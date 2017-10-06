@@ -1,0 +1,151 @@
+#legend {
+    position: fixed;
+    top: calc(50% - 100px);
+    right: 30px;
+    width: 100px;
+    height: 230px;
+    border: solid 1px black;
+}
+
+#legend .draw {
+    width: 100%;
+    height: 200px;
+}
+
+#legend .title {
+    width: 100%;
+    height: 30px;
+    text-align: center;
+    font-size: 12pt;
+    font-weight: bold;
+    font-family: sans-serif;
+    text-decoration: underline;
+}
+
+#restore-all {
+    width: 5% !important;
+    height: 5% !important;
+    top:0;
+    right:0;
+    position: absolute;
+    background: black url("images/reset.svg") no-repeat 2px 2px;
+    background-size: 90% 90%;
+    cursor: pointer;
+}
+
+#restore-all:hover {
+    background: black url("images/reset_hover.svg") no-repeat 2px 2px;
+    background-size: 90% 90%;
+}
+
+/*Loading logo*/
+#loading {
+    position: absolute;
+    left: calc(50% - 165px);
+    top: calc(50% - 48px);
+}
+
+#loading .label {
+    display: inline-block;
+    padding-left: 60px;
+    padding-right: 5px;
+    margin-left: -30px;
+    height: 42px;
+    width: 116px;
+    padding-top: 10px;
+    background: white;
+    border: 1px solid black;
+    border-radius: 25px;
+    font-size: 20pt;
+    font-weight: bold;
+    vertical-align: middle;
+}
+
+.cssload-container{
+    position:relative;
+    display: inline-block;
+    padding-top: -20px;
+    vertical-align: middle;
+}
+
+.cssload-whirlpool,
+.cssload-whirlpool::before,
+.cssload-whirlpool::after {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    border: 1px solid rgb(204,204,204);
+    border-left-color: rgb(0,0,0);
+    border-radius: 674px;
+    -o-border-radius: 674px;
+    -ms-border-radius: 674px;
+    -webkit-border-radius: 674px;
+    -moz-border-radius: 674px;
+}
+
+.cssload-whirlpool {
+    margin: -17px 0 0 -17px;
+    height: 34px;
+    width: 34px;
+    animation: cssload-rotate 1150ms linear infinite;
+    -o-animation: cssload-rotate 1150ms linear infinite;
+    -ms-animation: cssload-rotate 1150ms linear infinite;
+    -webkit-animation: cssload-rotate 1150ms linear infinite;
+    -moz-animation: cssload-rotate 1150ms linear infinite;
+}
+
+.cssload-whirlpool::before {
+    content: "";
+    margin: -16px 0 0 -16px;
+    height: 30px;
+    width: 30px;
+    animation: cssload-rotate 1150ms linear infinite;
+    -o-animation: cssload-rotate 1150ms linear infinite;
+    -ms-animation: cssload-rotate 1150ms linear infinite;
+    -webkit-animation: cssload-rotate 1150ms linear infinite;
+    -moz-animation: cssload-rotate 1150ms linear infinite;
+}
+
+.cssload-whirlpool::after {
+    content: "";
+    margin: -20px 0 0 -20px;
+    height: 38px;
+    width: 38px;
+    animation: cssload-rotate 2300ms linear infinite;
+    -o-animation: cssload-rotate 2300ms linear infinite;
+    -ms-animation: cssload-rotate 2300ms linear infinite;
+    -webkit-animation: cssload-rotate 2300ms linear infinite;
+    -moz-animation: cssload-rotate 2300ms linear infinite;
+}
+
+
+
+@keyframes cssload-rotate {
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@-o-keyframes cssload-rotate {
+    100% {
+        -o-transform: rotate(360deg);
+    }
+}
+
+@-ms-keyframes cssload-rotate {
+    100% {
+        -ms-transform: rotate(360deg);
+    }
+}
+
+@-webkit-keyframes cssload-rotate {
+    100% {
+        -webkit-transform: rotate(360deg);
+    }
+}
+
+@-moz-keyframes cssload-rotate {
+    100% {
+        -moz-transform: rotate(360deg);
+    }
+}
