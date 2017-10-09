@@ -1,8 +1,8 @@
 <?php
 
 $paf = "test2/araduvseve2.paf";
-$idx1 = "test2/evenia.idx";
-$idx2 = "test2/Aradu.idx";
+$idx1 = "test2/araduvseve2_1.idx";
+$idx2 = "test2/araduvseve2_2.idx";
 //$paf = "test3/2_10_vs_thal_f.paf";
 //$idx1 = "test3/chloroplast_arabidopsis.idx";
 //$idx2 = "test3/chloroplaste_2_10.idx";
