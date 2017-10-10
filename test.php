@@ -4,7 +4,7 @@
 	<script src="igenocomp/js/jquery-ui.min.js" type="text/JavaScript"></script>
 	<script src="igenocomp/js/sprintf.min.js" type="text/JavaScript"></script>
 	<script src="igenocomp/js/d3.min.js" type="text/JavaScript"></script>
-	<script src="igenocomp/js/draw_graph.js" type="text/JavaScript"></script>
+	<script src="igenocomp/js/d3.boxplot.js" type="text/JavaScript"></script>
 	<link rel="stylesheet" href="igenocomp/css/jquery-ui.min.css" type="text/css">
 	<link rel="stylesheet" href="igenocomp/css/style.css" type="text/css">
 </head>
