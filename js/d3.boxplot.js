@@ -40,6 +40,9 @@ d3.boxplot.color_idy = {
 d3.boxplot.min_sizes = [0, 0.01, 0.02, 0.03, 0.05, 1, 2];
 
 d3.boxplot.init = function () {
+    $("#filter_size").val(0);
+    $("#stroke-linecap").prop("checked", false);
+    $("#stroke-width").val(0);
     $.post("/get_graph",
         {"id": "araduvseve2"},
         //{"id": "2_10_vs_thal_f"},
@@ -812,10 +815,10 @@ d3.boxplot.draw_lines = function (lines, x_len=d3.boxplot.x_len, y_len=d3.boxplo
             let y2 = d3.boxplot.scale - (d_i[3] / y_len * d3.boxplot.scale);
             let len = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
             if (len > min_size && (max_size === null || len < max_size)) {
-                path.push(`M${x1} ${y1},L${x2} ${y2}`);
+                path.push(`M${x1} ${y1} L${x2} ${y2}`);
             }
         }
-        return path.join(",")
+        return path.join(" ")
     };
 
     //lines = lines.sort(d3.boxplot._sort_lines);
@@ -827,7 +830,7 @@ d3.boxplot.draw_lines = function (lines, x_len=d3.boxplot.x_len, y_len=d3.boxplo
             d3.boxplot.container.append("path")
                 .attr("d", lineFunction(lines["pos+"], min_size, max_size))
                 .attr("class", "content-lines s_" + min_size.toString().replace(".", "_"))
-                .attr("stroke-width", d3.boxplot.content_lines_width)
+                .attr("stroke-width", d3.boxplot.content_lines_width + "px")
                 .attr("stroke", d3.boxplot.color_idy["0.3"])
                 .attr("stroke-linecap", "square");
         }
@@ -835,7 +838,7 @@ d3.boxplot.draw_lines = function (lines, x_len=d3.boxplot.x_len, y_len=d3.boxplo
             d3.boxplot.container.append("path")
                 .attr("d", lineFunction(lines["pos-"], min_size, max_size))
                 .attr("class", "content-lines s_" + min_size.toString().replace(".", "_"))
-                .attr("stroke-width", d3.boxplot.content_lines_width)
+                .attr("stroke-width", d3.boxplot.content_lines_width + "px")
                 .attr("stroke", d3.boxplot.color_idy["0"])
                 .attr("stroke-linecap", "square");
         }
@@ -843,7 +846,7 @@ d3.boxplot.draw_lines = function (lines, x_len=d3.boxplot.x_len, y_len=d3.boxplo
             d3.boxplot.container.append("path")
                 .attr("d", lineFunction(lines["neg+"], min_size, max_size))
                 .attr("class", "content-lines s_" + min_size.toString().replace(".", "_"))
-                .attr("stroke-width", d3.boxplot.content_lines_width)
+                .attr("stroke-width", d3.boxplot.content_lines_width + "px")
                 .attr("stroke", d3.boxplot.color_idy["-0.3"])
                 .attr("stroke-linecap", "square");
         }
@@ -851,7 +854,7 @@ d3.boxplot.draw_lines = function (lines, x_len=d3.boxplot.x_len, y_len=d3.boxplo
             d3.boxplot.container.append("path")
                 .attr("d", lineFunction(lines["neg-"], min_size, max_size))
                 .attr("class", "content-lines s_" + min_size.toString().replace(".", "_"))
-                .attr("stroke-width", d3.boxplot.content_lines_width)
+                .attr("stroke-width", d3.boxplot.content_lines_width + "px")
                 .attr("stroke", d3.boxplot.color_idy["-1"])
                 .attr("stroke-linecap", "square");
         }

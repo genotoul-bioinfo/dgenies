@@ -1,5 +1,5 @@
 body {
-    font-size: 11pt;
+    font-size: 14px;
     font-family: sans-serif;
 }
 
@@ -16,6 +16,10 @@ label.input-checkbox-label input[type=checkbox]{
     position: relative;
     vertical-align: middle;
     bottom: 1px;
+}
+
+input[type=range] {
+    width: 130px;
 }
 
 #main-bar-title {
@@ -61,13 +65,21 @@ label.input-checkbox-label input[type=checkbox]{
 }
 
 #supdraw {
-    width:990px;
+    width:1010px;
     height: 850px;
     position: relative;
 }
 
 #draw {
     width: 850px;
+}
+
+.mylabel {
+    font-size: 18pt;
+    font-weight: bold;
+    font-family: FreeSans, sans-serif;
+    top: 8pt;
+    position: absolute;
 }
 
 #restore-all {
@@ -195,5 +207,11 @@ label.input-checkbox-label input[type=checkbox]{
 @-moz-keyframes cssload-rotate {
     100% {
         -moz-transform: rotate(360deg);
+    }
+}
+
+@media screen and (-webkit-min-device-pixel-ratio:0) {
+  Body {
+    font-size: 16px;
     }
 }
