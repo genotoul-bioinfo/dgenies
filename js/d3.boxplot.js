@@ -833,7 +833,7 @@ d3.boxplot.draw_lines = function (lines, x_len=d3.boxplot.x_len, y_len=d3.boxplo
                 .attr("d", lineFunction(lines["pos+"], min_size, max_size))
                 .attr("class", "content-lines s_" + min_size.toString().replace(".", "_"))
                 .attr("stroke-width", d3.boxplot.content_lines_width + "px")
-                .attr("stroke", d3.boxplot.color_idy["0.3"])
+                .attr("stroke", d3.boxplot.color_idy["pos+"])
                 .attr("stroke-linecap", "square");
         }
         if (lines["pos-"].length > 0) {
@@ -841,7 +841,7 @@ d3.boxplot.draw_lines = function (lines, x_len=d3.boxplot.x_len, y_len=d3.boxplo
                 .attr("d", lineFunction(lines["pos-"], min_size, max_size))
                 .attr("class", "content-lines s_" + min_size.toString().replace(".", "_"))
                 .attr("stroke-width", d3.boxplot.content_lines_width + "px")
-                .attr("stroke", d3.boxplot.color_idy["0"])
+                .attr("stroke", d3.boxplot.color_idy["pos-"])
                 .attr("stroke-linecap", "square");
         }
         if (lines["neg+"].length > 0) {
@@ -849,7 +849,7 @@ d3.boxplot.draw_lines = function (lines, x_len=d3.boxplot.x_len, y_len=d3.boxplo
                 .attr("d", lineFunction(lines["neg+"], min_size, max_size))
                 .attr("class", "content-lines s_" + min_size.toString().replace(".", "_"))
                 .attr("stroke-width", d3.boxplot.content_lines_width + "px")
-                .attr("stroke", d3.boxplot.color_idy["-0.3"])
+                .attr("stroke", d3.boxplot.color_idy["neg+"])
                 .attr("stroke-linecap", "square");
         }
         if (lines["neg-"].length > 0) {
@@ -857,7 +857,7 @@ d3.boxplot.draw_lines = function (lines, x_len=d3.boxplot.x_len, y_len=d3.boxplo
                 .attr("d", lineFunction(lines["neg-"], min_size, max_size))
                 .attr("class", "content-lines s_" + min_size.toString().replace(".", "_"))
                 .attr("stroke-width", d3.boxplot.content_lines_width + "px")
-                .attr("stroke", d3.boxplot.color_idy["-1"])
+                .attr("stroke", d3.boxplot.color_idy["neg-"])
                 .attr("stroke-linecap", "square");
         }
     }
