@@ -4,8 +4,6 @@ if (!d3) {
 d3.boxplot = {};
 
 //GLOBAL VARIABLES:
-d3.boxplot.scale = 1000;
-
 d3.boxplot.svgcontainer = null;
 d3.boxplot.container = null;
 d3.boxplot.svgsupercontainer = null;
@@ -19,17 +17,29 @@ d3.boxplot.y_zones = null;
 d3.boxplot.zoom_enabled = true;
 d3.boxplot.min_idy = 0;
 d3.boxplot.max_idy = 0;
-
 d3.boxplot.zone_selected = false;
+
 //For translations:
 d3.boxplot.translate_start = null;
 d3.boxplot.posX = null;
 d3.boxplot.posY = null;
 d3.boxplot.old_translate = null;
 
+//Graphical parameters:
+d3.boxplot.scale = 1000;
+d3.boxplot.content_lines_width = d3.boxplot.scale / 600;
+d3.boxplot.break_lines_width = d3.boxplot.scale / 400;
+d3.boxplot.color_idy = {
+    "0.3": "#063806",
+    "0": "#43a743",
+    "-0.3": "#a55353",
+    "-1": "#540404"
+};
+
 d3.boxplot.init = function () {
     $.post("/get_graph",
         {"id": "araduvseve2"},
+        //{"id": "2_10_vs_thal_f"},
         function (data) {
             let res = null;
             try {
@@ -116,7 +126,7 @@ d3.boxplot.select_zone = function (x, y) {
            .attr("transform", "scale(" + scale_x + "," + scale_y + ")" +
                "translate(-" + (d3.boxplot.x_zones[x_zone][0]) + ",-" + (d3.boxplot.scale - d3.boxplot.y_zones[y_zone][1]) + ")");
         // Correct lines stroke width to be not impacted by the zoom:
-        d3.selectAll(".content-lines").attr("stroke-width", (d3.boxplot.scale / 400) / Math.min(scale_x, scale_y));
+        d3.selectAll(".content-lines").attr("stroke-width", d3.boxplot.content_lines_width / Math.min(scale_x, scale_y));
         d3.selectAll("line.break-lines").style("visibility", "hidden");
 
         //Update left and bottom axis:
@@ -144,9 +154,9 @@ d3.boxplot.reset_scale = function () {
         d3.boxplot.container.attr("transform", "scale(1,1)translate(0,0)");
 
         //Restore lines stroke width:
-        d3.selectAll("path.content-lines").attr("stroke-width", d3.boxplot.scale / 400);
+        d3.selectAll("path.content-lines").attr("stroke-width", d3.boxplot.content_lines_width);
         d3.selectAll("line.break-lines").style("visibility","visible");
-        d3.selectAll("line.break-lines").attr("stroke-width", d3.boxplot.scale / 800);
+        d3.selectAll("line.break-lines").attr("stroke-width", d3.boxplot.break_lines_width);
 
         //Update left and bottom axis:
         d3.boxplot.draw_left_axis(d3.boxplot.y_len);
@@ -402,6 +412,13 @@ d3.boxplot.draw_top_axis = function (x_zones=d3.boxplot.x_zones) {
                 .attr("font-size", "7pt")
                 .text(zone);
         }
+        svg_top.append("line")
+            .attr("x1", x_pos_1 / d3.boxplot.scale * axis_length)
+            .attr("x2", x_pos_1 / d3.boxplot.scale * axis_length)
+            .attr("y1", "50%")
+            .attr("y2", "100%")
+            .attr("stroke", "black")
+            .attr("stroke-width", 1)
     }
 };
 
@@ -471,6 +488,14 @@ d3.boxplot.draw_right_axis = function (y_zones=d3.boxplot.y_zones) {
                 .attr("font-size", "7pt")
                 .text(zone);
         }
+        container_right.append("line")
+            .attr("x1", y_pos_1 / d3.boxplot.scale * axis_length)
+            .attr("x2", y_pos_1 / d3.boxplot.scale * axis_length)
+            .attr("y1", 10)
+            .attr("y2", 20)
+            .attr("stroke", "black")
+            .attr("stroke-width", 1)
+            .attr("class", "whereis")
     }
 };
 
@@ -478,9 +503,10 @@ d3.boxplot._sort_color_idy = function(a, b) {
     return parseFloat(b) - parseFloat(a);
 }
 
-d3.boxplot.draw_legend = function (color_idy) {
+d3.boxplot.draw_legend = function () {
+    let color_idy = d3.boxplot.color_idy;
+    let color_idy_len = Object.keys(color_idy).length;
     let color_idy_order = Object.keys(color_idy).sort(d3.boxplot._sort_color_idy);
-    console.log(color_idy_order);
     let svgcontainer = d3.select("#legend .draw").append("svg:svg")
         .attr("width", "100%")
         .attr("height", "100%");
@@ -492,19 +518,26 @@ d3.boxplot.draw_legend = function (color_idy) {
         let color_idy_idx = color_idy_order[i];
         container.append("rect")
             .attr("x", "50%")
-            .attr("y", (i * 10) + "%")
+            .attr("y", (i * (100 / color_idy_len)) + "%")
             .attr("width", "50%")
-            .attr("height", "10%")
+            .attr("height", (100 / color_idy_len) + "%")
             .attr("stroke", "none")
             .attr("fill", color_idy[color_idy_idx]);
         container.append("text")
-            .attr("x", "20%")
-            .attr("y", ((i * 10) + 7.5) + "%")
-            .attr("text-anchor", "top")
+            .attr("x", "45%")
+            .attr("y", ((i * (100 / color_idy_len)) + (100 / color_idy_len)-1) + "%")
+            .attr("text-anchor", "end")
             .attr("font-family", "sans-serif")
             .attr("font-size", "10pt")
-            .text(Math.round(color_idy_order[i] * 100) / 100);
+            .text(color_idy_order[i]);
     }
+    container.append("text")
+            .attr("x", "45%")
+            .attr("y", 10)
+            .attr("text-anchor", "end")
+            .attr("font-family", "sans-serif")
+            .attr("font-size", "10pt")
+            .text("1");
     container.append("text")
         .attr("x", 0)
         .attr("y", "50%")
@@ -575,7 +608,6 @@ d3.boxplot.translate = function () {
         let scale_x = 1;
         let scale_y = 1;
         if (old_transform) {
-            console.log(old_transform);
             let scale = old_transform.match(/scale\(([-\d.]+)(,\s*([-\d.]+))?\)/);
             scale_x = scale[1];
             scale_y = scale[1];
@@ -704,8 +736,8 @@ d3.boxplot.zoom = function () {
             d3.boxplot.container.attr("transform", new_transform);
 
             //Correct lines stroke width to be not impacted by the zoom:
-            d3.selectAll("path.content-lines").attr("stroke-width", (d3.boxplot.scale / 400) / new_scale);
-            d3.selectAll("line.break-lines").attr("stroke-width", (d3.boxplot.scale / 800) / new_scale);
+            d3.selectAll("path.content-lines").attr("stroke-width", d3.boxplot.content_lines_width / new_scale);
+            d3.selectAll("line.break-lines").attr("stroke-width", d3.boxplot.break_lines_width / new_scale);
 
             //Update axis:
             d3.boxplot.draw_top_axis();
@@ -729,27 +761,8 @@ d3.boxplot._sort_lines = function(l1, l2) {
 }
 
 d3.boxplot.draw_lines = function (lines, x_len=d3.boxplot.x_len, y_len=d3.boxplot.y_len) {
-    let color_idy_generic = {
-        0.0: "#d60004",
-        0.1: "#e37700",
-        0.2: "#e8ae00",
-        0.3: "#daa620",
-        0.4: "#947d54",
-        0.5: "#666666",
-        0.6: "#5e8465",
-        0.7: "#33b560",
-        0.8: "#597997",
-        0.9: "#1701d2"
-    };
-
-    let color_idy = {};
 
     let tmp_max = d3.boxplot.max_idy - d3.boxplot.min_idy;
-
-    for (let part in color_idy_generic) {
-        let new_limit = (part * tmp_max) + d3.boxplot.min_idy;
-        color_idy[new_limit] = color_idy_generic[part]
-    }
 
     let nb_lines = 0;
     // for (let i = 0; i < lines.length; i++) {
@@ -778,7 +791,7 @@ d3.boxplot.draw_lines = function (lines, x_len=d3.boxplot.x_len, y_len=d3.boxplo
     //         .attr("stroke-width", d3.boxplot.scale / 400)
     //         .attr("stroke", line_len >= 1 ? color : "black");
     // }
-    let lineFunction = function(d) {
+    let lineFunction = function(d, min_size=0, max_size=null) {
         let path = [];
         for (let i=0; i < d.length; i++) {
             let d_i = d[i];
@@ -786,42 +799,52 @@ d3.boxplot.draw_lines = function (lines, x_len=d3.boxplot.x_len, y_len=d3.boxplo
             let x2 = d_i[1] / x_len * d3.boxplot.scale;
             let y1 = d3.boxplot.scale - (d_i[2] / y_len * d3.boxplot.scale);
             let y2 = d3.boxplot.scale - (d_i[3] / y_len * d3.boxplot.scale);
-            path.push(`M${x1} ${y1},L${x2} ${y2}`);
+            let len = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+            if (len > min_size && (max_size === null || len < max_size)) {
+                path.push(`M${x1} ${y1},L${x2} ${y2}`);
+            }
         }
         return path.join(",")
     };
 
     //lines = lines.sort(d3.boxplot._sort_lines);
-    if (lines["pos+"].length > 0) {
-        d3.boxplot.container.append("path")
-        .attr("d", lineFunction(lines["pos+"]))
-        .attr("class", "content-lines")
-        .attr("stroke-width", d3.boxplot.scale / 400)
-        .attr("stroke", "#0B610B");
+    let min_sizes = [0, 0.01, 0.02, 0.03, 0.05, 1, 2];
+    for (let i=0; i<min_sizes.length; i++) {
+        let min_size = min_sizes[i];
+        let max_size = i+1 < min_sizes.length ? min_sizes[i+1] : null;
+        if (lines["pos+"].length > 0) {
+            d3.boxplot.container.append("path")
+                .attr("d", lineFunction(lines["pos+"], min_size, max_size))
+                .attr("class", "content-lines s_" + min_size.toString().replace(".", ""))
+                .attr("stroke-width", d3.boxplot.content_lines_width)
+                .attr("stroke", d3.boxplot.color_idy["0.3"])
+                .attr("stroke-linecap", "square");
+        }
+        if (lines["pos-"].length > 0) {
+            d3.boxplot.container.append("path")
+                .attr("d", lineFunction(lines["pos-"], min_size, max_size))
+                .attr("class", "content-lines s_" + min_size.toString().replace(".", ""))
+                .attr("stroke-width", d3.boxplot.content_lines_width)
+                .attr("stroke", d3.boxplot.color_idy["0"])
+                .attr("stroke-linecap", "square");
+        }
+        if (lines["neg+"].length > 0) {
+            d3.boxplot.container.append("path")
+                .attr("d", lineFunction(lines["neg+"], min_size, max_size))
+                .attr("class", "content-lines s_" + min_size.toString().replace(".", ""))
+                .attr("stroke-width", d3.boxplot.content_lines_width)
+                .attr("stroke", d3.boxplot.color_idy["-0.3"])
+                .attr("stroke-linecap", "square");
+        }
+        if (lines["neg-"].length > 0) {
+            d3.boxplot.container.append("path")
+                .attr("d", lineFunction(lines["neg-"], min_size, max_size))
+                .attr("class", "content-lines s_" + min_size.toString().replace(".", ""))
+                .attr("stroke-width", d3.boxplot.content_lines_width)
+                .attr("stroke", d3.boxplot.color_idy["-1"])
+                .attr("stroke-linecap", "square");
+        }
     }
-    if (lines["pos-"].length > 0) {
-        d3.boxplot.container.append("path")
-        .attr("d", lineFunction(lines["pos-"]))
-        .attr("class", "content-lines")
-        .attr("stroke-width", d3.boxplot.scale / 400)
-        .attr("stroke", "#43a743");
-    }
-    if (lines["neg+"].length > 0) {
-        d3.boxplot.container.append("path")
-        .attr("d", lineFunction(lines["neg+"]))
-        .attr("class", "content-lines")
-        .attr("stroke-width", d3.boxplot.scale / 400)
-        .attr("stroke", "#a55353");
-    }
-    if (lines["neg-"].length > 0) {
-        d3.boxplot.container.append("path")
-        .attr("d", lineFunction(lines["neg-"]))
-        .attr("class", "content-lines")
-        .attr("stroke-width", d3.boxplot.scale / 400)
-        .attr("stroke", "#8A0808");
-    }
-
-    return color_idy;
 }
 
 d3.boxplot.draw = function (x_contigs, x_order, y_contigs, y_order) {
@@ -877,7 +900,6 @@ d3.boxplot.draw = function (x_contigs, x_order, y_contigs, y_order) {
     for (let i = 0; i < x_order.length - 1; i++) {
         let x_id = x_order[i];
         let x_contig_len = x_contigs[x_id] / d3.boxplot.x_len * d3.boxplot.scale;
-        console.log(x_contigs[x_id], x_contig_len);
         d3.boxplot.x_zones[x_id] = [sum, sum + x_contig_len];
         sum += x_contig_len;
 
@@ -887,8 +909,8 @@ d3.boxplot.draw = function (x_contigs, x_order, y_contigs, y_order) {
             .attr("x2", sum)
             .attr("y2", 0)
             .attr("class", "break-lines")
-            .attr("stroke-width", d3.boxplot.scale / 800)
-            .attr("stroke", "gray")
+            .attr("stroke-width", d3.boxplot.break_lines_width)
+            .attr("stroke", "black")
             .style("stroke-dasharray", ("3, 3"));
     }
     d3.boxplot.x_zones[x_order[x_order.length - 1]] = [sum, d3.boxplot.scale];
@@ -908,8 +930,8 @@ d3.boxplot.draw = function (x_contigs, x_order, y_contigs, y_order) {
             .attr("x2", d3.boxplot.scale)
             .attr("y2", d3.boxplot.scale - sum)
             .attr("class", "break-lines")
-            .attr("stroke-width", d3.boxplot.scale / 800)
-            .attr("stroke", "gray")
+            .attr("stroke-width", d3.boxplot.break_lines_width)
+            .attr("stroke", "black")
             .style("stroke-dasharray", ("3, 3"));
     }
     d3.boxplot.y_zones[y_order[y_order.length - 1]] = [sum, d3.boxplot.scale];
@@ -921,7 +943,7 @@ d3.boxplot.draw = function (x_contigs, x_order, y_contigs, y_order) {
 
     window.setTimeout(() => {
         //Data:
-        let color_idy = d3.boxplot.draw_lines(d3.boxplot.lines);
+        d3.boxplot.draw_lines(d3.boxplot.lines);
 
         $("#restore-all").click(function () {
             d3.boxplot.reset_scale();
@@ -935,7 +957,7 @@ d3.boxplot.draw = function (x_contigs, x_order, y_contigs, y_order) {
             }
         });
 
-        d3.boxplot.draw_legend(color_idy);
+        d3.boxplot.draw_legend();
 
         $("#loading").hide();
     }, 0);
