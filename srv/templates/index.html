@@ -1,17 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>{{ title }}</title>
-
-    <script src="{{ url_for('static', filename='js/jquery-3.2.1.min.js') }}" type="text/JavaScript"></script>
-	<script src="{{ url_for('static', filename='js/jquery-ui.min.js') }}" type="text/JavaScript"></script>
-	<script src="{{ url_for('static', filename='js/d3.min.js') }}" type="text/JavaScript"></script>
-	<script src="{{ url_for('static', filename='js/d3.boxplot.js') }}" type="text/JavaScript"></script>
-    <script src="{{ url_for('static', filename='js/d3.boxplot.events.js') }}" type="text/JavaScript"></script>
-	<link rel="stylesheet" href="{{ url_for('static', filename='css/jquery-ui.min.css') }}" type="text/css">
-	<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" type="text/css">
-</head>
+{% include 'header.html' %}
 <body onload="d3.boxplot.init('{{ id }}');">
 <div id="main-bar-title">
     <img src="{{ url_for('static', filename='images/logo.png') }}" height="40px" alt=""/><h1>{{ title }}</h1>
