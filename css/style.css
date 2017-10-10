@@ -23,7 +23,6 @@ input[type=range] {
 }
 
 #main-bar-title {
-    width: 100%;
     background-color: black;
     color: white;
     padding-left: 10px;
