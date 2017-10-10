@@ -12,7 +12,7 @@
 	<link rel="stylesheet" href="{{ url_for('static', filename='css/jquery-ui.min.css') }}" type="text/css">
 	<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" type="text/css">
 </head>
-<body onload="d3.boxplot.init();">
+<body onload="d3.boxplot.init('{{ id }}');">
 <div id="main-bar-title">
     <img src="{{ url_for('static', filename='images/logo.png') }}" height="40px" alt=""/><h1>{{ title }}</h1>
 </div>

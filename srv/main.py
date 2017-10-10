@@ -5,9 +5,6 @@ import json
 from flask import Flask, render_template, request
 from lib.parse_paf import parse_paf
 
-# Init Jinja2 template loader:
-dirname = os.path.dirname(__file__)
-
 # Init Flash:
 app = Flask(__name__, static_url_path='/static')
 
@@ -16,10 +13,10 @@ app_data = "/home/fcabanettes/public_html/test"
 
 
 # Root path
-@app.route("/")
-def hello():
+@app.route("/result/<id_res>", methods=['GET'])
+def hello(id_res):
     title = "IGenoComp - An Interactive Genome Comparator"
-    return render_template("index.html", title=title)
+    return render_template("index.html", title=title, id=id_res)
 
 
 @app.route('/get_graph', methods=['POST'])

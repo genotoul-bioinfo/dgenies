@@ -39,13 +39,12 @@ d3.boxplot.color_idy = {
 //Filter sizes:
 d3.boxplot.min_sizes = [0, 0.01, 0.02, 0.03, 0.05, 1, 2];
 
-d3.boxplot.init = function () {
+d3.boxplot.init = function (id) {
     $("#filter_size").val(0);
     $("#stroke-linecap").prop("checked", false);
     $("#stroke-width").val(0);
     $.post("/get_graph",
-        {"id": "araduvseve2"},
-        //{"id": "2_10_vs_thal_f"},
+        {"id": id},
         function (data) {
             let res = null;
             try {
