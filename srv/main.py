@@ -14,7 +14,7 @@ app_data = "/home/fcabanettes/public_html/test"
 
 # Root path
 @app.route("/result/<id_res>", methods=['GET'])
-def hello(id_res):
+def result(id_res):
     title = "IGenoComp - An Interactive Genome Comparator"
     return render_template("index.html", title=title, id=id_res)
 

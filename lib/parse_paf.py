@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+limit_idy = 0.4
 
 
 def parse_paf(paf, idx1, idx2):
@@ -38,11 +39,11 @@ def parse_paf(paf, idx1, idx2):
                     x2 = int(parts[3])
                     y1 = int(parts[7 if strand == 1 else 8])
                     y2 = int(parts[8 if strand == 1 else 7])
-                    if idy < -0.3:
+                    if idy < -limit_idy:
                         class_idy = "neg-"
                     elif idy < 0:
                         class_idy = "neg+"
-                    elif idy < 0.3:
+                    elif idy < limit_idy:
                         class_idy = "pos-"
                     else:
                         class_idy = "pos+"
@@ -87,5 +88,6 @@ def parse_paf(paf, idx1, idx2):
         'y_contigs': y_contigs,
         'y_order': y_order,
         'name_x': first_sample,
-        'name_y': second_sample
+        'name_y': second_sample,
+        'limit_idy': limit_idy
     }

@@ -30,11 +30,12 @@ d3.boxplot.scale = 1000;
 d3.boxplot.content_lines_width = d3.boxplot.scale / 600;
 d3.boxplot.break_lines_width = d3.boxplot.scale / 400;
 d3.boxplot.color_idy = {
-    "0.3": "#063806",
-    "0": "#43a743",
-    "-0.3": "#a55353",
-    "-1": "#540404"
+    "pos+": "#063806",
+    "pos-": "#99d78d",
+    "neg+": "#d69185",
+    "neg-": "#540404"
 };
+d3.boxplot.limit_idy = null;
 
 //Filter sizes:
 d3.boxplot.min_sizes = [0, 0.01, 0.02, 0.03, 0.05, 1, 2];
@@ -62,6 +63,7 @@ d3.boxplot.init = function (id) {
                 d3.boxplot.y_len = res["y_len"];
                 d3.boxplot.min_idy = res["min_idy"];
                 d3.boxplot.max_idy = res["max_idy"];
+                d3.boxplot.limit_idy = res["limit_idy"];
                 d3.boxplot.draw(res["x_contigs"], res["x_order"], res["y_contigs"], res["y_order"]);
                 $("div#draw").resizable({
                     aspectRatio: true
@@ -519,7 +521,8 @@ d3.boxplot._sort_color_idy = function(a, b) {
 d3.boxplot.draw_legend = function () {
     let color_idy = d3.boxplot.color_idy;
     let color_idy_len = Object.keys(color_idy).length;
-    let color_idy_order = Object.keys(color_idy).sort(d3.boxplot._sort_color_idy);
+    let color_idy_order = ["pos+", "pos-", "neg+", "neg-"];
+    let color_idy_labels = [d3.boxplot.limit_idy.toString(), "0", (-d3.boxplot.limit_idy).toString(), "-1"];
     let svgcontainer = d3.select("#legend .draw").append("svg:svg")
         .attr("width", "100%")
         .attr("height", "100%");
@@ -542,7 +545,7 @@ d3.boxplot.draw_legend = function () {
             .attr("text-anchor", "end")
             .attr("font-family", "sans-serif")
             .attr("font-size", "10pt")
-            .text(color_idy_order[i]);
+            .text(color_idy_labels[i]);
     }
     container.append("text")
             .attr("x", "45%")
