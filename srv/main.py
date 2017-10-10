@@ -18,7 +18,7 @@ app_data = "/home/fcabanettes/public_html/test"
 # Root path
 @app.route("/")
 def hello():
-    title = "IgenoComp - An Interactive Genome Comparator"
+    title = "IGenoComp - An Interactive Genome Comparator"
     return render_template("index.html", title=title)
 
 

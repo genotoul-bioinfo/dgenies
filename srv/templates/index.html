@@ -8,29 +8,41 @@
 	<script src="{{ url_for('static', filename='js/jquery-ui.min.js') }}" type="text/JavaScript"></script>
 	<script src="{{ url_for('static', filename='js/d3.min.js') }}" type="text/JavaScript"></script>
 	<script src="{{ url_for('static', filename='js/d3.boxplot.js') }}" type="text/JavaScript"></script>
+    <script src="{{ url_for('static', filename='js/d3.boxplot.events.js') }}" type="text/JavaScript"></script>
 	<link rel="stylesheet" href="{{ url_for('static', filename='css/jquery-ui.min.css') }}" type="text/css">
 	<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" type="text/css">
 </head>
 <body onload="d3.boxplot.init();">
-<h1>{{ title }}</h1>
-<div id="subdraw">
-    <div id="draw"></div>
-    <div id="loading">
-    <div class="cssload-container">
-        <div class="cssload-whirlpool"></div>
-    </div>
-    <div class="label">
-        <div class="mylabel">
-            Loading...
+<div id="main-bar-title">
+    <img src="{{ url_for('static', filename='images/logo.png') }}" height="40px" alt=""/><h1>{{ title }}</h1>
+</div>
+<div id="supdraw">
+    <div class="master">
+        <div id="draw"></div>
+        <div id="sidebar">
+            <div id="legend">
+                <div class="title">
+                    Legend
+                </div>
+                <div class="draw"></div>
+            </div>
+            <label><p>Filter small matches:</p>
+            <input type="range" min="0" max="6" value="0" step="1" id="filter_size"/></label>
+            <p><label class="input-checkbox-label"><input type="checkbox" id="stroke-linecap"/> Strong precision</label></p>
+            <label><p>Stroke width:</p>
+            <input type="range" min="0" max="3" value="0" step="1" id="stroke-width"/></label>
         </div>
     </div>
-</div>
-</div>
-<div id="legend">
-<div class="title">
-Legend
-</div>
-<div class="draw">
+    <div id="loading">
+        <div class="cssload-container">
+            <div class="cssload-whirlpool"></div>
+        </div>
+        <div class="label">
+            <div class="mylabel">
+                Loading...
+            </div>
+        </div>
+    </div>
 </div>
 </body>
 </html>

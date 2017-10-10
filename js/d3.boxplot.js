@@ -36,6 +36,9 @@ d3.boxplot.color_idy = {
     "-1": "#540404"
 };
 
+//Filter sizes:
+d3.boxplot.min_sizes = [0, 0.01, 0.02, 0.03, 0.05, 1, 2];
+
 d3.boxplot.init = function () {
     $.post("/get_graph",
         {"id": "araduvseve2"},
@@ -44,7 +47,6 @@ d3.boxplot.init = function () {
             let res = null;
             try {
                 res = JSON.parse(data);
-                console.log(res)
             }
             catch (e) {
                 console.log(data);
@@ -62,6 +64,7 @@ d3.boxplot.init = function () {
                 $("div#draw").resizable({
                     aspectRatio: true
                 });
+                d3.boxplot.events.init();
             }
         }
     )
@@ -393,6 +396,7 @@ d3.boxplot.draw_top_axis = function (x_zones=d3.boxplot.x_zones) {
         .attr("text-anchor", "middle")
         .text(d3.boxplot.name_x);
 
+    let nb_zone = 0;
     for (let zone in x_zones) {
         let x_pos_1 = Math.min(Math.max(x_zones[zone][0] * scale + translate, 0), d3.boxplot.scale);
         let x_pos_2 = Math.min(Math.max(x_zones[zone][1] * scale + translate, 0), d3.boxplot.scale);
@@ -412,13 +416,16 @@ d3.boxplot.draw_top_axis = function (x_zones=d3.boxplot.x_zones) {
                 .attr("font-size", "7pt")
                 .text(zone);
         }
-        svg_top.append("line")
-            .attr("x1", x_pos_1 / d3.boxplot.scale * axis_length)
-            .attr("x2", x_pos_1 / d3.boxplot.scale * axis_length)
-            .attr("y1", "50%")
-            .attr("y2", "100%")
-            .attr("stroke", "black")
-            .attr("stroke-width", 1)
+        if (nb_zone > 0) { //Draw zone separator at left of zone (except for first zone)
+            svg_top.append("line")
+                .attr("x1", x_pos_1 / d3.boxplot.scale * axis_length)
+                .attr("x2", x_pos_1 / d3.boxplot.scale * axis_length)
+                .attr("y1", "50%")
+                .attr("y2", "100%")
+                .attr("stroke", "black")
+                .attr("stroke-width", 1);
+        }
+        nb_zone++;
     }
 };
 
@@ -469,6 +476,7 @@ d3.boxplot.draw_right_axis = function (y_zones=d3.boxplot.y_zones) {
         .attr("text-anchor", "middle")
         .text(d3.boxplot.name_y);
 
+    let nb_zone = Object.keys(y_zones).length - 1;
     for (let zone in y_zones) {
         let y_pos_2 = Math.min(Math.max((d3.boxplot.scale - y_zones[zone][0]) * scale + translate, 0), d3.boxplot.scale);
         let y_pos_1 = Math.min(Math.max((d3.boxplot.scale - y_zones[zone][1]) * scale + translate, 0), d3.boxplot.scale);
@@ -488,20 +496,23 @@ d3.boxplot.draw_right_axis = function (y_zones=d3.boxplot.y_zones) {
                 .attr("font-size", "7pt")
                 .text(zone);
         }
-        container_right.append("line")
-            .attr("x1", y_pos_1 / d3.boxplot.scale * axis_length)
-            .attr("x2", y_pos_1 / d3.boxplot.scale * axis_length)
-            .attr("y1", 10)
-            .attr("y2", 20)
-            .attr("stroke", "black")
-            .attr("stroke-width", 1)
-            .attr("class", "whereis")
+        if (nb_zone > 0) { //Draw zone separator at left of zone (except for first zone)
+            container_right.append("line")
+                .attr("x1", y_pos_1 / d3.boxplot.scale * axis_length)
+                .attr("x2", y_pos_1 / d3.boxplot.scale * axis_length)
+                .attr("y1", 10)
+                .attr("y2", 20)
+                .attr("stroke", "black")
+                .attr("stroke-width", 1)
+                .attr("class", "whereis");
+        }
+        nb_zone--;
     }
 };
 
 d3.boxplot._sort_color_idy = function(a, b) {
     return parseFloat(b) - parseFloat(a);
-}
+};
 
 d3.boxplot.draw_legend = function () {
     let color_idy = d3.boxplot.color_idy;
@@ -754,17 +765,17 @@ d3.boxplot._get_line_len = function (line) {
     let y1 = d3.boxplot.scale - (line[2] / d3.boxplot.y_len * d3.boxplot.scale);
     let y2 = d3.boxplot.scale - (line[3] / d3.boxplot.y_len * d3.boxplot.scale);
     return Math.sqrt(Math.pow(x2-x1, 2) + Math.pow(y2-y1, 2));
-}
+};
 
 d3.boxplot._sort_lines = function(l1, l2) {
     return d3.boxplot._get_line_len(l2) - d3.boxplot._get_line_len(l1);
-}
+};
 
 d3.boxplot.draw_lines = function (lines, x_len=d3.boxplot.x_len, y_len=d3.boxplot.y_len) {
 
-    let tmp_max = d3.boxplot.max_idy - d3.boxplot.min_idy;
-
-    let nb_lines = 0;
+    // let tmp_max = d3.boxplot.max_idy - d3.boxplot.min_idy;
+    //
+    // let nb_lines = 0;
     // for (let i = 0; i < lines.length; i++) {
     //     nb_lines++;
     //     if (nb_lines > 50000) {
@@ -808,14 +819,14 @@ d3.boxplot.draw_lines = function (lines, x_len=d3.boxplot.x_len, y_len=d3.boxplo
     };
 
     //lines = lines.sort(d3.boxplot._sort_lines);
-    let min_sizes = [0, 0.01, 0.02, 0.03, 0.05, 1, 2];
+    let min_sizes = d3.boxplot.min_sizes;
     for (let i=0; i<min_sizes.length; i++) {
         let min_size = min_sizes[i];
         let max_size = i+1 < min_sizes.length ? min_sizes[i+1] : null;
         if (lines["pos+"].length > 0) {
             d3.boxplot.container.append("path")
                 .attr("d", lineFunction(lines["pos+"], min_size, max_size))
-                .attr("class", "content-lines s_" + min_size.toString().replace(".", ""))
+                .attr("class", "content-lines s_" + min_size.toString().replace(".", "_"))
                 .attr("stroke-width", d3.boxplot.content_lines_width)
                 .attr("stroke", d3.boxplot.color_idy["0.3"])
                 .attr("stroke-linecap", "square");
@@ -823,7 +834,7 @@ d3.boxplot.draw_lines = function (lines, x_len=d3.boxplot.x_len, y_len=d3.boxplo
         if (lines["pos-"].length > 0) {
             d3.boxplot.container.append("path")
                 .attr("d", lineFunction(lines["pos-"], min_size, max_size))
-                .attr("class", "content-lines s_" + min_size.toString().replace(".", ""))
+                .attr("class", "content-lines s_" + min_size.toString().replace(".", "_"))
                 .attr("stroke-width", d3.boxplot.content_lines_width)
                 .attr("stroke", d3.boxplot.color_idy["0"])
                 .attr("stroke-linecap", "square");
@@ -831,7 +842,7 @@ d3.boxplot.draw_lines = function (lines, x_len=d3.boxplot.x_len, y_len=d3.boxplo
         if (lines["neg+"].length > 0) {
             d3.boxplot.container.append("path")
                 .attr("d", lineFunction(lines["neg+"], min_size, max_size))
-                .attr("class", "content-lines s_" + min_size.toString().replace(".", ""))
+                .attr("class", "content-lines s_" + min_size.toString().replace(".", "_"))
                 .attr("stroke-width", d3.boxplot.content_lines_width)
                 .attr("stroke", d3.boxplot.color_idy["-0.3"])
                 .attr("stroke-linecap", "square");
@@ -839,13 +850,13 @@ d3.boxplot.draw_lines = function (lines, x_len=d3.boxplot.x_len, y_len=d3.boxplo
         if (lines["neg-"].length > 0) {
             d3.boxplot.container.append("path")
                 .attr("d", lineFunction(lines["neg-"], min_size, max_size))
-                .attr("class", "content-lines s_" + min_size.toString().replace(".", ""))
+                .attr("class", "content-lines s_" + min_size.toString().replace(".", "_"))
                 .attr("stroke-width", d3.boxplot.content_lines_width)
                 .attr("stroke", d3.boxplot.color_idy["-1"])
                 .attr("stroke-linecap", "square");
         }
     }
-}
+};
 
 d3.boxplot.draw = function (x_contigs, x_order, y_contigs, y_order) {
     let width = 850;

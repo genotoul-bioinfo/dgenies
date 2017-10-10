@@ -1,10 +1,43 @@
+body {
+    font-size: 11pt;
+    font-family: sans-serif;
+}
+
 #legend {
-    position: fixed;
-    top: calc(50% - 100px);
-    right: 30px;
+    /*position: fixed;*/
+    /*top: calc(50% - 100px);*/
+    /*right: 30px;*/
     width: 100px;
     height: 230px;
     border: solid 1px black;
+}
+
+label.input-checkbox-label input[type=checkbox]{
+    position: relative;
+    vertical-align: middle;
+    bottom: 1px;
+}
+
+#main-bar-title {
+    width: 100%;
+    background-color: black;
+    color: white;
+    padding-left: 10px;
+    margin-bottom: 5px;
+}
+
+#main-bar-title h1 {
+    margin-top: 0;
+    margin-bottom: 0;
+    margin-left: 10px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+#main-bar-title h1,#main-bar-title img {
+    display: inline-block;
+    vertical-align: middle;
+    width: auto;
 }
 
 #legend .draw {
@@ -20,6 +53,21 @@
     font-weight: bold;
     font-family: sans-serif;
     text-decoration: underline;
+}
+
+#draw,#sidebar {
+    display: inline-block;
+    vertical-align: top;
+}
+
+#supdraw {
+    width:990px;
+    height: 850px;
+    position: relative;
+}
+
+#draw {
+    width: 850px;
 }
 
 #restore-all {
@@ -41,7 +89,7 @@
 /*Loading logo*/
 #loading {
     position: absolute;
-    left: calc(50% - 165px);
+    left: calc(50% - 140px);
     top: calc(50% - 48px);
 }
 
