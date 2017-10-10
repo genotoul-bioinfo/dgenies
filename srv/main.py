@@ -14,13 +14,14 @@ app = Flask(__name__, static_url_path='/static')
 app_data = "/home/fcabanettes/public_html/test"
 
 
-# Root path
+# Results path
 @app.route("/result/<id_res>", methods=['GET'])
 def result(id_res):
     title = app_title
     return render_template("index.html", title=title, id=id_res)
 
 
+# Get graph (ajax request)
 @app.route('/get_graph', methods=['POST'])
 def get_graph():
     id_f = request.form["id"]
