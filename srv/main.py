@@ -5,6 +5,8 @@ import json
 from flask import Flask, render_template, request
 from lib.parse_paf import parse_paf
 
+app_title = "ALGECO - A Live GEnome COmparator"
+
 # Init Flash:
 app = Flask(__name__, static_url_path='/static')
 
@@ -15,7 +17,7 @@ app_data = "/home/fcabanettes/public_html/test"
 # Root path
 @app.route("/result/<id_res>", methods=['GET'])
 def result(id_res):
-    title = "IGenoComp - An Interactive Genome Comparator"
+    title = app_title
     return render_template("index.html", title=title, id=id_res)
 
 
