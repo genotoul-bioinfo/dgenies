@@ -27,7 +27,7 @@ d3.boxplot.old_translate = null;
 
 //Graphical parameters:
 d3.boxplot.scale = 1000;
-d3.boxplot.content_lines_width = d3.boxplot.scale / 600;
+d3.boxplot.content_lines_width = d3.boxplot.scale / 400;
 d3.boxplot.break_lines_width = d3.boxplot.scale / 400;
 d3.boxplot.color_idy = {
     "pos+": "#063806",
@@ -43,7 +43,7 @@ d3.boxplot.min_sizes = [0, 0.01, 0.02, 0.03, 0.05, 1, 2];
 d3.boxplot.init = function (id) {
     $("#filter_size").val(0);
     $("#stroke-linecap").prop("checked", false);
-    $("#stroke-width").val(0);
+    $("#stroke-width").val(1);
     $.post("/get_graph",
         {"id": id},
         function (data) {
