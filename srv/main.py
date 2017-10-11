@@ -4,17 +4,30 @@ import os
 import json
 import time
 import datetime
-from flask import Flask, render_template, request, redirect, flash, session, url_for
+from flask import Flask, render_template, request, redirect, flash, url_for
 from werkzeug.utils import secure_filename
 from lib.parse_paf import parse_paf
 from config_reader import AppConfigReader
+from lib.job_manager import JobManager
 from lib.functions import *
+# try:
+#     import _preamble
+# except ImportError:
+#     pass
+
+import sys
+app_folder = os.path.dirname(os.path.realpath(__file__))
+sys.path.insert(0, app_folder)
+os.environ["PATH"] = os.path.join(app_folder, "bin") + ":" + os.environ["PATH"]
+
+sqlite_file = os.path.join(app_folder, "database.sqlite")
+job_db, db = generate_database(sqlite_file)
+
 
 # Init config reader:
 config_reader = AppConfigReader()
 
 UPLOAD_FOLDER = config_reader.get_upload_folder()
-ALLOWED_EXTENSIONS = {'fa', 'fasta', 'fa.gz', "fasta.gz"}
 
 app_title = "ALGECO - A Live GEnome COmparator"
 
@@ -74,15 +87,21 @@ def launch_analysis():
             form_pass = False
         if form_pass:
             # Save files:
-            filename_query = get_valid_uploaded_filename(secure_filename(file_query.filename))
-            file_query.save(os.path.join(app.config["UPLOAD_FOLDER"], filename_query))
-            filename_target = get_valid_uploaded_filename(secure_filename(file_target.filename))
-            file_target.save(os.path.join(app.config["UPLOAD_FOLDER"], filename_target))
+            filename_query = get_valid_uploaded_filename(secure_filename(file_query.filename), app.config["UPLOAD_FOLDER"])
+            query_path = os.path.join(app.config["UPLOAD_FOLDER"], filename_query)
+            file_query.save(query_path)
+            filename_target = get_valid_uploaded_filename(secure_filename(file_target.filename), app.config["UPLOAD_FOLDER"])
+            target_path = os.path.join(app.config["UPLOAD_FOLDER"], filename_target)
+            file_target.save(target_path)
 
             # Get final job id:
             id_job_orig = id_job
             while os.path.exists(os.path.join(app_data, id_job)):
                 id_job = id_job_orig + "_2"
+
+            # Launch job:
+            job = JobManager(id_job, email, query_path, target_path, db, job_db)
+            job.launch()
         else:
             return redirect(url_for(".main", id_job=id_job, email=email))
     else:

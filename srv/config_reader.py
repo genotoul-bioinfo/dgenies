@@ -19,10 +19,34 @@ class AppConfigReader(object):
         try:
             return self.reader.get("global", "upload_folder")
         except NoOptionError:
-            return None
+            raise Exception("No upload folder found in application.properties (global section)")
 
     def get_app_data(self):
         try:
             return self.reader.get("global", "data_folder")
         except NoOptionError:
-            return None
+            raise Exception("No data folder found in application.properties (global section)")
+
+    def get_batch_system_type(self):
+        try:
+            return self.reader.get("global", "batch_system_type")
+        except NoOptionError:
+            return "local"
+
+    def get_nb_threads(self):
+        try:
+            return self.reader.get("global", "threads")
+        except NoOptionError:
+            return "4"
+
+    def get_minimap2_exec(self):
+        try:
+            return self.reader.get("softwares", "minimap2")
+        except NoOptionError:
+            return "minimap2"
+
+    def get_samtools_exec(self):
+        try:
+            return self.reader.get("softwares", "samtools")
+        except NoOptionError:
+            return "samtools"
