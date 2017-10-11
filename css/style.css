@@ -214,3 +214,37 @@ input[type=range] {
     font-size: 16px;
     }
 }
+
+/* Submit form: */
+table.form td.label {
+    padding-top:5px;
+    padding-right: 10px;
+}
+
+table.form {
+    margin-bottom: 15px;
+    margin-left: 15px;
+}
+
+table.form input[type=text],table.form input[type=email]{
+    width: 250px;
+}
+
+#body {
+    margin-left: 15px;
+    margin-top: 10px;
+}
+
+.errors-submit ul li {
+    background-color: #ff756b;
+    border: solid 2px #7c0000;
+    margin-bottom: 5px;
+    padding: 3px;
+    list-style-type: none;
+    font-weight: bold;
+}
+
+.errors-submit ul {
+    padding: 0;
+    width: 460px;
+}

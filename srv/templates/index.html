@@ -1,0 +1,59 @@
+{% include 'header.html' %}
+<body>
+<div id="main-bar-title">
+    <img src="{{ url_for('static', filename='images/logo.png') }}" height="40px" alt=""/><h1>{{ title }}</h1>
+</div>
+<div id="body">
+    <form id="submit_minimap" method=post enctype=multipart/form-data action="/launch_analysis">
+        <h2>Launch map analysis</h2>
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="errors-submit">
+                <ul class=flashes>
+                {% for message in messages %}
+                    <li>{{ message | safe }}</li>
+                {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+    {% endwith %}
+        <table class="form">
+            <tr>
+                <td class="label">
+                    <label for="id_job">Name of your job</label>
+                </td>
+                <td>
+                    <input type="text" id="id_job" name="id_job" value="{{ id_job }}" required/>
+                </td>
+            </tr>
+            <tr>
+                <td class="label">
+                    <label for="email">E-mail*</label>
+                </td>
+                <td>
+                    <input type="email" name="email" id="email" value="{{ email }}" required/>
+                </td>
+            </tr>
+            <tr>
+                <td class="label">
+                    <label>Query fasta</label>
+                </td>
+                <td>
+                    <input type="file" name="file_query" id="file_query" required/>
+                </td>
+            </tr>
+            <tr>
+                <td class="label">
+                    <label>Target fasta</label>
+                </td>
+                <td>
+                    <input type="file" name="file_target" id="file_target" required/>
+                </td>
+            </tr>
+        </table>
+        <p>* We will send you results by mail.</p>
+        <button type="submit">Submit</button>
+    </form>
+</div>
+</body>
+</html>
