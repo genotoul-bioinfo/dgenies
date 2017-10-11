@@ -2,14 +2,13 @@
 
 import os
 import json
-import random
-import string
 import time
 import datetime
 from flask import Flask, render_template, request, redirect, flash, session, url_for
 from werkzeug.utils import secure_filename
 from lib.parse_paf import parse_paf
 from config_reader import AppConfigReader
+from lib.functions import *
 
 # Init config reader:
 config_reader = AppConfigReader()
@@ -26,32 +25,6 @@ app.config['SECRET_KEY'] = 'dsqdsq-255sdA-fHfg52-25Asd5'
 
 # Folder containing data:
 app_data = config_reader.get_app_data()
-
-
-def allowed_file(filename):
-    return '.' in filename and \
-           (filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS or ".".join(filename.rsplit('.', 2)[1:]).lower()
-            in ALLOWED_EXTENSIONS)
-
-
-def random_string(s_len):
-    """
-    Generate a random string
-    :param s_len: length of the string to generate
-    :return: the random string
-    """
-    return ''.join([random.choice(string.ascii_letters + string.digits) for n in range(s_len)])
-
-
-def get_valid_uploaded_filename(filename):
-    file_query_s = os.path.join(app.config["UPLOAD_FOLDER"], filename)
-    i = 2
-    filename_orig = filename
-    while os.path.exists(file_query_s):
-        filename = str(i) + "_" + filename_orig
-        file_query_s = os.path.join(app.config["UPLOAD_FOLDER"], filename)
-        i += 1
-    return filename
 
 
 # Main
