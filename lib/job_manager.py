@@ -34,7 +34,11 @@ class JobManager:
     def __check_job_success_local(self):
         if os.path.exists(self.paf):
             if os.path.getsize(self.paf) > 0:
-                return "success"
+                if os.path.exists(self.idx_q):
+                    if os.path.getsize(self.idx_q) > 0:
+                        if os.path.exists(self.idx_t):
+                            if os.path.getsize(self.idx_t) > 0:
+                                return "success"
         return "error"
 
     def check_job_success(self):

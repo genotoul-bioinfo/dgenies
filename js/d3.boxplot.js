@@ -525,7 +525,7 @@ d3.boxplot.draw_legend = function () {
     let color_idy_labels = [d3.boxplot.limit_idy.toString(), "0", (-d3.boxplot.limit_idy).toString(), "-1"];
     let svgcontainer = d3.select("#legend .draw").append("svg:svg")
         .attr("width", "100%")
-        .attr("height", "100%");
+        .attr("height", "99%");
     let draw = $("#legend").find(".draw");
     let draw_w = draw.width();
     let draw_h = draw.height();
