@@ -81,7 +81,9 @@ def launch_analysis():
             form_pass = False
         if form_pass:
             # Save files:
+            query_name = os.path.splitext(os.path.basename(file_query.filename))[0]
             filename_query = get_valid_uploaded_filename(secure_filename(file_query.filename), app.config["UPLOAD_FOLDER"])
+            target_name = os.path.splitext(os.path.basename(file_target.filename))[0]
             query_path = os.path.join(app.config["UPLOAD_FOLDER"], filename_query)
             file_query.save(query_path)
             filename_target = get_valid_uploaded_filename(secure_filename(file_target.filename), app.config["UPLOAD_FOLDER"])
@@ -94,7 +96,7 @@ def launch_analysis():
                 id_job = id_job_orig + "_2"
 
             # Launch job:
-            job = JobManager(id_job, email, query_path, target_path)
+            job = JobManager(id_job, email, query_path, target_path, query_name, target_name)
             job.launch()
             return redirect(url_for(".status", id_job=id_job))
         else:
