@@ -1,8 +1,6 @@
 {% extends 'base.html' %}
 {% block body %}
-<div id="main-bar-title">
-    <img src="{{ url_for('static', filename='images/logo.png') }}" height="40px" alt=""/><h1>{{ title }}</h1>
-</div>
+{{ super() }}
 <div id="body">
     <form id="submit_minimap" method=post enctype=multipart/form-data action="/launch_analysis">
         <h2>Launch map analysis</h2>

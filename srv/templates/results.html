@@ -1,9 +1,7 @@
 {% extends 'base.html' %}
 {% block onload %}d3.boxplot.init('{{ id }}');{% endblock %}
 {% block body %}
-<div id="main-bar-title">
-    <img src="{{ url_for('static', filename='images/logo.png') }}" height="40px" alt=""/><h1>{{ title }}</h1>
-</div>
+{{ super() }}
 <div id="supdraw">
     <div class="master">
         <div id="draw"></div>

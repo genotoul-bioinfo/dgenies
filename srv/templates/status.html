@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block body %}
+    {{ super() }}
+    <h2 class="status">Job name: {{ id_job }}</h2>
+    {% if status == "started" %}
+        <p>Your job is started.<br/>
+            You will receive an email when it will be finished.<br/>
+            Alternatively, you can refresh this page to update status.</p>
+    {% elif status == "not started" %}
+        <p>Your job has been submited.<br/>
+            You will receive an email when it will be finished.<br/>
+            Alternatively, you can refresh this page to update status.</p>
+    {% elif status == "success" %}
+        <p>Your job has ended successfully.<br/>
+            Please <a href="/result/{{ id_job }}">click here</a> to show results.</p>
+    {% elif status == "error" %}
+        <p>Your job has failed. Please try again.<br/>
+            If the problem persists, please contact the support.</p>
+    {% endif %}
+{% endblock %}

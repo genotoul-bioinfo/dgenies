@@ -96,11 +96,19 @@ def launch_analysis():
             # Launch job:
             job = JobManager(id_job, email, query_path, target_path)
             job.launch()
+            return redirect(url_for(".status", id_job=id_job))
         else:
             return redirect(url_for(".main", id_job=id_job, email=email))
     else:
         return redirect(url_for(".main", id_job=id_job, email=email))
-    return "Ok!"
+
+
+# Status of a job
+@app.route('/status/<id_job>', methods=['GET'])
+def status(id_job):
+    job = JobManager(id_job)
+    status = job.status()
+    return render_template("status.html", title=app_title, status=status, id_job=id_job)
 
 
 # Results path
@@ -115,8 +123,8 @@ def result(id_res):
 def get_graph():
     id_f = request.form["id"]
     paf = os.path.join(app_data, id_f, "map.paf")
-    idx1 = os.path.join(app_data, id_f, "query_1.idx")
-    idx2 = os.path.join(app_data, id_f, "query_2.idx")
+    idx1 = os.path.join(app_data, id_f, "query.idx")
+    idx2 = os.path.join(app_data, id_f, "target.idx")
 
     success, res = parse_paf(paf, idx1, idx2)
 
