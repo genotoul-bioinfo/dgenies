@@ -63,8 +63,12 @@ input[type=range] {
     vertical-align: top;
 }
 
+#sidebar input[type=number] {
+    width: 100px;
+}
+
 #supdraw {
-    width:1010px;
+    width:1020px;
     height: 850px;
     position: relative;
 }

@@ -36,6 +36,9 @@ d3.boxplot.color_idy = {
     "neg-": "#540404"
 };
 d3.boxplot.limit_idy = null;
+d3.boxplot.min_idy_draw = 0;
+d3.boxplot.min_size = 0;
+d3.boxplot.linecap = "round";
 
 //Filter sizes:
 d3.boxplot.min_sizes = [0, 0.01, 0.02, 0.03, 0.05, 1, 2];
@@ -776,7 +779,7 @@ d3.boxplot._sort_lines = function(l1, l2) {
     return d3.boxplot._get_line_len(l2) - d3.boxplot._get_line_len(l1);
 };
 
-d3.boxplot.draw_lines = function (lines, x_len=d3.boxplot.x_len, y_len=d3.boxplot.y_len) {
+d3.boxplot.draw_lines = function (lines=d3.boxplot.lines, x_len=d3.boxplot.x_len, y_len=d3.boxplot.y_len) {
 
     // let tmp_max = d3.boxplot.max_idy - d3.boxplot.min_idy;
     //
@@ -807,6 +810,10 @@ d3.boxplot.draw_lines = function (lines, x_len=d3.boxplot.x_len, y_len=d3.boxplo
     //         .attr("stroke-width", d3.boxplot.scale / 400)
     //         .attr("stroke", line_len >= 1 ? color : "black");
     // }
+
+    //Remove old lines (if any):
+    $("path.content-lines").remove();
+
     let lineFunction = function(d, min_size=0, max_size=null) {
         let path = [];
         for (let i=0; i < d.length; i++) {
@@ -815,8 +822,9 @@ d3.boxplot.draw_lines = function (lines, x_len=d3.boxplot.x_len, y_len=d3.boxplo
             let x2 = d_i[1] / x_len * d3.boxplot.scale;
             let y1 = d3.boxplot.scale - (d_i[2] / y_len * d3.boxplot.scale);
             let y2 = d3.boxplot.scale - (d_i[3] / y_len * d3.boxplot.scale);
+            let idy = d_i[4];
             let len = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-            if (len > min_size && (max_size === null || len < max_size)) {
+            if (len > min_size && (max_size === null || len < max_size) && Math.abs(idy) >= d3.boxplot.min_idy_draw) {
                 path.push(`M${x1} ${y1} L${x2} ${y2}`);
             }
         }
@@ -834,7 +842,7 @@ d3.boxplot.draw_lines = function (lines, x_len=d3.boxplot.x_len, y_len=d3.boxplo
                 .attr("class", "content-lines s_" + min_size.toString().replace(".", "_"))
                 .attr("stroke-width", d3.boxplot.content_lines_width + "px")
                 .attr("stroke", d3.boxplot.color_idy["pos+"])
-                .attr("stroke-linecap", "square");
+                .attr("stroke-linecap", d3.boxplot.linecap);
         }
         if (lines["pos-"].length > 0) {
             d3.boxplot.container.append("path")
@@ -842,7 +850,7 @@ d3.boxplot.draw_lines = function (lines, x_len=d3.boxplot.x_len, y_len=d3.boxplo
                 .attr("class", "content-lines s_" + min_size.toString().replace(".", "_"))
                 .attr("stroke-width", d3.boxplot.content_lines_width + "px")
                 .attr("stroke", d3.boxplot.color_idy["pos-"])
-                .attr("stroke-linecap", "square");
+                .attr("stroke-linecap", d3.boxplot.linecap);
         }
         if (lines["neg+"].length > 0) {
             d3.boxplot.container.append("path")
@@ -850,7 +858,7 @@ d3.boxplot.draw_lines = function (lines, x_len=d3.boxplot.x_len, y_len=d3.boxplo
                 .attr("class", "content-lines s_" + min_size.toString().replace(".", "_"))
                 .attr("stroke-width", d3.boxplot.content_lines_width + "px")
                 .attr("stroke", d3.boxplot.color_idy["neg+"])
-                .attr("stroke-linecap", "square");
+                .attr("stroke-linecap", d3.boxplot.linecap);
         }
         if (lines["neg-"].length > 0) {
             d3.boxplot.container.append("path")
@@ -858,7 +866,7 @@ d3.boxplot.draw_lines = function (lines, x_len=d3.boxplot.x_len, y_len=d3.boxplo
                 .attr("class", "content-lines s_" + min_size.toString().replace(".", "_"))
                 .attr("stroke-width", d3.boxplot.content_lines_width + "px")
                 .attr("stroke", d3.boxplot.color_idy["neg-"])
-                .attr("stroke-linecap", "square");
+                .attr("stroke-linecap", d3.boxplot.linecap);
         }
     }
 };
@@ -959,7 +967,7 @@ d3.boxplot.draw = function (x_contigs, x_order, y_contigs, y_order) {
 
     window.setTimeout(() => {
         //Data:
-        d3.boxplot.draw_lines(d3.boxplot.lines);
+        d3.boxplot.draw_lines();
 
         $("#restore-all").click(function () {
             d3.boxplot.reset_scale();

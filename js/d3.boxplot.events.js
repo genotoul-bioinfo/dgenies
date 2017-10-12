@@ -13,6 +13,9 @@ d3.boxplot.events.init = function () {
     $("input#stroke-width").change(function() {
         d3.boxplot.events.stroke_width(this.value);
     })
+    $("input#filter_identity").change(function() {
+        d3.boxplot.events.filter_identity(this.value);
+    })
 };
 
 d3.boxplot.events.filter_size = function(min_size) {
@@ -25,10 +28,22 @@ d3.boxplot.events.filter_size = function(min_size) {
             $("path.content-lines.s_" + size.toString().replace(".", "_")).show();
         }
     }
+    d3.boxplot.min_size = min_size
+};
+
+d3.boxplot.events.filter_identity = function (min_idy) {
+    d3.boxplot.min_idy_draw = min_idy;
+    $("#loading").show();
+    window.setTimeout(() => {
+        d3.boxplot.draw_lines();
+        d3.boxplot.events.filter_size(d3.boxplot.min_size);
+        $("#loading").hide();
+    }, 0);
 };
 
 d3.boxplot.events.stroke_linecap = function(rounded) {
-    $("path").attr("stroke-linecap", rounded ? "round" : "butt");
+    d3.boxplot.linecap = rounded ? "round" : "butt";
+    $("path").attr("stroke-linecap", d3.boxplot.linecap);
 };
 
 d3.boxplot.events.stroke_width = function (width) {
