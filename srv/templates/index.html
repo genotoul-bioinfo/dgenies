@@ -1,5 +1,5 @@
-{% include 'header.html' %}
-<body>
+{% extends 'base.html' %}
+{% block body %}
 <div id="main-bar-title">
     <img src="{{ url_for('static', filename='images/logo.png') }}" height="40px" alt=""/><h1>{{ title }}</h1>
 </div>
@@ -55,5 +55,4 @@
         <button type="submit">Submit</button>
     </form>
 </div>
-</body>
-</html>
+{% endblock %}

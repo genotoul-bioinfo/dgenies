@@ -1,7 +1,6 @@
 import os
 import random
 import string
-from pony.orm import Database, Required, commit
 
 ALLOWED_EXTENSIONS = {'fa', 'fasta', 'fa.gz', "fasta.gz"}
 
@@ -30,17 +29,3 @@ def get_valid_uploaded_filename(filename, folder):
         file_query_s = os.path.join(folder, filename)
         i += 1
     return filename
-
-
-def generate_database(file_path):
-    db = Database()
-    db.bind(provider='sqlite', filename=file_path, create_db=True)
-
-    class Job(db.Entity):
-        id_job = Required(str)
-        email = Required(str)
-        id_process = Required(int)
-
-    db.generate_mapping(create_tables=True)
-    commit()
-    return Job, db

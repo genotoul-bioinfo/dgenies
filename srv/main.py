@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import os
 import json
 import time
 import datetime
@@ -10,10 +9,6 @@ from lib.parse_paf import parse_paf
 from config_reader import AppConfigReader
 from lib.job_manager import JobManager
 from lib.functions import *
-# try:
-#     import _preamble
-# except ImportError:
-#     pass
 
 import sys
 app_folder = os.path.dirname(os.path.realpath(__file__))
@@ -21,7 +16,6 @@ sys.path.insert(0, app_folder)
 os.environ["PATH"] = os.path.join(app_folder, "bin") + ":" + os.environ["PATH"]
 
 sqlite_file = os.path.join(app_folder, "database.sqlite")
-job_db, db = generate_database(sqlite_file)
 
 
 # Init config reader:
@@ -100,7 +94,7 @@ def launch_analysis():
                 id_job = id_job_orig + "_2"
 
             # Launch job:
-            job = JobManager(id_job, email, query_path, target_path, db, job_db)
+            job = JobManager(id_job, email, query_path, target_path)
             job.launch()
         else:
             return redirect(url_for(".main", id_job=id_job, email=email))

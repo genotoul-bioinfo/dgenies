@@ -1,13 +1,15 @@
 import os
 import subprocess
+import datetime
+import threading
 from config_reader import AppConfigReader
 from pony.orm import db_session
-import threading
+from database import db, Job
 
 
 class JobManager:
 
-    def __init__(self, id_job, email, fasta_q, fasta_t, db, job_db):
+    def __init__(self, id_job, email, fasta_q, fasta_t):
         self.id_job = id_job
         self.email = email
         self.fasta_q = fasta_q
@@ -25,18 +27,17 @@ class JobManager:
         self.idx_q = os.path.join(self.output_dir, "query.idx")
         self.idx_t = os.path.join(self.output_dir, "target.idx")
         self.logs = os.path.join(self.output_dir, "logs.err")
-        self.db = db
-        self.job_db = job_db
 
     @db_session
     def __launch_local(self):
-        cmd = ["run_minimap2.sh", self.minimap2, self.samtools, self.threads, self.fasta_t, self.fasta_q]
-        with open(self.paf_raw, "w") as paf, open(self.logs, "w") as logs:
-            p = subprocess.Popen(cmd)
+        cmd = ["run_minimap2.sh", self.minimap2, self.samtools, self.threads, self.fasta_t, self.fasta_q, self.paf_raw]
+        with open(self.logs, "w") as logs:
+            p = subprocess.Popen(cmd, stdout=logs, stderr=logs)
             pid = p.pid
-        job = self.job_db(id_job=self.id_job, email=self.email, id_process=pid)
-        self.db.commit()
-        p.communicate()
+        job = Job(id_job=self.id_job, email=self.email, id_process=pid, batch_type="local",
+                  date_created=datetime.datetime.now())
+        db.commit()
+        p.wait()
 
     def launch(self):
         if not os.path.exists(self.output_dir):

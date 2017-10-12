@@ -16,3 +16,8 @@
 	<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" type="text/css">
 	<link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
 </head>
+<body onload="{% block onload %}{% endblock %}">
+{% block body %}
+{% endblock %}
+</body>
+</html>

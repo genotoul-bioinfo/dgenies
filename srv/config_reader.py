@@ -50,3 +50,9 @@ class AppConfigReader(object):
             return self.reader.get("softwares", "samtools")
         except NoOptionError:
             return "samtools"
+
+    def get_database(self):
+        try:
+            return self.reader.get("database", "sqlite_file")
+        except NoOptionError:
+            return ":memory:"
