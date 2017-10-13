@@ -3,6 +3,10 @@ body {
     font-family: sans-serif;
 }
 
+#body {
+    max-width: 850px;
+}
+
 #legend {
     /*position: fixed;*/
     /*top: calc(50% - 100px);*/
