@@ -91,3 +91,13 @@ def parse_paf(paf, idx1, idx2):
         'name_y': second_sample,
         'limit_idy': limit_idy
     }
+
+
+def save_json(paf, idx1, idx2, out):
+    import json
+    success, data = parse_paf(paf, idx1, idx2)
+    if success:
+        with open(out, "w") as out_f:
+            out_f.write(json.dumps(data))
+    else:
+        raise Exception(data)

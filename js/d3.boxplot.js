@@ -43,38 +43,51 @@ d3.boxplot.linecap = "round";
 //Filter sizes:
 d3.boxplot.min_sizes = [0, 0.01, 0.02, 0.03, 0.05, 1, 2];
 
-d3.boxplot.init = function (id) {
+d3.boxplot.init = function (id, from_file=false) {
     $("#filter_size").val(0);
     $("#stroke-linecap").prop("checked", false);
     $("#stroke-width").val(1);
-    $.post("/get_graph",
-        {"id": id},
-        function (data) {
-            let res = null;
-            try {
-                res = JSON.parse(data);
+    if (!from_file) {
+        $.post("/get_graph",
+            {"id": id},
+            function (data) {
+                let res = null;
+                try {
+                    res = JSON.parse(data);
+                }
+                catch (e) {
+                    console.log(data);
+                    console.warn("Unable to load data");
+                }
+                if (res) {
+                    d3.boxplot.launch(res);
+                }
             }
-            catch (e) {
-                console.log(data);
-                console.warn("Unable to load data");
-            }
-            if (res) {
-                d3.boxplot.name_x = res["name_x"];
-                d3.boxplot.name_y = res["name_y"];
-                d3.boxplot.lines = res["lines"];
-                d3.boxplot.x_len = res["x_len"];
-                d3.boxplot.y_len = res["y_len"];
-                d3.boxplot.min_idy = res["min_idy"];
-                d3.boxplot.max_idy = res["max_idy"];
-                d3.boxplot.limit_idy = res["limit_idy"];
-                d3.boxplot.draw(res["x_contigs"], res["x_order"], res["y_contigs"], res["y_order"]);
-                $("div#draw").resizable({
-                    aspectRatio: true
-                });
-                d3.boxplot.events.init();
-            }
-        }
-    )
+        )
+    }
+    else {
+        $.get(id,
+            {},
+            function (data) {
+                d3.boxplot.launch(data);
+            })
+    }
+};
+
+d3.boxplot.launch = function(res) {
+    d3.boxplot.name_x = res["name_x"];
+    d3.boxplot.name_y = res["name_y"];
+    d3.boxplot.lines = res["lines"];
+    d3.boxplot.x_len = res["x_len"];
+    d3.boxplot.y_len = res["y_len"];
+    d3.boxplot.min_idy = res["min_idy"];
+    d3.boxplot.max_idy = res["max_idy"];
+    d3.boxplot.limit_idy = res["limit_idy"];
+    d3.boxplot.draw(res["x_contigs"], res["x_order"], res["y_contigs"], res["y_order"]);
+    $("div#draw").resizable({
+        aspectRatio: true
+    });
+    d3.boxplot.events.init();
 };
 
 d3.boxplot.select_zone = function (x, y) {

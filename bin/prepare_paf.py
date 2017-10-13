@@ -79,6 +79,18 @@ def build_new_paf_file(paf_in: str, paf_out: str, query: Fasta, target: Fasta):
                 paf_o.write("\t".join(parts) + "\n")
 
 
+def init(input_f, output_f, query, target, query_name=None, target_name=None):
+    query = Fasta(query, query_name)
+    target = Fasta(target, target_name)
+    build_new_paf_file(input_f, output_f, query, target)
+    basedir = os.path.dirname(output_f)
+    i = 0
+    for fasta in [query, target]:
+        idx_file = os.path.join(basedir, "query.idx" if i == 0 else "target.idx")
+        fasta.build_index(idx_file)
+        i += 1
+
+
 if __name__ == '__main__':
     args = docopt(__doc__)
     if args["--version"]:
@@ -88,12 +100,5 @@ if __name__ == '__main__':
             raise Exception("Fasta file %s is not indexed!" % args["--query"])
         if not os.path.exists(args["--target"] + ".fai"):
             raise Exception("Fasta file %s is not indexed!" % args["--target"])
-        query = Fasta(args["--query"], args["--query-name"])
-        target = Fasta(args["--target"], args["--target-name"])
-        build_new_paf_file(args["--input"], args["--output"], query, target)
-        basedir = os.path.dirname(args["--output"])
-        i = 0
-        for fasta in [query, target]:
-            idx_file = os.path.join(basedir, "query.idx" if i==0 else "target.idx")
-            fasta.build_index(idx_file)
-            i += 1
+        init(args["--input"], args["--output"], args["--query"], args["--target"], args["--query-name"],
+             args["--target-name"])
