@@ -153,10 +153,12 @@ d3.boxplot.select_zone = function (x, y) {
         d3.selectAll("line.break-lines").style("visibility", "hidden");
 
         //Update left and bottom axis:
-        d3.boxplot.draw_left_axis(d3.boxplot.y_zones[y_zone][1] / d3.boxplot.scale * d3.boxplot.y_len,
-            d3.boxplot.y_zones[y_zone][0] / d3.boxplot.scale * d3.boxplot.y_len);
-        d3.boxplot.draw_bottom_axis(d3.boxplot.x_zones[x_zone][1] / d3.boxplot.scale * d3.boxplot.x_len,
-            d3.boxplot.x_zones[x_zone][0] / d3.boxplot.scale * d3.boxplot.x_len);
+        let y_max = d3.boxplot.y_zones[y_zone][1] / d3.boxplot.scale * d3.boxplot.y_len;
+        let y_min = d3.boxplot.y_zones[y_zone][0] / d3.boxplot.scale * d3.boxplot.y_len;
+        d3.boxplot.draw_left_axis(y_max-y_min, 0);
+        let x_max = d3.boxplot.x_zones[x_zone][1] / d3.boxplot.scale * d3.boxplot.x_len;
+        let x_min = d3.boxplot.x_zones[x_zone][0] / d3.boxplot.scale * d3.boxplot.x_len
+        d3.boxplot.draw_bottom_axis(x_max - x_min, 0);
 
         //Update top and right axis:
         let pseudo_x_zones = {};
