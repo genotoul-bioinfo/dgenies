@@ -23,7 +23,7 @@ config_reader = AppConfigReader()
 
 UPLOAD_FOLDER = config_reader.get_upload_folder()
 
-app_title = "DGENIES - Dotplot for Genomes Interactive, E-connected and Speed"
+app_title = "DGENIES - Dotplot for Genomes Interactive, E-connected and Speedy"
 app_title_small = "DGENIES"
 
 # Init Flask:
