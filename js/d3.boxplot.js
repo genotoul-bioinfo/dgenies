@@ -794,6 +794,10 @@ d3.boxplot._sort_lines = function(l1, l2) {
     return d3.boxplot._get_line_len(l2) - d3.boxplot._get_line_len(l1);
 };
 
+d3.boxplot._sort_lines_by_idy = function(l1, l2) {
+    return l1[4] - l2[4];
+};
+
 d3.boxplot.draw_lines = function (lines=d3.boxplot.lines, x_len=d3.boxplot.x_len, y_len=d3.boxplot.y_len) {
 
     // let tmp_max = d3.boxplot.max_idy - d3.boxplot.min_idy;
@@ -830,6 +834,7 @@ d3.boxplot.draw_lines = function (lines=d3.boxplot.lines, x_len=d3.boxplot.x_len
     $("path.content-lines").remove();
 
     let lineFunction = function(d, min_size=0, max_size=null) {
+        d = d.sort(d3.boxplot._sort_lines_by_idy);
         let path = [];
         for (let i=0; i < d.length; i++) {
             let d_i = d[i];
@@ -850,15 +855,7 @@ d3.boxplot.draw_lines = function (lines=d3.boxplot.lines, x_len=d3.boxplot.x_len
     let min_sizes = d3.boxplot.min_sizes;
     for (let i=0; i<min_sizes.length; i++) {
         let min_size = min_sizes[i];
-        let max_size = i+1 < min_sizes.length ? min_sizes[i+1] : null;
-        if (lines["pos+"].length > 0) {
-            d3.boxplot.container.append("path")
-                .attr("d", lineFunction(lines["pos+"], min_size, max_size))
-                .attr("class", "content-lines s_" + min_size.toString().replace(".", "_"))
-                .attr("stroke-width", d3.boxplot.content_lines_width + "px")
-                .attr("stroke", d3.boxplot.color_idy["pos+"])
-                .attr("stroke-linecap", d3.boxplot.linecap);
-        }
+        let max_size = i + 1 < min_sizes.length ? min_sizes[i + 1] : null;
         if (lines["pos-"].length > 0) {
             d3.boxplot.container.append("path")
                 .attr("d", lineFunction(lines["pos-"], min_size, max_size))
@@ -873,6 +870,19 @@ d3.boxplot.draw_lines = function (lines=d3.boxplot.lines, x_len=d3.boxplot.x_len
                 .attr("class", "content-lines s_" + min_size.toString().replace(".", "_"))
                 .attr("stroke-width", d3.boxplot.content_lines_width + "px")
                 .attr("stroke", d3.boxplot.color_idy["neg+"])
+                .attr("stroke-linecap", d3.boxplot.linecap);
+        }
+    }
+    //Draw better quality at the end (to be shown up)
+    for (let i=0; i<min_sizes.length; i++) {
+        let min_size = min_sizes[i];
+        let max_size = i + 1 < min_sizes.length ? min_sizes[i + 1] : null;
+        if (lines["pos+"].length > 0) {
+            d3.boxplot.container.append("path")
+                .attr("d", lineFunction(lines["pos+"], min_size, max_size))
+                .attr("class", "content-lines s_" + min_size.toString().replace(".", "_"))
+                .attr("stroke-width", d3.boxplot.content_lines_width + "px")
+                .attr("stroke", d3.boxplot.color_idy["pos+"])
                 .attr("stroke-linecap", d3.boxplot.linecap);
         }
         if (lines["neg-"].length > 0) {
