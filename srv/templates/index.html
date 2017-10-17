@@ -1,60 +1,25 @@
 {% extends 'base.html' %}
-{% block body %}
-{{ super() }}
-<div id="body">
-    <p class="description">DGENIES &#150; for Dotplot for Genomes Interactive, E-connected and Speedy &#150; is an online tool
-    designed to compare two genomes. It supports large genome and you can interact with the lot to improve the visualisation.</p>
-    <p class="description">We use minimap version 2 to align the two genomes. Then, the PAF file is parsed and plotted into
-    an interactive plot written with d3.js library.</p>
-    <form id="submit_minimap" method=post enctype=multipart/form-data action="/launch_analysis">
-        <h2>Launch map analysis</h2>
-        {% with messages = get_flashed_messages() %}
-        {% if messages %}
-            <div class="errors-submit">
-                <ul class=flashes>
-                {% for message in messages %}
-                    <li>{{ message | safe }}</li>
-                {% endfor %}
-                </ul>
-            </div>
-        {% endif %}
-    {% endwith %}
-        <table class="form">
-            <tr>
-                <td class="label">
-                    <label for="id_job">Name of your job</label>
-                </td>
-                <td>
-                    <input type="text" id="id_job" name="id_job" value="{{ id_job }}" required/>
-                </td>
-            </tr>
-            <tr>
-                <td class="label">
-                    <label for="email">E-mail*</label>
-                </td>
-                <td>
-                    <input type="email" name="email" id="email" value="{{ email }}" required/>
-                </td>
-            </tr>
-            <tr>
-                <td class="label">
-                    <label>Query fasta</label>
-                </td>
-                <td>
-                    <input type="file" name="file_query" id="file_query" required/>
-                </td>
-            </tr>
-            <tr>
-                <td class="label">
-                    <label>Target fasta</label>
-                </td>
-                <td>
-                    <input type="file" name="file_target" id="file_target" required/>
-                </td>
-            </tr>
-        </table>
-        <p>* We will send you results by mail.</p>
-        <button type="submit">Submit</button>
-    </form>
-</div>
+{% block content %}
+    <!-- Jumbotron -->
+      <div class="jumbotron" style="margin-top:-25px;text-align:justify">
+        <h1>D-Genies</h1>
+        <p class="description lead">D-GENIES &#150; for Dotplot for Genomes Interactive, E-connected and Speedy &#150; is an online tool
+        designed to compare two genomes. It supports large genome and you can interact with the lot to improve the visualisation.</p>
+        <p class="description">We use minimap version 2 to align the two genomes. Then, the PAF file is parsed and plotted into
+        an interactive plot written with d3.js library.</p>
+      </div>
+
+      <div class="row">
+
+        <div class="col-lg-6" style="text-align:justify">
+        	<h1 class="page-header">D-Genies <small>Summary</small></h1>
+			<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur tristique diam eu dolor viverra, aliquam malesuada ante dapibus. Fusce aliquet commodo justo, eu tristique tellus. Fusce sapien ligula, rutrum a luctus et, condimentum a leo. Donec at metus urna. Vivamus lacus ante, fringilla sed bibendum sed, faucibus vel diam. Aliquam erat volutpat. Etiam eu ante id odio interdum lacinia id id nisi. Duis placerat pharetra nulla at cursus.</p>
+        </div>
+        <div class="col-lg-6" style="text-align:justify">
+			<h1 class="page-header">D-Genies <small>Availability</small></h1>
+			<p>D-Genies is available under the GNU General
+				Public License (GPL). The package is comming with a full documentation and test data. Sources are available <a target="_blank" href="#">here</a>.</p>
+        </div><!--/span-->
+
+      </div><!--/row-->
 {% endblock %}

@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% block onload %}d3.boxplot.init('{{ id }}');{% endblock %}
-{% block body %}
+{% block content %}
 {{ super() }}
 <div id="supdraw">
     <div class="master">

@@ -24,7 +24,6 @@ config_reader = AppConfigReader()
 UPLOAD_FOLDER = config_reader.get_upload_folder()
 
 app_title = "D-GENIES - Dotplot for Genomes Interactive, E-connected and Speedy"
-app_title_small = "D-GENIES"
 
 # Init Flask:
 app = Flask(__name__, static_url_path='/static')
@@ -38,13 +37,19 @@ app_data = config_reader.get_app_data()
 # Main
 @app.route("/", methods=['GET'])
 def main():
+    return render_template("index.html", title=app_title, menu="index")
+
+
+@app.route("/run", methods=['GET'])
+def run():
     id_job = random_string(5) + "_" + datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S')
     if "id_job" in request.args:
         id_job = request.args["id_job"]
     email = ""
     if "email" in request.args:
         email = request.args["email"]
-    return render_template("index.html", title=app_title, title_small=app_title_small, id_job=id_job, email=email)
+    return render_template("run.html", title=app_title, id_job=id_job, email=email,
+                           menu="run")
 
 
 # Launch analysis
@@ -101,7 +106,7 @@ def launch_analysis():
             job.launch()
             return redirect(url_for(".status", id_job=id_job))
         else:
-            return redirect(url_for(".main", id_job=id_job, email=email))
+            return redirect(url_for(".run", id_job=id_job, email=email))
     else:
         return redirect(url_for(".main", id_job=id_job, email=email))
 
@@ -111,13 +116,14 @@ def launch_analysis():
 def status(id_job):
     job = JobManager(id_job)
     status = job.status()
-    return render_template("status.html", title=app_title, title_small=app_title_small, status=status, id_job=id_job)
+    return render_template("status.html", title=app_title, status=status, id_job=id_job,
+                           menu="results")
 
 
 # Results path
 @app.route("/result/<id_res>", methods=['GET'])
 def result(id_res):
-    return render_template("results.html", title=app_title, title_small=app_title_small, id=id_res)
+    return render_template("results.html", title=app_title, id=id_res, menu="results")
 
 
 # Get graph (ajax request)
