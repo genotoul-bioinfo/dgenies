@@ -4,6 +4,8 @@ if (!d3) {
 d3.boxplot = {};
 
 //GLOBAL VARIABLES:
+d3.boxplot.id_res = null;
+
 d3.boxplot.svgcontainer = null;
 d3.boxplot.container = null;
 d3.boxplot.svgsupercontainer = null;
@@ -46,6 +48,7 @@ d3.boxplot.break_lines_color = "#7c7c7c";
 d3.boxplot.min_sizes = [0, 0.01, 0.02, 0.03, 0.05, 1, 2];
 
 d3.boxplot.init = function (id, from_file=false) {
+    d3.boxplot.id_res = id;
     $("#filter_size").val(0);
     $("#stroke-linecap").prop("checked", false);
     $("#stroke-width").val(1);
@@ -53,17 +56,7 @@ d3.boxplot.init = function (id, from_file=false) {
         $.post("/get_graph",
             {"id": id},
             function (data) {
-                let res = null;
-                try {
-                    res = JSON.parse(data);
-                }
-                catch (e) {
-                    console.log(data);
-                    console.warn("Unable to load data");
-                }
-                if (res) {
-                    d3.boxplot.launch(res);
-                }
+                d3.boxplot.launch(data);
             }
         )
     }
@@ -90,6 +83,7 @@ d3.boxplot.launch = function(res) {
         aspectRatio: true
     });
     d3.boxplot.events.init();
+    d3.boxplot.controls.init();
 };
 
 d3.boxplot.select_zone = function (x, y) {

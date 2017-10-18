@@ -1,4 +1,12 @@
 {% extends 'base.html' %}
+{% block scripts %}
+    {{ super() }}
+    <script src="{{ url_for('static', filename='js/jquery-ui.min.js') }}" type="text/JavaScript"></script>
+    <script src="{{ url_for('static', filename='js/d3.min.js') }}" type="text/JavaScript"></script>
+    <script src="{{ url_for('static', filename='js/d3.boxplot.js') }}" type="text/JavaScript"></script>
+    <script src="{{ url_for('static', filename='js/d3.boxplot.events.js') }}" type="text/JavaScript"></script>
+    <script src="{{ url_for('static', filename='js/d3.boxplot.controls.js') }}" type="text/JavaScript"></script>
+{% endblock %}
 {% block onload %}d3.boxplot.init('{{ id }}');{% endblock %}
 {% block content %}
 {{ super() }}
@@ -19,6 +27,7 @@
             <p><label class="input-checkbox-label"><input type="checkbox" id="stroke-linecap"/> Strong precision</label></p>
             <p><label>Stroke width:<br/>
             <input type="range" min="0" max="3" value="1" step="1" id="stroke-width"/></label></p>
+            <p><button id="sort-contigs">Sort contigs</button></p>
         </div>
     </div>
     <div id="loading">

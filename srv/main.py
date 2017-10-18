@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 
-import json
 import time
 import datetime
-from flask import Flask, render_template, request, redirect, flash, url_for
+from flask import Flask, render_template, request, redirect, flash, url_for, jsonify
 from werkzeug.utils import secure_filename
-from lib.parse_paf import parse_paf
+from lib.paf import Paf
 from config_reader import AppConfigReader
 from lib.job_manager import JobManager
 from lib.functions import *
@@ -134,9 +133,15 @@ def get_graph():
     idx1 = os.path.join(app_data, id_f, "query.idx")
     idx2 = os.path.join(app_data, id_f, "target.idx")
 
-    success, res = parse_paf(paf, idx1, idx2)
+    paf = Paf(paf, idx1, idx2)
 
-    if success:
+    if paf.parsed:
+        res = paf.get_d3js_data()
         res["success"] = True
-        return json.dumps(res)
-    return json.dumps({"success": False, "message": res})
+        return jsonify(res)
+    return jsonify({"success": False, "message": paf.error})
+
+
+@app.route('/sort/<id_res>', methods=['POST'])
+def sort_graph(id_res):
+    pass
