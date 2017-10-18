@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-limit_idy = 0.4
+limit_idy = 0.5
 
 
 def parse_paf(paf, idx1, idx2):
@@ -28,7 +28,7 @@ def parse_paf(paf, idx1, idx2):
                 max_idy = max(max_idy, idy)
                 if first_sample is None:
                     first_sample = v1
-                elif first_sample != v1 or v1 == v6:
+                elif first_sample != v1:
                     ignore = True
                 if not ignore:
                     second_sample = v6

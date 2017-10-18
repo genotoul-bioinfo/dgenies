@@ -236,27 +236,12 @@ input[type=range] {
 }
 
 /* Submit form: */
-table.form td.label {
-    padding-top:5px;
-    padding-right: 10px;
-    color: black;
-}
-
-table.form td {
-    padding-bottom: 5px !important;
-}
-
-table.form {
-    margin-bottom: 15px;
-    margin-left: 15px;
-}
-
-table.form input[type=text],table.form input[type=email]{
-    width: 250px;
-}
-
 .form-group, .form-group input {
     margin-bottom: 5px !important;
+}
+
+div.submit-form {
+    margin-bottom: 10px;
 }
 
 h2.title-launch {

@@ -1,6 +1,5 @@
 {% extends 'base.html' %}
-{% block body %}
-    {{ super() }}
+{% block content %}
     <h2 class="status">Job name: {{ id_job }}</h2>
     {% if status == "started" %}
         <p>Your job has started.<br/>

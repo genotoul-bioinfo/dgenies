@@ -28,7 +28,7 @@ d3.boxplot.old_translate = null;
 //Graphical parameters:
 d3.boxplot.scale = 1000;
 d3.boxplot.content_lines_width = d3.boxplot.scale / 400;
-d3.boxplot.break_lines_width = d3.boxplot.scale / 400;
+d3.boxplot.break_lines_width = d3.boxplot.scale / 1500;
 d3.boxplot.color_idy = {
     "pos+": "#063806",
     "pos-": "#99d78d",
@@ -39,6 +39,8 @@ d3.boxplot.limit_idy = null;
 d3.boxplot.min_idy_draw = 0;
 d3.boxplot.min_size = 0;
 d3.boxplot.linecap = "round";
+d3.boxplot.background_axis = "#f4f4f4";
+d3.boxplot.break_lines_color = "#7c7c7c";
 
 //Filter sizes:
 d3.boxplot.min_sizes = [0, 0.01, 0.02, 0.03, 0.05, 1, 2];
@@ -157,7 +159,7 @@ d3.boxplot.select_zone = function (x, y) {
         let y_min = d3.boxplot.y_zones[y_zone][0] / d3.boxplot.scale * d3.boxplot.y_len;
         d3.boxplot.draw_left_axis(y_max-y_min, 0);
         let x_max = d3.boxplot.x_zones[x_zone][1] / d3.boxplot.scale * d3.boxplot.x_len;
-        let x_min = d3.boxplot.x_zones[x_zone][0] / d3.boxplot.scale * d3.boxplot.x_len
+        let x_min = d3.boxplot.x_zones[x_zone][0] / d3.boxplot.scale * d3.boxplot.x_len;
         d3.boxplot.draw_bottom_axis(x_max - x_min, 0);
 
         //Update top and right axis:
@@ -210,7 +212,7 @@ d3.boxplot.reset_scale = function () {
 
     // $("#loading").show();
     // window.setTimeout(() => {
-    //     d3.select(".container").html(d3.boxplot.full_pict);
+    //     d3.select("g.container").html(d3.boxplot.full_pict);
     //     $("#loading").hide();
     // }, 0);
 };
@@ -239,7 +241,7 @@ d3.boxplot.draw_left_axis = function (y_max, y_min = 0) {
         .attr("y", 0)
         .attr("width", axis_length)
         .attr("height", 20)
-        .style("fill", "#ddd");
+        .style("fill", d3.boxplot.background_axis);
 
     container_left.append("line")
         .attr("x1", 0)
@@ -303,7 +305,7 @@ d3.boxplot.draw_bottom_axis = function (x_max, x_min = 0) {
         .attr("y", 0)
         .attr("width", axis_length)
         .attr("height", 20)
-        .style("fill", "#ddd");
+        .style("fill", d3.boxplot.background_axis);
 
     svg_bottom.append("line")
         .attr("x1", 0)
@@ -400,7 +402,7 @@ d3.boxplot.draw_top_axis = function (x_zones=d3.boxplot.x_zones) {
         .attr("y", 0)
         .attr("width", axis_length)
         .attr("height", 20)
-        .style("fill", "#ddd");
+        .style("fill", d3.boxplot.background_axis);
 
     svg_top.append("line")
         .attr("x1", 0)
@@ -480,7 +482,7 @@ d3.boxplot.draw_right_axis = function (y_zones=d3.boxplot.y_zones) {
         .attr("y", 0)
         .attr("width", axis_length)
         .attr("height", 20)
-        .style("fill", "#ddd");
+        .style("fill", d3.boxplot.background_axis);
 
     container_right.append("line")
         .attr("x1", 0)
@@ -589,7 +591,7 @@ d3.boxplot.click = function () {
         $("#loading").show();
         let event = d3.event;
         window.setTimeout(() => {
-            let rect = $(".container")[0].getBoundingClientRect();
+            let rect = $("g.container")[0].getBoundingClientRect();
             let posX = rect.left,
                 posY = rect.top,
                 width_c = rect.width,
@@ -605,7 +607,7 @@ d3.boxplot.click = function () {
 
 d3.boxplot.mousedown = function() {
     if (d3.boxplot.zoom_enabled) {
-        let rect = $(".container")[0].getBoundingClientRect();
+        let rect = $("g.container")[0].getBoundingClientRect();
         let posX = rect.left,
             posY = rect.top,
             width_c = rect.width,
@@ -629,7 +631,7 @@ d3.boxplot.mouseup = function() {
 };
 
 d3.boxplot.translate = function () {
-    let rect = $(".container")[0].getBoundingClientRect();
+    let rect = $("g.container")[0].getBoundingClientRect();
     let posX = d3.boxplot.posX,
         posY = d3.boxplot.posY,
         width_c = rect.width,
@@ -679,7 +681,7 @@ d3.boxplot.translate = function () {
 //     console.log(d3.event);
 //     if (d3.event.ctrlKey) {
 //         d3.event.preventDefault();
-//         let rect = $(".container")[0].getBoundingClientRect();
+//         let rect = $("g.container")[0].getBoundingClientRect();
 //         let posX = rect.left,
 //             posY = rect.top,
 //             width_c = rect.width,
@@ -959,7 +961,7 @@ d3.boxplot.draw = function (x_contigs, x_order, y_contigs, y_order) {
             .attr("y2", 0)
             .attr("class", "break-lines")
             .attr("stroke-width", d3.boxplot.break_lines_width)
-            .attr("stroke", "black")
+            .attr("stroke", d3.boxplot.break_lines_color)
             .style("stroke-dasharray", ("3, 3"));
     }
     d3.boxplot.x_zones[x_order[x_order.length - 1]] = [sum, d3.boxplot.scale];
@@ -980,7 +982,7 @@ d3.boxplot.draw = function (x_contigs, x_order, y_contigs, y_order) {
             .attr("y2", d3.boxplot.scale - sum)
             .attr("class", "break-lines")
             .attr("stroke-width", d3.boxplot.break_lines_width)
-            .attr("stroke", "black")
+            .attr("stroke", d3.boxplot.break_lines_color)
             .style("stroke-dasharray", ("3, 3"));
     }
     d3.boxplot.y_zones[y_order[y_order.length - 1]] = [sum, d3.boxplot.scale];
