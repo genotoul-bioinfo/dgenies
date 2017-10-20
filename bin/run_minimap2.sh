@@ -9,18 +9,15 @@ fasta_t=$4
 fasta_q=$5
 query=$6
 target=$7
-paf_raw=$8
-paf=$9
+paf=$8
+out_dir=$9
 
 # Index fasta files:
 ${samtools_exec} faidx ${fasta_t}
 ${samtools_exec} faidx ${fasta_q}
 
 # Run minimap:
-${minimap_exec} -t ${nb_threads} ${fasta_t} ${fasta_q} > ${paf_raw}
+${minimap_exec} -t ${nb_threads} ${fasta_t} ${fasta_q} > ${paf}
 
 # Parse paf raw file:
-prepare_paf.py -i ${paf_raw} -q ${fasta_q} -t ${fasta_t} -o ${paf} -r ${query} -u ${target}
-
-# Remove raw file:
-rm -f ${paf_raw}
+build_indexes.py -q ${fasta_q} -t ${fasta_t} -o ${out_dir} -r ${query} -u ${target}

@@ -56,7 +56,11 @@ d3.boxplot.init = function (id, from_file=false) {
         $.post("/get_graph",
             {"id": id},
             function (data) {
-                d3.boxplot.launch(data);
+                if (data["success"])
+                    d3.boxplot.launch(data);
+                else {
+                    $("#supdraw").html($("<p>").html("This job does not exists!").css("margin-top", "15px"));
+                }
             }
         )
     }

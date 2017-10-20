@@ -85,7 +85,7 @@ input[type=range] {
 
 #supdraw {
     width:1020px;
-    height: 850px;
+    height: auto;
     position: relative;
 }
 

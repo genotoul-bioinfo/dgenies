@@ -25,7 +25,6 @@ class JobManager:
         self.app_data = config_reader.get_app_data()
         # Outputs:
         self.output_dir = os.path.join(self.app_data, id_job)
-        self.paf_raw = os.path.join(self.output_dir, "map_raw.paf")
         self.paf = os.path.join(self.output_dir, "map.paf")
         self.idx_q = os.path.join(self.output_dir, "query.idx")
         self.idx_t = os.path.join(self.output_dir, "target.idx")
@@ -48,7 +47,7 @@ class JobManager:
     @db_session
     def __launch_local(self):
         cmd = ["run_minimap2.sh", self.minimap2, self.samtools, self.threads, self.fasta_t, self.fasta_q, self.query,
-               self.target, self.paf_raw, self.paf]
+               self.target, self.paf, self.output_dir]
         with open(self.logs, "w") as logs:
             p = subprocess.Popen(cmd, stdout=logs, stderr=logs)
         job = Job.get(id_job=self.id_job)
