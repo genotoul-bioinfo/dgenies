@@ -145,3 +145,6 @@ def get_graph():
 @app.route('/sort/<id_res>', methods=['POST'])
 def sort_graph(id_res):
     pass
+
+if __name__ == '__main__':
+    app.run()
