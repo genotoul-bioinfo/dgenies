@@ -73,7 +73,7 @@ d3.boxplot.init = function (id, from_file=false) {
     }
 };
 
-d3.boxplot.launch = function(res) {
+d3.boxplot.launch = function(res, update=false) {
     d3.boxplot.name_x = res["name_x"];
     d3.boxplot.name_y = res["name_y"];
     d3.boxplot.lines = res["lines"];
@@ -83,11 +83,13 @@ d3.boxplot.launch = function(res) {
     d3.boxplot.max_idy = res["max_idy"];
     d3.boxplot.limit_idy = res["limit_idy"];
     d3.boxplot.draw(res["x_contigs"], res["x_order"], res["y_contigs"], res["y_order"]);
-    $("div#draw").resizable({
-        aspectRatio: true
-    });
-    d3.boxplot.events.init();
-    d3.boxplot.controls.init();
+    if (!update) {
+        $("div#draw").resizable({
+            aspectRatio: true
+        });
+        d3.boxplot.events.init();
+        d3.boxplot.controls.init();
+    }
 };
 
 d3.boxplot.select_zone = function (x, y) {
@@ -537,6 +539,7 @@ d3.boxplot._sort_color_idy = function(a, b) {
 };
 
 d3.boxplot.draw_legend = function () {
+    d3.select("#legend .draw").html(""); //Empty legend
     let color_idy = d3.boxplot.color_idy;
     let color_idy_len = Object.keys(color_idy).length;
     let color_idy_order = ["pos+", "pos-", "neg+", "neg-"];

@@ -8,11 +8,24 @@ d3.boxplot.controls.init = function () {
 };
 
 d3.boxplot.controls.launch_sort_contigs = function () {
-    alert("Not supported yet!");
-    $.post(`/sort/${d3.boxplot.id_res}`,
-        {},
-        function (data) {
-            console.log(data);
-        }
-    );
+    $("#loading").find(".mylabel").html("Building...");
+    $("#loading").show();
+    window.setTimeout(() => {
+            $.post(`/sort/${d3.boxplot.id_res}`,
+                {},
+                function (data) {
+                    if (data["success"]) {
+                        $("#loading").find(".mylabel").html("Loading...");
+                        window.setTimeout(() => {
+                            d3.boxplot.launch(data, true);
+                        }, 0);
+                    }
+                    else {
+                        $("#loading").find(".mylabel").html("Loading...");
+                        $("#loading").hide();
+                        alert("An error occurred!");
+                    }
+                }
+            );
+        }, 0);
 };

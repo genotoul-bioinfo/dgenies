@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+from math import sqrt
+
 
 class Paf:
     limit_idy = 0.5
@@ -13,11 +15,11 @@ class Paf:
         self.len_t = None
         self.min_idy = None
         self.max_idy = None
-        self.lines = None
-        self.q_contigs = None
-        self.q_order = None
-        self.t_contigs = None
-        self.t_order = None
+        self.lines = {}
+        self.q_contigs = {}
+        self.q_order = []
+        self.t_contigs = {}
+        self.t_order = []
         self.name_q = None
         self.name_t = None
         self.parsed = False
@@ -102,7 +104,7 @@ class Paf:
                         class_idy = "pos-"
                     else:
                         class_idy = "pos+"
-                    lines[class_idy].append([x1, x2, y1, y2, idy])
+                    lines[class_idy].append([x1, x2, y1, y2, idy, v1, v6])
         except IOError:
             self.error = "PAF file does not exist!"
             return False
@@ -144,3 +146,60 @@ class Paf:
                 out_f.write(json.dumps(data))
         else:
             raise Exception(data)
+
+    def sort(self):
+        gravity_contig = {}
+        lines_on_block = {}
+        # Compute size of blocks (in term of how many big match they have), and save median of each match on each one
+        # (for next step)
+        for line in [j for i in list(self.lines.values()) for j in i]:
+            x1 = int(line[0])
+            x2 = int(line[1])
+            y1 = int(line[2])
+            y2 = int(line[3])
+            idy = int(line[4])
+            contig = line[5]
+            chrm = line[6]
+            block = (contig, chrm)
+            med_q = x1 + (abs(x2 - x1) / 2)
+            len_m = sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2))  # Pow of len
+            len_m_2 = pow(1 + len_m, 2)
+            if block not in lines_on_block:
+                lines_on_block[block] = []
+            lines_on_block[block].append((med_q, len_m_2))
+
+            if contig not in gravity_contig:
+                gravity_contig[contig] = {}
+            if chrm not in gravity_contig[contig]:
+                gravity_contig[contig][chrm] = 0
+            gravity_contig[contig][chrm] += len_m_2
+
+        # For each contig, find best block, and deduce gravity of contig:
+        gravity_on_contig = {}
+        for contig, chr_blocks in gravity_contig.items():
+            # Find best block:
+            max_number = 0
+            max_chr = None
+            for chrm, size in chr_blocks.items():
+                if size > max_number:
+                    max_number = size
+                    max_chr = chrm
+
+            # Compute gravity of contig:
+            nb_items = 0
+            sum_items = 0
+            for med in lines_on_block[(contig, max_chr)]:
+                sum_items += med[0] * med[1]
+                nb_items += med[1]
+            gravity_on_contig[contig] = sum_items / nb_items
+
+        # Sort contigs:
+        self.q_order.sort(key=lambda x: gravity_on_contig[x] if x in gravity_on_contig else self.len_q + 1000)
+
+        with open(self.idx_q, "w") as idx_q_f:
+            idx_q_f.write(self.name_q + "\n")
+            for contig in self.q_order:
+                print(contig)
+                idx_q_f.write("\t".join([contig, str(self.q_contigs[contig])]) + "\n")
+        self.parsed = False
+        self.parse_paf()
