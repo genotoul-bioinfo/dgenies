@@ -199,7 +199,6 @@ class Paf:
         with open(self.idx_q, "w") as idx_q_f:
             idx_q_f.write(self.name_q + "\n")
             for contig in self.q_order:
-                print(contig)
                 idx_q_f.write("\t".join([contig, str(self.q_contigs[contig])]) + "\n")
         self.parsed = False
         self.parse_paf()
