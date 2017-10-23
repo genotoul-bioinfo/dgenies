@@ -33,6 +33,12 @@ app.config['SECRET_KEY'] = 'dsqdsq-255sdA-fHfg52-25Asd5'
 app_data = config_reader.get_app_data()
 
 
+@app.context_processor
+def get_launched_results():
+    cookie = request.cookies.get("results")
+    return {"results": cookie.split("|") if cookie is not None else set()}
+
+
 # Main
 @app.route("/", methods=['GET'])
 def main():
@@ -121,7 +127,14 @@ def status(id_job):
 # Results path
 @app.route("/result/<id_res>", methods=['GET'])
 def result(id_res):
-    return render_template("results.html", title=app_title, id=id_res, menu="results")
+    my_render = render_template("results.html", title=app_title, id=id_res, menu="results", current_result=id_res)
+    response = app.make_response(my_render)
+    cookie = request.cookies.get("results")
+    cookie = cookie.split("|") if cookie is not None else []
+    if id_res not in cookie:
+        cookie.insert(0, id_res)
+    response.set_cookie(key="results", value="|".join(cookie), path="/")
+    return response
 
 
 # Get graph (ajax request)

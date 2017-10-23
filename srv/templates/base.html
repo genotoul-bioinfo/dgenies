@@ -39,7 +39,18 @@
                                     class="caret"></span></a>
                             <ul class="dropdown-menu" role="menu">
                                 {% block results %}
-                                    <li><a href="/run">Please run a job!</a></li>
+                                    {% set has_job = False %}
+                                    {% if current_result and current_result not in results %}
+                                        {% set has_job = True %}
+                                        <li><a href="/result/{{ current_result }}">{{ current_result }}</a></li>
+                                    {% endif %}
+                                    {% if results | length > 0 %}
+                                        {% for result in results %}
+                                            <li><a href="/result/{{ result }}">{{ result }}</a></li>
+                                        {% endfor %}
+                                    {% elif not has_job %}
+                                        <li><a href="/run">Please run a job!</a></li>
+                                    {% endif %}
                                 {% endblock %}
                             </ul>
                         </li>
