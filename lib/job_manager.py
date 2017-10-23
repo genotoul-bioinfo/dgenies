@@ -46,7 +46,8 @@ class JobManager:
 
     @db_session
     def __launch_local(self):
-        cmd = ["run_minimap2.sh", self.minimap2, self.samtools, self.threads, self.fasta_t, self.fasta_q, self.query,
+        cmd = ["run_minimap2.sh", self.minimap2, self.samtools, self.threads,
+               self.fasta_t if self.fasta_t is not None else "NONE", self.fasta_q, self.query,
                self.target, self.paf, self.output_dir]
         with open(self.logs, "w") as logs:
             p = subprocess.Popen(cmd, stdout=logs, stderr=logs)

@@ -71,9 +71,6 @@ def launch_analysis():
     if file_query.filename == "":
         flash("No query fasta selected")
         form_pass = False
-    if file_target.filename == "":
-        flash("No target fasta selected")
-        form_pass = False
 
     # Form pass
     if form_pass:
@@ -81,7 +78,7 @@ def launch_analysis():
         if not allowed_file(file_query.filename):
             flash("Format of query fasta must be in fasta format (.fa, .fa.gz, .fasta, .fasta.gz)")
             form_pass = False
-        if not allowed_file(file_target.filename):
+        if file_target.filename != "" and not allowed_file(file_target.filename):
             flash("Format of target fasta must be in fasta format (.fa, .fa.gz, .fasta, .fasta.gz)")
             form_pass = False
         if form_pass:
@@ -91,9 +88,11 @@ def launch_analysis():
             target_name = os.path.splitext(os.path.basename(file_target.filename))[0]
             query_path = os.path.join(app.config["UPLOAD_FOLDER"], filename_query)
             file_query.save(query_path)
-            filename_target = get_valid_uploaded_filename(secure_filename(file_target.filename), app.config["UPLOAD_FOLDER"])
-            target_path = os.path.join(app.config["UPLOAD_FOLDER"], filename_target)
-            file_target.save(target_path)
+            target_path = None
+            if file_target.filename != "":
+                filename_target = get_valid_uploaded_filename(secure_filename(file_target.filename), app.config["UPLOAD_FOLDER"])
+                target_path = os.path.join(app.config["UPLOAD_FOLDER"], filename_target)
+                file_target.save(target_path)
 
             # Get final job id:
             id_job_orig = id_job

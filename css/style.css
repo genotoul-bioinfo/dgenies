@@ -2,7 +2,6 @@ body {
     font-size: 14px;
     font-family: sans-serif;
     padding-top: 50px;
-    padding-bottom: 30px;
 }
 
 #body {
@@ -275,4 +274,25 @@ h2.status {
     font-size: 18pt;
     margin-bottom: 15px;
     margin-top: 10px;
+}
+
+html, body {
+    height: 100%;
+}
+
+#main-wrapper {
+    position: relative;
+    padding-bottom: 55px;
+    min-height: 100%;
+}
+
+footer {
+    position: absolute;
+    bottom: 0;
+    height: 55px;
+    background: white;
+}
+
+footer hr {
+    margin-top: 0;
 }

@@ -16,60 +16,62 @@
 </head>
 <body role="document" onload="{% block onload %}{% endblock %}">
 {% block body %}
-    <!-- Fixed navbar -->
-    <div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
-        <div class="container">
-            <div class="navbar-header">
-                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse"
-                        data-target=".navbar-collapse">
-                    <span class="sr-only">Toggle navigation</span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                </button>
-                <a class="navbar-brand" href="/">D-GENIES</a>
+    <div id="main-wrapper">
+        <!-- Fixed navbar -->
+        <div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+            <div class="container">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse"
+                            data-target=".navbar-collapse">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="/">D-GENIES</a>
+                </div>
+                <div class="navbar-collapse collapse">
+                    <ul class="nav navbar-nav">
+                        <li class="{% if(menu == 'index') %}active{% endif %}"><a href="/">About</a></li>
+                        <li class="{% if(menu == 'run') %}active{% endif %}"><a href="/run">Run</a></li>
+                        <li class="dropdown {% if(menu == 'results') %}active{% endif %}">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Results<span
+                                    class="caret"></span></a>
+                            <ul class="dropdown-menu" role="menu">
+                                {% block results %}
+                                    <li><a href="#">Please run a job!</a></li>
+                                {% endblock %}
+                            </ul>
+                        </li>
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Documentation<span
+                                    class="caret"></span></a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li><a href="#">Launch a job</a></li>
+                                <li><a href="#">Zoom</a></li>
+                                <li><a href="#">Filter data</a></li>
+                            </ul>
+                        </li>
+                        <li><a href="mailto:support.genopole@toulouse.inra.fr">Contact</a></li>
+                    </ul>
+                </div><!--/.nav-collapse -->
             </div>
-            <div class="navbar-collapse collapse">
-                <ul class="nav navbar-nav">
-                    <li class="{% if(menu == 'index') %}active{% endif %}"><a href="/">About</a></li>
-                    <li class="{% if(menu == 'run') %}active{% endif %}"><a href="/run">Run</a></li>
-                    <li class="dropdown {% if(menu == 'results') %}active{% endif %}">
-                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">Results<span
-                                class="caret"></span></a>
-                        <ul class="dropdown-menu" role="menu">
-                            {% block results %}
-                                <li><a href="#">Please run a job!</a></li>
-                            {% endblock %}
-                        </ul>
-                    </li>
-                    <li class="dropdown">
-                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">Documentation<span
-                                class="caret"></span></a>
-                        <ul class="dropdown-menu" role="menu">
-                            <li><a href="#">Launch a job</a></li>
-                            <li><a href="#">Zoom</a></li>
-                            <li><a href="#">Filter data</a></li>
-                        </ul>
-                    </li>
-                    <li><a href="mailto:support.genopole@toulouse.inra.fr">Contact</a></li>
-                </ul>
-            </div><!--/.nav-collapse -->
         </div>
+        <div class="container theme-showcase" id="body-container" role="main">
+
+            {% block content %}
+            {% endblock %}
+
+            <footer>
+                <hr>
+                <div class="container" style="text-align: center;">
+                    <p>Copyright © 2017, INRA | Designed by <a target="_blank" href="http://bioinfo.genotoul.fr/">GenoToul
+                        Bioinfo platform</a>.</p>
+                </div>
+            </footer>
+
+        </div> <!-- /container -->
     </div>
-    <div class="container theme-showcase" id="body-container" role="main">
-
-        {% block content %}
-        {% endblock %}
-
-        <hr>
-        <footer>
-            <div class="container" style="text-align: center;">
-                <p>Copyright © 2017, INRA | Designed by <a target="_blank" href="http://bioinfo.genotoul.fr/">GenoToul
-                    Bioinfo platform</a>.</p>
-            </div>
-        </footer>
-
-    </div> <!-- /container -->
 {% endblock %}
 </body>
 </html>
