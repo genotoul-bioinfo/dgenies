@@ -261,7 +261,7 @@ d3.boxplot.draw_left_axis = function (y_max, y_min = 0) {
                 y_lab = (Math.round(y_t / 100000) / 10).toString() + " M";
             }
             else if (y_t > 1000) {
-                y_lab = (Math.round(y_t / 1000) / 10).toString() + " K";
+                y_lab = (Math.round(y_t / 100) / 10).toString() + " K";
             }
             else {
                 y_lab = Math.round(y_t).toString();
@@ -321,11 +321,11 @@ d3.boxplot.draw_bottom_axis = function (x_max, x_min = 0) {
         let x_t = x_min + x_size / 10 * i;
         if (x_t >= 0 && x_t <= d3.boxplot.x_len) {
             let x_lab = "";
-            if (x_t > 1000000) {
+            if (x_t >= 1000000) {
                 x_lab = (Math.round(x_t / 100000) / 10).toString() + " M";
             }
-            else if (x_t > 1000) {
-                x_lab = (Math.round(x_t / 1000) / 10).toString() + " K";
+            else if (x_t >= 1000) {
+                x_lab = (Math.round(x_t / 100) / 10).toString() + " K";
             }
             else {
                 x_lab = Math.round(x_t).toString()

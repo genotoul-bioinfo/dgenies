@@ -20,7 +20,9 @@ body {
     /*right: 30px;*/
     width: 100px;
     height: 230px;
-    border: solid 1px black;
+    border: none;
+    margin-bottom: 10px;
+    margin-left: 10px;
 }
 
 label.input-checkbox-label input[type=checkbox]{
@@ -86,6 +88,7 @@ input[type=range] {
     width:1020px;
     height: auto;
     position: relative;
+    margin-top: 5px;
 }
 
 #draw {
