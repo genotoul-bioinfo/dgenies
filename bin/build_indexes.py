@@ -57,7 +57,7 @@ class Fasta:
         with open(filename, "w") as idx:
             idx.write(self.name + "\n")
             for contig, props in self.contigs.items():
-                idx.write(contig + "\t" + str(props["length"]) + "\n")
+                idx.write("\t".join([contig, str(props["length"]), "0"]) + "\n")
 
 
 def init(output_d, query, target, query_name=None, target_name=None):
