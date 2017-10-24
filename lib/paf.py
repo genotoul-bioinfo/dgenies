@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
+from shutil import copyfile
+import os
 from math import sqrt
+from numpy import mean
 
 
 class Paf:
@@ -147,6 +150,76 @@ class Paf:
         else:
             raise Exception(data)
 
+    def is_contig_well_oriented(self, lines: list, contig, chrom):
+        """
+        Returns True if the contig is well oriented. A well oriented contig
+        must have y increased when x increased. We check that only for highest matchs
+        (small matches must be ignores)
+        :param lines: lines inside the contig
+        :return: True if well oriented, False else
+        """
+        lines.sort(key=lambda x: -x[-1])
+        max_len = lines[0][-1]
+        i = 0
+
+        # Select sample of tested lines:
+        while i < len(lines) and lines[i][-1] > max_len * 0.1 \
+                and lines[i][-1] >= 0.1 * min(self.q_contigs[contig], self.t_contigs[chrom]):
+            i += 1
+        selected_lines = lines[:i]
+
+        # Check orientation of each line:
+        if len(selected_lines) > 1:
+            selected_lines.sort(key=lambda x: x[0])
+            orients = []
+            for i in range(1, len(selected_lines)):
+                if selected_lines[i][2] > selected_lines[i-1][2]:
+                    orients.append(1)
+                else:
+                    orients.append(-1)
+            if mean(orients) > -0.1:  # We have a good orientation (-0.1 to ignore ambiguous cases)
+                return True
+        elif len(selected_lines) == 1:
+            orient_first = "+" if selected_lines[0][3] < selected_lines[0][4] else "-"  # Get X orientation
+            if selected_lines[0][-2 if orient_first == "+" else -3] > \
+                    selected_lines[0][-3 if orient_first == "+" else -2]:  # Check Y according to X orientation
+                return True
+        elif len(selected_lines) == 0:  # None line were selected: we ignore this block
+            return True
+
+        # In all other cases the orientation is wrong:
+        return False
+
+    def reorient_contigs_in_paf(self, contigs):
+        """
+        Reorient contigs in the PAF file
+        :param contigs: contigs to be reoriented
+        """
+        tmp_file = self.paf + ".bkp"
+        copyfile(self.paf, tmp_file)
+        try:
+            with open(tmp_file, "r") as source, open(self.paf, "w") as target:
+                for line in source:
+                    parts = line.strip("\n").split("\t")
+                    if parts[0] in contigs:
+                        len_q = int(parts[1])
+                        x1_q = int(parts[2])
+                        x2_q = int(parts[3])
+                        if parts[4] == "-":
+                            parts[4] = "+"
+                        else:
+                            parts[4] = "-"
+                        parts[2] = str(len_q - x2_q)
+                        parts[3] = str(len_q - x1_q)
+                    target.write("\t".join(parts) + "\n")
+            return True
+        except:
+            if os.path.exists(tmp_file):
+                os.remove(self.paf)
+                copyfile(tmp_file, self.paf)
+                os.remove(tmp_file)
+            return False
+
     def sort(self):
         gravity_contig = {}
         lines_on_block = {}
@@ -157,16 +230,22 @@ class Paf:
             x2 = int(line[1])
             y1 = int(line[2])
             y2 = int(line[3])
-            idy = int(line[4])
             contig = line[5]
             chrm = line[6]
             block = (contig, chrm)
-            med_q = x1 + (abs(x2 - x1) / 2)
+            # X1 and X2 (in good orientation):
+            x_1 = min(x1, x2)
+            x_2 = max(x2, x1)
+            med_q = x_1 + (abs(x_2 - x_1) / 2)
+            # Y1 and Y2 (in good orientation):
+            y_1 = min(y1, y2)
+            y_2 = max(y2, y1)
+            med_t = y_1 + (abs(y_2 - y_1) / 2)
             len_m = sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2))  # Pow of len
             len_m_2 = pow(1 + len_m, 2)
             if block not in lines_on_block:
                 lines_on_block[block] = []
-            lines_on_block[block].append((med_q, len_m_2))
+            lines_on_block[block].append((med_q, len_m_2, med_t, x1, x2, y1, y2, len_m))
 
             if contig not in gravity_contig:
                 gravity_contig[contig] = {}
@@ -176,6 +255,7 @@ class Paf:
 
         # For each contig, find best block, and deduce gravity of contig:
         gravity_on_contig = {}
+        reorient_contigs = []
         for contig, chr_blocks in gravity_contig.items():
             # Find best block:
             max_number = 0
@@ -188,10 +268,16 @@ class Paf:
             # Compute gravity of contig:
             nb_items = 0
             sum_items = 0
-            for med in lines_on_block[(contig, max_chr)]:
+            lines_on_selected_block = lines_on_block[(contig, max_chr)]
+            for med in lines_on_selected_block:
                 sum_items += med[0] * med[1]
                 nb_items += med[1]
             gravity_on_contig[contig] = sum_items / nb_items
+
+            # Check if contig must be re-oriented:
+            if len(lines_on_selected_block) > 0:
+                if not self.is_contig_well_oriented(lines_on_selected_block, contig, max_chr):
+                    reorient_contigs.append(contig)
 
         # Sort contigs:
         self.q_order.sort(key=lambda x: gravity_on_contig[x] if x in gravity_on_contig else self.len_q + 1000)
@@ -200,5 +286,11 @@ class Paf:
             idx_q_f.write(self.name_q + "\n")
             for contig in self.q_order:
                 idx_q_f.write("\t".join([contig, str(self.q_contigs[contig])]) + "\n")
+
+        # Re-orient contigs:
+        if len(reorient_contigs) > 0:
+            self.reorient_contigs_in_paf(reorient_contigs)
+
+        # Re parse PAF file:
         self.parsed = False
         self.parse_paf()
