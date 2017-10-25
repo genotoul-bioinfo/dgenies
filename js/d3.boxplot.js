@@ -922,7 +922,7 @@ d3.boxplot.draw = function (x_contigs, x_order, y_contigs, y_order) {
         .attr("height", "100%")
         .attr("viewBox", "0 0 100 100")
         .attr("preserveAspectRatio", "none")
-        .on("mousewheel", d3.boxplot.zoom);
+        .on("wheel", d3.boxplot.zoom);
     let drawcontainer = d3.boxplot.svgsupercontainer.append("svg:g")
         .on("mousedown", d3.boxplot.mousedown)
         .on("mouseup", d3.boxplot.mouseup)
