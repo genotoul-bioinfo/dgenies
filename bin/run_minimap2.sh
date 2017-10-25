@@ -44,4 +44,4 @@ fi
 sort_paf.py -i ${paf_raw} -o ${paf}
 
 # Remove raw file:
-#rm -f ${paf_raw}
+rm -f ${paf_raw}
