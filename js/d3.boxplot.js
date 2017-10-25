@@ -74,6 +74,12 @@ d3.boxplot.init = function (id, from_file=false) {
 };
 
 d3.boxplot.launch = function(res, update=false) {
+    if (res["sorted"]) {
+        $("button#sort-contigs").text("Undo sort");
+    }
+    else {
+        $("button#sort-contigs").text("Sort contigs");
+    }
     d3.boxplot.name_x = res["name_x"];
     d3.boxplot.name_y = res["name_y"];
     d3.boxplot.lines = res["lines"];

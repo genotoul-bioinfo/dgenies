@@ -9,11 +9,15 @@ from numpy import mean
 class Paf:
     limit_idy = 0.5
 
-    def __init__(self, paf, idx_q, idx_t):
+    def __init__(self, paf: str, idx_q: str, idx_t: str):
         self.paf = paf
         self.idx_q = idx_q
         self.idx_t = idx_t
-
+        self.sorted = False
+        if os.path.exists(paf + ".sorted") and os.path.exists(idx_q + ".sorted"):
+            self.paf += ".sorted"
+            self.idx_q += ".sorted"
+            self.sorted = True
         self.len_q = None
         self.len_t = None
         self.min_idy = None
@@ -138,7 +142,8 @@ class Paf:
             'x_order': self.t_order,
             'name_y': self.name_q,
             'name_x': self.name_t,
-            'limit_idy': self.limit_idy
+            'limit_idy': self.limit_idy,
+            'sorted': self.sorted,
         }
 
     def save_json(self, out):
@@ -221,8 +226,7 @@ class Paf:
                           + "\n")
 
     def sort(self):
-        sorted_file = self.paf + ".sorted"
-        if not os.path.exists(sorted_file):
+        if not self.sorted:  # Do the sort
             gravity_contig = {}
             lines_on_block = {}
             # Compute size of blocks (in term of how many big match they have), and save median of each match on each one
@@ -284,6 +288,8 @@ class Paf:
             # Sort contigs:
             self.q_order.sort(key=lambda x: gravity_on_contig[x] if x in gravity_on_contig else self.len_q + 1000)
 
+            self.idx_q += ".sorted"
+
             with open(self.idx_q, "w") as idx_q_f:
                 idx_q_f.write(self.name_q + "\n")
                 for contig in self.q_order:
@@ -296,8 +302,16 @@ class Paf:
             # Update index:
             self._update_query_index(reorient_contigs)
 
-        else:
-            self.paf = sorted_file
+            self.sorted = True
+
+        else:  # Undo the sort
+            if os.path.exists(self.paf):
+                os.remove(self.paf)
+                self.paf = self.paf.replace(".sorted", "")
+            if os.path.exists(self.idx_q):
+                os.remove(self.idx_q)
+                self.idx_q = self.idx_q.replace(".sorted", "")
+            self.sorted = False
 
         # Re parse PAF file:
         self.parsed = False
