@@ -96,6 +96,9 @@ d3.boxplot.launch = function(res, update=false) {
         d3.boxplot.events.init();
         d3.boxplot.controls.init();
     }
+    if (res["sampled"]) {
+        dgenies.notify("There are too much matches.\nOnly the 150.000 best matches are displayed")
+    }
 };
 
 d3.boxplot.select_zone = function (x, y) {

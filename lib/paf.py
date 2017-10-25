@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-from shutil import copyfile
 import os
 from math import sqrt
 from numpy import mean
@@ -8,6 +7,7 @@ from numpy import mean
 
 class Paf:
     limit_idy = 0.5
+    max_nb_lines = 150000
 
     def __init__(self, paf: str, idx_q: str, idx_t: str):
         self.paf = paf
@@ -18,6 +18,7 @@ class Paf:
             self.paf += ".sorted"
             self.idx_q += ".sorted"
             self.sorted = True
+        self.sampled= False
         self.len_q = None
         self.len_t = None
         self.min_idy = None
@@ -90,7 +91,10 @@ class Paf:
 
         try:
             with open(self.paf, "r") as paf_file:
-                for line in paf_file:
+                paf_lines = paf_file.readlines()
+                if len(paf_lines) > self.max_nb_lines:
+                    self.sampled = True
+                for line in paf_lines[:self.max_nb_lines]:
                     parts = line.strip("\n").split("\t")
                     v1 = parts[0]
                     v6 = parts[5]
@@ -144,6 +148,7 @@ class Paf:
             'name_x': self.name_t,
             'limit_idy': self.limit_idy,
             'sorted': self.sorted,
+            'sampled': self.sampled
         }
 
     def save_json(self, out):

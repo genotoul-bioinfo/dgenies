@@ -299,3 +299,8 @@ footer {
 footer hr {
     margin-top: 0;
 }
+
+/* Notify.js */
+.notifyjs-corner {
+    top: 50px !important;
+}
