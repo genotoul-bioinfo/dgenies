@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
-"""Prepare PAF file
+"""Build Indexes
 
-Short desc: Prepare the PAF file from minimap output to be loaded by the program
-Details: change coordinates of matches to be bounded one to another
+Short desc: Build index for query and target
+Details: Build index for query and target, which defines contigs and chromosomes positions
 
 Usage:
-    prepare_paf.py -q FASTA1 -t FASTA2 -o OUT [-r NAME1] [-u NAME2]
-    prepare_paf.py -v | --version
+    build_indexes.py -q FASTA1 -t FASTA2 -o OUT [-r NAME1] [-u NAME2]
+    build_indexes.py -v | --version
 
 Options:
     -q --query=FASTA1    Query fasta file compared with minimap
@@ -23,7 +23,6 @@ __NAME__ = "PreparePAF"
 __VERSION__ = 0.1
 
 import os
-from shutil import copyfile
 from docopt import docopt
 from collections import OrderedDict
 
