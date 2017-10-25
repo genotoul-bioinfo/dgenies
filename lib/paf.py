@@ -169,7 +169,7 @@ class Paf:
 
         # Select sample of tested lines:
         while i < len(lines) and lines[i][-1] > max_len * 0.1 \
-                and lines[i][-1] >= 0.1 * min(self.q_contigs[contig], self.t_contigs[chrom]):
+                and lines[i][-1] >= 0.05 * min(self.q_contigs[contig], self.t_contigs[chrom]):
             i += 1
         selected_lines = lines[:i]
 
