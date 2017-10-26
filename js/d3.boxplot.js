@@ -43,6 +43,7 @@ d3.boxplot.min_size = 0;
 d3.boxplot.linecap = "round";
 d3.boxplot.background_axis = "#f4f4f4";
 d3.boxplot.break_lines_color = "#7c7c7c";
+d3.boxplot.zoom_scale_lines = 1; // Zoom scale used for lines width
 
 //Filter sizes:
 d3.boxplot.min_sizes = [0, 0.01, 0.02, 0.03, 0.05, 1, 2];
@@ -161,6 +162,7 @@ d3.boxplot.select_zone = function (x, y) {
                "translate(-" + (d3.boxplot.x_zones[x_zone][0]) + ",-" + (d3.boxplot.scale - d3.boxplot.y_zones[y_zone][1]) + ")");
         // Correct lines stroke width to be not impacted by the zoom:
         d3.selectAll(".content-lines").attr("stroke-width", d3.boxplot.content_lines_width / Math.min(scale_x, scale_y));
+        d3.boxplot.zoom_scale_lines = Math.min(scale_x, scale_y);
         d3.selectAll("line.break-lines").style("visibility", "hidden");
 
         //Update left and bottom axis:
@@ -188,6 +190,7 @@ d3.boxplot.reset_scale = function () {
     window.setTimeout(() => {
         //Reset scale:
         d3.boxplot.container.attr("transform", "scale(1,1)translate(0,0)");
+        d3.boxplot.zoom_scale_lines = 1;
 
         //Restore lines stroke width:
         d3.selectAll("path.content-lines").attr("stroke-width", d3.boxplot.content_lines_width);
@@ -780,6 +783,7 @@ d3.boxplot.zoom = function () {
             let new_transform = `translate(${old_transform["translate"][0]},${old_transform["translate"][1]}) 
             scale(${new_scale})`;
             d3.boxplot.container.attr("transform", new_transform);
+            d3.boxplot.zoom_scale_lines = new_scale;
 
             //Correct lines stroke width to be not impacted by the zoom:
             d3.selectAll("path.content-lines").attr("stroke-width", d3.boxplot.content_lines_width / new_scale);
@@ -906,6 +910,7 @@ d3.boxplot.draw_lines = function (lines=d3.boxplot.lines, x_len=d3.boxplot.x_len
                 .attr("stroke-linecap", d3.boxplot.linecap);
         }
     }
+    d3.boxplot.events.filter_size(d3.boxplot.min_size);
 };
 
 d3.boxplot.draw = function (x_contigs, x_order, y_contigs, y_order) {

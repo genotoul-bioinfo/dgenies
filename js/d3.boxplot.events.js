@@ -36,6 +36,8 @@ d3.boxplot.events.filter_identity = function (min_idy) {
     dgenies.show_loading();
     window.setTimeout(() => {
         d3.boxplot.draw_lines();
+        d3.selectAll("path.content-lines").attr("stroke-width",
+            d3.boxplot.content_lines_width / d3.boxplot.zoom_scale_lines);
         d3.boxplot.events.filter_size(d3.boxplot.min_size);
         dgenies.hide_loading();
     }, 0);
@@ -60,13 +62,5 @@ d3.boxplot.events.stroke_width = function (width) {
     }
     console.log(stroke_width);
     d3.boxplot.content_lines_width = stroke_width;
-    let my_transform = d3.boxplot.container.attr("transform");
-    let scale = 1;
-    if (my_transform !== null) {
-        let search_sc = my_transform.match(/scale\(([-\de.]+)(,\s*([-\de.]+))?\)/);
-        let scale_x = parseFloat(search_sc[1]);
-        let scale_y = parseFloat(search_sc[3] === undefined ? 0 : search_sc[3]);
-        scale = Math.max(scale_x, scale_y);
-    }
-    d3.selectAll("path.content-lines").attr("stroke-width", stroke_width / scale);
+    d3.selectAll("path.content-lines").attr("stroke-width", stroke_width / d3.boxplot.zoom_scale_lines);
 };
