@@ -1005,7 +1005,7 @@ d3.boxplot.draw = function (x_contigs, x_order, y_contigs, y_order) {
     d3.boxplot.y_zones[y_order[y_order.length - 1]] = [sum, d3.boxplot.scale];
 
     if (!d3.boxplot.break_lines_show) {
-        $("line.break-lines").hide();
+        d3.selectAll("line.break-lines").style("visibility", "hidden");
     }
 
     d3.boxplot.draw_left_axis(d3.boxplot.y_len);
