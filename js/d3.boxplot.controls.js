@@ -8,9 +8,11 @@ d3.boxplot.controls.init = function () {
 };
 
 d3.boxplot.controls.launch_sort_contigs = function () {
-    dgenies.set_loading_message("Building...");
-    dgenies.show_loading();
+    d3.boxplot.reset_scale();
     window.setTimeout(() => {
+        dgenies.set_loading_message("Building...");
+        dgenies.show_loading();
+        window.setTimeout(() => {
             $.post(`/sort/${d3.boxplot.id_res}`,
                 {},
                 function (data) {
@@ -27,4 +29,5 @@ d3.boxplot.controls.launch_sort_contigs = function () {
                 }
             );
         }, 0);
+    }, 0);
 };
