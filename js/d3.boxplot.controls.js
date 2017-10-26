@@ -8,21 +8,20 @@ d3.boxplot.controls.init = function () {
 };
 
 d3.boxplot.controls.launch_sort_contigs = function () {
-    $("#loading").find(".mylabel").html("Building...");
-    $("#loading").show();
+    dgenies.set_loading_message("Building...");
+    dgenies.show_loading();
     window.setTimeout(() => {
             $.post(`/sort/${d3.boxplot.id_res}`,
                 {},
                 function (data) {
                     if (data["success"]) {
-                        $("#loading").find(".mylabel").html("Loading...");
+                        dgenies.reset_loading_message();
                         window.setTimeout(() => {
                             d3.boxplot.launch(data, true);
                         }, 0);
                     }
                     else {
-                        $("#loading").find(".mylabel").html("Loading...");
-                        $("#loading").hide();
+                        dgenies.hide_loading();
                         alert("An error occurred!");
                     }
                 }

@@ -33,11 +33,11 @@ d3.boxplot.events.filter_size = function(min_size) {
 
 d3.boxplot.events.filter_identity = function (min_idy) {
     d3.boxplot.min_idy_draw = min_idy;
-    $("#loading").show();
+    dgenies.show_loading();
     window.setTimeout(() => {
         d3.boxplot.draw_lines();
         d3.boxplot.events.filter_size(d3.boxplot.min_size);
-        $("#loading").hide();
+        dgenies.hide_loading();
     }, 0);
 };
 

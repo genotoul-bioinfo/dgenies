@@ -72,8 +72,12 @@ input[type=range] {
 }
 
 #draw,#sidebar {
-    display: inline-block;
+    display: table-cell;
     vertical-align: top;
+}
+
+#sidebar {
+    min-width: 158px;
 }
 
 #sidebar input[type=number] {
@@ -85,7 +89,7 @@ input[type=range] {
 }
 
 #supdraw {
-    width:1020px;
+    width:auto;
     height: auto;
     position: relative;
     margin-top: 5px;

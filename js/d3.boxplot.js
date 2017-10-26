@@ -184,7 +184,7 @@ d3.boxplot.select_zone = function (x, y) {
 };
 
 d3.boxplot.reset_scale = function () {
-    $("#loading").show();
+    dgenies.show_loading();
     window.setTimeout(() => {
         //Reset scale:
         d3.boxplot.container.attr("transform", "scale(1,1)translate(0,0)");
@@ -219,10 +219,10 @@ d3.boxplot.reset_scale = function () {
     // d3.selectAll("line.content-lines").remove();
     // d3.boxplot.draw_lines(d3.boxplot.lines, d3.boxplot.x_len, d3.boxplot.y_len);
 
-    // $("#loading").show();
+    // dgenies.show_loading();
     // window.setTimeout(() => {
     //     d3.select("g.container").html(d3.boxplot.full_pict);
-    //     $("#loading").hide();
+    //     dgenies.hide_loading();
     // }, 0);
 };
 
@@ -598,7 +598,7 @@ d3.boxplot.draw_legend = function () {
 
 d3.boxplot.click = function () {
     if (!d3.event.ctrlKey) {
-        $("#loading").show();
+        dgenies.show_loading();
         let event = d3.event;
         window.setTimeout(() => {
             let rect = $("g.container")[0].getBoundingClientRect();
@@ -610,7 +610,7 @@ d3.boxplot.click = function () {
                 y = d3.boxplot.scale - ((event.pageY - posY) / height_c * d3.boxplot.scale);
             d3.boxplot.select_zone(x, y);
             $("#restore-all").show();
-            $("#loading").hide();
+            dgenies.hide_loading();
         }, 0);
     }
 };
@@ -1020,6 +1020,6 @@ d3.boxplot.draw = function (x_contigs, x_order, y_contigs, y_order) {
 
         d3.boxplot.draw_legend();
 
-        $("#loading").hide();
+        dgenies.hide_loading();
     }, 0);
 };
