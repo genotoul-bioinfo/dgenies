@@ -194,8 +194,10 @@ d3.boxplot.reset_scale = function () {
 
         //Restore lines stroke width:
         d3.selectAll("path.content-lines").attr("stroke-width", d3.boxplot.content_lines_width);
-        d3.selectAll("line.break-lines").style("visibility","visible");
-        d3.selectAll("line.break-lines").attr("stroke-width", d3.boxplot.break_lines_width);
+        if (d3.boxplot.break_lines_show) {
+            d3.selectAll("line.break-lines").style("visibility", "visible");
+            d3.selectAll("line.break-lines").attr("stroke-width", d3.boxplot.break_lines_width);
+        }
 
         //Update left and bottom axis:
         d3.boxplot.draw_left_axis(d3.boxplot.y_len);
