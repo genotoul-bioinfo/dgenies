@@ -20,14 +20,18 @@
                 </div>
                 <div class="draw"></div>
             </div>
-            <p><label>Filter small matches:<br/>
-            <input type="range" min="0" max="6" value="0" step="1" id="filter_size"/></label></p>
-            <p><label>Filter by identity (abs):<br/>
-            <input type="number" min="0" max="0.95" value="0" step="0.05" id="filter_identity"/></label></p>
-            <p><label class="input-checkbox-label"><input type="checkbox" id="stroke-linecap"/> Strong precision</label></p>
-            <p><label>Stroke width:<br/>
-            <input type="range" min="0" max="3" value="1" step="1" id="stroke-width"/></label></p>
-            <p><button id="sort-contigs">Sort contigs</button></p>
+            <form id="form-parameters">
+                <p><label>Filter small matches:<br/>
+                <input type="range" min="0" max="6" value="0" step="1" id="filter_size"/></label></p>
+                <p><label>Filter by identity (abs):<br/>
+                <input type="number" min="0" max="0.95" value="0" step="0.05" id="filter_identity"/></label></p>
+                <p><label class="input-checkbox-label"><input type="checkbox" id="stroke-linecap"/> Strong precision</label></p>
+                <p><label>Stroke width:<br/>
+                <input type="range" min="0" max="3" value="1" step="1" id="stroke-width"/></label></p>
+                <p><label>Chromosomes limits:<br/>
+                <input type="range" min="0" max="5" value="2" step="1" id="chroms-limits"/></label></p>
+                <p><input type="button" id="sort-contigs" value="Sort contigs"/></p>
+            </form>
         </div>
     </div>
     <div id="loading">

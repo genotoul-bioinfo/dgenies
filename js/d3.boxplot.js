@@ -43,6 +43,8 @@ d3.boxplot.min_size = 0;
 d3.boxplot.linecap = "round";
 d3.boxplot.background_axis = "#f4f4f4";
 d3.boxplot.break_lines_color = "#7c7c7c";
+d3.boxplot.break_lines_dash = "3, 3";
+d3.boxplot.break_lines_show = true;
 d3.boxplot.zoom_scale_lines = 1; // Zoom scale used for lines width
 
 //Filter sizes:
@@ -50,9 +52,7 @@ d3.boxplot.min_sizes = [0, 0.01, 0.02, 0.03, 0.05, 1, 2];
 
 d3.boxplot.init = function (id, from_file=false) {
     d3.boxplot.id_res = id;
-    $("#filter_size").val(0);
-    $("#stroke-linecap").prop("checked", false);
-    $("#stroke-width").val(1);
+    $("#form-parameters")[0].reset();
     if (!from_file) {
         $.post("/get_graph",
             {"id": id},
@@ -76,10 +76,10 @@ d3.boxplot.init = function (id, from_file=false) {
 
 d3.boxplot.launch = function(res, update=false) {
     if (res["sorted"]) {
-        $("button#sort-contigs").text("Undo sort");
+        $("input#sort-contigs").val("Undo sort");
     }
     else {
-        $("button#sort-contigs").text("Sort contigs");
+        $("input#sort-contigs").val("Sort contigs");
     }
     d3.boxplot.name_x = res["name_x"];
     d3.boxplot.name_y = res["name_y"];
@@ -977,7 +977,7 @@ d3.boxplot.draw = function (x_contigs, x_order, y_contigs, y_order) {
             .attr("class", "break-lines")
             .attr("stroke-width", d3.boxplot.break_lines_width)
             .attr("stroke", d3.boxplot.break_lines_color)
-            .style("stroke-dasharray", ("3, 3"));
+            .style("stroke-dasharray", d3.boxplot.break_lines_dash);
     }
     d3.boxplot.x_zones[x_order[x_order.length - 1]] = [sum, d3.boxplot.scale];
 
@@ -998,7 +998,7 @@ d3.boxplot.draw = function (x_contigs, x_order, y_contigs, y_order) {
             .attr("class", "break-lines")
             .attr("stroke-width", d3.boxplot.break_lines_width)
             .attr("stroke", d3.boxplot.break_lines_color)
-            .style("stroke-dasharray", ("3, 3"));
+            .style("stroke-dasharray", d3.boxplot.break_lines_dash);
     }
     d3.boxplot.y_zones[y_order[y_order.length - 1]] = [sum, d3.boxplot.scale];
 
