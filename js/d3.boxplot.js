@@ -602,12 +602,12 @@ d3.boxplot.click = function () {
         let event = d3.event;
         window.setTimeout(() => {
             let rect = $("g.container")[0].getBoundingClientRect();
-            let posX = rect.left,
-                posY = rect.top,
+            let posX = rect.left + window.scrollX,
+                posY = rect.top + window.scrollY,
                 width_c = rect.width,
                 height_c = rect.height;
             let x = (event.pageX - posX) / width_c * d3.boxplot.scale,
-                y = d3.boxplot.scale - (event.pageY - posY) / height_c * d3.boxplot.scale;
+                y = d3.boxplot.scale - ((event.pageY - posY) / height_c * d3.boxplot.scale);
             d3.boxplot.select_zone(x, y);
             $("#restore-all").show();
             $("#loading").hide();
@@ -618,8 +618,8 @@ d3.boxplot.click = function () {
 d3.boxplot.mousedown = function() {
     if (d3.boxplot.zoom_enabled) {
         let rect = $("g.container")[0].getBoundingClientRect();
-        let posX = rect.left,
-            posY = rect.top,
+        let posX = rect.left + window.scrollX,
+            posY = rect.top + window.scrollY,
             width_c = rect.width,
             height_c = rect.height;
         let cursor_x = (d3.event.pageX - posX) / width_c * d3.boxplot.scale,
