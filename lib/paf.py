@@ -7,7 +7,7 @@ from numpy import mean
 
 class Paf:
     limit_idy = 0.5
-    max_nb_lines = 150000
+    max_nb_lines = 100000
 
     def __init__(self, paf: str, idx_q: str, idx_t: str):
         self.paf = paf
@@ -148,7 +148,8 @@ class Paf:
             'name_x': self.name_t,
             'limit_idy': self.limit_idy,
             'sorted': self.sorted,
-            'sampled': self.sampled
+            'sampled': self.sampled,
+            "max_nb_lines": self.max_nb_lines,
         }
 
     def save_json(self, out):

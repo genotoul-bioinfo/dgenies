@@ -100,7 +100,8 @@ d3.boxplot.launch = function(res, update=false) {
         d3.boxplot.controls.init();
     }
     if (res["sampled"]) {
-        dgenies.notify("There are too much matches.\nOnly the 150.000 best matches are displayed")
+        let max_nb_lines = dgenies.numberWithCommas(res["max_nb_lines"].toString());
+        dgenies.notify(`There are too much matches.\nOnly the ${max_nb_lines} best matches are displayed`)
     }
     dgenies.fill_select_zones(res["x_order"], res["y_order"]);
     d3.boxplot.mousetip.init();

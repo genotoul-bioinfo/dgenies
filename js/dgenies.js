@@ -51,3 +51,7 @@ dgenies.fill_select_zones = function(x_targets, y_contigs) {
         }))
     }
 };
+
+dgenies.numberWithCommas = function(x) {
+    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+};
