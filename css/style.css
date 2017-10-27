@@ -326,8 +326,7 @@ span.tip {
     display: none;
 
     /* Optional */
-    font-size: 15px;
-    max-width: 150px;
+    font-size: 12pt;
     height: auto;
     padding: 10px;
     border-radius: 3px;
