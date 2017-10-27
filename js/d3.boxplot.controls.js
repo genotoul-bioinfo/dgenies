@@ -6,6 +6,7 @@ d3.boxplot.controls = {};
 d3.boxplot.controls.init = function () {
     $("#sort-contigs").click(d3.boxplot.controls.launch_sort_contigs);
     $("form#select-zone input.submit").click(d3.boxplot.controls.select_zone);
+    $("form#export select").change(d3.boxplot.controls.export);
 };
 
 d3.boxplot.controls.launch_sort_contigs = function () {
@@ -41,5 +42,14 @@ d3.boxplot.controls.select_zone = function() {
     }
     else {
         dgenies.notify("Please select zones into zoom!", "error", 2000);
+    }
+};
+
+d3.boxplot.controls.export = function () {
+    let select = $("form#export select");
+    let selection = parseInt(select.val());
+    if (selection > 0) {
+        select.val("0");
+        dgenies.notify("Not supported yet!", "error", 2000);
     }
 };

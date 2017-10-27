@@ -18,11 +18,12 @@ body {
     /*position: fixed;*/
     /*top: calc(50% - 100px);*/
     /*right: 30px;*/
-    width: 100px;
+    width: 100%;
     height: 230px;
     border: none;
     margin-bottom: 10px;
     margin-left: 10px;
+    margin-top: 40px;
 }
 
 label.input-checkbox-label input[type=checkbox]{
@@ -62,13 +63,17 @@ input[type=range] {
 }
 
 #legend .title {
-    width: 100%;
+    width: 60%;
     height: 30px;
     text-align: center;
     font-size: 12pt;
     font-weight: bold;
     font-family: sans-serif;
     text-decoration: underline;
+}
+
+#legend .draw {
+    width: 60%;
 }
 
 #draw,#sidebar {
@@ -78,6 +83,7 @@ input[type=range] {
 
 #sidebar {
     min-width: 158px;
+    max-width: 158px;
 }
 
 #sidebar input[type=number] {
@@ -309,19 +315,31 @@ footer hr {
     top: 50px !important;
 }
 
-/* Form select zones*/
+/* Top forms*/
+div.top-forms {
+    position: relative;
+    width: 810px;
+}
+
 form#select-zone {
     margin-bottom: 5px;
     margin-left: 40px;
 }
 
-form#select-zone select, form#select-zone input {
+div.top-forms select, div.top-forms input {
     height: 28px;
 }
 
 /* Form parameters */
 form#form-parameters {
-    margin-left: 5px;
+    margin-top: 20px;
+    margin-left: 15px;
+}
+
+form#export {
+    position: absolute;
+    top: 0;
+    right: 0;
 }
 
 /* Tooltip*/
@@ -339,11 +357,19 @@ span.tip {
     padding: 10px;
     border-radius: 3px;
     box-shadow: 0 1px 2px #666;
-    background: #FD0;
+    background: #ededed;
 }
 
 table.drawtooltip td.tt-label {
     padding-right: 5px;
     vertical-align: middle;
     font-weight: bold;
+}
+
+#body-container {
+    max-width: 100% !important;
+}
+
+div.navbar {
+    background-image: linear-gradient(to bottom,#2B3044 0, #141a30 100%);
 }

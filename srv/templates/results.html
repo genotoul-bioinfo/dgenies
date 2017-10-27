@@ -14,15 +14,26 @@
 {{ super() }}
 
 <div id="supdraw">
-    <form id="select-zone">
-        <select id="select-contig">
-            <option value="0">Select a contig in query...</option>
-        </select>
-        <select id="select-target">
-            <option value="0">Select a chromosome in target...</option>
-        </select>
-        <input type="button" class="submit" value="Apply"/>
-    </form>
+    <div class="top-forms">
+        <form id="select-zone">
+            <select id="select-contig">
+                <option value="0" selected disabled>Select a contig in query...</option>
+            </select>
+            <select id="select-target">
+                <option value="0" selected disabled>Select a chromosome in target...</option>
+            </select>
+            <input type="button" class="submit" value="Apply"/>
+        </form>
+        <form id="export">
+            <select>
+                <option value="0" selected disabled hidden>Export...</option>
+                <option value="1">Svg</option>
+                <option value="2">Png</option>
+                <option value="3">Paf file</option>
+                <option value="4">Fasta files</option>
+            </select>
+        </form>
+    </div>
     <div class="master">
         <div id="draw"></div>
         <div id="sidebar">

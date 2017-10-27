@@ -32,10 +32,10 @@ d3.boxplot.scale = 1000;
 d3.boxplot.content_lines_width = d3.boxplot.scale / 400;
 d3.boxplot.break_lines_width = d3.boxplot.scale / 1500;
 d3.boxplot.color_idy = {
-    "pos+": "#063806",
-    "pos-": "#99d78d",
-    "neg+": "#d69185",
-    "neg-": "#540404"
+    "pos+": "#094b09",
+    "pos-": "#86bd7b",
+    "neg+": "#d5b43c",
+    "neg-": "#730404"
 };
 d3.boxplot.limit_idy = null;
 d3.boxplot.min_idy_draw = 0;
@@ -307,7 +307,7 @@ d3.boxplot.draw_left_axis = function (y_max, y_min = 0) {
                 .attr("y", 12)
                 .attr("text-anchor", "middle")
                 .attr("font-family", "sans-serif")
-                .attr("font-size", "7.5pt")
+                .attr("font-size", "6.5pt")
                 .text(y_lab);
         }
     }
@@ -372,7 +372,7 @@ d3.boxplot.draw_bottom_axis = function (x_max, x_min = 0) {
                 .attr("y", 15)
                 .attr("text-anchor", "middle")
                 .attr("font-family", "sans-serif")
-                .attr("font-size", "7.5pt")
+                .attr("font-size", "6.5pt")
                 .text(x_lab);
         }
     }
@@ -443,8 +443,8 @@ d3.boxplot.draw_top_axis = function (x_zones=d3.boxplot.x_zones) {
 
     svg_top.append("text")
         .attr("x", axis_length / 2)
-        .attr("y", 8)
-        .attr("font-size", "8pt")
+        .attr("y", 7.5)
+        .attr("font-size", "6pt")
         .attr("font-family", "sans-serif")
         .attr("font-weight", "bold")
         .attr("text-anchor", "middle")
@@ -464,17 +464,17 @@ d3.boxplot.draw_top_axis = function (x_zones=d3.boxplot.x_zones) {
                 .attr("height", "100%");
             text_container.append("text")
                 .attr("x", z_len / 2)
-                .attr("y", 18)
+                .attr("y", 17)
                 .attr("text-anchor", "middle")
                 .attr("font-family", "sans-serif")
-                .attr("font-size", "7pt")
+                .attr("font-size", "6pt")
                 .text(zone);
         }
         if (nb_zone > 0) { //Draw zone separator at left of zone (except for first zone)
             svg_top.append("line")
                 .attr("x1", x_pos_1 / d3.boxplot.scale * axis_length)
                 .attr("x2", x_pos_1 / d3.boxplot.scale * axis_length)
-                .attr("y1", "50%")
+                .attr("y1", "60%")
                 .attr("y2", "100%")
                 .attr("stroke", "black")
                 .attr("stroke-width", 1);
@@ -524,8 +524,8 @@ d3.boxplot.draw_right_axis = function (y_zones=d3.boxplot.y_zones) {
 
     container_right.append("text")
         .attr("x", axis_length / 2)
-        .attr("y", 8)
-        .attr("font-size", "8pt")
+        .attr("y", 7.5)
+        .attr("font-size", "6pt")
         .attr("font-family", "sans-serif")
         .attr("font-weight", "bold")
         .attr("text-anchor", "middle")
@@ -545,17 +545,17 @@ d3.boxplot.draw_right_axis = function (y_zones=d3.boxplot.y_zones) {
                 .attr("height", "100%");
             text_container.append("text")
                 .attr("x", z_len / 2)
-                .attr("y", 18)
+                .attr("y", 17)
                 .attr("text-anchor", "middle")
                 .attr("font-family", "sans-serif")
-                .attr("font-size", "7pt")
+                .attr("font-size", "6pt")
                 .text(zone);
         }
         if (nb_zone > 0) { //Draw zone separator at left of zone (except for first zone)
             container_right.append("line")
                 .attr("x1", y_pos_1 / d3.boxplot.scale * axis_length)
                 .attr("x2", y_pos_1 / d3.boxplot.scale * axis_length)
-                .attr("y1", 10)
+                .attr("y1", 12)
                 .attr("y2", 20)
                 .attr("stroke", "black")
                 .attr("stroke-width", 1)
