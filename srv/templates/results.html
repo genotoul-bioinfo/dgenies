@@ -10,7 +10,17 @@
 {% block onload %}d3.boxplot.init('{{ id }}');{% endblock %}
 {% block content %}
 {{ super() }}
+
 <div id="supdraw">
+    <form id="select-zone">
+        <select id="select-contig">
+            <option value="0">Select a contig in query...</option>
+        </select>
+        <select id="select-target">
+            <option value="0">Select a chromosome in target...</option>
+        </select>
+        <input type="button" class="submit" value="Apply"/>
+    </form>
     <div class="master">
         <div id="draw"></div>
         <div id="sidebar">
