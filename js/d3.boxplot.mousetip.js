@@ -7,13 +7,16 @@ $.fn.mousetip = function(my_tip, relative_to=null, x=20, y=20) {
     
     let $this = $(this);
     let tip = relative_to === null ? $(my_tip, this) : $(my_tip, relative_to);
+    let hidden = true;
     
     $this.hover(function(e) {
-        if (!e.ctrlKey)
+        if (!e.ctrlKey) {
             tip.show();
+            hidden = false;
+        }
     
     }, function() {
-    
+        hidden = true;
         tip.hide().removeAttr('style');
     
     }).mousemove(function(e) {
@@ -65,11 +68,13 @@ $.fn.mousetip = function(my_tip, relative_to=null, x=20, y=20) {
                         </tr>
                       </table>`);
 
-                tip.show().css({
+                if (!hidden) {
+                    tip.show().css({
 
-                    top: mouseY, left: mouseX
+                        top: mouseY, left: mouseX
 
-                });
+                    });
+                }
 
             }, 0);
 
