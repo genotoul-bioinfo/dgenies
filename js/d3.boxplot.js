@@ -267,6 +267,7 @@ d3.boxplot.draw_left_axis = function (y_max, y_min = 0) {
         .attr("y", 0)
         .attr("width", axis_length)
         .attr("height", 20)
+        .attr("stroke", d3.boxplot.background_axis)
         .style("fill", d3.boxplot.background_axis);
 
     container_left.append("line")
@@ -331,6 +332,7 @@ d3.boxplot.draw_bottom_axis = function (x_max, x_min = 0) {
         .attr("y", 0)
         .attr("width", axis_length)
         .attr("height", 20)
+        .attr("stroke", d3.boxplot.background_axis)
         .style("fill", d3.boxplot.background_axis);
 
     svg_bottom.append("line")
@@ -428,6 +430,7 @@ d3.boxplot.draw_top_axis = function (x_zones=d3.boxplot.x_zones) {
         .attr("y", 0)
         .attr("width", axis_length)
         .attr("height", 20)
+        .attr("stroke", d3.boxplot.background_axis)
         .style("fill", d3.boxplot.background_axis);
 
     svg_top.append("line")
@@ -508,6 +511,7 @@ d3.boxplot.draw_right_axis = function (y_zones=d3.boxplot.y_zones) {
         .attr("y", 0)
         .attr("width", axis_length)
         .attr("height", 20)
+        .attr("stroke", d3.boxplot.background_axis)
         .style("fill", d3.boxplot.background_axis);
 
     container_right.append("line")
@@ -558,6 +562,61 @@ d3.boxplot.draw_right_axis = function (y_zones=d3.boxplot.y_zones) {
         }
         nb_zone--;
     }
+};
+
+d3.boxplot.draw_corners = function () {
+    // Top left:
+    let svg_top_left = d3.boxplot.svgsupercontainer.append("svg:svg")
+        .attr("width", 5)
+        .attr("height", 5)
+        .attr("x", 0)
+        .attr("y", 0)
+        .attr("viewBox", "0 0 5 5")
+        .attr("preserveAspectRatio", "none");
+    svg_top_left.append("polygon")
+        .attr("points", "5,0 5,5 0,5")
+        .attr("stroke", d3.boxplot.background_axis)
+        .style("fill", d3.boxplot.background_axis);
+
+    // Top right:
+    let svg_top_right = d3.boxplot.svgsupercontainer.append("svg:svg")
+        .attr("width", 5)
+        .attr("height", 5)
+        .attr("x", 95)
+        .attr("y", 0)
+        .attr("viewBox", "0 0 5 5")
+        .attr("preserveAspectRatio", "none");
+    svg_top_right.append("polygon")
+        .attr("points", "0,0 5,5 0,5")
+        .attr("stroke", d3.boxplot.background_axis)
+        .style("fill", d3.boxplot.background_axis);
+
+    // Bottom left:
+    let svg_bottom_left = d3.boxplot.svgsupercontainer.append("svg:svg")
+        .attr("width", 5)
+        .attr("height", 5)
+        .attr("x", 0)
+        .attr("y", 95)
+        .attr("viewBox", "0 0 5 5")
+        .attr("preserveAspectRatio", "none");
+    svg_bottom_left.append("polygon")
+        .attr("points", "0,0 5,0 5,5")
+        .attr("stroke", d3.boxplot.background_axis)
+        .style("fill", d3.boxplot.background_axis);
+
+    //Bottom right:
+    // Top right:
+    let svg_bottom_right = d3.boxplot.svgsupercontainer.append("svg:svg")
+        .attr("width", 5)
+        .attr("height", 5)
+        .attr("x", 95)
+        .attr("y", 95)
+        .attr("viewBox", "0 0 5 5")
+        .attr("preserveAspectRatio", "none");
+    svg_bottom_right.append("polygon")
+        .attr("points", "0,0 0,5 5,0")
+        .attr("stroke", d3.boxplot.background_axis)
+        .style("fill", d3.boxplot.background_axis);
 };
 
 d3.boxplot._sort_color_idy = function(a, b) {
@@ -821,6 +880,7 @@ d3.boxplot.draw = function (x_contigs, x_order, y_contigs, y_order) {
     d3.boxplot.draw_bottom_axis(d3.boxplot.x_len);
     d3.boxplot.draw_top_axis(d3.boxplot.x_zones);
     d3.boxplot.draw_right_axis(d3.boxplot.y_zones);
+    d3.boxplot.draw_corners();
 
     window.setTimeout(() => {
         //Data:

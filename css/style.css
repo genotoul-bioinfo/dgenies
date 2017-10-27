@@ -312,11 +312,19 @@ footer hr {
 /* Form select zones*/
 form#select-zone {
     margin-bottom: 5px;
+    margin-left: 40px;
 }
 
 form#select-zone select, form#select-zone input {
     height: 28px;
 }
+
+/* Form parameters */
+form#form-parameters {
+    margin-left: 5px;
+}
+
+/* Tooltip*/
 
 span.tip {
 
