@@ -317,3 +317,26 @@ form#select-zone {
 form#select-zone select, form#select-zone input {
     height: 28px;
 }
+
+span.tip {
+
+    /* Required */
+    position: absolute;
+    z-index: 2;
+    display: none;
+
+    /* Optional */
+    font-size: 15px;
+    max-width: 150px;
+    height: auto;
+    padding: 10px;
+    border-radius: 3px;
+    box-shadow: 0 1px 2px #666;
+    background: #FD0;
+}
+
+table.drawtooltip td.tt-label {
+    padding-right: 5px;
+    vertical-align: middle;
+    font-weight: bold;
+}

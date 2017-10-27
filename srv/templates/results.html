@@ -6,6 +6,7 @@
     <script src="{{ url_for('static', filename='js/d3.boxplot.js') }}" type="text/JavaScript"></script>
     <script src="{{ url_for('static', filename='js/d3.boxplot.events.js') }}" type="text/JavaScript"></script>
     <script src="{{ url_for('static', filename='js/d3.boxplot.controls.js') }}" type="text/JavaScript"></script>
+    <script src="{{ url_for('static', filename='js/d3.boxplot.mousetip.js') }}" type="text/JavaScript"></script>
 {% endblock %}
 {% block onload %}d3.boxplot.init('{{ id }}');{% endblock %}
 {% block content %}

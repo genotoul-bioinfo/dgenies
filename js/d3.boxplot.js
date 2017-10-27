@@ -60,6 +60,7 @@ d3.boxplot.init = function (id, from_file=false) {
             function (data) {
                 if (data["success"]) {
                     d3.boxplot.launch(data);
+                    d3.boxplot.mousetip.init();
                 }
                 else {
                     $("#supdraw").html($("<p>").html("This job does not exists!").css("margin-top", "15px"));
@@ -106,6 +107,7 @@ d3.boxplot.launch = function(res, update=false) {
 };
 
 d3.boxplot.select_zone = function (x=null, y=null, x_zone=null, y_zone=null, force=false) {
+    d3.boxplot.mousetip.hide();
     dgenies.show_loading();
     window.setTimeout(() => {
         if (!d3.boxplot.zone_selected || force) {
@@ -627,6 +629,7 @@ d3.boxplot.click = function () {
 
 d3.boxplot.mousedown = function() {
     if (d3.boxplot.zoom_enabled) {
+        d3.boxplot.mousetip.hide();
         let rect = $("g.container")[0].getBoundingClientRect();
         let posX = rect.left + window.scrollX,
             posY = rect.top + window.scrollY,
@@ -760,6 +763,7 @@ d3.boxplot.translate = function () {
 d3.boxplot.zoom = function () {
     if (d3.event.ctrlKey) {
         d3.event.preventDefault();
+        d3.boxplot.mousetip.hide();
         if (d3.boxplot.zoom_enabled) {
             let zoom_f = 1.2;
             let old_transform = d3.boxplot.container.attr("transform");
