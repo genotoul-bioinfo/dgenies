@@ -9,8 +9,8 @@ body {
 }
 
 .navbar-brand {
-    padding-left: 50px;
-    background: url("images/logo.png") no-repeat 0 5px;
+    padding-left: 45px;
+    background: url("images/logo.svg") no-repeat 0 5px;
     background-size: 40px 40px;
 }
 
