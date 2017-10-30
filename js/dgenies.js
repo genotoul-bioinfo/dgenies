@@ -42,6 +42,8 @@ dgenies.fill_select_zones = function(x_targets, y_contigs) {
             text: y_contigs[i]
         }))
     }
+    select_contig.chosen({disable_search_threshold: 10});
+    select_contig.trigger("chosen:updated")
     let select_target = $("select#select-target");
     select_target.find("option[value!=0]").remove();
     for (let i=0; i< x_targets.length; i++) {
@@ -50,6 +52,8 @@ dgenies.fill_select_zones = function(x_targets, y_contigs) {
             text: x_targets[i]
         }))
     }
+    select_target.chosen({disable_search_threshold: 10});
+    select_target.trigger("chosen:updated")
 };
 
 dgenies.numberWithCommas = function(x) {

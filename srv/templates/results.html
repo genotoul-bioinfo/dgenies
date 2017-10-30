@@ -2,12 +2,14 @@
 {% block scripts %}
     {{ super() }}
     <script src="{{ url_for('static', filename='js/jquery-ui.min.js') }}" type="text/JavaScript"></script>
+    <script src="{{ url_for('static', filename='js/chosen.jquery.min.js') }}" type="text/JavaScript"></script>
     <script src="{{ url_for('static', filename='js/d3.min.js') }}" type="text/JavaScript"></script>
     <script src="{{ url_for('static', filename='js/d3.boxplot.js') }}" type="text/JavaScript"></script>
     <script src="{{ url_for('static', filename='js/d3.boxplot.zoom.js') }}" type="text/JavaScript"></script>
     <script src="{{ url_for('static', filename='js/d3.boxplot.events.js') }}" type="text/JavaScript"></script>
     <script src="{{ url_for('static', filename='js/d3.boxplot.controls.js') }}" type="text/JavaScript"></script>
     <script src="{{ url_for('static', filename='js/d3.boxplot.mousetip.js') }}" type="text/JavaScript"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/chosen.min.css') }}" type="text/css">
 {% endblock %}
 {% block onload %}d3.boxplot.init('{{ id }}');{% endblock %}
 {% block content %}
@@ -16,12 +18,16 @@
 <div id="supdraw">
     <div class="top-forms">
         <form id="select-zone">
-            <select id="select-contig">
-                <option value="0" selected disabled>Select a contig in query...</option>
-            </select>
-            <select id="select-target">
-                <option value="0" selected disabled>Select a chromosome in target...</option>
-            </select>
+            <div class="chosen-widget">
+                <select id="select-contig" data-placeholder="Select a query...">
+                    <option value="0" label=" "></option>
+                </select>
+            </div>
+            <div class="chosen-widget">
+                <select id="select-target" data-placeholder="Select a target...">
+                    <option value="0" label=" "></option>
+                </select>
+            </div>
             <input type="button" class="submit" value="Apply"/>
         </form>
         <form id="export">

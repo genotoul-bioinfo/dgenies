@@ -77,6 +77,7 @@ d3.boxplot.init = function (id, from_file=false) {
 };
 
 d3.boxplot.launch = function(res, update=false) {
+    dgenies.fill_select_zones(res["x_order"], res["y_order"]);
     if (res["sorted"]) {
         $("input#sort-contigs").val("Undo sort");
     }
@@ -103,7 +104,6 @@ d3.boxplot.launch = function(res, update=false) {
         let max_nb_lines = dgenies.numberWithCommas(res["max_nb_lines"].toString());
         dgenies.notify(`There are too much matches.\nOnly the ${max_nb_lines} best matches are displayed`)
     }
-    dgenies.fill_select_zones(res["x_order"], res["y_order"]);
     d3.boxplot.mousetip.init();
 };
 

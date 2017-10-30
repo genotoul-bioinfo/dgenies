@@ -330,6 +330,29 @@ div.top-forms select, div.top-forms input {
     height: 28px;
 }
 
+form#select-zone div.chosen-widget, form#select-zone input[type=button] {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+form#select-zone input[type=button] {
+    line-height: 100%;
+}
+
+div.chosen-container {
+    width: 200px !important;
+}
+
+a.chosen-single {
+    height: 30px !important;
+    line-height: 30px !important;
+    font-size: 11pt !important;
+}
+
+a.chosen-single div b {
+    background-position-y: 4px !important;
+}
+
 /* Form parameters */
 form#form-parameters {
     margin-top: 20px;
