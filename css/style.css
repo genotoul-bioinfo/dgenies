@@ -32,10 +32,6 @@ label.input-checkbox-label input[type=checkbox]{
     bottom: 1px;
 }
 
-input[type=range] {
-    width: 130px;
-}
-
 #main-bar-title {
     background-color: black;
     color: white;
@@ -82,8 +78,8 @@ input[type=range] {
 }
 
 #sidebar {
-    min-width: 158px;
-    max-width: 158px;
+    min-width: 120px;
+    max-width: 165px;
 }
 
 #sidebar input[type=number] {
@@ -92,6 +88,10 @@ input[type=range] {
 
 #sidebar label {
     font-weight: normal !important;
+}
+
+#sidebar input[type=button], #sidebar input[type=range], #sidebar input[type=number], #sidebar label {
+    width: 100% !important;
 }
 
 #supdraw {
