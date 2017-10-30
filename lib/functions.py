@@ -2,7 +2,7 @@ import os
 import random
 import string
 
-ALLOWED_EXTENSIONS = {'fa', 'fasta', 'fa.gz', "fasta.gz", "fna", "fna.gz"}
+ALLOWED_EXTENSIONS = ['fa', 'fasta', 'fna', 'fa.gz', 'fasta.gz', 'fna.gz']
 
 
 def allowed_file(filename):

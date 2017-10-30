@@ -82,10 +82,10 @@ def launch_analysis():
     if form_pass:
         # Check files are correct:
         if not allowed_file(file_query.filename):
-            flash("Format of query fasta must be in fasta format (.fa, .fa.gz, .fasta, .fasta.gz)")
+            flash("Format of query fasta must be in fasta format (*.%s)" % ", *.".join(ALLOWED_EXTENSIONS))
             form_pass = False
         if file_target.filename != "" and not allowed_file(file_target.filename):
-            flash("Format of target fasta must be in fasta format (.fa, .fa.gz, .fasta, .fasta.gz)")
+            flash("Format of target fasta must be in fasta format (*.%s)" % ", *.".join(ALLOWED_EXTENSIONS))
             form_pass = False
         if form_pass:
             # Save files:
