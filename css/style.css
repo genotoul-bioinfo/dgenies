@@ -396,3 +396,88 @@ table.drawtooltip td.tt-label {
 div.navbar {
     background-image: linear-gradient(to bottom,#2B3044 0, #141a30 100%);
 }
+
+.input-group {
+    display: inline-block;
+}
+
+.input-group .input-group-btn, .input-group input {
+    display: inline-block !important;
+    position: relative !important;
+    float: none !important;
+}
+
+div.in-label {
+    position: relative;
+    display: inline-block;
+    width: 300px;
+    height: 30px;
+}
+
+div.progress {
+    display: none;
+    width: 300px;
+    height: 30px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 10;
+    opacity: 0.5;
+}
+
+div.progress .bar {
+    height: 100%;
+    background: green;
+}
+
+select.select-type-input, .input-group button, .input-group input {
+    height: 30px;
+    line-height: 30px;
+}
+
+.input-group button {
+    padding-top: 0;
+}
+
+div.input-group {
+    padding-left: 15px !important;
+}
+
+.upload-btn-wrapper {
+    position: relative;
+    height: 30px;
+    width: 42px;
+    overflow: hidden;
+    display: inline-block;
+}
+
+.upload-btn-wrapper button {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 30px;
+    width: 42px;
+}
+
+/*.btn {*/
+  /*border: 2px solid gray;*/
+  /*color: black;*/
+  /*background-color: white;*/
+  /*border-radius: 8px;*/
+  /*font-size: 20px;*/
+  /*font-weight: bold;*/
+/*}*/
+
+.upload-btn-wrapper input[type=file] {
+  font-size: 100px;
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+}
+
+input.show-file {
+    padding-left: 2px;
+    padding-right: 2px;
+    width: auto;
+}

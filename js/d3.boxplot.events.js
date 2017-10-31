@@ -18,7 +18,7 @@ d3.boxplot.events.init = function () {
     });
     $("input#chroms-limits").change(function() {
         d3.boxplot.events.set_break_lines_visibility(this.value);
-    })
+    });
 };
 
 d3.boxplot.events.set_break_lines_visibility = function(value) {

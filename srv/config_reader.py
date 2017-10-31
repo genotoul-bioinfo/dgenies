@@ -15,6 +15,12 @@ class AppConfigReader(object):
         self.reader = RawConfigParser()
         self.reader.read(os.path.join(os.path.dirname(inspect.getfile(self.__class__)), self.CONFIG_FILE_PATH))
 
+    def get_upload_folder(self):
+        try:
+            return self.reader.get("global", "upload_folder")
+        except NoOptionError:
+            raise Exception("No upload folder found in application.properties (global section)")
+
     def get_app_data(self):
         try:
             return self.reader.get("global", "data_folder")

@@ -8,6 +8,7 @@ from lib.paf import Paf
 from config_reader import AppConfigReader
 from lib.job_manager import JobManager
 from lib.functions import *
+from lib.upload_file import uploadfile
 
 import sys
 app_folder = os.path.dirname(os.path.realpath(__file__))
@@ -20,10 +21,13 @@ sqlite_file = os.path.join(app_folder, "database.sqlite")
 # Init config reader:
 config_reader = AppConfigReader()
 
+UPLOAD_FOLDER = config_reader.get_upload_folder()
+
 app_title = "D-GENIES - Dotplot for Genomes Interactive, E-connected and Speedy"
 
 # Init Flask:
 app = Flask(__name__, static_url_path='/static')
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['SECRET_KEY'] = 'dsqdsq-255sdA-fHfg52-25Asd5'
 
 # Folder containing data:
@@ -166,6 +170,44 @@ def sort_graph(id_res):
         res["success"] = True
         return jsonify(res)
     return jsonify({"success": False, "message": paf.error})
+
+
+@app.route("/upload", methods=['POST'])
+def upload():
+    folder = request.form["folder"]
+    print(folder)
+    files = request.files[list(request.files.keys())[0]]
+
+    if files:
+        filename = files.filename
+        folder_files = os.path.join(app.config["UPLOAD_FOLDER"], folder)
+        if folder == "null" or not os.path.exists(folder_files):
+            folder_files = os.path.join(app.config["UPLOAD_FOLDER"], random_string(5) + "_" +
+                                        datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S'))
+            while os.path.exists(folder_files):
+                folder_files = os.path.join(app.config["UPLOAD_FOLDER"], random_string(5) + "_" +
+                                            datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S'))
+            os.makedirs(folder_files)
+        filename = get_valid_uploaded_filename(filename, folder_files)
+        mime_type = files.content_type
+
+        if not allowed_file(files.filename):
+            result = uploadfile(name=filename, type=mime_type, size=0, not_allowed_msg="File type not allowed")
+
+        else:
+            # save file to disk
+            uploaded_file_path = os.path.join(folder_files, filename)
+            files.save(uploaded_file_path)
+
+            # get file size after saving
+            size = os.path.getsize(uploaded_file_path)
+
+            # return json for js call back
+            result = uploadfile(name=filename, type=mime_type, size=size)
+
+        return jsonify({"files": [result.get_file()], "folder": os.path.basename(folder_files)})
+
+    return jsonify({"files": [], "folder": None})
 
 
 if __name__ == '__main__':
