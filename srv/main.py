@@ -20,13 +20,10 @@ sqlite_file = os.path.join(app_folder, "database.sqlite")
 # Init config reader:
 config_reader = AppConfigReader()
 
-UPLOAD_FOLDER = config_reader.get_upload_folder()
-
 app_title = "D-GENIES - Dotplot for Genomes Interactive, E-connected and Speedy"
 
 # Init Flask:
 app = Flask(__name__, static_url_path='/static')
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['SECRET_KEY'] = 'dsqdsq-255sdA-fHfg52-25Asd5'
 
 # Folder containing data:
@@ -88,22 +85,25 @@ def launch_analysis():
             flash("Format of target fasta must be in fasta format (*.%s)" % ", *.".join(ALLOWED_EXTENSIONS))
             form_pass = False
         if form_pass:
-            # Save files:
-            query_name = os.path.splitext(os.path.basename(file_query.filename))[0]
-            filename_query = get_valid_uploaded_filename(secure_filename(file_query.filename), app.config["UPLOAD_FOLDER"])
-            target_name = os.path.splitext(os.path.basename(file_target.filename))[0]
-            query_path = os.path.join(app.config["UPLOAD_FOLDER"], filename_query)
-            file_query.save(query_path)
-            target_path = None
-            if file_target.filename != "":
-                filename_target = get_valid_uploaded_filename(secure_filename(file_target.filename), app.config["UPLOAD_FOLDER"])
-                target_path = os.path.join(app.config["UPLOAD_FOLDER"], filename_target)
-                file_target.save(target_path)
-
             # Get final job id:
             id_job_orig = id_job
             while os.path.exists(os.path.join(app_data, id_job)):
                 id_job = id_job_orig + "_2"
+
+            folder_files = os.path.join(app_data, id_job)
+            os.makedirs(folder_files)
+
+            # Save files:
+            query_name = os.path.splitext(os.path.basename(file_query.filename))[0]
+            filename_query = get_valid_uploaded_filename(secure_filename(file_query.filename), folder_files)
+            target_name = os.path.splitext(os.path.basename(file_target.filename))[0]
+            query_path = os.path.join(folder_files, filename_query)
+            file_query.save(query_path)
+            target_path = None
+            if file_target.filename != "":
+                filename_target = get_valid_uploaded_filename(secure_filename(file_target.filename), folder_files)
+                target_path = os.path.join(folder_files, filename_target)
+                file_target.save(target_path)
 
             # Launch job:
             job = JobManager(id_job, email, query_path, target_path, query_name, target_name)
