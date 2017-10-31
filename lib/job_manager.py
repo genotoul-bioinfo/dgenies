@@ -6,7 +6,7 @@ import gzip
 import urllib.request
 import traceback
 from config_reader import AppConfigReader
-from pony.orm import db_session
+from pony.orm import db_session, select
 from database import db, Job
 
 
@@ -85,7 +85,11 @@ class JobManager:
 
     @db_session
     def launch(self):
-        if self.fasta_q is not None and self.fasta_t is not None:
+        j1 = select(j for j in Job if j.id_job == self.id_job)
+        if len(j1) > 0:
+            print("Old job found without result dir existing: delete it from BDD!")
+            j1.delete()
+        if self.fasta_q is not None:
             job = Job(id_job=self.id_job, email=self.email, batch_type=self.batch_system_type,
                       date_created=datetime.datetime.now())
             db.commit()
