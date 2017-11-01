@@ -2,15 +2,17 @@
 
 import time
 import datetime
-from flask import Flask, render_template, request, redirect, flash, url_for, jsonify
+from flask import Flask, render_template, request, redirect, flash, url_for, jsonify, session
 from werkzeug.utils import secure_filename
 from lib.paf import Paf
 from config_reader import AppConfigReader
 from lib.job_manager import JobManager
 from lib.functions import *
 from lib.upload_file import uploadfile
+from lib.Fasta import Fasta
 
 import sys
+
 app_folder = os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0, app_folder)
 os.environ["PATH"] = os.path.join(app_folder, "bin") + ":" + os.environ["PATH"]
@@ -48,6 +50,8 @@ def main():
 
 @app.route("/run", methods=['GET'])
 def run():
+    session["user_tmp_dir"] = random_string(5) + "_" + \
+                              datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S')
     id_job = random_string(5) + "_" + datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S')
     if "id_job" in request.args:
         id_job = request.args["id_job"]
@@ -63,60 +67,51 @@ def run():
 def launch_analysis():
     id_job = request.form["id_job"]
     email = request.form["email"]
-    file_query = request.files["file_query"]
-    file_target = request.files["file_target"]
+    file_query = request.form["query"]
+    file_query_type = request.form["query_type"]
+    file_target = request.form["target"]
+    file_target_type = request.form["target_type"]
 
     # Check form:
     form_pass = True
+    errors = []
     if id_job == "":
-        flash("Id of job not given")
+        errors.append("Id of job not given")
         form_pass = False
 
     if email == "":
-        flash("Email not given")
+        errors.append("Email not given")
         form_pass = False
-    if file_query.filename == "":
-        flash("No query fasta selected")
+    if file_query == "":
+        errors.append("No query fasta selected")
         form_pass = False
 
     # Form pass
     if form_pass:
-        # Check files are correct:
-        if not allowed_file(file_query.filename):
-            flash("Format of query fasta must be in fasta format (*.%s)" % ", *.".join(ALLOWED_EXTENSIONS))
-            form_pass = False
-        if file_target.filename != "" and not allowed_file(file_target.filename):
-            flash("Format of target fasta must be in fasta format (*.%s)" % ", *.".join(ALLOWED_EXTENSIONS))
-            form_pass = False
-        if form_pass:
-            # Get final job id:
-            id_job_orig = id_job
-            while os.path.exists(os.path.join(app_data, id_job)):
-                id_job = id_job_orig + "_2"
+        # Get final job id:
+        id_job_orig = id_job
+        while os.path.exists(os.path.join(app_data, id_job)):
+            id_job = id_job_orig + "_2"
 
-            folder_files = os.path.join(app_data, id_job)
-            os.makedirs(folder_files)
+        folder_files = os.path.join(app_data, id_job)
+        os.makedirs(folder_files)
 
-            # Save files:
-            query_name = os.path.splitext(os.path.basename(file_query.filename))[0]
-            filename_query = get_valid_uploaded_filename(secure_filename(file_query.filename), folder_files)
-            target_name = os.path.splitext(os.path.basename(file_target.filename))[0]
-            query_path = os.path.join(folder_files, filename_query)
-            file_query.save(query_path)
-            target_path = None
-            if file_target.filename != "":
-                filename_target = get_valid_uploaded_filename(secure_filename(file_target.filename), folder_files)
-                target_path = os.path.join(folder_files, filename_target)
-                file_target.save(target_path)
+        # Save files:
+        query_name = os.path.splitext(file_query.replace(".gz", ""))[0]
+        query_path = os.path.join(app.config["UPLOAD_FOLDER"], session["user_tmp_dir"], file_query)
+        query = Fasta(name=query_name, path=query_path, type_f=file_query_type)
+        target = None
+        if file_target != "":
+            target_name = os.path.splitext(file_target.replace(".gz", ""))[0]
+            target_path = os.path.join(app.config["UPLOAD_FOLDER"], session["user_tmp_dir"], file_target)
+            target = Fasta(name=target_name, path=target_path, type_f=file_target_type)
 
-            # Launch job:
-            job = JobManager(id_job, email, query_path, target_path, query_name, target_name)
-            job.launch()
-            return redirect(url_for(".status", id_job=id_job))
-        else:
-            return redirect(url_for(".run", id_job=id_job, email=email))
+        # Launch job:
+        job = JobManager(id_job, email, query, target)
+        job.launch()
+        return jsonify({"success": True, "redirect": url_for(".status", id_job=id_job)})
     else:
-        return redirect(url_for(".main", id_job=id_job, email=email))
+        return jsonify({"success": False, "errors": errors})
 
 
 # Status of a job
@@ -174,40 +169,36 @@ def sort_graph(id_res):
 
 @app.route("/upload", methods=['POST'])
 def upload():
-    folder = request.form["folder"]
-    print(folder)
-    files = request.files[list(request.files.keys())[0]]
+    if "user_tmp_dir" in session and session["user_tmp_dir"] != "":
+        folder = session["user_tmp_dir"]
+        files = request.files[list(request.files.keys())[0]]
 
-    if files:
-        filename = files.filename
-        folder_files = os.path.join(app.config["UPLOAD_FOLDER"], folder)
-        if folder == "null" or not os.path.exists(folder_files):
-            folder_files = os.path.join(app.config["UPLOAD_FOLDER"], random_string(5) + "_" +
-                                        datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S'))
-            while os.path.exists(folder_files):
-                folder_files = os.path.join(app.config["UPLOAD_FOLDER"], random_string(5) + "_" +
-                                            datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S'))
-            os.makedirs(folder_files)
-        filename = get_valid_uploaded_filename(filename, folder_files)
-        mime_type = files.content_type
+        if files:
+            filename = files.filename
+            folder_files = os.path.join(app.config["UPLOAD_FOLDER"], folder)
+            if not os.path.exists(folder_files):
+                os.makedirs(folder_files)
+            filename = get_valid_uploaded_filename(filename, folder_files)
+            mime_type = files.content_type
 
-        if not allowed_file(files.filename):
-            result = uploadfile(name=filename, type=mime_type, size=0, not_allowed_msg="File type not allowed")
+            if not allowed_file(files.filename):
+                result = uploadfile(name=filename, type=mime_type, size=0, not_allowed_msg="File type not allowed")
 
-        else:
-            # save file to disk
-            uploaded_file_path = os.path.join(folder_files, filename)
-            files.save(uploaded_file_path)
+            else:
+                # save file to disk
+                uploaded_file_path = os.path.join(folder_files, filename)
+                files.save(uploaded_file_path)
 
-            # get file size after saving
-            size = os.path.getsize(uploaded_file_path)
+                # get file size after saving
+                size = os.path.getsize(uploaded_file_path)
 
-            # return json for js call back
-            result = uploadfile(name=filename, type=mime_type, size=size)
+                # return json for js call back
+                result = uploadfile(name=filename, type=mime_type, size=size)
 
-        return jsonify({"files": [result.get_file()], "folder": os.path.basename(folder_files)})
+            return jsonify({"files": [result.get_file()], "success": "OK"})
 
-    return jsonify({"files": [], "folder": None})
+        return jsonify({"files": [], "success": "404", "message": "No file provided"})
+    return jsonify({"files": [], "success": "ERR", "message": "Session not initialized. Please refresh the page."})
 
 
 if __name__ == '__main__':

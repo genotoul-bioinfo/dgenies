@@ -397,6 +397,8 @@ div.navbar {
     background-image: linear-gradient(to bottom,#2B3044 0, #141a30 100%);
 }
 
+/* Run form: */
+
 .input-group {
     display: inline-block;
 }
@@ -405,34 +407,6 @@ div.navbar {
     display: inline-block !important;
     position: relative !important;
     float: none !important;
-}
-
-div.in-label {
-    position: relative;
-    display: inline-block;
-    width: 300px;
-    height: 30px;
-}
-
-div.progress {
-    display: none;
-    width: 300px;
-    height: 30px;
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 10;
-    opacity: 0.5;
-}
-
-div.progress .bar {
-    height: 100%;
-    background: green;
-}
-
-select.select-type-input, .input-group button, .input-group input {
-    height: 30px;
-    line-height: 30px;
 }
 
 .input-group button {
@@ -451,33 +425,82 @@ div.input-group {
     display: inline-block;
 }
 
-.upload-btn-wrapper button {
-    position: absolute;
-    top: 0;
-    left: 0;
+button.btn-file {
     height: 30px;
     width: 42px;
 }
 
-/*.btn {*/
-  /*border: 2px solid gray;*/
-  /*color: black;*/
-  /*background-color: white;*/
-  /*border-radius: 8px;*/
-  /*font-size: 20px;*/
-  /*font-weight: bold;*/
-/*}*/
+div.in-label {
+    position: relative;
+    display: inline-block;
+    width: 300px;
+    height: 30px;
+}
 
-.upload-btn-wrapper input[type=file] {
-  font-size: 100px;
-  position: absolute;
-  left: 0;
-  top: 0;
-  opacity: 0;
+div.progress {
+    width: 300px;
+    height: 30px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 5;
+    background: white;
+}
+
+div.progress .bar {
+    height: 100%;
+    background: #33b234;
+    z-index: 5;
+}
+
+select.select-type-input, .input-group button, .input-group input {
+    height: 30px;
+    line-height: 30px;
 }
 
 input.show-file {
     padding-left: 2px;
     padding-right: 2px;
     width: auto;
+    z-index: 10 !important;
+    background: none !important;
+    color: black;
+}
+
+div.hidden-input-files {
+    display: none;
+}
+
+label.error {
+    color: red;
+}
+
+div.loading-file {
+    display: inline-block;
+    vertical-align: middle;
+    width: 30px;
+    height: 30px;
+    background: url("images/loading1.gif") no-repeat 0 0;
+    background-size: 30px 30px;
+}
+
+div.upload-success {
+    display: inline-block;
+    vertical-align: middle;
+    width: 30px;
+    height: 30px;
+    background: url("images/success.svg") no-repeat 0 0;
+    background-size: 30px 30px;
+}
+
+div#uploading-loading {
+    height: 60px;
+    line-height: 30px;
+    width: 200px;
+    font-size: 14pt;
+    font-weight: bold;
+    text-align: center;
+    color: blue;
+    background: url("images/loading-cascade.gif") no-repeat 0 25px;
+    background-size: 200px 30px;
 }

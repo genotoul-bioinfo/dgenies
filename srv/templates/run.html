@@ -11,40 +11,40 @@
 {% endblock %}
 {% block onload %}dgenies.run.init();{% endblock %}
 {% block content %}
-    <form id="submit_minimap" method=post enctype=multipart/form-data action="/launch_analysis">
+    <form id="submit_minimap" method=post action="#">
         <h2 class="title-launch">Launch map analysis</h2>
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                <div class="errors-submit">
-                    <ul class=flashes>
+        <div class="errors-submit">
+            <ul class=flashes>
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
                         {% for message in messages %}
                             <li>{{ message | safe }}</li>
                         {% endfor %}
-                    </ul>
-                </div>
-            {% endif %}
-        {% endwith %}
+                    {% endif %}
+                {% endwith %}
+            </ul>
+        </div>
         <div class="submit-form">
             <fieldset>
                 <div class="form-group">
-                    <label for="id_job" class="col-sm-2">Name of your job</label>
+                    <label for="id_job" class="col-sm-2 id-job">Name of your job</label>
                     <div class="col-sm-10">
                         <input type="text" id="id_job" name="id_job" value="{{ id_job }}" required/>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label for="email" class="col-sm-2">E-mail*</label>
+                    <label for="email" class="col-sm-2 email">E-mail*</label>
                     <div class="col-sm-10">
                         <input type="email" name="email" id="email" value="{{ email }}" required/>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label for="file_query" class="col-sm-2">Query fasta**</label>
+                    <label for="file_query" class="col-sm-2 file-query">Query fasta**</label>
                     {#                    <div class="col-sm-10">#}
                     {#                        <input type="file" name="file_query" id="file_query" required/>#}
                     {#                    </div>#}
                     <div class="input-group col-sm-10">
-                        <select class="select-type-input target">
+                        <select class="select-type-input query">
                             <option value="0">Local</option>
                             <option value="1">Url</option>
                         </select>
@@ -56,16 +56,15 @@
                             <input id="query" name="query" class="form-control show-file" type="text" value="" readonly/>
                         </div>
 
-                        <span class="input-group-btn">
-                            <div class="upload-btn-wrapper">
-                              <button class="btn" type="button"><span class="glyphicon glyphicon-folder-open"></span>&nbsp;</button>
-                              <input type="file" name="file-query" class="file-query" data-url="/upload"/>
-                            </div>
-                        </span>
+                        <button class="btn btn-file" type="button" id="button-query">
+                            <span class="glyphicon glyphicon-folder-open"></span>&nbsp
+                        </button>
+                        <div class="loading-file query" style="display: none"></div>
+                        <div class="upload-success query" style="display: none"></div>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label for="file_target" class="col-sm-2">Target fasta**</label>
+                    <label for="file_target" class="col-sm-2 file-target">Target fasta**</label>
                     {#                    <div class="col-sm-10">#}
                     {#                        <input type="file" name="file_target" id="file_target"/>#}
                     {#                    </div>#}
@@ -82,12 +81,11 @@
                             <input id="target" name="target" class="form-control show-file" type="text" value="" readonly/>
                         </div>
 
-                        <span class="input-group-btn">
-                            <div class="upload-btn-wrapper">
-                              <button class="btn" type="button"><span class="glyphicon glyphicon-folder-open"></span>&nbsp;</button>
-                              <input type="file" name="file-target" class="file-target" data-url="/upload"/>
-                            </div>
-                        </span>
+                        <button class="btn btn-file" type="button" id="button-target">
+                            <span class="glyphicon glyphicon-folder-open"></span>&nbsp
+                        </button>
+                        <div class="loading-file target" style="display: none"></div>
+                        <div class="upload-success target" style="display: none"></div>
                     </div>
                 </div>
             </fieldset>
@@ -95,5 +93,10 @@
         <p class="afterworlff">* We will send you results by mail.</p>
         <p class="afterworlff">** Can be gzipped.</p>
         <button type="button" id="submit">Submit</button>
+        <div id="uploading-loading" style="display:none;">Uploading files...</div>
+        <div class="hidden-input-files">
+            <input type="file" name="file-query" class="file-query" data-url="/upload" title=""/>
+            <input type="file" name="file-target" class="file-target" data-url="/upload"/>
+        </div>
     </form>
 {% endblock %}

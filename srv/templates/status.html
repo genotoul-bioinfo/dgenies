@@ -9,6 +9,14 @@
         <p>Your job has been submitted.<br/>
             You will receive an email when it will be finished.<br/>
             Alternatively, you can refresh this page to update status.</p>
+    {% elif status == "getfiles" %}
+        <p>Your job has been submitted. We are retrieving data...<br/>
+            You will receive an email when it will be finished.<br/>
+            Alternatively, you can refresh this page to update status.</p>
+    {% elif status == "waiting" %}
+        <p>Your job has been shedulded. It will start soon...<br/>
+            You will receive an email when it will be finished.<br/>
+            Alternatively, you can refresh this page to update status.</p>
     {% elif status == "success" %}
         <p>Your job has ended successfully.<br/>
             Please <a href="/result/{{ id_job }}">click here</a> to show results.</p>

@@ -1,24 +1,23 @@
 import os
+import shutil
 import subprocess
 import datetime
 import threading
 import gzip
-import urllib.request
 import traceback
 from config_reader import AppConfigReader
 from pony.orm import db_session, select
 from database import db, Job
+from lib.Fasta import Fasta
 
 
 class JobManager:
 
-    def __init__(self, id_job, email=None, fasta_q=None, fasta_t=None, query_name=None, target_name=None):
+    def __init__(self, id_job: str, email: str=None, query: Fasta=None, target: Fasta=None):
         self.id_job = id_job
         self.email = email
-        self.fasta_q = fasta_q if (fasta_q is None or not fasta_q.endswith(".gz")) else self._decompress(fasta_q)
-        self.fasta_t = fasta_t if (fasta_t is None or not fasta_t.endswith(".gz")) else self._decompress(fasta_t)
-        self.query = query_name
-        self.target = target_name
+        self.query = query
+        self.target = target
         config_reader = AppConfigReader()
         # Get configs:
         self.batch_system_type = config_reader.get_batch_system_type()
@@ -70,8 +69,8 @@ class JobManager:
     @db_session
     def __launch_local(self):
         cmd = ["run_minimap2.sh", self.minimap2, self.samtools, self.threads,
-               self.fasta_t if self.fasta_t is not None else "NONE", self.fasta_q, self.query,
-               self.target, self.paf, self.paf_raw, self.output_dir]
+               self.target.get_path() if self.target is not None else "NONE", self.query.get_path(),
+               self.query.get_name(), self.target.get_name(), self.paf, self.paf_raw, self.output_dir]
         with open(self.logs, "w") as logs:
             p = subprocess.Popen(cmd, stdout=logs, stderr=logs)
         job = Job.get(id_job=self.id_job)
@@ -83,21 +82,44 @@ class JobManager:
         job.status = status
         db.commit()
 
+    def __getting_local_file(self, fasta: Fasta):
+        finale_path = os.path.join(self.output_dir, os.path.basename(fasta.get_path()))
+        shutil.move(fasta.get_path(), finale_path)
+        if finale_path.endswith(".gz"):
+            finale_path = self._decompress(finale_path)
+        return finale_path
+
+    @db_session
+    def getting_files(self):
+        job = Job.get(id_job=self.id_job)
+        job.status = "getfiles"
+        db.commit()
+        if self.query is not None:
+            if self.query.get_type() == "local":
+                self.query.set_path(self.__getting_local_file(self.query))
+        if self.target is not None:
+            if self.target.get_type() == "local":
+                self.target.set_path(self.__getting_local_file(self.target))
+        job = Job.get(id_job=self.id_job)
+        job.status = "waiting"
+        db.commit()
+        if self.batch_system_type == "local":
+            self.__launch_local()
+
     @db_session
     def launch(self):
         j1 = select(j for j in Job if j.id_job == self.id_job)
         if len(j1) > 0:
             print("Old job found without result dir existing: delete it from BDD!")
             j1.delete()
-        if self.fasta_q is not None:
+        if self.query is not None:
             job = Job(id_job=self.id_job, email=self.email, batch_type=self.batch_system_type,
                       date_created=datetime.datetime.now())
             db.commit()
             if not os.path.exists(self.output_dir):
                 os.mkdir(self.output_dir)
-            if self.batch_system_type == "local":
-                thread = threading.Timer(1, self.__launch_local)
-                thread.start()
+            thread = threading.Timer(1, self.getting_files)
+            thread.start()
         else:
             job = Job(id_job=self.id_job, email=self.email, batch_type=self.batch_system_type,
                       date_created=datetime.datetime.now(), status="error")
