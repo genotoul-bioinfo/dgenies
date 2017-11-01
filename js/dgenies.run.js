@@ -13,10 +13,8 @@ dgenies.run.init = function () {
 };
 
 dgenies.run.restore_form = function () {
-    if ($("select.query").val() === "0")
-        $("input#query").val("");
-    if ($("select.target").val() === "0")
-        $("input#target").val("");
+    dgenies.run.change_fasta_type("query", $("select.query").find(":selected").text().toLowerCase(), true);
+    dgenies.run.change_fasta_type("target", $("select.target").find(":selected").text().toLowerCase(), true);
 };
 
 dgenies.run.upload_next = function () {
@@ -80,7 +78,7 @@ dgenies.run.init_fileuploads = function () {
     $("button#button-target").click(function() {
         $("input.file-target").trigger("click");
     })
-}
+};
 
 dgenies.run.set_events = function() {
     $("input.file-query").change(function () {
@@ -98,6 +96,32 @@ dgenies.run.set_events = function() {
     $("button#submit").click(function () {
         dgenies.run.submit();
     });
+    $("select.query").change(function() {
+        dgenies.run.change_fasta_type("query", $("select.query").find(":selected").text().toLowerCase())
+    });
+    $("select.target").change(function() {
+        dgenies.run.change_fasta_type("target", $("select.target").find(":selected").text().toLowerCase())
+    });
+};
+
+dgenies.run.change_fasta_type = function (fasta, type, keep_url=false) {
+    let button = $("button#button-" + fasta);
+    let input = $("input#" + fasta);
+    let container = $("div." + fasta + "-label");
+    $("input.file-" + fasta).val("");
+    if (type === "local") {
+        button.show();
+        input.prop("readonly", true);
+        input.val("");
+        container.width(300);
+    }
+    else {
+        button.hide();
+        input.prop("readonly", false);
+        if (!keep_url)
+            input.val("");
+        container.width(348);
+    }
 };
 
 dgenies.run.set_filename = function (name, fasta) {

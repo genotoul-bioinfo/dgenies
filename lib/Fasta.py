@@ -10,6 +10,9 @@ class Fasta:
     def get_path(self):
         return self.__path
 
+    def set_name(self, name):
+        self.__name = name
+
     def get_name(self):
         return self.__name
 

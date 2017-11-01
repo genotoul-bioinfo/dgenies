@@ -9,6 +9,9 @@ from config_reader import AppConfigReader
 from pony.orm import db_session, select
 from database import db, Job
 from lib.Fasta import Fasta
+from lib.functions import allowed_file
+import requests
+import wget
 
 
 class JobManager:
@@ -89,22 +92,56 @@ class JobManager:
             finale_path = self._decompress(finale_path)
         return finale_path
 
+    def __getting_file_from_url(self, fasta: Fasta):
+        finale_path = wget.download(fasta.get_path(), self.output_dir, None)
+        if finale_path.endswith(".gz"):
+            finale_path = self._decompress(finale_path)
+        return finale_path
+
+    @db_session
+    def __check_url(self, fasta: Fasta):
+        filename = requests.head(fasta.get_path(), allow_redirects=True).url.split("/")[-1]
+        allowed = allowed_file(filename)
+        if not allowed:
+            job = Job.get(id_job=self.id_job)
+            job.status = "error"
+            job.error = "<p>File <b>%s</b> downloaded from <b>%s</b> is not a Fasta file!</p>" \
+                        "<p>If this is unattended, please contact the support.</p>" % (filename, fasta.get_path())
+            db.commit()
+        return allowed
+
     @db_session
     def getting_files(self):
         job = Job.get(id_job=self.id_job)
         job.status = "getfiles"
         db.commit()
+        correct = True
         if self.query is not None:
             if self.query.get_type() == "local":
                 self.query.set_path(self.__getting_local_file(self.query))
-        if self.target is not None:
+            elif self.__check_url(self.query):
+                finale_path = self.__getting_file_from_url(self.query)
+                filename = os.path.splitext(os.path.basename(finale_path).replace(".gz", ""))[0]
+                self.query.set_path(finale_path)
+                self.query.set_name(filename)
+            else:
+                correct = False
+        if correct and self.target is not None:
             if self.target.get_type() == "local":
                 self.target.set_path(self.__getting_local_file(self.target))
-        job = Job.get(id_job=self.id_job)
-        job.status = "waiting"
-        db.commit()
-        if self.batch_system_type == "local":
-            self.__launch_local()
+            elif self.__check_url(self.target):
+                finale_path = self.__getting_file_from_url(self.target)
+                filename = os.path.splitext(os.path.basename(finale_path).replace(".gz", ""))[0]
+                self.target.set_path(finale_path)
+                self.target.set_name(filename)
+            else:
+                correct = False
+        if correct:
+            job = Job.get(id_job=self.id_job)
+            job.status = "waiting"
+            db.commit()
+            if self.batch_system_type == "local":
+                self.__launch_local()
 
     @db_session
     def launch(self):
@@ -129,6 +166,6 @@ class JobManager:
     def status(self):
         job = Job.get(id_job=self.id_job)
         if job is not None:
-            return job.status
+            return job.status, job.error
         else:
-            return "unknown"
+            return "unknown", ""

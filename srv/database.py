@@ -16,6 +16,7 @@ class Job(db.Entity):
     batch_type = Required(str)
     status = Required(str, default="submitted")
     date_created = Required(datetime.datetime)
+    error = Optional(str)
 
 
 db.generate_mapping(create_tables=True)

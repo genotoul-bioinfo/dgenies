@@ -504,3 +504,11 @@ div#uploading-loading {
     background: url("images/loading-cascade.gif") no-repeat 0 25px;
     background-size: 200px 30px;
 }
+
+div.progress, input.show-file {
+    width: 100% !important;
+}
+
+div.in-label {
+    width: 300px;
+}

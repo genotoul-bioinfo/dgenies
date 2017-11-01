@@ -97,13 +97,15 @@ def launch_analysis():
         os.makedirs(folder_files)
 
         # Save files:
-        query_name = os.path.splitext(file_query.replace(".gz", ""))[0]
-        query_path = os.path.join(app.config["UPLOAD_FOLDER"], session["user_tmp_dir"], file_query)
+        query_name = os.path.splitext(file_query.replace(".gz", ""))[0] if file_query_type == "local" else None
+        query_path = os.path.join(app.config["UPLOAD_FOLDER"], session["user_tmp_dir"], file_query) \
+            if file_query_type == "local" else file_query
         query = Fasta(name=query_name, path=query_path, type_f=file_query_type)
         target = None
         if file_target != "":
-            target_name = os.path.splitext(file_target.replace(".gz", ""))[0]
-            target_path = os.path.join(app.config["UPLOAD_FOLDER"], session["user_tmp_dir"], file_target)
+            target_name = os.path.splitext(file_target.replace(".gz", ""))[0] if file_target_type == "local" else None
+            target_path = os.path.join(app.config["UPLOAD_FOLDER"], session["user_tmp_dir"], file_target) \
+                if file_target_type == "local" else file_target
             target = Fasta(name=target_name, path=target_path, type_f=file_target_type)
 
         # Launch job:
@@ -118,8 +120,8 @@ def launch_analysis():
 @app.route('/status/<id_job>', methods=['GET'])
 def status(id_job):
     job = JobManager(id_job)
-    status = job.status()
-    return render_template("status.html", title=app_title, status=status, id_job=id_job,
+    j_status, error = job.status()
+    return render_template("status.html", title=app_title, status=j_status, error=error, id_job=id_job,
                            menu="results")
 
 

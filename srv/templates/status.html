@@ -21,8 +21,13 @@
         <p>Your job has ended successfully.<br/>
             Please <a href="/result/{{ id_job }}">click here</a> to show results.</p>
     {% elif status == "error" %}
-        <p>Your job has failed. Please try again.<br/>
-            If the problem persists, please contact the support.</p>
+        <p>Your job has failed.
+            {% if error == "" %}
+                Please try again.<br/>
+                If the problem persists, please contact the support.
+            {% else %}
+                <br/>{{ error | safe }}
+            {% endif %}</p>
     {% else %}
         <p>This job does not exists!</p>
     {% endif %}
