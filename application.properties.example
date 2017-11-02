@@ -1,0 +1,12 @@
+[global]
+upload_folder = /tmp
+data_folder = ###PROGRAM###/data
+# batch system type: local, sge, slurm
+batch_system_type = local
+threads = 4
+
+[softwares]
+minimap2 = ###DEFAULT###
+
+[database]
+sqlite_file = ###PROGRAM###/srv/database.sqlite
