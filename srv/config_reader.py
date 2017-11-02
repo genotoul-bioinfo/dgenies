@@ -45,12 +45,6 @@ class AppConfigReader(object):
         except NoOptionError:
             return "minimap2"
 
-    def get_samtools_exec(self):
-        try:
-            return self.reader.get("softwares", "samtools")
-        except NoOptionError:
-            return "samtools"
-
     def get_database(self):
         try:
             return self.reader.get("database", "sqlite_file")

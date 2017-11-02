@@ -2,13 +2,12 @@
 
 import time
 import datetime
-from flask import Flask, render_template, request, redirect, flash, url_for, jsonify, session
-from werkzeug.utils import secure_filename
+from flask import Flask, render_template, request, url_for, jsonify, session
 from lib.paf import Paf
 from config_reader import AppConfigReader
 from lib.job_manager import JobManager
 from lib.functions import *
-from lib.upload_file import uploadfile
+from lib.upload_file import UploadFile
 from lib.Fasta import Fasta
 
 import sys
@@ -184,7 +183,7 @@ def upload():
             mime_type = files.content_type
 
             if not allowed_file(files.filename):
-                result = uploadfile(name=filename, type=mime_type, size=0, not_allowed_msg="File type not allowed")
+                result = UploadFile(name=filename, type_f=mime_type, size=0, not_allowed_msg="File type not allowed")
 
             else:
                 # save file to disk
@@ -195,7 +194,7 @@ def upload():
                 size = os.path.getsize(uploaded_file_path)
 
                 # return json for js call back
-                result = uploadfile(name=filename, type=mime_type, size=size)
+                result = UploadFile(name=filename, type_f=mime_type, size=size)
 
             return jsonify({"files": [result.get_file()], "success": "OK"})
 

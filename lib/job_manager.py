@@ -4,7 +4,7 @@ import subprocess
 import datetime
 import threading
 import gzip
-import traceback
+import io
 from config_reader import AppConfigReader
 from pony.orm import db_session, select
 from database import db, Job
@@ -36,25 +36,6 @@ class JobManager:
         self.idx_t = os.path.join(self.output_dir, "target.idx")
         self.logs = os.path.join(self.output_dir, "logs.txt")
 
-    @staticmethod
-    def _decompress(filename):
-        try:
-            uncompressed = filename.rsplit('.', 1)[0]
-            parts = uncompressed.rsplit("/", 1)
-            file_path = parts[0]
-            basename = parts[1]
-            n = 2
-            while os.path.exists(uncompressed):
-                uncompressed = "%s/%d_%s" % (file_path, n, basename)
-                n += 1
-            with open(filename, "rb") as infile, open(uncompressed, "wb") as outfile:
-                outfile.write(gzip.decompress(infile.read()))
-            os.remove(filename)
-            return uncompressed
-        except Exception as e:
-            print(traceback.format_exc())
-            return None
-
     def __check_job_success_local(self):
         if os.path.exists(self.paf):
             if os.path.getsize(self.paf) > 0:
@@ -71,7 +52,7 @@ class JobManager:
 
     @db_session
     def __launch_local(self):
-        cmd = ["run_minimap2.sh", self.minimap2, self.samtools, self.threads,
+        cmd = ["run_minimap2.sh", self.minimap2, self.threads,
                self.target.get_path() if self.target is not None else "NONE", self.query.get_path(),
                self.query.get_name(), self.target.get_name(), self.paf, self.paf_raw, self.output_dir]
         with open(self.logs, "w") as logs:
@@ -88,14 +69,10 @@ class JobManager:
     def __getting_local_file(self, fasta: Fasta):
         finale_path = os.path.join(self.output_dir, os.path.basename(fasta.get_path()))
         shutil.move(fasta.get_path(), finale_path)
-        if finale_path.endswith(".gz"):
-            finale_path = self._decompress(finale_path)
         return finale_path
 
     def __getting_file_from_url(self, fasta: Fasta):
         finale_path = wget.download(fasta.get_path(), self.output_dir, None)
-        if finale_path.endswith(".gz"):
-            finale_path = self._decompress(finale_path)
         return finale_path
 
     @db_session
@@ -150,12 +127,43 @@ class JobManager:
                 self.target.set_name(filename)
             else:
                 correct = False
-        if correct:
+        return correct
+
+    @db_session
+    def start_job(self):
+        success = self.getting_files()
+        if success:
+            job = Job.get(id_job=self.id_job)
+            job.status = "indexing"
+            db.commit()
+            self.index_file(self.query, os.path.join(self.output_dir, "query.idx"))
+            self.index_file(self.target, os.path.join(self.output_dir, "target.idx"))
             job = Job.get(id_job=self.id_job)
             job.status = "waiting"
             db.commit()
             if self.batch_system_type == "local":
                 self.__launch_local()
+
+    @staticmethod
+    def index_file(fasta: Fasta, out):
+        compressed = fasta.get_path().endswith(".gz")
+        with (gzip.open(fasta.get_path()) if compressed else open(fasta.get_path())) as in_file, \
+                open(out, "w") as out_file:
+            out_file.write(fasta.get_name() + "\n")
+            with (io.TextIOWrapper(in_file) if compressed else in_file) as fasta:
+                contig = None
+                len_c = 0
+                for line in fasta:
+                    line = line.strip("\n")
+                    if line.startswith(">"):
+                        if contig is not None:
+                            out_file.write("%s\t%d\n" % (contig, len_c))
+                        contig = line[1:].split(" ")[0]
+                        len_c = 0
+                    elif len(line) > 0:
+                        len_c += len(line)
+                if contig is not None and len_c > 0:
+                    out_file.write("%s\t%d\n" % (contig, len_c))
 
     @db_session
     def launch(self):
@@ -169,7 +177,7 @@ class JobManager:
             db.commit()
             if not os.path.exists(self.output_dir):
                 os.mkdir(self.output_dir)
-            thread = threading.Timer(1, self.getting_files)
+            thread = threading.Timer(1, self.start_job)
             thread.start()
         else:
             job = Job(id_job=self.id_job, email=self.email, batch_type=self.batch_system_type,
