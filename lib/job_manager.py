@@ -53,7 +53,8 @@ class JobManager:
     def __launch_local(self):
         cmd = ["run_minimap2.sh", self.minimap2, self.threads,
                self.target.get_path() if self.target is not None else "NONE", self.query.get_path(),
-               self.query.get_name(), self.target.get_name(), self.paf, self.paf_raw, self.output_dir]
+               self.query.get_name(), self.target.get_name() if self.target is not None else "NONE", self.paf,
+               self.paf_raw, self.output_dir]
         with open(self.logs, "w") as logs:
             p = subprocess.Popen(cmd, stdout=logs, stderr=logs)
         job = Job.get(id_job=self.id_job)
@@ -135,8 +136,13 @@ class JobManager:
             job = Job.get(id_job=self.id_job)
             job.status = "indexing"
             db.commit()
-            self.index_file(self.query, os.path.join(self.output_dir, "query.idx"))
-            self.index_file(self.target, os.path.join(self.output_dir, "target.idx"))
+            query_index = os.path.join(self.output_dir, "query.idx")
+            self.index_file(self.query,query_index)
+            target_index = os.path.join(self.output_dir, "target.idx")
+            if self.target is not None:
+                self.index_file(self.target, target_index)
+            else:
+                shutil.copyfile(query_index, target_index)
             job = Job.get(id_job=self.id_job)
             job.status = "waiting"
             db.commit()

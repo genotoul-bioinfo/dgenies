@@ -223,7 +223,7 @@ dgenies.run.start_uploads = function() {
         dgenies.run.files[0] = undefined;
     }
     let target_type = parseInt($("select.target").val());
-    if (target_type === 0) {
+    if (target_type === 0 && $("input#target").val().length > 0) {
         $("button#button-target").hide();
         dgenies.run.show_loading("target");
     }
