@@ -32,10 +32,10 @@ d3.boxplot.scale = 1000;
 d3.boxplot.content_lines_width = d3.boxplot.scale / 400;
 d3.boxplot.break_lines_width = d3.boxplot.scale / 1500;
 d3.boxplot.color_idy = {
-    "pos+": "#094b09",
-    "pos-": "#86bd7b",
-    "neg+": "#d5b43c",
-    "neg-": "#730404"
+    "3": "#094b09",
+    "2": "#2ebd40",
+    "1": "#d5670b",
+    "0": "#ffd84b"
 };
 d3.boxplot.limit_idy = null;
 d3.boxplot.min_idy_draw = 0;
@@ -629,8 +629,9 @@ d3.boxplot.draw_legend = function () {
     d3.select("#legend .draw").html(""); //Empty legend
     let color_idy = d3.boxplot.color_idy;
     let color_idy_len = Object.keys(color_idy).length;
-    let color_idy_order = ["pos+", "pos-", "neg+", "neg-"];
-    let color_idy_labels = [d3.boxplot.limit_idy.toString(), "0", (-d3.boxplot.limit_idy).toString(), "-1"];
+    let color_idy_order = ["3", "2", "1", "0"];
+    let color_idy_labels = [d3.boxplot.limit_idy[2].toString(), d3.boxplot.limit_idy[1].toString(),
+                            d3.boxplot.limit_idy[0].toString(), "0"];
     let svgcontainer = d3.select("#legend .draw").append("svg:svg")
         .attr("width", "100%")
         .attr("height", "99%");
@@ -690,6 +691,40 @@ d3.boxplot._sort_lines_by_idy = function(l1, l2) {
     return l1[4] - l2[4];
 };
 
+d3.boxplot.__lineFunction = function(d, min_size=0, max_size=null, x_len, y_len) {
+    d = d.sort(d3.boxplot._sort_lines_by_idy);
+    let path = [];
+    for (let i=0; i < d.length; i++) {
+        let d_i = d[i];
+        let x1 = d_i[0] / x_len * d3.boxplot.scale;
+        let x2 = d_i[1] / x_len * d3.boxplot.scale;
+        let y1 = d3.boxplot.scale - (d_i[2] / y_len * d3.boxplot.scale);
+        let y2 = d3.boxplot.scale - (d_i[3] / y_len * d3.boxplot.scale);
+        let idy = d_i[4];
+        let len = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+        if (len > min_size && (max_size === null || len < max_size) && Math.abs(idy) >= d3.boxplot.min_idy_draw) {
+            path.push(`M${x1} ${y1} L${x2} ${y2}`);
+        }
+    }
+    return path.join(" ")
+};
+
+d3.boxplot.__draw_idy_lines = function (idy, lines, x_len, y_len) {
+    let min_sizes = d3.boxplot.min_sizes;
+    for (let i=0; i<min_sizes.length; i++) {
+        let min_size = min_sizes[i];
+        let max_size = i + 1 < min_sizes.length ? min_sizes[i + 1] : null;
+        if (lines[idy].length > 0) {
+            d3.boxplot.container.append("path")
+                .attr("d", d3.boxplot.__lineFunction(lines[idy], min_size, max_size, x_len, y_len))
+                .attr("class", "content-lines s_" + min_size.toString().replace(".", "_"))
+                .attr("stroke-width", d3.boxplot.content_lines_width + "px")
+                .attr("stroke", d3.boxplot.color_idy[idy])
+                .attr("stroke-linecap", d3.boxplot.linecap);
+        }
+    }
+}
+
 d3.boxplot.draw_lines = function (lines=d3.boxplot.lines, x_len=d3.boxplot.x_len, y_len=d3.boxplot.y_len) {
 
     // let tmp_max = d3.boxplot.max_idy - d3.boxplot.min_idy;
@@ -725,66 +760,9 @@ d3.boxplot.draw_lines = function (lines=d3.boxplot.lines, x_len=d3.boxplot.x_len
     //Remove old lines (if any):
     $("path.content-lines").remove();
 
-    let lineFunction = function(d, min_size=0, max_size=null) {
-        d = d.sort(d3.boxplot._sort_lines_by_idy);
-        let path = [];
-        for (let i=0; i < d.length; i++) {
-            let d_i = d[i];
-            let x1 = d_i[0] / x_len * d3.boxplot.scale;
-            let x2 = d_i[1] / x_len * d3.boxplot.scale;
-            let y1 = d3.boxplot.scale - (d_i[2] / y_len * d3.boxplot.scale);
-            let y2 = d3.boxplot.scale - (d_i[3] / y_len * d3.boxplot.scale);
-            let idy = d_i[4];
-            let len = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-            if (len > min_size && (max_size === null || len < max_size) && Math.abs(idy) >= d3.boxplot.min_idy_draw) {
-                path.push(`M${x1} ${y1} L${x2} ${y2}`);
-            }
-        }
-        return path.join(" ")
-    };
-
     //lines = lines.sort(d3.boxplot._sort_lines);
-    let min_sizes = d3.boxplot.min_sizes;
-    for (let i=0; i<min_sizes.length; i++) {
-        let min_size = min_sizes[i];
-        let max_size = i + 1 < min_sizes.length ? min_sizes[i + 1] : null;
-        if (lines["pos-"].length > 0) {
-            d3.boxplot.container.append("path")
-                .attr("d", lineFunction(lines["pos-"], min_size, max_size))
-                .attr("class", "content-lines s_" + min_size.toString().replace(".", "_"))
-                .attr("stroke-width", d3.boxplot.content_lines_width + "px")
-                .attr("stroke", d3.boxplot.color_idy["pos-"])
-                .attr("stroke-linecap", d3.boxplot.linecap);
-        }
-        if (lines["neg+"].length > 0) {
-            d3.boxplot.container.append("path")
-                .attr("d", lineFunction(lines["neg+"], min_size, max_size))
-                .attr("class", "content-lines s_" + min_size.toString().replace(".", "_"))
-                .attr("stroke-width", d3.boxplot.content_lines_width + "px")
-                .attr("stroke", d3.boxplot.color_idy["neg+"])
-                .attr("stroke-linecap", d3.boxplot.linecap);
-        }
-    }
-    //Draw better quality at the end (to be shown up)
-    for (let i=0; i<min_sizes.length; i++) {
-        let min_size = min_sizes[i];
-        let max_size = i + 1 < min_sizes.length ? min_sizes[i + 1] : null;
-        if (lines["pos+"].length > 0) {
-            d3.boxplot.container.append("path")
-                .attr("d", lineFunction(lines["pos+"], min_size, max_size))
-                .attr("class", "content-lines s_" + min_size.toString().replace(".", "_"))
-                .attr("stroke-width", d3.boxplot.content_lines_width + "px")
-                .attr("stroke", d3.boxplot.color_idy["pos+"])
-                .attr("stroke-linecap", d3.boxplot.linecap);
-        }
-        if (lines["neg-"].length > 0) {
-            d3.boxplot.container.append("path")
-                .attr("d", lineFunction(lines["neg-"], min_size, max_size))
-                .attr("class", "content-lines s_" + min_size.toString().replace(".", "_"))
-                .attr("stroke-width", d3.boxplot.content_lines_width + "px")
-                .attr("stroke", d3.boxplot.color_idy["neg-"])
-                .attr("stroke-linecap", d3.boxplot.linecap);
-        }
+    for (let i=0; i <4; i++) {
+        d3.boxplot.__draw_idy_lines(i.toString(), lines, x_len, y_len)
     }
     d3.boxplot.events.filter_size(d3.boxplot.min_size);
 };

@@ -6,7 +6,7 @@ from numpy import mean
 
 
 class Paf:
-    limit_idy = 0.5
+    limit_idy = [0.25, 0.5, 0.75]
     max_nb_lines = 100000
 
     def __init__(self, paf: str, idx_q: str, idx_t: str):
@@ -43,10 +43,10 @@ class Paf:
         name_q = None
         name_t = None
         lines = {
-            "pos+": [],
-            "pos-": [],
-            "neg+": [],
-            "neg-": []
+            "0": [],
+            "1": [],
+            "2": [],
+            "3": []
         }
         q_abs_start = {}
         q_abs_current_start = 0
@@ -99,7 +99,7 @@ class Paf:
                     v1 = parts[0]
                     v6 = parts[5]
                     strand = 1 if parts[4] == "+" else -1
-                    idy = int(parts[9]) / int(parts[10]) * strand
+                    idy = int(parts[9]) / int(parts[10])
                     min_idy = min(min_idy, idy)
                     max_idy = max(max_idy, idy)
                     # x1, x2, y1, y2, idy
@@ -107,14 +107,14 @@ class Paf:
                     y2 = int(parts[3]) + q_abs_start[v1]
                     x1 = int(parts[7 if strand == 1 else 8]) + t_abs_start[v6]
                     x2 = int(parts[8 if strand == 1 else 7]) + t_abs_start[v6]
-                    if idy < -self.limit_idy:
-                        class_idy = "neg-"
-                    elif idy < 0:
-                        class_idy = "neg+"
-                    elif idy < self.limit_idy:
-                        class_idy = "pos-"
+                    if idy < self.limit_idy[0]:
+                        class_idy = "0"
+                    elif idy < self.limit_idy[1]:
+                        class_idy = "1"
+                    elif idy < self.limit_idy[2]:
+                        class_idy = "2"
                     else:
-                        class_idy = "pos+"
+                        class_idy = "3"
                     lines[class_idy].append([x1, x2, y1, y2, idy, v1, v6])
         except IOError:
             self.error = "PAF file does not exist!"
