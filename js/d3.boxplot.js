@@ -46,6 +46,7 @@ d3.boxplot.break_lines_color = "#7c7c7c";
 d3.boxplot.break_lines_dash = "3, 3";
 d3.boxplot.break_lines_show = true;
 d3.boxplot.zoom_scale_lines = 1; // Zoom scale used for lines width
+d3.boxplot.tick_width = 0.5;
 
 //Filter sizes:
 d3.boxplot.min_sizes = [0, 0.01, 0.02, 0.03, 0.05, 1, 2];
@@ -299,7 +300,7 @@ d3.boxplot.draw_left_axis = function (y_max, y_min = 0) {
                 .attr("y1", 15)
                 .attr("x2", y)
                 .attr("y2", 20)
-                .attr("stroke-width", axis_length / 800)
+                .attr("stroke-width", d3.boxplot.tick_width)
                 .attr("stroke", "black");
 
             container_left.append("text")
@@ -364,7 +365,7 @@ d3.boxplot.draw_bottom_axis = function (x_max, x_min = 0) {
                 .attr("y1", 0)
                 .attr("x2", x)
                 .attr("y2", 5)
-                .attr("stroke-width", d3.boxplot.scale / 800)
+                .attr("stroke-width", d3.boxplot.tick_width)
                 .attr("stroke", "black");
 
             svg_bottom.append("text")
@@ -446,7 +447,7 @@ d3.boxplot.draw_top_axis = function (x_zones=d3.boxplot.x_zones) {
         .attr("y", 7.5)
         .attr("font-size", "6pt")
         .attr("font-family", "sans-serif")
-        .attr("font-weight", "bold")
+        .attr("font-style", "italic")
         .attr("text-anchor", "middle")
         .text(d3.boxplot.name_x);
 
@@ -477,7 +478,7 @@ d3.boxplot.draw_top_axis = function (x_zones=d3.boxplot.x_zones) {
                 .attr("y1", "60%")
                 .attr("y2", "100%")
                 .attr("stroke", "black")
-                .attr("stroke-width", 1);
+                .attr("stroke-width", d3.boxplot.tick_width);
         }
         nb_zone++;
     }
@@ -527,7 +528,7 @@ d3.boxplot.draw_right_axis = function (y_zones=d3.boxplot.y_zones) {
         .attr("y", 7.5)
         .attr("font-size", "6pt")
         .attr("font-family", "sans-serif")
-        .attr("font-weight", "bold")
+        .attr("font-style", "italic")
         .attr("text-anchor", "middle")
         .text(d3.boxplot.name_y);
 
@@ -558,7 +559,7 @@ d3.boxplot.draw_right_axis = function (y_zones=d3.boxplot.y_zones) {
                 .attr("y1", 12)
                 .attr("y2", 20)
                 .attr("stroke", "black")
-                .attr("stroke-width", 1)
+                .attr("stroke-width", d3.boxplot.tick_width)
                 .attr("class", "whereis");
         }
         nb_zone--;
