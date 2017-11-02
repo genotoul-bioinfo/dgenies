@@ -100,13 +100,27 @@ class JobManager:
 
     @db_session
     def __check_url(self, fasta: Fasta):
-        filename = requests.head(fasta.get_path(), allow_redirects=True).url.split("/")[-1]
-        allowed = allowed_file(filename)
-        if not allowed:
+        url = fasta.get_path()
+        if url.startswith("http://") or url.startswith("https://"):
+            filename = requests.head(url, allow_redirects=True).url.split("/")[-1]
+        elif url.startswith("ftp://"):
+            filename = url.split("/")[-1]
+        else:
+            filename = None
+        if filename is not None:
+            allowed = allowed_file(filename)
+            if not allowed:
+                job = Job.get(id_job=self.id_job)
+                job.status = "error"
+                job.error = "<p>File <b>%s</b> downloaded from <b>%s</b> is not a Fasta file!</p>" \
+                            "<p>If this is unattended, please contact the support.</p>" % (filename, url)
+                db.commit()
+        else:
+            allowed = False
             job = Job.get(id_job=self.id_job)
             job.status = "error"
-            job.error = "<p>File <b>%s</b> downloaded from <b>%s</b> is not a Fasta file!</p>" \
-                        "<p>If this is unattended, please contact the support.</p>" % (filename, fasta.get_path())
+            job.error = "<p>Url <b>%s</b> is not a valid URL!</p>" \
+                        "<p>If this is unattended, please contact the support.</p>" % (url)
             db.commit()
         return allowed
 
