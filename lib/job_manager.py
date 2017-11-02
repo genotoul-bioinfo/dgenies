@@ -25,7 +25,6 @@ class JobManager:
         # Get configs:
         self.batch_system_type = config_reader.get_batch_system_type()
         self.minimap2 = config_reader.get_minimap2_exec()
-        self.samtools = config_reader.get_samtools_exec()
         self.threads = config_reader.get_nb_threads()
         self.app_data = config_reader.get_app_data()
         # Outputs:
