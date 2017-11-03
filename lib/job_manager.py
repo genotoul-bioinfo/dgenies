@@ -65,6 +65,7 @@ class JobManager:
         status = self.check_job_success()
         job.status = status
         db.commit()
+        return status == "success"
 
     def __getting_local_file(self, fasta: Fasta):
         finale_path = os.path.join(self.output_dir, os.path.basename(fasta.get_path()))
@@ -134,20 +135,22 @@ class JobManager:
         success = self.getting_files()
         if success:
             job = Job.get(id_job=self.id_job)
-            job.status = "indexing"
-            db.commit()
-            query_index = os.path.join(self.output_dir, "query.idx")
-            self.index_file(self.query,query_index)
-            target_index = os.path.join(self.output_dir, "target.idx")
-            if self.target is not None:
-                self.index_file(self.target, target_index)
-            else:
-                shutil.copyfile(query_index, target_index)
-            job = Job.get(id_job=self.id_job)
             job.status = "waiting"
             db.commit()
+            success = True
             if self.batch_system_type == "local":
-                self.__launch_local()
+                success = self.__launch_local()
+            if success:
+                job = Job.get(id_job=self.id_job)
+                job.status = "indexing"
+                db.commit()
+                query_index = os.path.join(self.output_dir, "query.idx")
+                self.index_file(self.query, query_index)
+                target_index = os.path.join(self.output_dir, "target.idx")
+                if self.target is not None:
+                    self.index_file(self.target, target_index)
+                else:
+                    shutil.copyfile(query_index, target_index)
 
     @staticmethod
     def index_file(fasta: Fasta, out):
