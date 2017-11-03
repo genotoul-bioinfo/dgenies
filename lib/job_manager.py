@@ -38,11 +38,7 @@ class JobManager:
     def __check_job_success_local(self):
         if os.path.exists(self.paf):
             if os.path.getsize(self.paf) > 0:
-                if os.path.exists(self.idx_q):
-                    if os.path.getsize(self.idx_q) > 0:
-                        if os.path.exists(self.idx_t):
-                            if os.path.getsize(self.idx_t) > 0:
-                                return "success"
+                return "success"
         return "error"
 
     def check_job_success(self):
@@ -151,6 +147,9 @@ class JobManager:
                     self.index_file(self.target, target_index)
                 else:
                     shutil.copyfile(query_index, target_index)
+                job = Job.get(id_job=self.id_job)
+                job.status = "success"
+                db.commit()
 
     @staticmethod
     def index_file(fasta: Fasta, out):
