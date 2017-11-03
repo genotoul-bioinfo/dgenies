@@ -47,6 +47,7 @@ d3.boxplot.break_lines_dash = "3, 3";
 d3.boxplot.break_lines_show = true;
 d3.boxplot.zoom_scale_lines = 1; // Zoom scale used for lines width
 d3.boxplot.tick_width = 0.5;
+d3.boxplot.color_mixes = "#969696";
 
 //Filter sizes:
 d3.boxplot.min_sizes = [0, 0.01, 0.02, 0.03, 0.05, 1, 2];
@@ -456,7 +457,7 @@ d3.boxplot.draw_top_axis = function (x_zones=d3.boxplot.x_zones) {
         let x_pos_1 = Math.min(Math.max(x_zones[zone][0] * scale + translate, 0), d3.boxplot.scale);
         let x_pos_2 = Math.min(Math.max(x_zones[zone][1] * scale + translate, 0), d3.boxplot.scale);
         let z_len = x_pos_2 / d3.boxplot.scale * axis_length - x_pos_1 / d3.boxplot.scale * axis_length;
-        if (z_len > 0.05 * axis_length) {
+        if (z_len > 0.05 * axis_length && !zone.startsWith("###MIX###")) {
             //z_middle = (x_zones[zone][1] + x_zones[zone][0]) / 2
             let text_container = svg_top.append("svg:svg")
                 .attr("x", x_pos_1 / d3.boxplot.scale * axis_length)
@@ -471,7 +472,16 @@ d3.boxplot.draw_top_axis = function (x_zones=d3.boxplot.x_zones) {
                 .attr("font-size", "6pt")
                 .text(zone);
         }
-        if (nb_zone > 0) { //Draw zone separator at left of zone (except for first zone)
+        if (zone.startsWith("###MIX###")) {
+            svg_top.append("rect")
+                .attr("x", y_pos_1 / d3.boxplot.scale * axis_length)
+                .attr("y", 12)
+                .attr("width", z_len)
+                .attr("height", 8)
+                .attr("fill", d3.boxplot.color_mixes)
+                .attr("stroke", d3.boxplot.color_mixes)
+        }
+        else if (nb_zone > 0) { //Draw zone separator at left of zone (except for first zone)
             svg_top.append("line")
                 .attr("x1", x_pos_1 / d3.boxplot.scale * axis_length)
                 .attr("x2", x_pos_1 / d3.boxplot.scale * axis_length)
@@ -537,7 +547,7 @@ d3.boxplot.draw_right_axis = function (y_zones=d3.boxplot.y_zones) {
         let y_pos_2 = Math.min(Math.max((d3.boxplot.scale - y_zones[zone][0]) * scale + translate, 0), d3.boxplot.scale);
         let y_pos_1 = Math.min(Math.max((d3.boxplot.scale - y_zones[zone][1]) * scale + translate, 0), d3.boxplot.scale);
         let z_len = y_pos_2 / d3.boxplot.scale * axis_length - y_pos_1 / d3.boxplot.scale * axis_length;
-        if (z_len > 0.05 * axis_length) {
+        if (z_len > 0.05 * axis_length && !zone.startsWith("###MIX###")) {
             //z_middle = (x_zones[zone][1] + x_zones[zone][0]) / 2
             let text_container = container_right.append("svg:svg")
                 .attr("x", y_pos_1 / d3.boxplot.scale * axis_length)
@@ -558,8 +568,8 @@ d3.boxplot.draw_right_axis = function (y_zones=d3.boxplot.y_zones) {
                 .attr("y", 12)
                 .attr("width", z_len)
                 .attr("height", 8)
-                .attr("fill", "black")
-                .attr("stroke", "black")
+                .attr("fill", d3.boxplot.color_mixes)
+                .attr("stroke", d3.boxplot.color_mixes)
         }
         else if (nb_zone > 0) { //Draw zone separator at left of zone (except for first zone)
             container_right.append("line")
