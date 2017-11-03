@@ -2,6 +2,7 @@
 
 import time
 import datetime
+import shutil
 from flask import Flask, render_template, request, url_for, jsonify, session
 from lib.paf import Paf
 from config_reader import AppConfigReader
@@ -184,6 +185,7 @@ def upload():
 
             if not allowed_file(files.filename):
                 result = UploadFile(name=filename, type_f=mime_type, size=0, not_allowed_msg="File type not allowed")
+                shutil.rmtree(folder_files)
 
             else:
                 # save file to disk

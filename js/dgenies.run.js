@@ -44,10 +44,21 @@ dgenies.run.init_fileuploads = function () {
             );
         },
         success: function (data, success) {
-            $("input#query").val(data["files"][0]["name"]);
-            dgenies.run.hide_loading("query");
-            dgenies.run.show_success("query");
-            dgenies.run.upload_next();
+            if (data["success"] !== "OK") {
+                dgenies.notify("message" in data ? data["message"]: "An error has occured when uploading query file!",
+                    "error");
+                dgenies.run.enable_form();
+            }
+            else if ("error" in data["files"][0]) {
+                dgenies.run.add_error("Query file: " + data["files"][0]["error"], "error");
+                dgenies.run.enable_form();
+            }
+            else {
+                $("input#query").val(data["files"][0]["name"]);
+                dgenies.run.hide_loading("query");
+                dgenies.run.show_success("query");
+                dgenies.run.upload_next();
+            }
         }
     });
     $('input.file-target').fileupload({
@@ -64,10 +75,21 @@ dgenies.run.init_fileuploads = function () {
             );
         },
         success: function (data, success) {
-            $("input#target").val(data["files"][0]["name"]);
-            dgenies.run.hide_loading("target");
-            dgenies.run.show_success("target");
-            dgenies.run.upload_next();
+            if (data["success"] !== "OK") {
+                dgenies.notify("message" in data ? data["message"]: "An error has occured when uploading target file!",
+                    "error");
+                dgenies.run.enable_form();
+            }
+            else if ("error" in data["files"][0]) {
+                dgenies.run.add_error("Target file: " + data["files"][0]["error"], "error");
+                dgenies.run.enable_form();
+            }
+            else {
+                $("input#target").val(data["files"][0]["name"]);
+                dgenies.run.hide_loading("target");
+                dgenies.run.show_success("target");
+                dgenies.run.upload_next();
+            }
         }
     });
 
@@ -133,7 +155,18 @@ dgenies.run.disable_form = function () {
 };
 
 dgenies.run.enable_form = function () {
+    $('.progress').find('.bar').css(
+        'width', '0%'
+    );
     $("input, select, button").prop("disabled", false);
+    $("div#uploading-loading").hide();
+    $("button#submit").show();
+    dgenies.run.hide_loading("query");
+    dgenies.run.hide_loading("target");
+    dgenies.run.hide_success("query");
+    dgenies.run.hide_success("fasta");
+    dgenies.run.files = [undefined, undefined];
+    dgenies.run.restore_form();
 };
 
 dgenies.run.do_submit = function () {
