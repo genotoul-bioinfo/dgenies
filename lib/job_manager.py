@@ -9,7 +9,7 @@ from config_reader import AppConfigReader
 from pony.orm import db_session, select
 from database import db, Job
 from lib.Fasta import Fasta
-from lib.functions import allowed_file
+from lib.functions import Functions
 import requests
 import wget
 
@@ -85,7 +85,7 @@ class JobManager:
         else:
             filename = None
         if filename is not None:
-            allowed = allowed_file(filename)
+            allowed = Functions.allowed_file(filename)
             if not allowed:
                 job = Job.get(id_job=self.id_job)
                 job.status = "error"

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import time
 import datetime
 import shutil
@@ -7,7 +8,7 @@ from flask import Flask, render_template, request, url_for, jsonify, session
 from lib.paf import Paf
 from config_reader import AppConfigReader
 from lib.job_manager import JobManager
-from lib.functions import *
+from lib.functions import Functions
 from lib.upload_file import UploadFile
 from lib.Fasta import Fasta
 
@@ -50,9 +51,9 @@ def main():
 
 @app.route("/run", methods=['GET'])
 def run():
-    session["user_tmp_dir"] = random_string(5) + "_" + \
+    session["user_tmp_dir"] = Functions.random_string(5) + "_" + \
                               datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S')
-    id_job = random_string(5) + "_" + datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S')
+    id_job = Functions.random_string(5) + "_" + datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S')
     if "id_job" in request.args:
         id_job = request.args["id_job"]
     email = ""
@@ -180,10 +181,10 @@ def upload():
             folder_files = os.path.join(app.config["UPLOAD_FOLDER"], folder)
             if not os.path.exists(folder_files):
                 os.makedirs(folder_files)
-            filename = get_valid_uploaded_filename(filename, folder_files)
+            filename = Functions.get_valid_uploaded_filename(filename, folder_files)
             mime_type = files.content_type
 
-            if not allowed_file(files.filename):
+            if not Functions.allowed_file(files.filename):
                 result = UploadFile(name=filename, type_f=mime_type, size=0, not_allowed_msg="File type not allowed")
                 shutil.rmtree(folder_files)
 
