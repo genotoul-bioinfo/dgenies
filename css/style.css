@@ -252,7 +252,7 @@ label.input-checkbox-label input[type=checkbox]{
     margin-bottom: 5px !important;
 }
 
-div.submit-form {
+div.submit-form fieldset {
     margin-bottom: 10px;
 }
 
@@ -399,6 +399,16 @@ div.navbar {
 
 /* Run form: */
 
+div.submit-form table td {
+    padding-right: 10px;
+    padding-bottom: 5px;
+    vertical-align: bottom;
+}
+
+div.submit-form table input#id_job, div.submit-form table input#email {
+    width: 300px;
+}
+
 .input-group {
     display: inline-block;
 }
@@ -435,6 +445,7 @@ div.in-label {
     display: inline-block;
     width: 300px;
     height: 30px;
+    vertical-align: middle;
 }
 
 div.progress {
@@ -443,14 +454,16 @@ div.progress {
     position: absolute;
     top: 0;
     left: 0;
-    z-index: 5;
+    z-index: 5 !important;
     background: white;
+    margin-bottom: 0 !important;
+    box-shadow: none;
 }
 
 div.progress .bar {
     height: 100%;
     background: #33b234;
-    z-index: 5;
+    z-index: 5 !important;
 }
 
 select.select-type-input, .input-group button, .input-group input {
@@ -511,4 +524,24 @@ div.progress, input.show-file {
 
 div.in-label {
     width: 300px;
+}
+
+div.submit-form table input[type=text], div.submit-form table input[type=email] {
+    border: 1px solid #A9A9A9;
+    border-image: none;
+}
+
+div.submit-form table input, div.submit-form button, div.submit-form select {
+    border-radius: 5px 5px 5px 5px !important;
+    -moz-border-radius: 5px 5px 5px 5px !important;
+    -webkit-border-radius: 5px 5px 5px 5px !important;
+    height: 30px;
+    outline: none !important;
+}
+
+div.submit-form select:hover {
+    border-radius: 5px 5px 0 0 !important;
+    -moz-border-radius: 5px 5px 0 0 !important;
+    -webkit-border-radius: 5px 5px 0 0 !important;
+    outline: none !important;
 }

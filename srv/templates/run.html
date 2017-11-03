@@ -26,73 +26,81 @@
         </div>
         <div class="submit-form">
             <fieldset>
-                <div class="form-group">
-                    <label for="id_job" class="col-sm-2 id-job">Name of your job</label>
-                    <div class="col-sm-10">
-                        <input type="text" id="id_job" name="id_job" value="{{ id_job }}" autocomplete="Off" required/>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="email" class="col-sm-2 email">E-mail*</label>
-                    <div class="col-sm-10">
-                        <input type="email" name="email" id="email" value="{{ email }}" required/>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="file_query" class="col-sm-2 file-query">Query fasta**</label>
-                    {#                    <div class="col-sm-10">#}
-                    {#                        <input type="file" name="file_query" id="file_query" required/>#}
-                    {#                    </div>#}
-                    <div class="input-group col-sm-10">
-                        <select class="select-type-input query">
-                            <option value="0">Local</option>
-                            <option value="1">Url</option>
-                        </select>
+                <div>
+                    <table>
+                        <tbody>
+                            <tr class="id_job">
+                                <td>
+                                    <label for="id_job" class="id-job">Name of your job</label>
+                                </td>
+                                <td>
+                                    <input type="text" id="id_job" name="id_job" value="{{ id_job }}" autocomplete="Off" required/>
+                                </td>
+                            </tr>
+                            <tr class="email">
+                                <td>
+                                    <label for="email" class="email">E-mail*</label>
+                                </td>
+                                <td>
+                                    <input type="email" name="email" id="email" value="{{ email }}" required/>
+                                </td>
+                            </tr>
+                            <tr class="query">
+                                <td>
+                                    <label for="file_query" class="file-query">Query fasta**</label>
+                                </td>
+                                <td class="input-group">
+                                    <select class="select-type-input query">
+                                        <option value="0">Local</option>
+                                        <option value="1">Url</option>
+                                    </select>
 
-                        <div class="query-label in-label">
-                            <div id="progress-query" class="progress">
-                                <div class="bar" style="width: 0%;"></div>
-                            </div>
-                            <input id="query" name="query" class="form-control show-file" type="text" value="" readonly/>
-                        </div>
+                                    <div class="query-label in-label">
+                                        <div id="progress-query" class="progress">
+                                            <div class="bar" style="width: 0%;"></div>
+                                        </div>
+                                        <input id="query" name="query" class="form-control show-file" type="text" value="" readonly/>
+                                    </div>
 
-                        <button class="btn btn-file" type="button" id="button-query" title="Select a file">
-                            <span class="glyphicon glyphicon-folder-open"></span>&nbsp
-                        </button>
-                        <div class="loading-file query" style="display: none"></div>
-                        <div class="upload-success query" style="display: none"></div>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="file_target" class="col-sm-2 file-target">Target fasta**</label>
-                    {#                    <div class="col-sm-10">#}
-                    {#                        <input type="file" name="file_target" id="file_target"/>#}
-                    {#                    </div>#}
-                    <div class="input-group col-sm-10">
-                        <select class="select-type-input target">
-                            <option value="0">Local</option>
-                            <option value="1">Url</option>
-                        </select>
+                                    <button class="btn btn-file" type="button" id="button-query" title="Select a file">
+                                        <span class="glyphicon glyphicon-folder-open"></span>&nbsp
+                                    </button>
+                                    <div class="loading-file query" style="display: none"></div>
+                                    <div class="upload-success query" style="display: none"></div>
+                                </td>
+                            </tr>
+                            <tr class="target">
+                                <td>
+                                    <label for="file_target" class="file-target">Target fasta**</label>
+                                </td>
+                                <td class="input-group">
+                                    <select class="select-type-input target">
+                                        <option value="0">Local</option>
+                                        <option value="1">Url</option>
+                                    </select>
 
-                        <div class="target-label in-label">
-                            <div id="progress-target" class="progress">
-                                <div class="bar" style="width: 0%;"></div>
-                            </div>
-                            <input id="target" name="target" class="form-control show-file" type="text" value="" readonly/>
-                        </div>
+                                    <div class="target-label in-label">
+                                        <div id="progress-target" class="progress">
+                                            <div class="bar" style="width: 0%;"></div>
+                                        </div>
+                                        <input id="target" name="target" class="form-control show-file" type="text" value="" readonly/>
+                                    </div>
 
-                        <button class="btn btn-file" type="button" id="button-target" title="Select a file">
-                            <span class="glyphicon glyphicon-folder-open"></span>&nbsp
-                        </button>
-                        <div class="loading-file target" style="display: none"></div>
-                        <div class="upload-success target" style="display: none"></div>
-                    </div>
+                                    <button class="btn btn-file" type="button" id="button-target" title="Select a file">
+                                        <span class="glyphicon glyphicon-folder-open"></span>&nbsp
+                                    </button>
+                                    <div class="loading-file target" style="display: none"></div>
+                                    <div class="upload-success target" style="display: none"></div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </fieldset>
+            <p class="afterworlff">* We will send you results by mail.</p>
+            <p class="afterworlff">** Can be gzipped.</p>
+            <button type="button" id="submit">Submit</button>
         </div>
-        <p class="afterworlff">* We will send you results by mail.</p>
-        <p class="afterworlff">** Can be gzipped.</p>
-        <button type="button" id="submit">Submit</button>
         <div id="uploading-loading" style="display:none;">Uploading files...</div>
         <div class="hidden-input-files">
             <input type="file" name="file-query" class="file-query" data-url="/upload" title=""/>
