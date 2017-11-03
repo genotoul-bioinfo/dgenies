@@ -47,14 +47,14 @@ $.fn.mousetip = function(my_tip, relative_to=null, x=20, y=20) {
                 let x_zone = "unknown";
                 for (let zone in d3.boxplot.x_zones) {
                     if (d3.boxplot.x_zones[zone][0] < x_g && x_g <= d3.boxplot.x_zones[zone][1]) {
-                        x_zone = zone;
+                        x_zone = d3.boxplot.mousetip.get_label(zone);
                         break;
                     }
                 }
                 let y_zone = "unknown";
                 for (let zone in d3.boxplot.y_zones) {
                     if (d3.boxplot.y_zones[zone][0] < y_g && y_g <= d3.boxplot.y_zones[zone][1]) {
-                        y_zone = zone;
+                        y_zone = d3.boxplot.mousetip.get_label(zone);
                         break;
                     }
                 }
@@ -89,4 +89,15 @@ d3.boxplot.mousetip.init = function () {
 
 d3.boxplot.mousetip.hide = function () {
     $(".tip", "#draw").hide();
+}
+
+d3.boxplot.mousetip.get_label = function (label) {
+    if (label.startsWith("###MIX###")) {
+        let parts = label.substr(10).split("###");
+        label = "Mix:&nbsp;" + parts.slice(0, 3).join(",&nbsp;");
+        if (parts.length > 3) {
+            label += ",&nbsp;..."
+        }
+    }
+    return label;
 }

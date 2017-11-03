@@ -552,7 +552,16 @@ d3.boxplot.draw_right_axis = function (y_zones=d3.boxplot.y_zones) {
                 .attr("font-size", "6pt")
                 .text(zone);
         }
-        if (nb_zone > 0) { //Draw zone separator at left of zone (except for first zone)
+        if (zone.startsWith("###MIX###")) {
+            container_right.append("rect")
+                .attr("x", y_pos_1 / d3.boxplot.scale * axis_length)
+                .attr("y", 12)
+                .attr("width", z_len)
+                .attr("height", 8)
+                .attr("fill", "black")
+                .attr("stroke", "black")
+        }
+        else if (nb_zone > 0) { //Draw zone separator at left of zone (except for first zone)
             container_right.append("line")
                 .attr("x1", y_pos_1 / d3.boxplot.scale * axis_length)
                 .attr("x2", y_pos_1 / d3.boxplot.scale * axis_length)

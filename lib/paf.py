@@ -9,7 +9,7 @@ class Paf:
     limit_idy = [0.25, 0.5, 0.75]
     max_nb_lines = 100000
 
-    def __init__(self, paf: str, idx_q: str, idx_t: str):
+    def __init__(self, paf: str, idx_q: str, idx_t: str, auto_parse: bool=True):
         self.paf = paf
         self.idx_q = idx_q
         self.idx_t = idx_t
@@ -33,15 +33,49 @@ class Paf:
         self.parsed = False
         self.error = False
 
-        self.parse_paf()
+        if auto_parse:
+            self.parse_paf()
 
-    def parse_paf(self):
-        len_q = 0
-        len_t = 0
+    @staticmethod
+    def __flush_blocks(index_c, new_index_c, new_index_o, current_block):
+        if len(current_block) >= 5:
+            block_length = 0
+            for contig in current_block:
+                block_length += index_c[contig]
+            b_name = "###MIX###_" + "###".join(current_block)
+            new_index_c[b_name] = block_length
+            new_index_o.append(b_name)
+        elif len(current_block) > 0:
+            for b_name in current_block:
+                new_index_c[b_name] = index_c[b_name]
+                new_index_o.append(b_name)
+        return new_index_c, new_index_o
+
+    def parse_index(self, index_o: list, index_c: dict, full_len: int):
+        """
+        Parse index and merge too small contigs
+        :param index_o: index order
+        :param index_c: index contigs def
+        :param full_len: length of the sequence
+        :return: new index orders and contigs def
+        """
+        new_index_o = []
+        new_index_c = {}
+        current_block = []
+        for index in index_o:
+            if index_c[index] >= 0.002 * full_len:
+                new_index_c, new_index_o = self.__flush_blocks(index_c, new_index_c, new_index_o, current_block)
+                current_block = []
+                new_index_c[index] = index_c[index]
+                new_index_o.append(index)
+            else:
+                current_block.append(index)
+        new_index_c, new_index_o = self.__flush_blocks(index_c, new_index_c, new_index_o, current_block)
+        return new_index_c, new_index_o
+
+    def parse_paf(self, merge_index=True):
         min_idy = 10000000000
         max_idy = -10000000000
-        name_q = None
-        name_t = None
         lines = {
             "0": [],
             "1": [],
@@ -50,6 +84,7 @@ class Paf:
         }
         q_abs_start = {}
         q_abs_current_start = 0
+        q_len = 0
         try:
             with open(self.idx_q, "r") as idx_q_f:
                 name_q = idx_q_f.readline().strip("\n")
@@ -62,13 +97,17 @@ class Paf:
                     q_order.append(id_c)
                     q_abs_start[id_c] = q_abs_current_start
                     q_contigs[id_c] = len_c
+                    q_len += len_c
                     q_abs_current_start += len_c
+            if merge_index:
+                q_contigs, q_order = self.parse_index(q_order, q_contigs, q_len)
         except IOError:
             self.error = "Index file does not exist for query!"
             return False
 
         t_abs_start = {}
         t_abs_current_start = 0
+        t_len = 0
         try:
             with open(self.idx_t, "r") as idx_t_f:
                 name_t = idx_t_f.readline().strip("\n")
@@ -81,7 +120,10 @@ class Paf:
                     t_order.append(id_c)
                     t_abs_start[id_c] = t_abs_current_start
                     t_contigs[id_c] = len_c
+                    t_len += len_c
                     t_abs_current_start += len_c
+            if merge_index:
+                t_contigs, t_order = self.parse_index(t_order, t_contigs, t_len)
         except IOError:
             self.error = "Index file does not exist for target!"
             return False
@@ -232,6 +274,7 @@ class Paf:
                           + "\n")
 
     def sort(self):
+        self.parse_paf(False)
         if not self.sorted:  # Do the sort
             gravity_contig = {}
             lines_on_block = {}

@@ -161,7 +161,7 @@ def sort_graph(id_res):
     paf = os.path.join(app_data, id_res, "map.paf")
     idx1 = os.path.join(app_data, id_res, "query.idx")
     idx2 = os.path.join(app_data, id_res, "target.idx")
-    paf = Paf(paf, idx1, idx2)
+    paf = Paf(paf, idx1, idx2, False)
     paf.sort()
     if paf.parsed:
         res = paf.get_d3js_data()
