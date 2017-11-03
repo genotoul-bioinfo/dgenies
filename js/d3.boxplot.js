@@ -474,7 +474,7 @@ d3.boxplot.draw_top_axis = function (x_zones=d3.boxplot.x_zones) {
         }
         if (zone.startsWith("###MIX###")) {
             svg_top.append("rect")
-                .attr("x", y_pos_1 / d3.boxplot.scale * axis_length)
+                .attr("x", x_pos_1 / d3.boxplot.scale * axis_length)
                 .attr("y", 12)
                 .attr("width", z_len)
                 .attr("height", 8)
