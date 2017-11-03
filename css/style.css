@@ -510,15 +510,13 @@ div.upload-success {
 }
 
 div#uploading-loading {
-    height: 60px;
+    height: 30px;
     line-height: 30px;
     width: 200px;
     font-size: 14pt;
     font-weight: bold;
     text-align: center;
-    color: blue;
-    background: url("images/loading-cascade.gif") no-repeat 0 25px;
-    background-size: 200px 30px;
+    color: black;
 }
 
 div.progress, input.show-file {
