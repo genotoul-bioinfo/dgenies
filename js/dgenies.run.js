@@ -30,6 +30,12 @@ dgenies.run.upload_next = function () {
     return false;
 };
 
+dgenies.run.__upload_server_error = function(fasta, data) {
+    dgenies.notify("message" in data ? data["message"]: `An error has occured when uploading ${fasta} file. Please contact us to report the bug!`,
+                    "error");
+    dgenies.run.enable_form();
+};
+
 dgenies.run.init_fileuploads = function () {
     $('input.file-query').fileupload({
         dataType: 'json',
@@ -45,9 +51,7 @@ dgenies.run.init_fileuploads = function () {
         },
         success: function (data, success) {
             if (data["success"] !== "OK") {
-                dgenies.notify("message" in data ? data["message"]: "An error has occured when uploading query file!",
-                    "error");
-                dgenies.run.enable_form();
+                dgenies.run.__upload_server_error("query", data);
             }
             else if ("error" in data["files"][0]) {
                 dgenies.run.add_error("Query file: " + data["files"][0]["error"], "error");
@@ -59,6 +63,9 @@ dgenies.run.init_fileuploads = function () {
                 dgenies.run.show_success("query");
                 dgenies.run.upload_next();
             }
+        },
+        error: function (data, success) {
+            dgenies.run.__upload_server_error("query", data);
         }
     });
     $('input.file-target').fileupload({
@@ -76,9 +83,7 @@ dgenies.run.init_fileuploads = function () {
         },
         success: function (data, success) {
             if (data["success"] !== "OK") {
-                dgenies.notify("message" in data ? data["message"]: "An error has occured when uploading target file!",
-                    "error");
-                dgenies.run.enable_form();
+                dgenies.run.__upload_server_error("target", data);
             }
             else if ("error" in data["files"][0]) {
                 dgenies.run.add_error("Target file: " + data["files"][0]["error"], "error");
@@ -90,6 +95,9 @@ dgenies.run.init_fileuploads = function () {
                 dgenies.run.show_success("target");
                 dgenies.run.upload_next();
             }
+        },
+        error: function (data, success) {
+            dgenies.run.__upload_server_error("target", data);
         }
     });
 
