@@ -4,9 +4,11 @@ if (!dgenies) {
 dgenies.run = {};
 
 // Init global variables:
+dgenies.run.allowed_ext = [];
 dgenies.run.files = [undefined, undefined];
 
-dgenies.run.init = function () {
+dgenies.run.init = function (allowed_ext) {
+    dgenies.run.allowed_ext = allowed_ext;
     dgenies.run.restore_form();
     dgenies.run.set_events();
     dgenies.run.init_fileuploads();
@@ -36,11 +38,23 @@ dgenies.run.__upload_server_error = function(fasta, data) {
     dgenies.run.enable_form();
 };
 
+dgenies.run.allowed_file = function (filename) {
+    return filename.indexOf('.') !== -1 &&
+        (dgenies.run.allowed_ext.indexOf(filename.rsplit('.', 1)[1].toLowerCase()) !== -1 ||
+            dgenies.run.allowed_ext.indexOf(filename.rsplit('.', 2).splice(1).join(".").toLowerCase()) !== -1);
+};
+
 dgenies.run.init_fileuploads = function () {
     $('input.file-query').fileupload({
         dataType: 'json',
         add: function (e, data) {
-            dgenies.run.files[0] = data;
+            let filename = data.files[0].name
+            if (dgenies.run.allowed_file(filename))
+                dgenies.run.files[0] = data;
+            else {
+                $("input.file-query").trigger("change"); // The value is null after fired
+                dgenies.notify(`File ${filename} is not supported!`, "error", 3000)
+            }
         },
         progressall: function (e, data) {
             var progress = parseInt(data.loaded / data.total * 100, 10);
@@ -72,7 +86,13 @@ dgenies.run.init_fileuploads = function () {
         dataType: 'json',
         formData: {folder: dgenies.run.upload_folder},
         add: function (e, data) {
-            dgenies.run.files[1] = data;
+            let filename = data.files[0].name
+            if (dgenies.run.allowed_file(filename))
+                dgenies.run.files[1] = data;
+            else {
+                $("input.file-target").trigger("change"); // The value is null after fired
+                dgenies.notify(`File ${filename} is not supported!`, "error", 3000)
+            }
         },
         progressall: function (e, data) {
             var progress = parseInt(data.loaded / data.total * 100, 10);

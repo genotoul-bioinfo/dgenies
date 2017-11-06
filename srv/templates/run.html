@@ -9,7 +9,7 @@
     <script src="{{ url_for('static', filename='js/jquery.fileupload-validate.js') }}"></script>
     <script src="{{ url_for('static', filename='js/dgenies.run.js') }}" type="text/JavaScript"></script>
 {% endblock %}
-{% block onload %}dgenies.run.init();{% endblock %}
+{% block onload %}dgenies.run.init({{ allowed_ext }});{% endblock %}
 {% block content %}
     <form id="submit_minimap" method=post action="#">
         <h2 class="title-launch">Launch map analysis</h2>

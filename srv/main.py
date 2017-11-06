@@ -8,7 +8,7 @@ from flask import Flask, render_template, request, url_for, jsonify, session
 from lib.paf import Paf
 from config_reader import AppConfigReader
 from lib.job_manager import JobManager
-from lib.functions import Functions
+from lib.functions import Functions, ALLOWED_EXTENSIONS
 from lib.upload_file import UploadFile
 from lib.Fasta import Fasta
 
@@ -60,7 +60,7 @@ def run():
     if "email" in request.args:
         email = request.args["email"]
     return render_template("run.html", title=app_title, id_job=id_job, email=email,
-                           menu="run")
+                           menu="run", allowed_ext=ALLOWED_EXTENSIONS)
 
 
 # Launch analysis
