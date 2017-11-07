@@ -63,7 +63,7 @@ class JobManager:
         if status == "success":
             message += "Your job %s has successfully ended!\n\n" % self.id_job
             message += str("Your job {0} is finished. You can see  the results by clicking on the link below:\n"
-                           "{1}/results/{0}\n\n").format(self.id_job, self.web_url)
+                           "{1}/result/{0}\n\n").format(self.id_job, self.web_url)
         else:
             message += "Your job %s has failed!\n\n" % self.id_job
             message += "Your job %s has failed. If the problem persists, please contact the support.\n\n" % self.id_job
@@ -75,7 +75,7 @@ class JobManager:
 <h3>{% if status == "success" %}Your job {{ job_name }} has successfully ended!{% else %}Your job {{ job_name }} has failed{% endif %}</h3>
 <p>Hi,</p>
 {% if status == "success" %}
-<p>Your job {{ job_name }} is finished. You can <a href="{{ url_base }}/results/{{ job_name }}">click here</a> to see results.</p>
+<p>Your job {{ job_name }} is finished. You can <a href="{{ url_base }}/result/{{ job_name }}">click here</a> to see results.</p>
 {% else %}
 <p>Your job {{ job_name }} has failed. If the problem persists, please contact the support.</p>
 {% endif %}
@@ -85,8 +85,8 @@ class JobManager:
         template = Template(template_str)
         return template.render(job_name=self.id_job, status=status, url_base=self.web_url)
 
-    def get_mail_subject(self):
-        if self.status == "success":
+    def get_mail_subject(self, status):
+        if status == "success":
             return "DGenies - Job succeeded: %s" % self.id_job
         else:
             return "DGenies - Job failed: %s" % self.id_job
