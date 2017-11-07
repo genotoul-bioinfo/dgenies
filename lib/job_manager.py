@@ -93,7 +93,7 @@ class JobManager:
 
     def send_mail(self, status):
         msg = Message(
-            subject=self.get_mail_subject(),
+            subject=self.get_mail_subject(status),
             recipients=[self.email],
             html=self.get_mail_content_html(status),
             body=self.get_mail_content(status),
