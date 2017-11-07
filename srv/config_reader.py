@@ -48,6 +48,12 @@ class AppConfigReader(object):
         except NoOptionError:
             return "4"
 
+    def get_web_url(self):
+        try:
+            return self.replace_vars(self.reader.get("global", "web_url"))
+        except NoOptionError:
+            return "http://localhost:5000"
+
     def get_minimap2_exec(self):
         try:
             entry = self.reader.get("softwares", "minimap2")
@@ -60,3 +66,27 @@ class AppConfigReader(object):
             return self.replace_vars(self.reader.get("database", "sqlite_file"))
         except NoOptionError:
             return ":memory:"
+
+    def get_mail_status_sender(self):
+        try:
+            return self.replace_vars(self.reader.get("mail", "status"))
+        except NoOptionError:
+            return "status@dgenies"
+
+    def get_mail_reply(self):
+        try:
+            return self.replace_vars(self.reader.get("mail", "reply"))
+        except NoOptionError:
+            return "status@dgenies"
+
+    def get_mail_org(self):
+        try:
+            return self.replace_vars(self.reader.get("mail", "org"))
+        except NoOptionError:
+            return None
+
+    def get_send_mail_status(self):
+        try:
+            return self.replace_vars(self.reader.get("mail", "send_mail_status"))
+        except NoOptionError:
+            return False

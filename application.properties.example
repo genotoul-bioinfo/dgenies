@@ -4,9 +4,16 @@ data_folder = ###PROGRAM###/data
 # batch system type: local, sge, slurm
 batch_system_type = local
 threads = 4
+web_url = http://localhost:5000
 
 [softwares]
 minimap2 = ###DEFAULT###
 
 [database]
 sqlite_file = ###PROGRAM###/srv/database.sqlite
+
+[mail]
+status = mail@dgenies
+reply = mail@dgenies
+org = "Dgenies team"
+send_mail_status = True

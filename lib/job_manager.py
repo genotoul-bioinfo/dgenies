@@ -12,11 +12,13 @@ from lib.Fasta import Fasta
 from lib.functions import Functions
 import requests
 import wget
+from jinja2 import Template
+from flask_mail import Message
 
 
 class JobManager:
 
-    def __init__(self, id_job: str, email: str=None, query: Fasta=None, target: Fasta=None):
+    def __init__(self, id_job: str, email: str=None, query: Fasta=None, target: Fasta=None, mailer: "Mail"=None):
         self.id_job = id_job
         self.email = email
         self.query = query
@@ -27,6 +29,11 @@ class JobManager:
         self.minimap2 = config_reader.get_minimap2_exec()
         self.threads = config_reader.get_nb_threads()
         self.app_data = config_reader.get_app_data()
+        self.web_url = config_reader.get_web_url()
+        self.mail_status = config_reader.get_mail_status_sender()
+        self.mail_reply = config_reader.get_mail_reply()
+        self.mail_org = config_reader.get_mail_org()
+        self.do_send = config_reader.get_send_mail_status()
         # Outputs:
         self.output_dir = os.path.join(self.app_data, id_job)
         self.paf = os.path.join(self.output_dir, "map.paf")
@@ -34,6 +41,7 @@ class JobManager:
         self.idx_q = os.path.join(self.output_dir, "query.idx")
         self.idx_t = os.path.join(self.output_dir, "target.idx")
         self.logs = os.path.join(self.output_dir, "logs.txt")
+        self.mailer = mailer
 
     def __check_job_success_local(self):
         if os.path.exists(self.paf):
@@ -44,6 +52,50 @@ class JobManager:
     def check_job_success(self):
         if self.batch_system_type == "local":
             return self.__check_job_success_local()
+
+    def get_mail_content(self):
+        message = "D-Genies\n\n"
+        if self.status == "success":
+            message += "Your job %s has successfully ended!\n\n" % self.id_job
+            message += str("Your job {0} is finished. You can see  the results by clicking on the link below:\n"
+                           "{1}/results/{0}\n\n").format(self.id_job, self.web_url)
+        else:
+            message += "Your job %s has failed!\n\n" % self.id_job
+            message += "Your job %s has failed. If the problem persists, please contact the support.\n\n" % self.id_job
+        message += "See you soon on D-Genies,\n"
+        message += "The team"
+
+    def get_mail_content_html(self):
+        template_str = """<h1>D-Genies</h1>
+<h3>{% if status == "success" %}Your job {{ job_name }} has successfully ended!{% else %}Your job {{ job_name }} has failed{% endif %}</h3>
+<p>Hi,</p>
+{% if status == "success" %}
+<p>Your job {{ job_name }} is finished. You can <a href="{{ url_base }}/results/{{ job_name }}">click here</a> to see results.</p>
+{% else %}
+<p>Your job {{ job_name }} has failed. If the problem persists, please contact the support.</p>
+{% endif %}
+<p>See you soon on D-Genies,</p>
+<p>The team</p>
+        """
+        template = Template(template_str)
+        return template.render(job_name=self.id_job, status=self.status, url_base=self.web_url)
+
+    def get_mail_subject(self):
+        if self.status == "success":
+            return "DGenies - Job %s finished" % self.id_job
+        else:
+            return "DGenies - Job %s failed" % self.id_job
+
+    def send_mail(self):
+        msg = Message(
+            subject=self.get_mail_subject(),
+            recipients=self.email,
+            html=self.get_mail_content_html(),
+            body=self.get_mail_content(),
+            sender=(self.mail_org, self.mail_status) if self.mail_org is not None else self.mail_status,
+            reply_to=self.mail_reply
+        )
+        self.mailer.send(msg)
 
     @db_session
     def __launch_local(self):
@@ -150,6 +202,8 @@ class JobManager:
                 job = Job.get(id_job=self.id_job)
                 job.status = "success"
                 db.commit()
+        if self.do_send:
+            self.send_mail()
 
     @staticmethod
     def index_file(fasta: Fasta, out):

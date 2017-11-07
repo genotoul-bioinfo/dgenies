@@ -5,6 +5,7 @@ import time
 import datetime
 import shutil
 from flask import Flask, render_template, request, url_for, jsonify, session
+from flask_mail import Mail
 from lib.paf import Paf
 from config_reader import AppConfigReader
 from lib.job_manager import JobManager
@@ -32,6 +33,9 @@ app_title = "D-GENIES - Dotplot for Genomes Interactive, E-connected and Speedy"
 app = Flask(__name__, static_url_path='/static')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['SECRET_KEY'] = 'dsqdsq-255sdA-fHfg52-25Asd5'
+
+# Init mail:
+mail = Mail(app)
 
 # Folder containing data:
 app_data = config_reader.get_app_data()
@@ -110,7 +114,7 @@ def launch_analysis():
             target = Fasta(name=target_name, path=target_path, type_f=file_target_type)
 
         # Launch job:
-        job = JobManager(id_job, email, query, target)
+        job = JobManager(id_job, email, query, target, mail)
         job.launch()
         return jsonify({"success": True, "redirect": url_for(".status", id_job=id_job)})
     else:
