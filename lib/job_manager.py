@@ -58,9 +58,9 @@ class JobManager:
         if self.batch_system_type == "local":
             return self.__check_job_success_local()
 
-    def get_mail_content(self):
+    def get_mail_content(self, status):
         message = "D-Genies\n\n"
-        if self.status == "success":
+        if status == "success":
             message += "Your job %s has successfully ended!\n\n" % self.id_job
             message += str("Your job {0} is finished. You can see  the results by clicking on the link below:\n"
                            "{1}/results/{0}\n\n").format(self.id_job, self.web_url)
@@ -70,7 +70,7 @@ class JobManager:
         message += "See you soon on D-Genies,\n"
         message += "The team"
 
-    def get_mail_content_html(self):
+    def get_mail_content_html(self, status):
         template_str = """<h1>D-Genies</h1>
 <h3>{% if status == "success" %}Your job {{ job_name }} has successfully ended!{% else %}Your job {{ job_name }} has failed{% endif %}</h3>
 <p>Hi,</p>
@@ -83,20 +83,20 @@ class JobManager:
 <p>The team</p>
         """
         template = Template(template_str)
-        return template.render(job_name=self.id_job, status=self.status, url_base=self.web_url)
+        return template.render(job_name=self.id_job, status=status, url_base=self.web_url)
 
     def get_mail_subject(self):
         if self.status == "success":
-            return "DGenies - Job %s finished" % self.id_job
+            return "DGenies - Job succeeded: %s" % self.id_job
         else:
-            return "DGenies - Job %s failed" % self.id_job
+            return "DGenies - Job failed: %s" % self.id_job
 
-    def send_mail(self):
+    def send_mail(self, status):
         msg = Message(
             subject=self.get_mail_subject(),
             recipients=[self.email],
-            html=self.get_mail_content_html(),
-            body=self.get_mail_content(),
+            html=self.get_mail_content_html(status),
+            body=self.get_mail_content(status),
             sender=(self.mail_org, self.mail_status) if self.mail_org is not None else self.mail_status,
             reply_to=self.mail_reply
         )
@@ -208,7 +208,8 @@ class JobManager:
                 job.status = "success"
                 db.commit()
         if self.do_send:
-            self.send_mail()
+            job = Job.get(id_job=self.id_job)
+            self.send_mail(job.status)
 
     @staticmethod
     def index_file(fasta: Fasta, out):
