@@ -14,6 +14,7 @@ import requests
 import wget
 from jinja2 import Template
 from flask_mail import Message
+from main import send_async_email
 
 
 class JobManager:
@@ -95,7 +96,7 @@ class JobManager:
             sender=(self.mail_org, self.mail_status) if self.mail_org is not None else self.mail_status,
             reply_to=self.mail_reply
         )
-        self.mailer.send(msg)
+        send_async_email(msg)
 
     @db_session
     def __launch_local(self):
