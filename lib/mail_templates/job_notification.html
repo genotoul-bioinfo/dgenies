@@ -21,17 +21,17 @@
 </div>
 <h3>
     {% if status == "success" %}
-        Your job {{ job_name }} has successfully ended!
+        Your job {{ job_name }} was completed successfully!
     {% else %}
         Your job {{ job_name }} has failed
     {% endif %}
 </h3>
 <p>Hi,</p>
 {% if status == "success" %}
-    <p>Your job {{ job_name }} is finished.
+    <p>Your job {{ job_name }} is done.
         You can <a href="{{ url_base }}/result/{{ job_name }}">click here</a> to see results.</p>
 {% else %}
-    <p>Your job {{ job_name }} has failed. If the problem persists, please contact the support.</p>
+    <p>Your job {{ job_name }} has failed. You can try again. If the problem persists, please contact the support.</p>
 {% endif %}
 <p>See you soon on D-Genies,</p>
 <p>The D-Genies team</p>

@@ -61,12 +61,13 @@ class JobManager:
     def get_mail_content(self, status):
         message = "D-Genies\n\n"
         if status == "success":
-            message += "Your job %s has successfully ended!\n\n" % self.id_job
+            message += "Your job %s was completed successfully!\n\n" % self.id_job
             message += str("Your job {0} is finished. You can see  the results by clicking on the link below:\n"
                            "{1}/result/{0}\n\n").format(self.id_job, self.web_url)
         else:
             message += "Your job %s has failed!\n\n" % self.id_job
-            message += "Your job %s has failed. If the problem persists, please contact the support.\n\n" % self.id_job
+            message += "Your job %s has failed. You can try again. " \
+                       "If the problem persists, please contact the support.\n\n" % self.id_job
         message += "See you soon on D-Genies,\n"
         message += "The team"
 
@@ -78,7 +79,7 @@ class JobManager:
 
     def get_mail_subject(self, status):
         if status == "success":
-            return "DGenies - Job succeeded: %s" % self.id_job
+            return "DGenies - Job completed: %s" % self.id_job
         else:
             return "DGenies - Job failed: %s" % self.id_job
 
