@@ -52,6 +52,8 @@ class JobManager:
         if os.path.exists(self.paf):
             if os.path.getsize(self.paf) > 0:
                 return "success"
+            else:
+                return "no-match"
         return "error"
 
     def check_job_success(self):
@@ -78,7 +80,7 @@ class JobManager:
             return template.render(job_name=self.id_job, status=status, url_base=self.web_url)
 
     def get_mail_subject(self, status):
-        if status == "success":
+        if status == "success" or status == "no-match":
             return "DGenies - Job completed: %s" % self.id_job
         else:
             return "DGenies - Job failed: %s" % self.id_job

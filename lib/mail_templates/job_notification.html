@@ -22,14 +22,18 @@
 <h3>
     {% if status == "success" %}
         Your job {{ job_name }} was completed successfully!
+    {% elif status == "no-match" %}
+        Your job {{ job_name }} was completed.
     {% else %}
-        Your job {{ job_name }} has failed
+        Your job {{ job_name }} has failed.
     {% endif %}
 </h3>
 <p>Hi,</p>
 {% if status == "success" %}
     <p>Your job {{ job_name }} is done.
         You can <a href="{{ url_base }}/result/{{ job_name }}">click here</a> to see results.</p>
+{% elif status == "no-match" %}
+    <p>Sorry, we did not find any match between your query and your target.</p>
 {% else %}
     <p>Your job {{ job_name }} has failed. You can try again. If the problem persists, please contact the support.</p>
 {% endif %}

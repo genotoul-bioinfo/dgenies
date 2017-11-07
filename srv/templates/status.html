@@ -22,8 +22,11 @@
             You will receive an email when it will be finished.<br/>
             Alternatively, you can refresh this page to update status.</p>
     {% elif status == "success" %}
-        <p>Your job has ended successfully.<br/>
+        <p>Your job was completed successfully.<br/>
             Please <a href="/result/{{ id_job }}">click here</a> to show results.</p>
+    {% elif status == "no-match" %}
+        <p>Your job is done.<br/>
+        Sorry, we did not find any match between your query and your target.</p>
     {% elif status == "error" %}
         <p>Your job has failed.
             {% if error == "" %}
