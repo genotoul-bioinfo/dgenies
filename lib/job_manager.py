@@ -71,7 +71,7 @@ class JobManager:
         message += "The team"
 
     def get_mail_content_html(self, status):
-        template_str = """<h1>D-Genies</h1>
+        template_str = """<h1><img src="{{ url_base }}/static/images/logo.png" height="30px" alt=""/> D-Genies</h1>
 <h3>{% if status == "success" %}Your job {{ job_name }} has successfully ended!{% else %}Your job {{ job_name }} has failed{% endif %}</h3>
 <p>Hi,</p>
 {% if status == "success" %}
