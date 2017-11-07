@@ -13,13 +13,12 @@ from lib.functions import Functions
 import requests
 import wget
 from jinja2 import Template
-from flask_mail import Message
-from main import send_async_email
+from flask_mail import Message, Mail
 
 
 class JobManager:
 
-    def __init__(self, id_job: str, email: str=None, query: Fasta=None, target: Fasta=None, mailer: "Mail"=None):
+    def __init__(self, id_job: str, email: str=None, query: Fasta=None, target: Fasta=None, app=None, mailer: Mail=None):
         self.id_job = id_job
         self.email = email
         self.query = query
@@ -43,6 +42,11 @@ class JobManager:
         self.idx_t = os.path.join(self.output_dir, "target.idx")
         self.logs = os.path.join(self.output_dir, "logs.txt")
         self.mailer = mailer
+        self.app = app
+
+    def send_async_email(self, msg):
+        with self.app.app_context():
+            self.mailer.send(msg)
 
     def __check_job_success_local(self):
         if os.path.exists(self.paf):
@@ -96,7 +100,7 @@ class JobManager:
             sender=(self.mail_org, self.mail_status) if self.mail_org is not None else self.mail_status,
             reply_to=self.mail_reply
         )
-        send_async_email(msg)
+        self.send_async_email(msg)
 
     @db_session
     def __launch_local(self):

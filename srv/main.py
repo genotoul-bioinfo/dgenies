@@ -41,11 +41,6 @@ mail = Mail(app)
 app_data = config_reader.get_app_data()
 
 
-def send_async_email(msg):
-    with app.app_context():
-        mail.send(msg)
-
-
 @app.context_processor
 def get_launched_results():
     cookie = request.cookies.get("results")
@@ -119,7 +114,7 @@ def launch_analysis():
             target = Fasta(name=target_name, path=target_path, type_f=file_target_type)
 
         # Launch job:
-        job = JobManager(id_job, email, query, target, mail)
+        job = JobManager(id_job, email, query, target, app, mail)
         job.launch()
         return jsonify({"success": True, "redirect": url_for(".status", id_job=id_job)})
     else:
