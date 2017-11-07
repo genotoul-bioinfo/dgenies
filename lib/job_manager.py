@@ -89,7 +89,7 @@ class JobManager:
     def send_mail(self):
         msg = Message(
             subject=self.get_mail_subject(),
-            recipients=self.email,
+            recipients=[self.email],
             html=self.get_mail_content_html(),
             body=self.get_mail_content(),
             sender=(self.mail_org, self.mail_status) if self.mail_org is not None else self.mail_status,
