@@ -71,19 +71,10 @@ class JobManager:
         message += "The team"
 
     def get_mail_content_html(self, status):
-        template_str = """<h1><img src="{{ url_base }}/static/images/logo.png" height="30px" alt=""/> D-Genies</h1>
-<h3>{% if status == "success" %}Your job {{ job_name }} has successfully ended!{% else %}Your job {{ job_name }} has failed{% endif %}</h3>
-<p>Hi,</p>
-{% if status == "success" %}
-<p>Your job {{ job_name }} is finished. You can <a href="{{ url_base }}/result/{{ job_name }}">click here</a> to see results.</p>
-{% else %}
-<p>Your job {{ job_name }} has failed. If the problem persists, please contact the support.</p>
-{% endif %}
-<p>See you soon on D-Genies,</p>
-<p>The team</p>
-        """
-        template = Template(template_str)
-        return template.render(job_name=self.id_job, status=status, url_base=self.web_url)
+        with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "mail_templates", "job_notification.html")) \
+                as t_file:
+            template = Template(t_file.read())
+            return template.render(job_name=self.id_job, status=status, url_base=self.web_url)
 
     def get_mail_subject(self, status):
         if status == "success":
