@@ -14,6 +14,7 @@ import requests
 import wget
 from jinja2 import Template
 from flask_mail import Message, Mail
+import traceback
 
 
 class JobManager:
@@ -179,28 +180,35 @@ class JobManager:
 
     @db_session
     def start_job(self):
-        success = self.getting_files()
-        if success:
-            job = Job.get(id_job=self.id_job)
-            job.status = "waiting"
-            db.commit()
-            success = True
-            if self.batch_system_type == "local":
-                success = self.__launch_local()
+        try:
+            success = self.getting_files()
             if success:
                 job = Job.get(id_job=self.id_job)
-                job.status = "indexing"
+                job.status = "waiting"
                 db.commit()
-                query_index = os.path.join(self.output_dir, "query.idx")
-                self.index_file(self.query, query_index)
-                target_index = os.path.join(self.output_dir, "target.idx")
-                if self.target is not None:
-                    self.index_file(self.target, target_index)
-                else:
-                    shutil.copyfile(query_index, target_index)
-                job = Job.get(id_job=self.id_job)
-                job.status = "success"
-                db.commit()
+                success = True
+                if self.batch_system_type == "local":
+                    success = self.__launch_local()
+                if success:
+                    job = Job.get(id_job=self.id_job)
+                    job.status = "indexing"
+                    db.commit()
+                    query_index = os.path.join(self.output_dir, "query.idx")
+                    self.index_file(self.query, query_index)
+                    target_index = os.path.join(self.output_dir, "target.idx")
+                    if self.target is not None:
+                        self.index_file(self.target, target_index)
+                    else:
+                        shutil.copyfile(query_index, target_index)
+                    job = Job.get(id_job=self.id_job)
+                    job.status = "success"
+                    db.commit()
+        except Exception:
+            print(traceback.print_exc())
+            job = Job.get(id_job=self.id_job)
+            job.status = "error"
+            job.error = "<p>An unexpected error has occurred. Please contact the support to report the bug.</p>"
+            db.commit()
         if self.do_send:
             job = Job.get(id_job=self.id_job)
             self.send_mail(job.status)
