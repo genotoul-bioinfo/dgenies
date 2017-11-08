@@ -4,6 +4,7 @@ import os
 import time
 import datetime
 import shutil
+import re
 from flask import Flask, render_template, request, url_for, jsonify, session
 from flask_mail import Mail
 from lib.paf import Paf
@@ -94,6 +95,7 @@ def launch_analysis():
     # Form pass
     if form_pass:
         # Get final job id:
+        id_job = re.sub('[^A-Za-z0-9_\-]+', '', id_job.replace(" ", "_"))
         id_job_orig = id_job
         while os.path.exists(os.path.join(app_data, id_job)):
             id_job = id_job_orig + "_2"
