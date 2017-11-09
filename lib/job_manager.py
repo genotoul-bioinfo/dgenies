@@ -3,8 +3,6 @@ import shutil
 import subprocess
 import datetime
 import threading
-import gzip
-import io
 from config_reader import AppConfigReader
 from pony.orm import db_session, select
 from database import db, Job
@@ -194,10 +192,10 @@ class JobManager:
                     job.status = "indexing"
                     db.commit()
                     query_index = os.path.join(self.output_dir, "query.idx")
-                    self.index_file(self.query, query_index)
+                    Functions.index_file(self.query, query_index)
                     target_index = os.path.join(self.output_dir, "target.idx")
                     if self.target is not None:
-                        self.index_file(self.target, target_index)
+                        Functions.index_file(self.target, target_index)
                     else:
                         shutil.copyfile(query_index, target_index)
                     job = Job.get(id_job=self.id_job)
@@ -212,27 +210,6 @@ class JobManager:
         if self.do_send:
             job = Job.get(id_job=self.id_job)
             self.send_mail(job.status)
-
-    @staticmethod
-    def index_file(fasta: Fasta, out):
-        compressed = fasta.get_path().endswith(".gz")
-        with (gzip.open(fasta.get_path()) if compressed else open(fasta.get_path())) as in_file, \
-                open(out, "w") as out_file:
-            out_file.write(fasta.get_name() + "\n")
-            with (io.TextIOWrapper(in_file) if compressed else in_file) as fasta:
-                contig = None
-                len_c = 0
-                for line in fasta:
-                    line = line.strip("\n")
-                    if line.startswith(">"):
-                        if contig is not None:
-                            out_file.write("%s\t%d\n" % (contig, len_c))
-                        contig = line[1:].split(" ")[0]
-                        len_c = 0
-                    elif len(line) > 0:
-                        len_c += len(line)
-                if contig is not None and len_c > 0:
-                    out_file.write("%s\t%d\n" % (contig, len_c))
 
     @db_session
     def launch(self):
