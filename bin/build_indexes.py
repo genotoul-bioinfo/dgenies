@@ -24,49 +24,15 @@ __VERSION__ = 0.1
 
 import os
 from docopt import docopt
-from collections import OrderedDict
-
-
-class Fasta:
-    def __init__(self, fasta, name=None):
-        self.fasta = fasta
-        self.fai = fasta + ".fai"
-        self.name = os.path.splitext(os.path.basename(fasta))[0] if name is None else name
-        self.contigs = OrderedDict()
-        self.total_length = 0
-        self.__load()
-
-    def __load(self):
-        start = 0
-        with open(self.fai, "r") as fai_file:
-            for line in fai_file:
-                parts = line.strip("\n").split("\t")
-                length = int(parts[1])
-                self.contigs[parts[0]] = {
-                    "length": length,
-                    "start": start
-                }
-                start += length
-                self.total_length += length
-
-    def get_contig(self, contig):
-        return self.contigs[contig]
-
-    def build_index(self, filename):
-        with open(filename, "w") as idx:
-            idx.write(self.name + "\n")
-            for contig, props in self.contigs.items():
-                idx.write("\t".join([contig, str(props["length"])]) + "\n")
+from lib.functions import Functions
+from lib.Fasta import Fasta
 
 
 def init(output_d, query, target, query_name=None, target_name=None):
-    query = Fasta(query, query_name)
-    target = Fasta(target, target_name)
-    i = 0
-    for fasta in [query, target]:
-        idx_file = os.path.join(output_d, "query.idx" if i == 0 else "target.idx")
-        fasta.build_index(idx_file)
-        i += 1
+    query_f = Fasta(query_name, query, "local")
+    target_f = Fasta(target_name, target, "local")
+    Functions.index_file(query_f, os.path.join(output_d, "query.idx"))
+    Functions.index_file(target_f, os.path.join(output_d, "target.idx"))
 
 
 if __name__ == '__main__':
@@ -74,8 +40,8 @@ if __name__ == '__main__':
     if args["--version"]:
         print(__NAME__, __VERSION__)
     else:
-        if not os.path.exists(args["--query"] + ".fai"):
-            raise Exception("Fasta file %s is not indexed!" % args["--query"])
-        if not os.path.exists(args["--target"] + ".fai"):
-            raise Exception("Fasta file %s is not indexed!" % args["--target"])
+        if not os.path.exists(args["--query"]):
+            raise Exception("Fasta file %s does not exists!" % args["--query"])
+        if not os.path.exists(args["--target"]):
+            raise Exception("Fasta file %s does not exists!" % args["--target"])
         init(args["--output"], args["--query"], args["--target"], args["--query-name"], args["--target-name"])
