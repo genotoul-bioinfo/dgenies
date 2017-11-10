@@ -271,14 +271,8 @@ d3.boxplot.draw_left_axis = function (y_max, y_min = 0) {
         .attr("width", axis_length)
         .attr("height", 20)
         .attr("stroke", d3.boxplot.background_axis)
+        .attr("stroke-width", "0.1px")
         .style("fill", d3.boxplot.background_axis);
-
-    container_left.append("line")
-        .attr("x1", 0)
-        .attr("x2", axis_length)
-        .attr("y1", 20)
-        .attr("y2", 20)
-        .attr("stroke", "black");
 
     let y_size = y_max - y_min;
 
@@ -336,14 +330,8 @@ d3.boxplot.draw_bottom_axis = function (x_max, x_min = 0) {
         .attr("width", axis_length)
         .attr("height", 20)
         .attr("stroke", d3.boxplot.background_axis)
+        .attr("stroke-width", "0.1px")
         .style("fill", d3.boxplot.background_axis);
-
-    svg_bottom.append("line")
-        .attr("x1", 0)
-        .attr("x2", axis_length)
-        .attr("y1", 0)
-        .attr("y2", 0)
-        .attr("stroke", "black");
 
     let x_size = x_max - x_min;
 
@@ -434,14 +422,8 @@ d3.boxplot.draw_top_axis = function (x_zones=d3.boxplot.x_zones) {
         .attr("width", axis_length)
         .attr("height", 20)
         .attr("stroke", d3.boxplot.background_axis)
+        .attr("stroke-width", "0.1px")
         .style("fill", d3.boxplot.background_axis);
-
-    svg_top.append("line")
-        .attr("x1", 0)
-        .attr("x2", axis_length)
-        .attr("y1", 20)
-        .attr("y2", 20)
-        .attr("stroke", "black");
 
     svg_top.append("text")
         .attr("x", axis_length / 2)
@@ -485,8 +467,8 @@ d3.boxplot.draw_top_axis = function (x_zones=d3.boxplot.x_zones) {
             svg_top.append("line")
                 .attr("x1", x_pos_1 / d3.boxplot.scale * axis_length)
                 .attr("x2", x_pos_1 / d3.boxplot.scale * axis_length)
-                .attr("y1", "60%")
-                .attr("y2", "100%")
+                .attr("y1", 12)
+                .attr("y2", 20)
                 .attr("stroke", "black")
                 .attr("stroke-width", d3.boxplot.tick_width);
         }
@@ -524,14 +506,8 @@ d3.boxplot.draw_right_axis = function (y_zones=d3.boxplot.y_zones) {
         .attr("width", axis_length)
         .attr("height", 20)
         .attr("stroke", d3.boxplot.background_axis)
+        .style("stroke-width", "0.1px")
         .style("fill", d3.boxplot.background_axis);
-
-    container_right.append("line")
-        .attr("x1", 0)
-        .attr("x2", axis_length)
-        .attr("y1", 20)
-        .attr("y2", 20)
-        .attr("stroke", "black");
 
     container_right.append("text")
         .attr("x", axis_length / 2)
@@ -569,7 +545,7 @@ d3.boxplot.draw_right_axis = function (y_zones=d3.boxplot.y_zones) {
                 .attr("width", z_len)
                 .attr("height", 8)
                 .attr("fill", d3.boxplot.color_mixes)
-                .attr("stroke", d3.boxplot.color_mixes)
+                .attr("stroke", "None")
         }
         else if (nb_zone > 0) { //Draw zone separator at left of zone (except for first zone)
             container_right.append("line")
@@ -597,6 +573,7 @@ d3.boxplot.draw_corners = function () {
     svg_top_left.append("polygon")
         .attr("points", "5,0 5,5 0,5")
         .attr("stroke", d3.boxplot.background_axis)
+        .attr("stroke-width", "0px")
         .style("fill", d3.boxplot.background_axis);
 
     // Top right:
@@ -610,6 +587,7 @@ d3.boxplot.draw_corners = function () {
     svg_top_right.append("polygon")
         .attr("points", "0,0 5,5 0,5")
         .attr("stroke", d3.boxplot.background_axis)
+        .attr("stroke-width", "0px")
         .style("fill", d3.boxplot.background_axis);
 
     // Bottom left:
@@ -623,6 +601,7 @@ d3.boxplot.draw_corners = function () {
     svg_bottom_left.append("polygon")
         .attr("points", "0,0 5,0 5,5")
         .attr("stroke", d3.boxplot.background_axis)
+        .attr("stroke-width", "0px")
         .style("fill", d3.boxplot.background_axis);
 
     //Bottom right:
@@ -637,6 +616,7 @@ d3.boxplot.draw_corners = function () {
     svg_bottom_right.append("polygon")
         .attr("points", "0,0 0,5 5,0")
         .attr("stroke", d3.boxplot.background_axis)
+        .attr("stroke-width", "0px")
         .style("fill", d3.boxplot.background_axis);
 };
 
@@ -795,7 +775,8 @@ d3.boxplot.draw = function (x_contigs, x_order, y_contigs, y_order) {
     draw.empty();
     draw.append($("<div>")
         .attr("id", "restore-all").css("display", "none"));
-    d3.boxplot.svgsupercontainer = d3.select("#draw").append("svg:svg")
+    let draw_in = draw.append($("<div>").attr("id", "draw-in"));
+    d3.boxplot.svgsupercontainer = d3.select("#draw-in").append("svg:svg")
         .attr("width", "100%")
         .attr("height", "100%")
         .attr("viewBox", "0 0 100 100")
