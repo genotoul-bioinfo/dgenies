@@ -35,6 +35,15 @@ dgenies.result.export.export_svg = function () {
 
 };
 
+dgenies.result.export.export_paf = function () {
+    let export_div = $("div#export-pict");
+    export_div.html("");
+    export_div.append($("<a>").attr("href", `/paf/${d3.boxplot.id_res}`)
+        .attr("download", `map_${d3.boxplot.name_y}_to_${d3.boxplot.name_x}.paf`).attr("id", "my-download").text("download"));
+    dgenies.hide_loading();
+    document.getElementById('my-download').click();
+};
+
 dgenies.result.export.export = function () {
     let select = $("form#export select");
     let selection = parseInt(select.val());
@@ -45,6 +54,8 @@ dgenies.result.export.export = function () {
                 dgenies.result.export.export_svg();
             else if (selection === 2)
                 dgenies.result.export.export_png();
+            else if (selection === 3)
+                dgenies.result.export.export_paf();
             else
                 dgenies.notify("Not supported yet!", "error", 2000);
             dgenies.hide_loading();

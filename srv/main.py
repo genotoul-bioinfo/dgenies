@@ -5,7 +5,7 @@ import time
 import datetime
 import shutil
 import re
-from flask import Flask, render_template, request, url_for, jsonify, session
+from flask import Flask, render_template, request, url_for, jsonify, session, Response, abort
 from flask_mail import Mail
 from lib.paf import Paf
 from config_reader import AppConfigReader
@@ -27,6 +27,7 @@ sqlite_file = os.path.join(app_folder, "database.sqlite")
 config_reader = AppConfigReader()
 
 UPLOAD_FOLDER = config_reader.get_upload_folder()
+APP_DATA = config_reader.get_app_data()
 
 app_title = "D-GENIES - Dotplot for Genomes Interactive, E-connected and Speedy"
 
@@ -143,6 +144,29 @@ def result(id_res):
         cookie.insert(0, id_res)
     response.set_cookie(key="results", value="|".join(cookie), path="/")
     return response
+
+
+def get_file(file):  # pragma: no cover
+    try:
+        # Figure out how flask returns static files
+        # Tried:
+        # - render_template
+        # - send_file
+        # This should not be so non-obvious
+        return open(file).read()
+    except IOError as exc:
+        return str(exc)
+
+
+@app.route("/paf/<id_res>", methods=['GET'])
+def download_paf(id_res):
+    map_file = os.path.join(APP_DATA, id_res, "map.paf.sorted")
+    if not os.path.exists(map_file):
+        map_file = os.path.join(APP_DATA, id_res, "map.paf")
+    if not os.path.exists(map_file):
+        abort(404)
+    content = get_file(map_file)
+    return Response(content, mimetype="text/plain")
 
 
 # Get graph (ajax request)
