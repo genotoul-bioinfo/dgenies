@@ -100,7 +100,7 @@ d3.boxplot.launch = function(res, update=false) {
             aspectRatio: true
         });
         d3.boxplot.events.init();
-        d3.boxplot.controls.init();
+        dgenies.result.controls.init();
     }
     if (res["sampled"]) {
         let max_nb_lines = dgenies.numberWithCommas(res["max_nb_lines"].toString());
