@@ -114,7 +114,6 @@ d3.boxplot.select_zone = function (x=null, y=null, x_zone=null, y_zone=null, for
     dgenies.show_loading();
     window.setTimeout(() => {
         if (!d3.boxplot.zone_selected || force) {
-            d3.boxplot.zone_selected = true;
 
             if (x_zone === null) {
                 //Search zone for X axis:
@@ -135,6 +134,8 @@ d3.boxplot.select_zone = function (x=null, y=null, x_zone=null, y_zone=null, for
                     }
                 }
             }
+
+            d3.boxplot.zone_selected = [x_zone, y_zone];
 
             //Compute X and Y scales to zoom into zone:
             let x_len_zone = d3.boxplot.x_zones[x_zone][1] - d3.boxplot.x_zones[x_zone][0];
@@ -200,59 +201,13 @@ d3.boxplot.select_zone = function (x=null, y=null, x_zone=null, y_zone=null, for
     }, 0);
 };
 
-d3.boxplot.reset_scale = function () {
-    dgenies.show_loading();
-    window.setTimeout(() => {
-        //Reset scale:
-        d3.boxplot.container.attr("transform", "scale(1,1)translate(0,0)");
-        d3.boxplot.zoom_scale_lines = 1;
-
-        //Restore lines stroke width:
-        d3.selectAll("path.content-lines").attr("stroke-width", d3.boxplot.content_lines_width);
-        if (d3.boxplot.break_lines_show) {
-            d3.selectAll("line.break-lines").style("visibility", "visible");
-            d3.selectAll("line.break-lines").attr("stroke-width", d3.boxplot.break_lines_width);
-        }
-
-        //Update left and bottom axis:
-        d3.boxplot.draw_left_axis(d3.boxplot.y_len);
-        d3.boxplot.draw_bottom_axis(d3.boxplot.x_len);
-
-        //Update top and right axis:
-        d3.boxplot.draw_top_axis();
-        d3.boxplot.draw_right_axis();
-
-        d3.boxplot.zone_selected = false;
-
-        $("#loading").hide();
-
-        //Re-enable zoom:
-        d3.boxplot.zoom_enabled = true;
-    }, 0);
-    //
-    // //Restore axis:
-    // d3.boxplot.draw_left_axis(d3.boxplot.y_len);
-    // d3.boxplot.draw_bottom_axis(d3.boxplot.x_len);
-    // d3.boxplot.draw_top_axis(d3.boxplot.x_zones);
-    // d3.boxplot.draw_right_axis(d3.boxplot.y_zones);
-    //
-    // d3.selectAll("line.content-lines").remove();
-    // d3.boxplot.draw_lines(d3.boxplot.lines, d3.boxplot.x_len, d3.boxplot.y_len);
-
-    // dgenies.show_loading();
-    // window.setTimeout(() => {
-    //     d3.select("g.container").html(d3.boxplot.full_pict);
-    //     dgenies.hide_loading();
-    // }, 0);
-};
-
 d3.boxplot.draw_left_axis = function (y_max, y_min = 0) {
     let axis_length = 500;
 
-    $(".axis-left").remove(); //Remove previous axis (if any)
+    $("svg.left-axis").remove(); //Remove previous axis (if any)
 
     let svg_left = d3.boxplot.svgsupercontainer.append("svg:svg")
-        .attr("class", "axis axis-left")
+        .attr("class", "axis left-axis")
         .attr("width", 5)
         .attr("height", 90)
         .attr("x", 0)
@@ -264,15 +219,6 @@ d3.boxplot.draw_left_axis = function (y_max, y_min = 0) {
         .attr("width", axis_length)
         .attr("height", 20)
         .attr("transform", "translate(0," + axis_length + ")rotate(-90)");
-
-    container_left.append("rect")
-        .attr("x", 0)
-        .attr("y", 0)
-        .attr("width", axis_length)
-        .attr("height", 20)
-        .attr("stroke", d3.boxplot.background_axis)
-        .attr("stroke-width", "0.1px")
-        .style("fill", d3.boxplot.background_axis);
 
     let y_size = y_max - y_min;
 
@@ -313,25 +259,16 @@ d3.boxplot.draw_bottom_axis = function (x_max, x_min = 0) {
 
     let axis_length = 500;
 
-    $(".axis-bottom").remove(); //Remove previous axis (if any)
+    $("svg.bottom-axis").remove(); //Remove previous axis (if any)
 
     let svg_bottom = d3.boxplot.svgsupercontainer.append("svg:svg")
-        .attr("class", "axis axis-bottom")
+        .attr("class", "axis bottom-axis")
         .attr("width", 90)
         .attr("height", 5)
         .attr("x", 5)
         .attr("y", 95)
         .attr("viewBox", "0 0 " + axis_length + " 20")
         .attr("preserveAspectRatio", "none");
-
-    svg_bottom.append("rect")
-        .attr("x", 0)
-        .attr("y", 0)
-        .attr("width", axis_length)
-        .attr("height", 20)
-        .attr("stroke", d3.boxplot.background_axis)
-        .attr("stroke-width", "0.1px")
-        .style("fill", d3.boxplot.background_axis);
 
     let x_size = x_max - x_min;
 
@@ -398,6 +335,7 @@ d3.boxplot.zoom_bottom_axis = function() {
 };
 
 d3.boxplot.draw_top_axis = function (x_zones=d3.boxplot.x_zones) {
+    $("svg.top-axis").remove();  //Remove previous axis (if any)
     let transform = d3.boxplot.container.attr("transform");
     if (transform === null) {
         transform = "translate(0,0)scale(1)";
@@ -409,21 +347,13 @@ d3.boxplot.draw_top_axis = function (x_zones=d3.boxplot.x_zones) {
 
     let axis_length = 500;
     let svg_top = d3.boxplot.svgsupercontainer.append("svg:svg")
+        .attr("class", "top-axis axis")
         .attr("width", 90)
         .attr("height", 5)
         .attr("x", 5)
         .attr("y", 0)
         .attr("viewBox", "0 0 " + axis_length + " 20")
         .attr("preserveAspectRatio", "none");
-
-    svg_top.append("rect")
-        .attr("x", 0)
-        .attr("y", 0)
-        .attr("width", axis_length)
-        .attr("height", 20)
-        .attr("stroke", d3.boxplot.background_axis)
-        .attr("stroke-width", "0.1px")
-        .style("fill", d3.boxplot.background_axis);
 
     svg_top.append("text")
         .attr("x", axis_length / 2)
@@ -439,20 +369,37 @@ d3.boxplot.draw_top_axis = function (x_zones=d3.boxplot.x_zones) {
         let x_pos_1 = Math.min(Math.max(x_zones[zone][0] * scale + translate, 0), d3.boxplot.scale);
         let x_pos_2 = Math.min(Math.max(x_zones[zone][1] * scale + translate, 0), d3.boxplot.scale);
         let z_len = x_pos_2 / d3.boxplot.scale * axis_length - x_pos_1 / d3.boxplot.scale * axis_length;
-        if (z_len > 0.05 * axis_length && !zone.startsWith("###MIX###")) {
+        if (!zone.startsWith("###MIX###")) {
             //z_middle = (x_zones[zone][1] + x_zones[zone][0]) / 2
             let text_container = svg_top.append("svg:svg")
                 .attr("x", x_pos_1 / d3.boxplot.scale * axis_length)
                 .attr("y", 0)
                 .attr("width", z_len)
                 .attr("height", "100%");
-            text_container.append("text")
+            let text = text_container.append("text")
                 .attr("x", z_len / 2)
                 .attr("y", 17)
                 .attr("text-anchor", "middle")
                 .attr("font-family", "sans-serif")
                 .attr("font-size", "6pt")
                 .text(zone);
+            let zone_txt = zone;
+            let i = 4;
+            while (text.node().getComputedTextLength() > z_len && zone_txt.length >= 5) {
+                text.remove();
+                zone_txt = zone.slice(0, -i) + "...";
+                text = text_container.append("text")
+                    .attr("x", z_len / 2)
+                    .attr("y", 17)
+                    .attr("text-anchor", "middle")
+                    .attr("font-family", "sans-serif")
+                    .attr("font-size", "6pt")
+                    .text(zone_txt);
+                i++;
+            }
+            if (text.node().getComputedTextLength() > z_len) {
+                text.remove();
+            }
         }
         if (zone.startsWith("###MIX###")) {
             svg_top.append("rect")
@@ -477,6 +424,7 @@ d3.boxplot.draw_top_axis = function (x_zones=d3.boxplot.x_zones) {
 };
 
 d3.boxplot.draw_right_axis = function (y_zones=d3.boxplot.y_zones) {
+    $("svg.right-axis").remove();  //Remove previous axis (if any)
     let transform = d3.boxplot.container.attr("transform");
     if (transform === null) {
         transform = "translate(0,0)scale(1)";
@@ -488,6 +436,7 @@ d3.boxplot.draw_right_axis = function (y_zones=d3.boxplot.y_zones) {
 
     let axis_length = 500;
     let svg_right = d3.boxplot.svgsupercontainer.append("svg:svg")
+        .attr("class", "right-axis")
         .attr("width", 5)
         .attr("height", 90)
         .attr("x", 95)
@@ -499,15 +448,6 @@ d3.boxplot.draw_right_axis = function (y_zones=d3.boxplot.y_zones) {
         .attr("width", axis_length)
         .attr("height", 20)
         .attr("transform", "translate(20)rotate(90)");
-
-    container_right.append("rect")
-        .attr("x", 0)
-        .attr("y", 0)
-        .attr("width", axis_length)
-        .attr("height", 20)
-        .attr("stroke", d3.boxplot.background_axis)
-        .style("stroke-width", "0.1px")
-        .style("fill", d3.boxplot.background_axis);
 
     container_right.append("text")
         .attr("x", axis_length / 2)
@@ -523,20 +463,37 @@ d3.boxplot.draw_right_axis = function (y_zones=d3.boxplot.y_zones) {
         let y_pos_2 = Math.min(Math.max((d3.boxplot.scale - y_zones[zone][0]) * scale + translate, 0), d3.boxplot.scale);
         let y_pos_1 = Math.min(Math.max((d3.boxplot.scale - y_zones[zone][1]) * scale + translate, 0), d3.boxplot.scale);
         let z_len = y_pos_2 / d3.boxplot.scale * axis_length - y_pos_1 / d3.boxplot.scale * axis_length;
-        if (z_len > 0.05 * axis_length && !zone.startsWith("###MIX###")) {
+        if (!zone.startsWith("###MIX###")) {
             //z_middle = (x_zones[zone][1] + x_zones[zone][0]) / 2
             let text_container = container_right.append("svg:svg")
                 .attr("x", y_pos_1 / d3.boxplot.scale * axis_length)
                 .attr("y", 0)
                 .attr("width", z_len)
                 .attr("height", "100%");
-            text_container.append("text")
+            let text = text_container.append("text")
                 .attr("x", z_len / 2)
                 .attr("y", 17)
                 .attr("text-anchor", "middle")
                 .attr("font-family", "sans-serif")
                 .attr("font-size", "6pt")
                 .text(zone);
+            let zone_txt = zone;
+            let i = 4;
+            while (text.node().getComputedTextLength() > z_len && zone_txt.length >= 5) {
+                text.remove();
+                zone_txt = zone.slice(0, -i) + "...";
+                text = text_container.append("text")
+                    .attr("x", z_len / 2)
+                    .attr("y", 17)
+                    .attr("text-anchor", "middle")
+                    .attr("font-family", "sans-serif")
+                    .attr("font-size", "6pt")
+                    .text(zone_txt);
+                i++;
+            }
+            if (text.node().getComputedTextLength() > z_len) {
+                text.remove();
+            }
         }
         if (zone.startsWith("###MIX###")) {
             container_right.append("rect")
@@ -561,60 +518,56 @@ d3.boxplot.draw_right_axis = function (y_zones=d3.boxplot.y_zones) {
     }
 };
 
-d3.boxplot.draw_corners = function () {
-    // Top left:
-    let svg_top_left = d3.boxplot.svgsupercontainer.append("svg:svg")
-        .attr("width", 5)
+d3.boxplot.draw_axis_bckgd = function () {
+    // Top:
+    let svg_top = d3.boxplot.svgsupercontainer.append("svg:svg")
+        .attr("width", 100)
         .attr("height", 5)
         .attr("x", 0)
         .attr("y", 0)
-        .attr("viewBox", "0 0 5 5")
+        .attr("viewBox", "0 0 100 5")
         .attr("preserveAspectRatio", "none");
-    svg_top_left.append("polygon")
-        .attr("points", "5,0 5,5 0,5")
-        .attr("stroke", d3.boxplot.background_axis)
-        .attr("stroke-width", "0px")
+    svg_top.append("polygon")
+        .attr("points", "5,0 95,0 100,5 0,5")
+        .attr("stroke", "none")
         .style("fill", d3.boxplot.background_axis);
 
-    // Top right:
-    let svg_top_right = d3.boxplot.svgsupercontainer.append("svg:svg")
+    // Right:
+    let svg_right = d3.boxplot.svgsupercontainer.append("svg:svg")
         .attr("width", 5)
-        .attr("height", 5)
+        .attr("height", 100)
         .attr("x", 95)
         .attr("y", 0)
-        .attr("viewBox", "0 0 5 5")
+        .attr("viewBox", "0 0 5 100")
         .attr("preserveAspectRatio", "none");
-    svg_top_right.append("polygon")
-        .attr("points", "0,0 5,5 0,5")
-        .attr("stroke", d3.boxplot.background_axis)
-        .attr("stroke-width", "0px")
+    svg_right.append("polygon")
+        .attr("points", "0,0 5,5 5,95 0,100")
+        .attr("stroke","none")
         .style("fill", d3.boxplot.background_axis);
 
-    // Bottom left:
-    let svg_bottom_left = d3.boxplot.svgsupercontainer.append("svg:svg")
-        .attr("width", 5)
+    // Bottom:
+    let svg_bottom = d3.boxplot.svgsupercontainer.append("svg:svg")
+        .attr("width", 100)
         .attr("height", 5)
         .attr("x", 0)
         .attr("y", 95)
-        .attr("viewBox", "0 0 5 5")
+        .attr("viewBox", "0 0 100 5")
         .attr("preserveAspectRatio", "none");
-    svg_bottom_left.append("polygon")
-        .attr("points", "0,0 5,0 5,5")
-        .attr("stroke", d3.boxplot.background_axis)
-        .attr("stroke-width", "0px")
+    svg_bottom.append("polygon")
+        .attr("points", "0,0 100,0 95,5 5,5")
+        .attr("stroke", "none")
         .style("fill", d3.boxplot.background_axis);
 
-    //Bottom right:
-    // Top right:
-    let svg_bottom_right = d3.boxplot.svgsupercontainer.append("svg:svg")
+    //Left:
+    let svg_left = d3.boxplot.svgsupercontainer.append("svg:svg")
         .attr("width", 5)
-        .attr("height", 5)
-        .attr("x", 95)
-        .attr("y", 95)
-        .attr("viewBox", "0 0 5 5")
+        .attr("height", 100)
+        .attr("x", 0)
+        .attr("y", 0)
+        .attr("viewBox", "0 0 5 100")
         .attr("preserveAspectRatio", "none");
-    svg_bottom_right.append("polygon")
-        .attr("points", "0,0 0,5 5,0")
+    svg_left.append("polygon")
+        .attr("points", "5,0 5,100 0,95 0,5")
         .attr("stroke", d3.boxplot.background_axis)
         .attr("stroke-width", "0px")
         .style("fill", d3.boxplot.background_axis);
@@ -856,24 +809,24 @@ d3.boxplot.draw = function (x_contigs, x_order, y_contigs, y_order) {
         d3.selectAll("line.break-lines").style("visibility", "hidden");
     }
 
+    d3.boxplot.draw_axis_bckgd();
     d3.boxplot.draw_left_axis(d3.boxplot.y_len);
     d3.boxplot.draw_bottom_axis(d3.boxplot.x_len);
     d3.boxplot.draw_top_axis(d3.boxplot.x_zones);
     d3.boxplot.draw_right_axis(d3.boxplot.y_zones);
-    d3.boxplot.draw_corners();
 
     window.setTimeout(() => {
         //Data:
         d3.boxplot.draw_lines();
 
         $("#restore-all").click(function () {
-            d3.boxplot.reset_scale();
+            d3.boxplot.zoom.reset_scale();
             $(this).hide();
         });
 
         $(document).on("keyup", function(e) {
             if (e.keyCode === 27) {
-                d3.boxplot.reset_scale();
+                d3.boxplot.zoom.reset_scale();
                 $("#restore-all").hide();
             }
         });

@@ -5,12 +5,14 @@ dgenies.notify = function (text, type="warn", delay=10000) {
     $.notify(text, {
         className: type,
         globalPosition: "top",
-        position: "right",
+        position: "left",
         autoHideDelay: delay
     })
 };
 
-dgenies.show_loading = function () {
+dgenies.show_loading = function (message="Loading...", width=118) {
+    $(dgenies.loading).find(".mylabel").html(message);
+    $(dgenies.loading).find(".label").width(width);
     $(dgenies.loading).show();
     $(dgenies.loading).position({
         my: "center center",
@@ -31,6 +33,7 @@ dgenies.set_loading_message = function (message) {
 
 dgenies.reset_loading_message = function () {
     $(dgenies.loading).find(".mylabel").html("Loading...");
+    $(dgenies.loading).find(".label").width(118);
 };
 
 dgenies.fill_select_zones = function(x_targets, y_contigs) {

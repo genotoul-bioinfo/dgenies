@@ -2,13 +2,14 @@
 {% block scripts %}
     {{ super() }}
     <script src="{{ url_for('static', filename='js/chosen.jquery.min.js') }}" type="text/JavaScript"></script>
+    <script src="{{ url_for('static', filename='js/FileSaver.min.js') }}" type="text/JavaScript"></script>
+    <script src="{{ url_for('static', filename='js/canvg.min.js') }}" type="text/JavaScript"></script>
     <script src="{{ url_for('static', filename='js/d3.min.js') }}" type="text/JavaScript"></script>
     <script src="{{ url_for('static', filename='js/d3.boxplot.js') }}" type="text/JavaScript"></script>
     <script src="{{ url_for('static', filename='js/d3.boxplot.zoom.js') }}" type="text/JavaScript"></script>
     <script src="{{ url_for('static', filename='js/d3.boxplot.events.js') }}" type="text/JavaScript"></script>
     <script src="{{ url_for('static', filename='js/d3.boxplot.controls.js') }}" type="text/JavaScript"></script>
     <script src="{{ url_for('static', filename='js/d3.boxplot.mousetip.js') }}" type="text/JavaScript"></script>
-    <script src="{{ url_for('static', filename='js/FileSaver.min.js') }}" type="text/JavaScript"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/chosen.min.css') }}" type="text/css">
 {% endblock %}
 {% block onload %}d3.boxplot.init('{{ id }}');{% endblock %}
@@ -73,5 +74,6 @@
             </div>
         </div>
     </div>
+    <div id="export-pict" style="display: none;"></div>
 </div>
 {% endblock %}

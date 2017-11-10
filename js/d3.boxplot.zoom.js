@@ -208,3 +208,81 @@ d3.boxplot.zoom.zoom = function () {
         }
     }
 };
+
+d3.boxplot.zoom.restore_scale = function(transform) {
+    if (d3.boxplot.zone_selected) {
+        d3.boxplot.select_zone(null, null, d3.boxplot.zone_selected[0], d3.boxplot.zone_selected[1], true)
+    }
+    else {
+        let scale_x = 1;
+        let scale_y = 1;
+        if (transform !== null) {
+            let search_sc = transform.match(/scale\(([-\de.]+)(,\s*[-\de.]+)?\)/);
+            scale_x = search_sc[1];
+            scale_y = search_sc[2];
+        }
+        else {
+            transform = "translate(0,0)scale(1,1)";
+        }
+        if (scale_y === undefined) {
+            scale_y = 1000000;
+        }
+        d3.boxplot.container.attr("transform", transform);
+        d3.selectAll("path.content-lines").attr("stroke-width", d3.boxplot.content_lines_width / Math.min(scale_x, scale_y));
+        if (d3.boxplot.break_lines_show) {
+            d3.selectAll("line.break-lines").style("visibility", "visible");
+            d3.selectAll("line.break-lines").attr("stroke-width", d3.boxplot.break_lines_width);
+        }
+    }
+};
+
+d3.boxplot.zoom.reset_scale = function (temp=false, after=null) {
+    dgenies.show_loading();
+    window.setTimeout(() => {
+        //Reset scale:
+        d3.boxplot.container.attr("transform", "scale(1,1)translate(0,0)");
+        d3.boxplot.zoom_scale_lines = 1;
+
+        //Restore lines stroke width:
+        d3.selectAll("path.content-lines").attr("stroke-width", d3.boxplot.content_lines_width);
+        if (d3.boxplot.break_lines_show) {
+            d3.selectAll("line.break-lines").style("visibility", "visible");
+            d3.selectAll("line.break-lines").attr("stroke-width", d3.boxplot.break_lines_width);
+        }
+
+        //Update left and bottom axis:
+        d3.boxplot.draw_left_axis(d3.boxplot.y_len);
+        d3.boxplot.draw_bottom_axis(d3.boxplot.x_len);
+
+        //Update top and right axis:
+        d3.boxplot.draw_top_axis();
+        d3.boxplot.draw_right_axis();
+
+        if (!temp)
+            d3.boxplot.zone_selected = false;
+
+        dgenies.hide_loading();
+
+        //Re-enable zoom:
+        d3.boxplot.zoom_enabled = true;
+
+        if (after !== null) {
+            after();
+        }
+    }, 0);
+    //
+    // //Restore axis:
+    // d3.boxplot.draw_left_axis(d3.boxplot.y_len);
+    // d3.boxplot.draw_bottom_axis(d3.boxplot.x_len);
+    // d3.boxplot.draw_top_axis(d3.boxplot.x_zones);
+    // d3.boxplot.draw_right_axis(d3.boxplot.y_zones);
+    //
+    // d3.selectAll("line.content-lines").remove();
+    // d3.boxplot.draw_lines(d3.boxplot.lines, d3.boxplot.x_len, d3.boxplot.y_len);
+
+    // dgenies.show_loading();
+    // window.setTimeout(() => {
+    //     d3.select("g.container").html(d3.boxplot.full_pict);
+    //     dgenies.hide_loading();
+    // }, 0);
+};
