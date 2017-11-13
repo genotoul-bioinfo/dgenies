@@ -263,5 +263,4 @@ def emit_event(event, data, room=None):
 
 
 if __name__ == '__main__':
-    app.run()
     socketio.run(app)
