@@ -546,3 +546,16 @@ div.submit-form select:hover {
     -webkit-border-radius: 5px 5px 0 0 !important;
     outline: none !important;
 }
+
+.beta-warning {
+    height: 30px;
+    line-height: 30px;
+    text-align: center;
+    color: white;
+    background-color: #6e0000;
+}
+
+.beta-warning a {
+    color: white;
+    font-weight: bold;
+}

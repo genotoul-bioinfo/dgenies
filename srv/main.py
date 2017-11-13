@@ -5,7 +5,6 @@ import time
 import datetime
 import shutil
 import re
-import threading
 import gevent
 from flask import Flask, render_template, request, url_for, jsonify, session, Response, abort
 from flask_mail import Mail
