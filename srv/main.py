@@ -249,15 +249,9 @@ def upload():
 # SocketIO #
 ############
 
-@socketio.on('connected')
-def handle_my_custom_event(json):
-    print('received json: ' + str(json))
-    emit("event", {})
-
 
 @socketio.on('join')
 def on_join(data):
-    print(data)
     username = Functions.random_string(10)
     room = data['room']
     join_room(room)
@@ -265,7 +259,6 @@ def on_join(data):
 
 
 def emit_event(event, data, room=None):
-    print("pass")
     socketio.emit(event, data, room=room)
     socketio.sleep(0)
 
