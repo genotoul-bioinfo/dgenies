@@ -38,7 +38,7 @@ dgenies.result.export.export_svg = function () {
 dgenies.result.export.export_paf = function () {
     let export_div = $("div#export-pict");
     export_div.html("");
-    export_div.append($("<a>").attr("href", `/paf/${d3.boxplot.id_res}`)
+    export_div.append($("<a>").attr("href", `/paf/${dgenies.result.id_res}`)
         .attr("download", `map_${d3.boxplot.name_y}_to_${d3.boxplot.name_x}.paf`).attr("id", "my-download").text("download"));
     dgenies.hide_loading();
     document.getElementById('my-download').click();

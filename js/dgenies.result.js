@@ -3,6 +3,9 @@ if (!dgenies) {
 }
 dgenies.result = {};
 
+// GLOBAL VARIABLES:
+dgenies.result.id_res = null;
+
 dgenies.result.init = function(id_res) {
     dgenies.result.socketio(id_res);
 };

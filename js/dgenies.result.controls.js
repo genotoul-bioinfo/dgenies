@@ -14,7 +14,7 @@ dgenies.result.controls.launch_sort_contigs = function () {
     window.setTimeout(() => {
         dgenies.show_loading("Building...");
         window.setTimeout(() => {
-            $.post(`/sort/${d3.boxplot.id_res}`,
+            $.post(`/sort/${dgenies.result.id_res}`,
                 {},
                 function (data) {
                     if (!data["success"]) {

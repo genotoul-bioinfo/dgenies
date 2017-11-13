@@ -4,8 +4,6 @@ if (!d3) {
 d3.boxplot = {};
 
 //GLOBAL VARIABLES:
-d3.boxplot.id_res = null;
-
 d3.boxplot.svgcontainer = null;
 d3.boxplot.container = null;
 d3.boxplot.svgsupercontainer = null;
@@ -53,7 +51,7 @@ d3.boxplot.color_mixes = "#969696";
 d3.boxplot.min_sizes = [0, 0.01, 0.02, 0.03, 0.05, 1, 2];
 
 d3.boxplot.init = function (id, from_file=false) {
-    d3.boxplot.id_res = id;
+    dgenies.result.id_res = id;
     $("#form-parameters")[0].reset();
     $("form#select-zone")[0].reset();
     if (!from_file) {
