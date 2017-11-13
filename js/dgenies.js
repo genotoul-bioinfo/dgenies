@@ -2,12 +2,22 @@ dgenies = {};
 dgenies.loading = "#loading";
 dgenies.login = null; // Username for websocket (anonymous)
 
-dgenies.notify = function (text, type="warn", delay=10000) {
-    $.notify(text, {
-        className: type,
-        globalPosition: "top",
-        position: "left",
-        autoHideDelay: delay
+dgenies.notify = function (text, type="warning", delay=5000) {
+    $.notify({
+        message: text
+    },{
+        type: type,
+        placement: {
+            from: "top",
+            align: "center"
+        },
+        delay: delay,
+        animate: {
+            enter: 'animated fadeInDown',
+            exit: 'animated fadeOutUp'
+        },
+        offset: 55,
+        newest_on_top: true,
     })
 };
 

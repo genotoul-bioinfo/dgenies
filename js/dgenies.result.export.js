@@ -57,7 +57,7 @@ dgenies.result.export.export = function () {
             else if (selection === 3)
                 dgenies.result.export.export_paf();
             else
-                dgenies.notify("Not supported yet!", "error", 2000);
+                dgenies.notify("Not supported yet!", "danger", 2000);
             dgenies.hide_loading();
             select.val("0");
         }

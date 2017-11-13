@@ -19,7 +19,7 @@ dgenies.result.controls.launch_sort_contigs = function () {
                 function (data) {
                     if (!data["success"]) {
                         dgenies.hide_loading();
-                        alert("An error occurred!");
+                        dgenies.notify("An error occurred! Please contact us to report the bug", "danger");
                     }
                 }
             );
@@ -34,6 +34,6 @@ dgenies.result.controls.select_zone = function() {
         d3.boxplot.select_zone(null, null, target_select.text(), contig_select.text(), true);
     }
     else {
-        dgenies.notify("Please select zones into zoom!", "error", 2000);
+        dgenies.notify("Please select zones into zoom!", "danger", 2000);
     }
 };

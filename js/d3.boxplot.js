@@ -104,7 +104,7 @@ d3.boxplot.launch = function(res, update=false) {
     }
     if (res["sampled"]) {
         let max_nb_lines = dgenies.numberWithCommas(res["max_nb_lines"].toString());
-        dgenies.notify(`There are too much matches.\nOnly the ${max_nb_lines} best matches are displayed`)
+        dgenies.notify(`<div style="text-align: center"><b>There are too much matches.\nOnly the ${max_nb_lines} best matches are displayed</b></div>`)
     }
     d3.boxplot.mousetip.init();
 };

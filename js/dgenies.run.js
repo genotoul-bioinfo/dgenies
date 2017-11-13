@@ -33,8 +33,8 @@ dgenies.run.upload_next = function () {
 };
 
 dgenies.run.__upload_server_error = function(fasta, data) {
-    dgenies.notify("message" in data ? data["message"]: `An error has occured when uploading ${fasta} file. Please contact us to report the bug!`,
-                    "error");
+    dgenies.notify("message" in data ? data["message"]: `An error has occured when uploading <b>${fasta}</b> file. Please contact us to report the bug!`,
+                    "danger");
     dgenies.run.enable_form();
 };
 
@@ -53,7 +53,7 @@ dgenies.run.init_fileuploads = function () {
                 dgenies.run.files[0] = data;
             else {
                 $("input.file-query").trigger("change"); // The value is null after fired
-                dgenies.notify(`File ${filename} is not supported!`, "error", 3000)
+                dgenies.notify(`File <b>${filename}</b> is not supported!`, "danger", 3000)
             }
         },
         progressall: function (e, data) {
@@ -91,7 +91,7 @@ dgenies.run.init_fileuploads = function () {
                 dgenies.run.files[1] = data;
             else {
                 $("input.file-target").trigger("change"); // The value is null after fired
-                dgenies.notify(`File ${filename} is not supported!`, "error", 3000)
+                dgenies.notify(`File <b>${filename}</b> is not supported!`, "danger", 3000)
             }
         },
         progressall: function (e, data) {
