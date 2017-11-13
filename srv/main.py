@@ -5,8 +5,11 @@ import time
 import datetime
 import shutil
 import re
+import threading
+import gevent
 from flask import Flask, render_template, request, url_for, jsonify, session, Response, abort
 from flask_mail import Mail
+from flask_socketio import SocketIO, emit, join_room, leave_room
 from lib.paf import Paf
 from config_reader import AppConfigReader
 from lib.job_manager import JobManager
@@ -35,6 +38,8 @@ app_title = "D-GENIES - Dotplot for Genomes Interactive, E-connected and Speedy"
 app = Flask(__name__, static_url_path='/static')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['SECRET_KEY'] = 'dsqdsq-255sdA-fHfg52-25Asd5'
+
+socketio = SocketIO(app, async_mode='gevent')
 
 # Init mail:
 mail = Mail(app)
@@ -186,18 +191,23 @@ def get_graph():
     return jsonify({"success": False, "message": paf.error})
 
 
+def sort_paf(paf, id_res):
+    paf.sort()
+    res = {"success": False}
+    if paf.parsed:
+        res = paf.get_d3js_data()
+        res["success"] = True
+    emit_event("update_graph", res, "res_" + id_res)
+
+
 @app.route('/sort/<id_res>', methods=['POST'])
 def sort_graph(id_res):
     paf = os.path.join(app_data, id_res, "map.paf")
     idx1 = os.path.join(app_data, id_res, "query.idx")
     idx2 = os.path.join(app_data, id_res, "target.idx")
     paf = Paf(paf, idx1, idx2, False)
-    paf.sort()
-    if paf.parsed:
-        res = paf.get_d3js_data()
-        res["success"] = True
-        return jsonify(res)
-    return jsonify({"success": False, "message": paf.error})
+    gevent.spawn(sort_paf, paf=paf, id_res=id_res)
+    return jsonify({"success": True})
 
 
 @app.route("/upload", methods=['POST'])
@@ -235,5 +245,31 @@ def upload():
     return jsonify({"files": [], "success": "ERR", "message": "Session not initialized. Please refresh the page."})
 
 
+############
+# SocketIO #
+############
+
+@socketio.on('connected')
+def handle_my_custom_event(json):
+    print('received json: ' + str(json))
+    emit("event", {})
+
+
+@socketio.on('join')
+def on_join(data):
+    print(data)
+    username = Functions.random_string(10)
+    room = data['room']
+    join_room(room)
+    emit("connected", {"username": username})
+
+
+def emit_event(event, data, room=None):
+    print("pass")
+    socketio.emit(event, data, room=room)
+    socketio.sleep(0)
+
+
 if __name__ == '__main__':
     app.run()
+    socketio.run(app)

@@ -56,4 +56,4 @@ if [ "$LOCAL" == "True" ]; then
     host="127.0.0.1"
 fi
 
-FLASK_DEBUG=${debug} FLASK_APP=${SCRIPTPATH}/../srv/main.py flask run --host=${host} --port=${PORT}
+FLASK_DEBUG=${debug} FLASK_APP=${SCRIPTPATH}/../srv/main.py flask run --host=${host} --port=${PORT} --no-reload

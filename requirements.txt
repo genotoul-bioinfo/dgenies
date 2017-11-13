@@ -1,5 +1,8 @@
 flask==0.12.*
 Flask-Mail==0.9.*
+flask-socketio==2.9.*
+gevent==1.2.*
+gevent-websocket==0.10.*
 Jinja2==2.9.*
 pony==0.7.*
 docopt==0.6.*

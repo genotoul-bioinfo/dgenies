@@ -12,19 +12,12 @@ dgenies.result.controls.init = function () {
 dgenies.result.controls.launch_sort_contigs = function () {
     d3.boxplot.zoom.reset_scale();
     window.setTimeout(() => {
-        dgenies.set_loading_message("Building...");
-        dgenies.show_loading();
+        dgenies.show_loading("Building...");
         window.setTimeout(() => {
             $.post(`/sort/${d3.boxplot.id_res}`,
                 {},
                 function (data) {
-                    if (data["success"]) {
-                        dgenies.reset_loading_message();
-                        window.setTimeout(() => {
-                            d3.boxplot.launch(data, true);
-                        }, 0);
-                    }
-                    else {
+                    if (!data["success"]) {
                         dgenies.hide_loading();
                         alert("An error occurred!");
                     }

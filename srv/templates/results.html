@@ -12,9 +12,10 @@
     <script src="{{ url_for('static', filename='js/d3.boxplot.zoom.js') }}" type="text/JavaScript"></script>
     <script src="{{ url_for('static', filename='js/d3.boxplot.events.js') }}" type="text/JavaScript"></script>
     <script src="{{ url_for('static', filename='js/d3.boxplot.mousetip.js') }}" type="text/JavaScript"></script>
+    <script src="{{ url_for('static', filename='js/socket.io.slim.js') }}" type="text/javascript"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/chosen.min.css') }}" type="text/css">
 {% endblock %}
-{% block onload %}d3.boxplot.init('{{ id }}');{% endblock %}
+{% block onload %}d3.boxplot.init('{{ id }}');dgenies.result.init('{{ id }}');{% endblock %}
 {% block content %}
 {{ super() }}
 
