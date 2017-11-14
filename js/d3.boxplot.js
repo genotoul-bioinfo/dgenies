@@ -50,13 +50,15 @@ d3.boxplot.color_mixes = "#969696";
 //Filter sizes:
 d3.boxplot.min_sizes = [0, 0.01, 0.02, 0.03, 0.05, 1, 2];
 
-d3.boxplot.init = function (id, from_file=false) {
-    dgenies.result.id_res = id;
+d3.boxplot.init = function (id_res=null, from_file=false) {
+    if (id_res === null) {
+        id_res = dgenies.result.id_res;
+    }
     $("#form-parameters")[0].reset();
     $("form#select-zone")[0].reset();
     if (!from_file) {
         $.post("/get_graph",
-            {"id": id},
+            {"id": id_res},
             function (data) {
                 if (data["success"]) {
                     d3.boxplot.launch(data);
@@ -68,7 +70,7 @@ d3.boxplot.init = function (id, from_file=false) {
         )
     }
     else {
-        $.get(id,
+        $.get(id_res,
             {},
             function (data) {
                 d3.boxplot.launch(data);

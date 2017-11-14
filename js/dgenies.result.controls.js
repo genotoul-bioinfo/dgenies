@@ -17,7 +17,13 @@ dgenies.result.controls.launch_sort_contigs = function () {
             $.post(`/sort/${dgenies.result.id_res}`,
                 {},
                 function (data) {
-                    if (!data["success"]) {
+                    if (data["success"]) {
+                        dgenies.reset_loading_message();
+                        window.setTimeout(() => {
+                            d3.boxplot.launch(data, true);
+                        }, 0);
+                    }
+                    else {
                         dgenies.hide_loading();
                         dgenies.notify("An error occurred! Please contact us to report the bug", "danger");
                     }

@@ -1,6 +1,5 @@
 dgenies = {};
 dgenies.loading = "#loading";
-dgenies.login = null; // Username for websocket (anonymous)
 
 dgenies.notify = function (text, type="warning", delay=5000) {
     $.notify({
