@@ -57,7 +57,7 @@ d3.boxplot.init = function (id_res=null, from_file=false) {
     $("#form-parameters")[0].reset();
     $("form#select-zone")[0].reset();
     if (!from_file) {
-        $.post("/get_graph",
+        dgenies.post("/get_graph",
             {"id": id_res},
             function (data) {
                 if (data["success"]) {
@@ -70,7 +70,7 @@ d3.boxplot.init = function (id_res=null, from_file=false) {
         )
     }
     else {
-        $.get(id_res,
+        dgenies.get(id_res,
             {},
             function (data) {
                 d3.boxplot.launch(data);

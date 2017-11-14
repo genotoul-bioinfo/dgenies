@@ -14,26 +14,19 @@ dgenies.result.controls.launch_sort_contigs = function () {
     window.setTimeout(() => {
         dgenies.show_loading("Building...");
         window.setTimeout(() => {
-            $.ajax(`/sort/${dgenies.result.id_res}`,
-                {
-                    method: "POST",
-                    data: {},
-                    success: function (data) {
-                        if (data["success"]) {
-                            dgenies.reset_loading_message();
-                            window.setTimeout(() => {
-                                d3.boxplot.launch(data, true);
-                            }, 0);
-                        }
-                        else {
-                            dgenies.hide_loading();
-                            dgenies.notify("An error occurred! Please contact us to report the bug", "danger");
-                        }
-                    },
-                    error: function () {
+            dgenies.post(`/sort/${dgenies.result.id_res}`,
+                {},
+                function (data) {
+                    if (data["success"]) {
+                        dgenies.reset_loading_message();
+                        window.setTimeout(() => {
+                            d3.boxplot.launch(data, true);
+                        }, 0);
+                    }
+                    else {
                         dgenies.hide_loading();
                         dgenies.notify("An error occurred! Please contact us to report the bug", "danger");
-                    },
+                    }
                 }
             );
         }, 0);

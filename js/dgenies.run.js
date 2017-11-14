@@ -199,7 +199,7 @@ dgenies.run.enable_form = function () {
 
 dgenies.run.do_submit = function () {
     $("div#uploading-loading").html("Submitting form...");
-    $.post("/launch_analysis",
+    dgenies.post("/launch_analysis",
         {
             "id_job": $("input#id_job").val(),
             "email": $("input#email").val(),

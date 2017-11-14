@@ -88,3 +88,25 @@ dgenies.fill_select_zones = function(x_targets, y_contigs) {
 dgenies.numberWithCommas = function(x) {
     return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 };
+
+dgenies.ajax = function(url, data, success, error, method="POST") {
+    $.ajax(url,
+        {
+            method: method,
+            data: data,
+            success: success,
+            error: error !== null ? error : function () {
+                dgenies.hide_loading();
+                dgenies.notify("An error occurred! Please contact us to report the bug", "danger");
+            },
+        }
+    );
+};
+
+dgenies.post = function(url, data, success, error) {
+    dgenies.ajax(url, data, success, error, "POST")
+};
+
+dgenies.get = function (url, data, success, error) {
+    dgenies.ajax(url, data, success, error, "GET")
+};
