@@ -95,7 +95,7 @@ dgenies.ajax = function(url, data, success, error, method="POST") {
             method: method,
             data: data,
             success: success,
-            error: error !== null ? error : function () {
+            error: error || function () {
                 dgenies.hide_loading();
                 dgenies.notify("An error occurred! Please contact us to report the bug", "danger");
             },
