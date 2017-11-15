@@ -64,7 +64,7 @@ d3.boxplot.init = function (id_res=null, from_file=false) {
                     d3.boxplot.launch(data);
                 }
                 else {
-                    $("#supdraw").html($("<p>").html("This job does not exists!").css("margin-top", "15px"));
+                    $("#supdraw").html($("<p>").html("This job does not exist!").css("margin-top", "15px"));
                 }
             }
         )
