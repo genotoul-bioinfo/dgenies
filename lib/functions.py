@@ -3,6 +3,7 @@ import random
 import string
 import gzip
 import io
+import re
 from lib.Fasta import Fasta
 
 ALLOWED_EXTENSIONS = ['fa', 'fasta', 'fna', 'fa.gz', 'fasta.gz', 'fna.gz']
@@ -50,7 +51,7 @@ class Functions:
                     if line.startswith(">"):
                         if contig is not None:
                             out_file.write("%s\t%d\n" % (contig, len_c))
-                        contig = line[1:].split(" ")[0]
+                        contig = re.split("\s", line[1:])[0]
                         len_c = 0
                     elif len(line) > 0:
                         len_c += len(line)
