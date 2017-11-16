@@ -100,7 +100,6 @@ d3.boxplot.events.stroke_linecap = function(rounded) {
 };
 
 d3.boxplot.events.stroke_width = function (width) {
-    console.log(width);
     let stroke_width = d3.boxplot.scale / 600;
     if (width === "1") {
         stroke_width = d3.boxplot.scale / 400;
@@ -111,7 +110,6 @@ d3.boxplot.events.stroke_width = function (width) {
     else if (width === "3") {
         stroke_width = d3.boxplot.scale / 100;
     }
-    console.log(stroke_width);
     d3.boxplot.content_lines_width = stroke_width;
     d3.selectAll("path.content-lines").attr("stroke-width", stroke_width / d3.boxplot.zoom_scale_lines);
 };

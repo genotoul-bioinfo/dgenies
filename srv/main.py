@@ -235,6 +235,7 @@ def build_fasta(id_res):
                     "job_name": id_res,
                     "fasta_file": query_fasta,
                     "index_file": os.path.join(res_dir, "query.idx.sorted"),
+                    "lock_file": lock_query,
                     "compressed": compressed,
                     "mailer": mailer
                 })

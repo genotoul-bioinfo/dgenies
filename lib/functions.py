@@ -181,9 +181,7 @@ class Functions:
 
     @staticmethod
     def sort_fasta(job_name, fasta_file, index_file, lock_file, compress=False, mailer=None):
-        print("Loading index...")
         index, sample_name = Functions.read_index(index_file)
-        print("Starting fasta sort...")
         is_compressed = fasta_file.endswith(".gz")
         if is_compressed:
             fasta_file = Functions.uncompress(fasta_file)
@@ -198,17 +196,14 @@ class Functions:
         if is_compressed:
             os.remove(fasta_file)
         if compress:
-            print("Compress...")
             Functions.compress(fasta_file_o)
         os.remove(lock_file)
         if mailer is not None:
             Functions.send_fasta_ready(mailer, job_name, sample_name, compress)
-        print("Fasta sort done!")
 
     @staticmethod
-    def compress_and_send_mail(job_name, fasta_file, index_file, compressed, mailer):
-        print("Compress!")
+    def compress_and_send_mail(job_name, fasta_file, index_file, lock_file, compressed, mailer):
         Functions.compress(fasta_file)
         index, sample_name = Functions.read_index(index_file)
         Functions.send_fasta_ready(mailer, job_name, sample_name, compressed)
-        print("DONE!")
+        os.remove(lock_file)

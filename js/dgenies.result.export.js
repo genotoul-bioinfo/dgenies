@@ -63,7 +63,6 @@ dgenies.result.export.export_fasta = function(compress=false) {
             gzip: compress
         },
         function(data, success) {
-            console.log(data);
             if (data["status"] === 0) {
                 window.setTimeout(() => {
                     dgenies.result.export.export_fasta();
