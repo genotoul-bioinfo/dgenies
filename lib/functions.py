@@ -142,8 +142,9 @@ class Functions:
     def read_index(index_file):
         index = OrderedDict()
         with open(index_file, "r") as index_f:
-            lines = index_f.readlines()
-            for line in lines[1:]:
+            # Sample name without special chars:
+            sample_name = re.sub('[^A-Za-z0-9_\-.]+', '', index_f.readline().strip("\n").replace(" ", "_"))
+            for line in index_f:
                 if line != "":
                     parts = line.strip("\n").split("\t")
                     name = parts[0]
@@ -153,7 +154,7 @@ class Functions:
                         "length": lenght,
                         "to_reverse": to_reverse
                     }
-        return index
+        return index, sample_name
 
     @staticmethod
     @db_session
@@ -162,25 +163,26 @@ class Functions:
         return j1.email
 
     @staticmethod
-    def send_fasta_ready(mailer, job_name):
+    def send_fasta_ready(mailer, job_name, sample_name, compressed=False):
         config_reader = AppConfigReader()
         web_url = config_reader.get_web_url()
         with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "mail_templates", "dl_fasta.html")) \
                 as t_file:
             template = Template(t_file.read())
-            message_html = template.render(job_name=job_name, status="success", url_base=web_url)
+            message_html = template.render(job_name=job_name, status="success", url_base=web_url,
+                                           sample_name=sample_name, compressed=compressed)
         message = "D-Genies\n\n" \
                   "Job %s - Download fasta\n\n" % job_name
-        message += "Query fasta file for job %s is ready to download." % job_name
+        message += "Query fasta file for job %s (query: %s) is ready to download.\n" % (job_name, sample_name)
         message += "You can click on the link below to download it:\n\n"
-        message += "%s/fasta-query/%s" % (web_url, job_name)
+        message += "%s/fasta-query/%s/%s" % (web_url, job_name, sample_name + ".fasta" + (".gz" if compressed else ""))
         mailer.send_mail([Functions.get_mail_for_job(job_name)], "Job %s - Download fasta" % job_name, message,
                          message_html)
 
     @staticmethod
     def sort_fasta(job_name, fasta_file, index_file, lock_file, compress=False, mailer=None):
         print("Loading index...")
-        index = Functions.read_index(index_file)
+        index, sample_name = Functions.read_index(index_file)
         print("Starting fasta sort...")
         is_compressed = fasta_file.endswith(".gz")
         if is_compressed:
@@ -200,5 +202,13 @@ class Functions:
             Functions.compress(fasta_file_o)
         os.remove(lock_file)
         if mailer is not None:
-            Functions.send_fasta_ready(mailer, job_name)
+            Functions.send_fasta_ready(mailer, job_name, sample_name, compress)
         print("Fasta sort done!")
+
+    @staticmethod
+    def compress_and_send_mail(job_name, fasta_file, index_file, compressed, mailer):
+        print("Compress!")
+        Functions.compress(fasta_file)
+        index, sample_name = Functions.read_index(index_file)
+        Functions.send_fasta_ready(mailer, job_name, sample_name, compressed)
+        print("DONE!")

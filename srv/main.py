@@ -207,6 +207,7 @@ def build_fasta(id_res):
     res_dir = os.path.join(app_data, id_res)
     lock_query = os.path.join(res_dir, ".query-fasta-build")
     is_sorted = os.path.exists(os.path.join(res_dir, ".sorted"))
+    compressed = request.form["gzip"].lower() == "true"
     query_fasta = Functions.get_fasta_file(res_dir, "query", is_sorted)
     if query_fasta is not None:
         if is_sorted and not query_fasta.endswith(".sorted"):
@@ -217,7 +218,7 @@ def build_fasta(id_res):
                 "fasta_file": query_fasta,
                 "index_file": os.path.join(res_dir, "query.idx.sorted"),
                 "lock_file": lock_query,
-                "compress": request.form["gzip"],
+                "compress": compressed,
                 "mailer": mailer
             })
             thread.start()
@@ -227,6 +228,18 @@ def build_fasta(id_res):
             return jsonify({"success": True, "status": 1, "status_message": "In progress"})
         else:
             # No sort to do or sort done
+            if compressed and not query_fasta.endswith(".gz.fasta"):
+                # If compressed file is asked, we must compress it now if not done before...
+                Path(lock_query).touch()
+                thread = threading.Timer(1, Functions.compress_and_send_mail, kwargs={
+                    "job_name": id_res,
+                    "fasta_file": query_fasta,
+                    "index_file": os.path.join(res_dir, "query.idx.sorted"),
+                    "compressed": compressed,
+                    "mailer": mailer
+                })
+                thread.start()
+                return jsonify({"success": True, "status": 1, "status_message": "In progress"})
             return jsonify({"success": True, "status": 2, "status_message": "Done",
                             "gzip": query_fasta.endswith(".gz") or query_fasta.endswith(".gz.sorted")})
     else:
@@ -234,8 +247,9 @@ def build_fasta(id_res):
                         "message": "Unable to get fasta file for query. Please contact us to report the bug"})
 
 
-@app.route('/fasta-query/<id_res>', methods=['GET'])
-def dl_fasta(id_res):
+@app.route('/fasta-query/<id_res>', defaults={'filename': ""}, methods=['GET'])
+@app.route('/fasta-query/<id_res>/<filename>', methods=['GET'])  # Use fake URL in mail to set download file name
+def dl_fasta(id_res, filename):
     res_dir = os.path.join(app_data, id_res)
     lock_query = os.path.join(res_dir, ".query-fasta-build")
     is_sorted = os.path.exists(os.path.join(res_dir, ".sorted"))
