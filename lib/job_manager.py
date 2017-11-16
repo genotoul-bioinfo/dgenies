@@ -11,13 +11,12 @@ from lib.functions import Functions
 import requests
 import wget
 from jinja2 import Template
-from flask_mail import Message, Mail
 import traceback
 
 
 class JobManager:
 
-    def __init__(self, id_job: str, email: str=None, query: Fasta=None, target: Fasta=None, app=None, mailer: Mail=None):
+    def __init__(self, id_job: str, email: str=None, query: Fasta=None, target: Fasta=None, mailer=None):
         self.id_job = id_job
         self.email = email
         self.query = query
@@ -41,11 +40,6 @@ class JobManager:
         self.idx_t = os.path.join(self.output_dir, "target.idx")
         self.logs = os.path.join(self.output_dir, "logs.txt")
         self.mailer = mailer
-        self.app = app
-
-    def send_async_email(self, msg):
-        with self.app.app_context():
-            self.mailer.send(msg)
 
     def __check_job_success_local(self):
         if os.path.exists(self.paf):
@@ -85,15 +79,8 @@ class JobManager:
             return "DGenies - Job failed: %s" % self.id_job
 
     def send_mail(self, status):
-        msg = Message(
-            subject=self.get_mail_subject(status),
-            recipients=[self.email],
-            html=self.get_mail_content_html(status),
-            body=self.get_mail_content(status),
-            sender=(self.mail_org, self.mail_status) if self.mail_org is not None else self.mail_status,
-            reply_to=self.mail_reply
-        )
-        self.send_async_email(msg)
+        self.mailer.send_mail([self.email], self.get_mail_subject(status), self.get_mail_content(status),
+                              self.get_mail_content_html(status))
 
     @db_session
     def __launch_local(self):

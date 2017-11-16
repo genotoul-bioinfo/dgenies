@@ -13,6 +13,7 @@ from lib.job_manager import JobManager
 from lib.functions import Functions, ALLOWED_EXTENSIONS
 from lib.upload_file import UploadFile
 from lib.Fasta import Fasta
+from lib.mailer import Mailer
 
 import sys
 
@@ -37,7 +38,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['SECRET_KEY'] = 'dsqdsq-255sdA-fHfg52-25Asd5'
 
 # Init mail:
-mail = Mail(app)
+mailer = Mailer(app)
 
 # Folder containing data:
 app_data = config_reader.get_app_data()
@@ -117,7 +118,7 @@ def launch_analysis():
             target = Fasta(name=target_name, path=target_path, type_f=file_target_type)
 
         # Launch job:
-        job = JobManager(id_job, email, query, target, app, mail)
+        job = JobManager(id_job, email, query, target, mailer)
         job.launch()
         return jsonify({"success": True, "redirect": url_for(".status", id_job=id_job)})
     else:
