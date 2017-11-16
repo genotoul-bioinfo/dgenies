@@ -1,0 +1,37 @@
+<style>
+    .inline {
+        display: inline-block;
+        vertical-align: middle;
+    }
+
+    .header {
+        background: #21264a;
+        padding: 5px;
+    }
+
+    .header h1 {
+        margin: 0;
+        color: white;
+    }
+</style>
+
+<div class="header">
+    <img src="{{ url_base }}/static/images/logo.png" height="45px" alt="" class="inline" style="margin-right: 5px;"/>
+    <h1 class="inline">D-Genies</h1>
+</div>
+<h3>
+    {% if status == "success" %}
+        Job {{ job_name }} - Download fasta
+    {% else %}
+        Job {{ job_name }} - Build of fasta failed
+    {% endif %}
+</h3>
+<p>Hi,</p>
+{% if status == "success" %}
+    <p>Query fasta file for job {{ job_name }} is ready to download.
+        You can <a href="{{ url_base }}/fasta-query/{{ job_name }}">click here</a> to download it.</p>
+{% else %}
+    <p>Build of query fasta file for job {{ job_name }} has failed. You can try again. If the problem persists, please contact the support.</p>
+{% endif %}
+<p>See you soon on D-Genies,</p>
+<p>The D-Genies team</p>

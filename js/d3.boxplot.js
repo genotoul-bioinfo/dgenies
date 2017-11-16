@@ -82,9 +82,11 @@ d3.boxplot.launch = function(res, update=false) {
     dgenies.fill_select_zones(res["x_order"], res["y_order"]);
     if (res["sorted"]) {
         $("input#sort-contigs").val("Undo sort");
+        $("#export").find("select option[value=4]").show();
     }
     else {
         $("input#sort-contigs").val("Sort contigs");
+        $("#export").find("select option[value=4]").hide();
     }
     d3.boxplot.name_x = res["name_x"];
     d3.boxplot.name_y = res["name_y"];

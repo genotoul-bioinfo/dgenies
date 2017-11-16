@@ -87,6 +87,12 @@ class AppConfigReader(object):
 
     def get_send_mail_status(self):
         try:
-            return self.replace_vars(self.reader.get("mail", "send_mail_status")).lower() == "true"
+            return self.reader.get("mail", "send_mail_status").lower() == "true"
+        except NoOptionError:
+            return True
+
+    def get_disable_mail(self):
+        try:
+            return self.reader.get("mail", "disable").lower() == "true"
         except NoOptionError:
             return False

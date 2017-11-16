@@ -100,14 +100,22 @@ class JobManager:
         db.commit()
         return status == "success"
 
-    def __getting_local_file(self, fasta: Fasta):
-        finale_path = os.path.join(self.output_dir, os.path.basename(fasta.get_path()))
+    def __getting_local_file(self, fasta: Fasta, type_f):
+        finale_path = os.path.join(self.output_dir, type_f + "_" + os.path.basename(fasta.get_path()))
         shutil.move(fasta.get_path(), finale_path)
+        with open(os.path.join(self.output_dir, "." + type_f), "w") as save_file:
+            save_file.write(finale_path)
         return finale_path
 
-    def __getting_file_from_url(self, fasta: Fasta):
-        finale_path = wget.download(fasta.get_path(), self.output_dir, None)
-        return finale_path
+    def __getting_file_from_url(self, fasta: Fasta, type_f):
+        dl_path = wget.download(fasta.get_path(), self.output_dir, None)
+        filename = os.path.basename(dl_path)
+        name = os.path.splitext(filename.replace(".gz", ""))[0]
+        finale_path = os.path.join(self.output_dir, type_f + "_" + filename)
+        shutil.move(dl_path, finale_path)
+        with open(os.path.join(self.output_dir, "." + type_f), "w") as save_file:
+            save_file.write(finale_path)
+        return finale_path, name
 
     @db_session
     def __check_url(self, fasta: Fasta):
@@ -143,20 +151,18 @@ class JobManager:
         correct = True
         if self.query is not None:
             if self.query.get_type() == "local":
-                self.query.set_path(self.__getting_local_file(self.query))
+                self.query.set_path(self.__getting_local_file(self.query, "query"))
             elif self.__check_url(self.query):
-                finale_path = self.__getting_file_from_url(self.query)
-                filename = os.path.splitext(os.path.basename(finale_path).replace(".gz", ""))[0]
+                finale_path, filename = self.__getting_file_from_url(self.query)
                 self.query.set_path(finale_path)
                 self.query.set_name(filename)
             else:
                 correct = False
         if correct and self.target is not None:
             if self.target.get_type() == "local":
-                self.target.set_path(self.__getting_local_file(self.target))
+                self.target.set_path(self.__getting_local_file(self.target, "target"))
             elif self.__check_url(self.target):
-                finale_path = self.__getting_file_from_url(self.target)
-                filename = os.path.splitext(os.path.basename(finale_path).replace(".gz", ""))[0]
+                finale_path, filename = self.__getting_file_from_url(self.target)
                 self.target.set_path(finale_path)
                 self.target.set_name(filename)
             else:

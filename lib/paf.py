@@ -3,6 +3,7 @@
 import os
 from math import sqrt
 from numpy import mean
+from pathlib import Path
 
 
 class Paf:
@@ -14,7 +15,7 @@ class Paf:
         self.idx_q = idx_q
         self.idx_t = idx_t
         self.sorted = False
-        if os.path.exists(paf + ".sorted") and os.path.exists(idx_q + ".sorted"):
+        if os.path.exists(os.path.join(os.path.dirname(paf), ".sorted")):
             self.paf += ".sorted"
             self.idx_q += ".sorted"
             self.sorted = True
@@ -273,6 +274,15 @@ class Paf:
                 idx.write("\t".join([contig, str(self.q_contigs[contig]), "1" if contig in contigs_reoriented else "0"])
                           + "\n")
 
+    def set_sorted(self, is_sorted):
+        self.sorted = is_sorted
+        sorted_touch = os.path.join(os.path.dirname(self.paf), ".sorted")
+        if is_sorted:
+            Path(sorted_touch).touch()
+        else:
+            if os.path.exists(sorted_touch):
+                os.remove(sorted_touch)
+
     def sort(self):
         self.parse_paf(False)
         if not self.sorted:  # Do the sort
@@ -351,7 +361,7 @@ class Paf:
             # Update index:
             self._update_query_index(reorient_contigs)
 
-            self.sorted = True
+            self.set_sorted(True)
 
         else:  # Undo the sort
             if os.path.exists(self.paf):
@@ -360,7 +370,7 @@ class Paf:
             if os.path.exists(self.idx_q):
                 os.remove(self.idx_q)
                 self.idx_q = self.idx_q.replace(".sorted", "")
-            self.sorted = False
+            self.set_sorted(False)
 
         # Re parse PAF file:
         self.parsed = False

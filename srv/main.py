@@ -5,8 +5,9 @@ import time
 import datetime
 import shutil
 import re
+import threading
 from flask import Flask, render_template, request, url_for, jsonify, session, Response, abort
-from flask_mail import Mail
+from pathlib import Path
 from lib.paf import Paf
 from config_reader import AppConfigReader
 from lib.job_manager import JobManager
@@ -147,14 +148,14 @@ def result(id_res):
     return response
 
 
-def get_file(file):  # pragma: no cover
+def get_file(file, gzip=False):  # pragma: no cover
     try:
         # Figure out how flask returns static files
         # Tried:
         # - render_template
         # - send_file
         # This should not be so non-obvious
-        return open(file).read()
+        return open(file, "rb" if gzip else "r").read()
     except IOError as exc:
         return str(exc)
 
@@ -199,6 +200,55 @@ def sort_graph(id_res):
         res["success"] = True
         return jsonify(res)
     return jsonify({"success": False, "message": paf.error})
+
+
+@app.route('/get-fasta-query/<id_res>', methods=['POST'])
+def build_fasta(id_res):
+    res_dir = os.path.join(app_data, id_res)
+    lock_query = os.path.join(res_dir, ".query-fasta-build")
+    is_sorted = os.path.exists(os.path.join(res_dir, ".sorted"))
+    query_fasta = Functions.get_fasta_file(res_dir, "query", is_sorted)
+    if query_fasta is not None:
+        if is_sorted and not query_fasta.endswith(".sorted"):
+            # Do the sort
+            Path(lock_query).touch()
+            thread = threading.Timer(1, Functions.sort_fasta, kwargs={
+                "job_name": id_res,
+                "fasta_file": query_fasta,
+                "index_file": os.path.join(res_dir, "query.idx.sorted"),
+                "lock_file": lock_query,
+                "compress": request.form["gzip"],
+                "mailer": mailer
+            })
+            thread.start()
+            return jsonify({"success": True, "status": 0, "status_message": "Started"})
+        elif is_sorted and os.path.exists(lock_query):
+            # Sort is already in progress
+            return jsonify({"success": True, "status": 1, "status_message": "In progress"})
+        else:
+            # No sort to do or sort done
+            return jsonify({"success": True, "status": 2, "status_message": "Done",
+                            "gzip": query_fasta.endswith(".gz") or query_fasta.endswith(".gz.sorted")})
+    else:
+        return jsonify({"success": False,
+                        "message": "Unable to get fasta file for query. Please contact us to report the bug"})
+
+
+@app.route('/fasta-query/<id_res>', methods=['GET'])
+def dl_fasta(id_res):
+    res_dir = os.path.join(app_data, id_res)
+    lock_query = os.path.join(res_dir, ".query-fasta-build")
+    is_sorted = os.path.exists(os.path.join(res_dir, ".sorted"))
+    if not os.path.exists(lock_query) or not is_sorted:
+        query_fasta = Functions.get_fasta_file(res_dir, "query", is_sorted)
+        print(query_fasta)
+        if query_fasta is not None:
+            if query_fasta.endswith(".gz") or query_fasta.endswith(".gz.sorted"):
+                content = get_file(query_fasta, True)
+                return Response(content, mimetype="application/gzip")
+            content = get_file(query_fasta)
+            return Response(content, mimetype="text/plain")
+    abort(404)
 
 
 @app.route("/upload", methods=['POST'])
