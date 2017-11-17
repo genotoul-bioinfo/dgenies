@@ -4,6 +4,7 @@ import string
 import gzip
 import io
 import shutil
+import sys
 import re
 import traceback
 from lib.Fasta import Fasta
@@ -82,7 +83,7 @@ class Functions:
             with open(os.path.join(res_dir, "." + type_f), "r") as save_name:
                 fasta_file = save_name.readline()
         except IOError:
-            print(res_dir + ": Unable to load saved name for " + type_f)
+            print(res_dir + ": Unable to load saved name for " + type_f, file=sys.stderr)
             pass
         if fasta_file is not None and os.path.exists(fasta_file):
             fasta_file_uc = fasta_file
