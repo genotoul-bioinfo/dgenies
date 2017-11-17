@@ -99,8 +99,11 @@ class JobManager:
     def search_error(self):
         logs = os.path.join(self.output_dir, "logs.txt")
         if os.path.exists(logs):
-            line = subprocess.check_output(['tail', '-1', logs]).decode("utf-8")
-            if re.match(r"\[morecore\] \d+ bytes requested but not available.\n", line):
+            lines = subprocess.check_output(['tail', '-2', logs]).decode("utf-8").split("\n")
+            if re.match(r"\[morecore] \d+ bytes requested but not available.", lines[1]) or \
+                    re.match(r"\[morecore] \d+ bytes requested but not available.", lines[1]) or \
+                    re.match(r"\[morecore] insufficient memory", lines[0]) or \
+                    re.match(r"\[morecore] insufficient memory", lines[1]):
                 return "Your job #ID# has failed because of memory limit exceeded. May be your sequences are too big?" \
                        "<br/>You can contact the support for more information."
         return "Your job #ID# has failed. You can try again.<br/>If the problem persists, please contact the support."
