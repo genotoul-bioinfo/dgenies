@@ -20,9 +20,9 @@ dgenies.run.restore_form = function () {
 };
 
 dgenies.run.upload_next = function () {
-    let next = dgenies.run.files.shift();
+    let next = dgenies.run.files.pop();
     while (next === undefined && dgenies.run.files.length > 0) {
-        next = dgenies.run.files.shift();
+        next = dgenies.run.files.pop();
     }
     if (next !== undefined) {
         next.submit();
@@ -48,7 +48,7 @@ dgenies.run.init_fileuploads = function () {
     $('input.file-query').fileupload({
         dataType: 'json',
         add: function (e, data) {
-            let filename = data.files[0].name
+            let filename = data.files[0].name;
             if (dgenies.run.allowed_file(filename))
                 dgenies.run.files[0] = data;
             else {

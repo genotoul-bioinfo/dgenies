@@ -45,30 +45,6 @@
                                     <input type="email" name="email" id="email" value="{{ email }}" required/>
                                 </td>
                             </tr>
-                            <tr class="query">
-                                <td>
-                                    <label for="file_query" class="file-query">Query fasta**</label>
-                                </td>
-                                <td class="input-group">
-                                    <select class="select-type-input query">
-                                        <option value="0">Local</option>
-                                        <option value="1">Url</option>
-                                    </select>
-
-                                    <div class="query-label in-label">
-                                        <div id="progress-query" class="progress">
-                                            <div class="bar" style="width: 0%;"></div>
-                                        </div>
-                                        <input id="query" name="query" class="form-control show-file" type="text" value="" readonly/>
-                                    </div>
-
-                                    <button class="btn btn-file" type="button" id="button-query" title="Select a file">
-                                        <span class="glyphicon glyphicon-folder-open"></span>&nbsp
-                                    </button>
-                                    <div class="loading-file query" style="display: none"></div>
-                                    <div class="upload-success query" style="display: none"></div>
-                                </td>
-                            </tr>
                             <tr class="target">
                                 <td>
                                     <label for="file_target" class="file-target">Target fasta**</label>
@@ -91,6 +67,30 @@
                                     </button>
                                     <div class="loading-file target" style="display: none"></div>
                                     <div class="upload-success target" style="display: none"></div>
+                                </td>
+                            </tr>
+                            <tr class="query">
+                                <td>
+                                    <label for="file_query" class="file-query">Query fasta**</label>
+                                </td>
+                                <td class="input-group">
+                                    <select class="select-type-input query">
+                                        <option value="0">Local</option>
+                                        <option value="1">Url</option>
+                                    </select>
+
+                                    <div class="query-label in-label">
+                                        <div id="progress-query" class="progress">
+                                            <div class="bar" style="width: 0%;"></div>
+                                        </div>
+                                        <input id="query" name="query" class="form-control show-file" type="text" value="" readonly/>
+                                    </div>
+
+                                    <button class="btn btn-file" type="button" id="button-query" title="Select a file">
+                                        <span class="glyphicon glyphicon-folder-open"></span>&nbsp
+                                    </button>
+                                    <div class="loading-file query" style="display: none"></div>
+                                    <div class="upload-success query" style="display: none"></div>
                                 </td>
                             </tr>
                         </tbody>
