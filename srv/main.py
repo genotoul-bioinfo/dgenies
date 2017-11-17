@@ -232,8 +232,8 @@ def build_fasta(id_res):
                 while os.path.exists(lock_query) and i < 2:
                     i += 1
                     time.sleep(5)
+                os.remove(lock_query + ".pending")
                 if os.path.exists(lock_query):
-                    os.remove(lock_query + ".pending")
                     return jsonify({"success": True, "status": 1, "status_message": "In progress"})
                 return jsonify({"success": True, "status": 2, "status_message": "Done",
                                 "gzip": query_fasta.endswith(".gz") or query_fasta.endswith(".gz.sorted")})
