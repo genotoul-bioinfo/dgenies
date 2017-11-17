@@ -84,10 +84,8 @@ class JobManager:
 
     @db_session
     def __launch_local(self):
-        cmd = ["run_minimap2.sh", self.minimap2, self.threads,
-               self.target.get_path() if self.target is not None else "NONE", self.query.get_path(),
-               self.query.get_name(), self.target.get_name() if self.target is not None else "NONE", self.paf,
-               self.paf_raw, self.output_dir]
+        cmd = ["run_minimap2.sh", self.minimap2, self.threads, self.target.get_path(),
+               self.query.get_path() if self.query is not None else "NONE", self.paf, self.paf_raw]
         with open(self.logs, "w") as logs:
             p = subprocess.Popen(cmd, stdout=logs, stderr=logs)
         job = Job.get(id_job=self.id_job)
@@ -184,13 +182,13 @@ class JobManager:
                     job = Job.get(id_job=self.id_job)
                     job.status = "indexing"
                     db.commit()
-                    query_index = os.path.join(self.output_dir, "query.idx")
-                    Functions.index_file(self.query, query_index)
                     target_index = os.path.join(self.output_dir, "target.idx")
-                    if self.target is not None:
-                        Functions.index_file(self.target, target_index)
+                    Functions.index_file(self.target, target_index)
+                    query_index = os.path.join(self.output_dir, "query.idx")
+                    if self.query is not None:
+                        Functions.index_file(self.query, query_index)
                     else:
-                        shutil.copyfile(query_index, target_index)
+                        shutil.copyfile(target_index, query_index)
                     job = Job.get(id_job=self.id_job)
                     job.status = "success"
                     db.commit()
@@ -210,7 +208,7 @@ class JobManager:
         if len(j1) > 0:
             print("Old job found without result dir existing: delete it from BDD!")
             j1.delete()
-        if self.query is not None:
+        if self.target is not None:
             job = Job(id_job=self.id_job, email=self.email, batch_type=self.batch_system_type,
                       date_created=datetime.datetime.now())
             db.commit()

@@ -91,8 +91,8 @@ def launch_analysis():
     if email == "":
         errors.append("Email not given")
         form_pass = False
-    if file_query == "":
-        errors.append("No query fasta selected")
+    if file_target == "":
+        errors.append("No target fasta selected")
         form_pass = False
 
     # Form pass
@@ -107,16 +107,16 @@ def launch_analysis():
         os.makedirs(folder_files)
 
         # Save files:
-        query_name = os.path.splitext(file_query.replace(".gz", ""))[0] if file_query_type == "local" else None
-        query_path = os.path.join(app.config["UPLOAD_FOLDER"], session["user_tmp_dir"], file_query) \
-            if file_query_type == "local" else file_query
-        query = Fasta(name=query_name, path=query_path, type_f=file_query_type)
-        target = None
-        if file_target != "":
-            target_name = os.path.splitext(file_target.replace(".gz", ""))[0] if file_target_type == "local" else None
-            target_path = os.path.join(app.config["UPLOAD_FOLDER"], session["user_tmp_dir"], file_target) \
-                if file_target_type == "local" else file_target
-            target = Fasta(name=target_name, path=target_path, type_f=file_target_type)
+        query = None
+        if file_query != "":
+            query_name = os.path.splitext(file_query.replace(".gz", ""))[0] if file_query_type == "local" else None
+            query_path = os.path.join(app.config["UPLOAD_FOLDER"], session["user_tmp_dir"], file_query) \
+                if file_query_type == "local" else file_query
+            query = Fasta(name=query_name, path=query_path, type_f=file_query_type)
+        target_name = os.path.splitext(file_target.replace(".gz", ""))[0] if file_target_type == "local" else None
+        target_path = os.path.join(app.config["UPLOAD_FOLDER"], session["user_tmp_dir"], file_target) \
+            if file_target_type == "local" else file_target
+        target = Fasta(name=target_name, path=target_path, type_f=file_target_type)
 
         # Launch job:
         job = JobManager(id_job, email, query, target, mailer)

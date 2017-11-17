@@ -243,9 +243,9 @@ dgenies.run.valid_form = function () {
     }
 
     //Check input query:
-    if ($("input#query").val().length === 0) {
-        $("label.file-query").addClass("error");
-        dgenies.run.add_error("Query fasta is required!");
+    if ($("input#target").val().length === 0) {
+        $("label.file-target").addClass("error");
+        dgenies.run.add_error("Target fasta is required!");
         has_errors = true;
     }
 
@@ -276,7 +276,7 @@ dgenies.run.reset_errors = function() {
 
 dgenies.run.start_uploads = function() {
     let query_type = parseInt($("select.query").val());
-    if (query_type === 0) {
+    if (query_type === 0 && $("input#query").val().length > 0) {
         $("button#button-query").hide();
         dgenies.run.show_loading("query");
     }
