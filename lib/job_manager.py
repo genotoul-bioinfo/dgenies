@@ -50,6 +50,13 @@ class JobManager:
                 return "no-match"
         return "error"
 
+    def get_sample_name(self, type_f):
+        file = self.query
+        if type_f == "target":
+            file = self.target
+        filename = os.path.basename(file)
+        return os.path.splitext(filename.replace(".gz", ""))[0]
+
     def check_job_success(self):
         if self.batch_system_type == "local":
             return self.__check_job_success_local()
@@ -64,14 +71,17 @@ class JobManager:
             message += "Your job %s has failed!\n\n" % self.id_job
             message += "Your job %s has failed. You can try again. " \
                        "If the problem persists, please contact the support.\n\n" % self.id_job
+        message += "Sequences compared in this analysis:\n"
+        message += "Target: %s\nQuery: %s\n\n" % (self.get_sample_name("target"), self.get_sample_name("query"))
         message += "See you soon on D-Genies,\n"
         message += "The team"
 
     def get_mail_content_html(self, status):
-        with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "mail_templates", "job_notification.html")) \
+        with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "mail_templates", "job_notification.html"))\
                 as t_file:
             template = Template(t_file.read())
-            return template.render(job_name=self.id_job, status=status, url_base=self.web_url)
+            return template.render(job_name=self.id_job, status=status, url_base=self.web_url,
+                                   query_name=self.get_sample_name("query"), target_name=self.get_sample_name("target"))
 
     def get_mail_subject(self, status):
         if status == "success" or status == "no-match":
