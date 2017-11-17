@@ -152,7 +152,7 @@ class JobManager:
             if self.query.get_type() == "local":
                 self.query.set_path(self.__getting_local_file(self.query, "query"))
             elif self.__check_url(self.query):
-                finale_path, filename = self.__getting_file_from_url(self.query)
+                finale_path, filename = self.__getting_file_from_url(self.query, "query")
                 self.query.set_path(finale_path)
                 self.query.set_name(filename)
             else:
@@ -161,7 +161,7 @@ class JobManager:
             if self.target.get_type() == "local":
                 self.target.set_path(self.__getting_local_file(self.target, "target"))
             elif self.__check_url(self.target):
-                finale_path, filename = self.__getting_file_from_url(self.target)
+                finale_path, filename = self.__getting_file_from_url(self.target, "target")
                 self.target.set_path(finale_path)
                 self.target.set_name(filename)
             else:
