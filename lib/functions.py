@@ -198,12 +198,12 @@ class Functions:
         if compress:
             Functions.compress(fasta_file_o)
         os.remove(lock_file)
-        if mailer is not None:
+        if mailer is not None and not os.path.exists(lock_file + ".pending"):
             Functions.send_fasta_ready(mailer, job_name, sample_name, compress)
 
     @staticmethod
     def compress_and_send_mail(job_name, fasta_file, index_file, lock_file, compressed, mailer):
         Functions.compress(fasta_file)
+        os.remove(lock_file)
         index, sample_name = Functions.read_index(index_file)
         Functions.send_fasta_ready(mailer, job_name, sample_name, compressed)
-        os.remove(lock_file)
