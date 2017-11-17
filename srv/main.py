@@ -131,8 +131,8 @@ def launch_analysis():
 def status(id_job):
     job = JobManager(id_job)
     j_status, error = job.status()
-    return render_template("status.html", title=app_title, status=j_status, error=error, id_job=id_job,
-                           menu="results")
+    return render_template("status.html", title=app_title, status=j_status, error=error.replace("#ID#", ""),
+                           id_job=id_job, menu="results")
 
 
 # Results path

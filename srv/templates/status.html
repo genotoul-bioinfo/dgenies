@@ -28,12 +28,12 @@
         <p>Your job is done.<br/>
         Sorry, we did not find any match between your query and your target.</p>
     {% elif status == "error" %}
-        <p>Your job has failed.
-            {% if error == "" %}
+        <p>{% if error == "" %}
+                Your job has failed.
                 Please try again.<br/>
                 If the problem persists, please contact the support.
             {% else %}
-                <br/>{{ error | safe }}
+            {{ error | safe }}
             {% endif %}</p>
     {% else %}
         <p>This job does not exists!</p>

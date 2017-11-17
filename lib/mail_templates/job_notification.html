@@ -35,7 +35,12 @@
 {% elif status == "no-match" %}
     <p>Sorry, we did not find any match between your query and your target.</p>
 {% else %}
-    <p>Your job {{ job_name }} has failed. You can try again. If the problem persists, please contact the support.</p>
+    {% if error != "" %}
+        <p>{{ error | replace("#ID#",job_name) }}</p>
+    {% else %}
+        <p>Your job {{ job_name }} has failed. You can try again.<br/>
+            If the problem persists, please contact the support.</p>
+    {% endif %}
 {% endif %}
 
 <p>Sequences compared in this analysis:</p>

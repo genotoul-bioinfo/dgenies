@@ -3,6 +3,7 @@ import shutil
 import subprocess
 import datetime
 import threading
+import re
 from config_reader import AppConfigReader
 from pony.orm import db_session, select
 from database import db, Job
@@ -23,6 +24,7 @@ class JobManager:
         self.query = query
         self.target = target
         config_reader = AppConfigReader()
+        self.error = ""
         # Get configs:
         self.batch_system_type = config_reader.get_batch_system_type()
         self.minimap2 = config_reader.get_minimap2_exec()
@@ -62,8 +64,11 @@ class JobManager:
                            "{1}/result/{0}\n\n").format(self.id_job, self.web_url)
         else:
             message += "Your job %s has failed!\n\n" % self.id_job
-            message += "Your job %s has failed. You can try again. " \
-                       "If the problem persists, please contact the support.\n\n" % self.id_job
+            if self.error != "":
+                message += self.error.replace("#ID#", self.id_job).replace("<br/>", "\n")
+            else:
+                message += "Your job %s has failed. You can try again. " \
+                           "If the problem persists, please contact the support.\n\n" % self.id_job
         message += "Sequences compared in this analysis:\n"
         message += "Target: %s\nQuery: %s\n\n" % (self.target.get_name(), self.query.get_name())
         message += "See you soon on D-Genies,\n"
@@ -74,7 +79,8 @@ class JobManager:
                 as t_file:
             template = Template(t_file.read())
             return template.render(job_name=self.id_job, status=status, url_base=self.web_url,
-                                   query_name=self.query.get_name(), target_name=self.target.get_name())
+                                   query_name=self.query.get_name(), target_name=self.target.get_name(),
+                                   error=self.error)
 
     def get_mail_subject(self, status):
         if status == "success" or status == "no-match":
@@ -85,6 +91,15 @@ class JobManager:
     def send_mail(self, status):
         self.mailer.send_mail([self.email], self.get_mail_subject(status), self.get_mail_content(status),
                               self.get_mail_content_html(status))
+
+    def search_error(self):
+        logs = os.path.join(self.output_dir, "logs.txt")
+        if os.path.exists(logs):
+            line = subprocess.check_output(['tail', '-1', logs]).decode("utf-8")
+            if re.match(r"\[morecore\] \d+ bytes requested but not available.\n", line):
+                return "Your job #ID# has failed because of memory limit exceeded. May be your sequences are too big?" \
+                       "<br/>You can contact the support for more information."
+        return "Your job #ID# has failed. You can try again.<br/>If the problem persists, please contact the support."
 
     @db_session
     def __launch_local(self):
@@ -97,10 +112,16 @@ class JobManager:
         job.status = "started"
         db.commit()
         p.wait()
-        status = self.check_job_success()
-        job.status = status
+        if p.returncode == 0:
+            status = self.check_job_success()
+            job.status = status
+            db.commit()
+            return status == "success"
+        job.status = "error"
+        self.error = self.search_error()
+        job.error = self.error
         db.commit()
-        return status == "success"
+        return False
 
     def __getting_local_file(self, fasta: Fasta, type_f):
         finale_path = os.path.join(self.output_dir, type_f + "_" + os.path.basename(fasta.get_path()))
