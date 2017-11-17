@@ -119,14 +119,16 @@ label.input-checkbox-label input[type=checkbox]{
     top:0;
     right:0;
     position: absolute;
-    background: black url("images/reset.svg") no-repeat 2px 2px;
-    background-size: 90% 90%;
+    background: #ffffff url("images/reset.svg") no-repeat 6.5px 7.5px;
+    background-size: 65% 65%;
     cursor: pointer;
+    border: solid 1px black;
+    border-radius: 0 15px 0 0;
 }
 
 #restore-all:hover {
-    background: black url("images/reset_hover.svg") no-repeat 2px 2px;
-    background-size: 90% 90%;
+    background: #000000 url("images/reset_hover.svg") no-repeat 6.5px 7.5px;
+    background-size: 65% 65%;
 }
 
 /*Loading logo*/

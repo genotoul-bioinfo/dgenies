@@ -737,7 +737,7 @@ d3.boxplot.draw = function (x_contigs, x_order, y_contigs, y_order) {
     let draw = $("#draw");
     draw.empty();
     draw.append($("<div>")
-        .attr("id", "restore-all").css("display", "none"));
+        .attr("id", "restore-all").css("display", "none").attr("title", "Unzoom"));
     let draw_in = draw.append($("<div>").attr("id", "draw-in"));
     d3.boxplot.svgsupercontainer = d3.select("#draw-in").append("svg:svg")
         .attr("width", "100%")
