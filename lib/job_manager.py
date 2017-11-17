@@ -12,6 +12,7 @@ import requests
 import wget
 from jinja2 import Template
 import traceback
+from pathlib import Path
 
 
 class JobManager:
@@ -189,6 +190,7 @@ class JobManager:
                         Functions.index_file(self.query, query_index)
                     else:
                         shutil.copyfile(target_index, query_index)
+                        Path(os.path.join(self.output_dir, ".all-vs-all")).touch()
                     job = Job.get(id_job=self.id_job)
                     job.status = "success"
                     db.commit()

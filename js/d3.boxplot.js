@@ -90,6 +90,14 @@ d3.boxplot.launch = function(res, update=false) {
     }
     d3.boxplot.name_x = res["name_x"];
     d3.boxplot.name_y = res["name_y"];
+
+    if (d3.boxplot.name_x === d3.boxplot.name_y) {
+        $("input#sort-contigs").hide();
+    }
+    else {
+        $("input#sort-contigs").show();
+    }
+
     d3.boxplot.lines = res["lines"];
     d3.boxplot.x_len = res["x_len"];
     d3.boxplot.y_len = res["y_len"];

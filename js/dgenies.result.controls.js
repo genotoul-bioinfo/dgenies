@@ -25,7 +25,7 @@ dgenies.result.controls.launch_sort_contigs = function () {
                     }
                     else {
                         dgenies.hide_loading();
-                        dgenies.notify("An error occurred! Please contact us to report the bug", "danger");
+                        dgenies.notify(data["message"] || "An error occurred! Please contact us to report the bug", "danger");
                     }
                 }
             );

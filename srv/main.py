@@ -190,16 +190,18 @@ def get_graph():
 
 @app.route('/sort/<id_res>', methods=['POST'])
 def sort_graph(id_res):
-    paf = os.path.join(app_data, id_res, "map.paf")
-    idx1 = os.path.join(app_data, id_res, "query.idx")
-    idx2 = os.path.join(app_data, id_res, "target.idx")
-    paf = Paf(paf, idx1, idx2, False)
-    paf.sort()
-    if paf.parsed:
-        res = paf.get_d3js_data()
-        res["success"] = True
-        return jsonify(res)
-    return jsonify({"success": False, "message": paf.error})
+    if not os.path.exists(os.path.join(APP_DATA, id_res, ".all-vs-all")):
+        paf = os.path.join(app_data, id_res, "map.paf")
+        idx1 = os.path.join(app_data, id_res, "query.idx")
+        idx2 = os.path.join(app_data, id_res, "target.idx")
+        paf = Paf(paf, idx1, idx2, False)
+        paf.sort()
+        if paf.parsed:
+            res = paf.get_d3js_data()
+            res["success"] = True
+            return jsonify(res)
+        return jsonify({"success": False, "message": paf.error})
+    return jsonify({"success": False, "message": "Sort is not available for All-vs-All mode"})
 
 
 @app.route('/get-fasta-query/<id_res>', methods=['POST'])
