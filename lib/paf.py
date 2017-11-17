@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import shutil
 from math import sqrt
 from numpy import mean
 from pathlib import Path
@@ -357,6 +358,10 @@ class Paf:
             # Re-orient contigs:
             if len(reorient_contigs) > 0:
                 self.reorient_contigs_in_paf(reorient_contigs)
+            else:
+                sorted_file = self.paf + ".sorted"
+                shutil.copyfile(self.paf, sorted_file)
+                self.paf = sorted_file
 
             # Update index:
             self._update_query_index(reorient_contigs)

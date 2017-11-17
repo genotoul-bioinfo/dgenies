@@ -272,7 +272,6 @@ def dl_fasta(id_res, filename):
     is_sorted = os.path.exists(os.path.join(res_dir, ".sorted"))
     if not os.path.exists(lock_query) or not is_sorted:
         query_fasta = Functions.get_fasta_file(res_dir, "query", is_sorted)
-        print(query_fasta)
         if query_fasta is not None:
             if query_fasta.endswith(".gz") or query_fasta.endswith(".gz.sorted"):
                 content = get_file(query_fasta, True)
