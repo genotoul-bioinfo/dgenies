@@ -47,7 +47,7 @@ dgenies.reset_loading_message = function () {
 };
 
 dgenies.fill_select_zones = function(x_targets, y_contigs) {
-    let select_contig = $("select#select-contig")
+    let select_contig = $("select#select-contig");
     select_contig.find("option[value!=0]").remove();
     for (let i=0; i< y_contigs.length; i++) {
         let label = y_contigs[i];
@@ -63,8 +63,8 @@ dgenies.fill_select_zones = function(x_targets, y_contigs) {
             text: label
         }))
     }
-    select_contig.chosen({disable_search_threshold: 10});
-    select_contig.trigger("chosen:updated")
+    select_contig.chosen({disable_search_threshold: 10, search_contains: true});
+    select_contig.trigger("chosen:updated");
     let select_target = $("select#select-target");
     select_target.find("option[value!=0]").remove();
     for (let i=0; i< x_targets.length; i++) {
@@ -81,7 +81,7 @@ dgenies.fill_select_zones = function(x_targets, y_contigs) {
             text: label
         }))
     }
-    select_target.chosen({disable_search_threshold: 10});
+    select_target.chosen({disable_search_threshold: 10, search_contains: true});
     select_target.trigger("chosen:updated")
 };
 
