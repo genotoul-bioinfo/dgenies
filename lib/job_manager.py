@@ -70,7 +70,10 @@ class JobManager:
                 message += "Your job %s has failed. You can try again. " \
                            "If the problem persists, please contact the support.\n\n" % self.id_job
         message += "Sequences compared in this analysis:\n"
-        message += "Target: %s\nQuery: %s\n\n" % (self.target.get_name(), self.query.get_name())
+        if self.query is not None:
+            message += "Target: %s\nQuery: %s\n\n" % (self.target.get_name(), self.query.get_name())
+        else:
+            message += "Target: %s\n\n" % self.target.get_name()
         message += "See you soon on D-Genies,\n"
         message += "The team"
 
@@ -79,7 +82,8 @@ class JobManager:
                 as t_file:
             template = Template(t_file.read())
             return template.render(job_name=self.id_job, status=status, url_base=self.web_url,
-                                   query_name=self.query.get_name(), target_name=self.target.get_name(),
+                                   query_name=self.query.get_name() if self.query is not None else "",
+                                   target_name=self.target.get_name(),
                                    error=self.error)
 
     def get_mail_subject(self, status):

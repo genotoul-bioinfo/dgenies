@@ -45,7 +45,9 @@
 
 <p>Sequences compared in this analysis:</p>
 <p><em>Target:</em> {{ target_name }}<br/>
-<em>Query:</em> {{ query_name }}</p>
+{% if query_name != "" %}
+    <em>Query:</em> {{ query_name }}</p>
+{% endif %}
 
 <p>See you soon on D-Genies,</p>
 <p>The D-Genies team</p>
