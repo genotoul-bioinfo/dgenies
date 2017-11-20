@@ -30,6 +30,7 @@ class Paf:
         self.q_order = []
         self.t_contigs = {}
         self.t_order = []
+        self.q_reversed = {}
         self.name_q = None
         self.name_t = None
         self.parsed = False
@@ -92,10 +93,15 @@ class Paf:
                 name_q = idx_q_f.readline().strip("\n")
                 q_order = []
                 q_contigs = {}
+                q_reversed = {}
                 for line in idx_q_f:
                     parts = line.strip("\n").split("\t")
                     id_c = parts[0]
                     len_c = int(parts[1])
+                    if len(parts) > 2:
+                        q_reversed[id_c] = parts[2] == "1"
+                    else:
+                        q_reversed[id_c] = False
                     q_order.append(id_c)
                     q_abs_start[id_c] = q_abs_current_start
                     q_contigs[id_c] = len_c
@@ -172,6 +178,7 @@ class Paf:
         self.lines = lines
         self.q_contigs = q_contigs
         self.q_order = q_order
+        self.q_reversed = q_reversed
         self.t_contigs = t_contigs
         self.t_order = t_order
         self.name_q = name_q
@@ -425,10 +432,14 @@ class Paf:
         :return: content of the file
         """
         query_on_target = self.get_query_on_target_association()
-        content = "Query\tTarget\n"
+        content = "Query\tTarget\tStrand\n"
         for contig in self.q_order:
+            strand = "+"
+            if contig in self.q_reversed:
+                print("TRUE")
+                strand = "-" if self.q_reversed[contig] else "+"
             if contig in query_on_target:
-                content += "%s\t%s\n" % (contig, query_on_target[contig] or "None")
+                content += "%s\t%s\t%s\n" % (contig, query_on_target[contig] or "None", strand)
             else:
-                content += "%s\t%s\n" % (contig, "None")
+                content += "%s\t%s\t%s\n" % (contig, "None", strand)
         return content
