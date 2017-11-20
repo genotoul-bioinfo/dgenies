@@ -48,9 +48,10 @@ dgenies.reset_loading_message = function () {
 
 dgenies.fill_select_zones = function(x_targets, y_contigs) {
     let select_contig = $("select#select-contig");
-    select_contig.find("option[value!=0]").remove();
+    select_contig.find("option[value!='###NONE###']").remove();
     for (let i=0; i< y_contigs.length; i++) {
         let label = y_contigs[i];
+        let value = label;
         if (label.startsWith("###MIX###")) {
             let parts = label.substr(10).split("###");
             label = "Mix: " + parts.slice(0, 3).join(", ");
@@ -59,16 +60,17 @@ dgenies.fill_select_zones = function(x_targets, y_contigs) {
             }
         }
         select_contig.append($('<option>', {
-            value: i+1,
+            value: value,
             text: label
         }))
     }
     select_contig.chosen({disable_search_threshold: 10, search_contains: true});
     select_contig.trigger("chosen:updated");
     let select_target = $("select#select-target");
-    select_target.find("option[value!=0]").remove();
+    select_target.find("option[value!='###NONE###']").remove();
     for (let i=0; i< x_targets.length; i++) {
         let label = x_targets[i];
+        let value = label;
         if (label.startsWith("###MIX###")) {
             let parts = label.substr(10).split("###");
             label = "Mix: " + parts.slice(0, 3).join(", ");
@@ -77,7 +79,7 @@ dgenies.fill_select_zones = function(x_targets, y_contigs) {
             }
         }
         select_target.append($('<option>', {
-            value: i+1,
+            value: value,
             text: label
         }))
     }

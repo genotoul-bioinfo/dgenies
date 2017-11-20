@@ -36,8 +36,8 @@ dgenies.result.controls.launch_sort_contigs = function () {
 dgenies.result.controls.select_zone = function() {
     let contig_select = $("#select-contig").find(":selected");
     let target_select = $("#select-target").find(":selected");
-    if (parseInt(contig_select.val()) > 0 && parseInt(target_select.val())) {
-        d3.boxplot.select_zone(null, null, target_select.text(), contig_select.text(), true);
+    if (contig_select.val() !== "###NONE###" && target_select.val() !== "###NONE###") {
+        d3.boxplot.select_zone(null, null, target_select.val(), contig_select.val(), true);
     }
     else {
         dgenies.notify("Please select zones into zoom!", "danger", 2000);
