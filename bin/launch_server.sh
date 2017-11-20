@@ -4,7 +4,7 @@ SCRIPT=`realpath $0`
 SCRIPTPATH=`dirname ${SCRIPT}`
 
 DEBUG=False
-LOCAL=True
+LOCAL=False
 PORT=5000
 
 function usage()
@@ -14,7 +14,7 @@ function usage()
     echo "./launch_server.sh"
     echo -e "\t-h,--help\tShow this help"
     echo -e "\t--debug=${DEBUG}\tTrue to run in debug mode"
-    echo -e "\t--local=${LOCAL}\tFalse to make the website accessible outside the hosting PC"
+    echo -e "\t--local=${LOCAL}\tTrue to make the website accessible only on the hosting PC"
     echo -e "\t--port=${PORT}\tPort number onto run the server"
     echo ""
 }
