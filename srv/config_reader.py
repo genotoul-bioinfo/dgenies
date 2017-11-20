@@ -1,6 +1,7 @@
 import os
+import re
 import inspect
-from configparser import RawConfigParser, NoOptionError
+from configparser import RawConfigParser, NoOptionError, NoSectionError
 
 
 class AppConfigReader(object):
@@ -96,3 +97,18 @@ class AppConfigReader(object):
             return self.reader.get("mail", "disable").lower() == "true"
         except NoOptionError:
             return False
+
+    def get_cron_menage_hour(self):
+        try:
+            value = self.reader.get("cron", "menage_hour").lower()
+            match = re.match(r"(\d[0-23]+)[hH](\d[0-59]+)", value)
+            if match is not None:
+                return [int(match.group(1)), int(match.group(2))]
+        except (NoOptionError, NoSectionError):
+            return [1, 0]
+
+    def get_cron_menage_freq(self):
+        try:
+            return int(self.reader.get("cron", "menage_freq"))
+        except (NoOptionError, NoSectionError):
+            return 1

@@ -17,3 +17,10 @@ status = mail@dgenies
 reply = mail@dgenies
 org = "Dgenies team"
 send_mail_status = True
+
+[cron]
+### Menage
+# Time to launch the cron:
+menage_hour = 1h00
+# Frequency (days):
+menage_freq = 1
