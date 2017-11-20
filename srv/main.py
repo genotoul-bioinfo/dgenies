@@ -15,6 +15,7 @@ from lib.functions import Functions, ALLOWED_EXTENSIONS
 from lib.upload_file import UploadFile
 from lib.Fasta import Fasta
 from lib.mailer import Mailer
+from lib.crons import Crons
 
 import sys
 
@@ -43,6 +44,10 @@ mailer = Mailer(app)
 
 # Folder containing data:
 app_data = config_reader.get_app_data()
+
+# Crons:
+crons = Crons(app_folder)
+crons.init_menage_cron()
 
 
 @app.context_processor

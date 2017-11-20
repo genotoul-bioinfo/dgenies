@@ -2,3 +2,5 @@
 .idea
 srv/database.sqlite
 application.properties
+logs/*
+!logs/README
