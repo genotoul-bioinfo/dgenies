@@ -19,7 +19,7 @@ class Crons:
         Menage cron is launched at 1h00am each day
         """
         if self.base_dir is not None:
-            job = self.my_cron.new("python3 {0}/bin/clean_jobs.py > {0}/logs/menage.log".format(self.base_dir),
+            job = self.my_cron.new("python3 {0}/bin/clean_jobs.py > {0}/logs/menage.log 2>&1".format(self.base_dir),
                                    comment="dgenies")
             job.day.every(1)
             job.hour.on(1)
