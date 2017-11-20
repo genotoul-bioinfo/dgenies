@@ -68,6 +68,8 @@ def parse_data_folders():
             if os.path.exists(query_name_file):
                 with open(query_name_file) as query_file:
                     sorted_file = Functions.get_fasta_file(file, "query", True)
+                    if not sorted_file.endswith(".sorted"):
+                        sorted_file = None
                     if sorted_file is not None:
                         create_date = os.path.getctime(sorted_file)
                         age = (NOW - create_date) / 86400  # Age in days
