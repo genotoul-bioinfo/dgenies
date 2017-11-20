@@ -116,6 +116,16 @@ dgenies.result.export.ask_export_fasta = function () {
     })
 };
 
+dgenies.result.export.export_association_table = function () {
+    let export_div = $("div#export-pict");
+    export_div.html("");
+    export_div.append($("<a>").attr("href", `/qt-assoc/${dgenies.result.id_res}`)
+        .attr("download", d3.boxplot.name_y + "_" + d3.boxplot.name_x + "_assoc.tsv").attr("id", "my-download")
+        .text("download"));
+    dgenies.hide_loading();
+    document.getElementById('my-download').click();
+};
+
 dgenies.result.export.export = function () {
     let select = $("form#export select");
     let selection = parseInt(select.val());
@@ -131,6 +141,9 @@ dgenies.result.export.export = function () {
             else if (selection === 4) {
                 dgenies.result.export.ask_export_fasta();
                 async = true;
+            }
+            else if (selection === 5) {
+                dgenies.result.export.export_association_table();
             }
             else
                 dgenies.notify("Not supported yet!", "danger", 2000);

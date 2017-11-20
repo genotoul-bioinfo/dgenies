@@ -284,40 +284,56 @@ class Paf:
             if os.path.exists(sorted_touch):
                 os.remove(sorted_touch)
 
+    def compute_gravity_contigs(self):
+        """
+        Compute gravity for each contig on each chromosome (how many big matches they have).
+        Will be used to find which chromosome has the highest value for each contig
+        :return:
+            - gravity for each contig and each chromosome:
+                {contig1: {chr1: value, chr2: value, ...}, contig2: ...}
+            - For each block save lines inside:
+                [median_on_query, squared length, median_on_target, x1, x2, y1, y2, length] (x : on target, y: on query)
+        """
+        gravity_contig = {}
+        lines_on_block = {}
+        # Compute size of blocks (in term of how many big match they have), and save median of each match on each one
+        # (for next step)
+        for line in [j for i in list(self.lines.values()) for j in i]:
+            x1 = int(line[0])
+            x2 = int(line[1])
+            y1 = int(line[2])
+            y2 = int(line[3])
+            contig = line[5]
+            chrm = line[6]
+            block = (contig, chrm)
+            # X1 and X2 (in good orientation):
+            x_1 = min(x1, x2)
+            x_2 = max(x2, x1)
+            med_q = x_1 + (abs(x_2 - x_1) / 2)
+            # Y1 and Y2 (in good orientation):
+            y_1 = min(y1, y2)
+            y_2 = max(y2, y1)
+            med_t = y_1 + (abs(y_2 - y_1) / 2)
+            len_m = sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2))  # Len
+            len_m_2 = pow(1 + len_m, 2) # Pow of len
+            if block not in lines_on_block:
+                lines_on_block[block] = []
+            lines_on_block[block].append((med_q, len_m_2, med_t, x1, x2, y1, y2, len_m))
+
+            if contig not in gravity_contig:
+                gravity_contig[contig] = {}
+            if chrm not in gravity_contig[contig]:
+                gravity_contig[contig][chrm] = 0
+            gravity_contig[contig][chrm] += len_m_2
+        return gravity_contig, lines_on_block
+
     def sort(self):
+        """
+        Sort contigs according to reference target and reorient them if needed
+        """
         self.parse_paf(False)
         if not self.sorted:  # Do the sort
-            gravity_contig = {}
-            lines_on_block = {}
-            # Compute size of blocks (in term of how many big match they have), and save median of each match on each one
-            # (for next step)
-            for line in [j for i in list(self.lines.values()) for j in i]:
-                x1 = int(line[0])
-                x2 = int(line[1])
-                y1 = int(line[2])
-                y2 = int(line[3])
-                contig = line[5]
-                chrm = line[6]
-                block = (contig, chrm)
-                # X1 and X2 (in good orientation):
-                x_1 = min(x1, x2)
-                x_2 = max(x2, x1)
-                med_q = x_1 + (abs(x_2 - x_1) / 2)
-                # Y1 and Y2 (in good orientation):
-                y_1 = min(y1, y2)
-                y_2 = max(y2, y1)
-                med_t = y_1 + (abs(y_2 - y_1) / 2)
-                len_m = sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2))  # Pow of len
-                len_m_2 = pow(1 + len_m, 2)
-                if block not in lines_on_block:
-                    lines_on_block[block] = []
-                lines_on_block[block].append((med_q, len_m_2, med_t, x1, x2, y1, y2, len_m))
-
-                if contig not in gravity_contig:
-                    gravity_contig[contig] = {}
-                if chrm not in gravity_contig[contig]:
-                    gravity_contig[contig][chrm] = 0
-                gravity_contig[contig][chrm] += len_m_2
+            gravity_contig , lines_on_block = self.compute_gravity_contigs()
 
             # For each contig, find best block, and deduce gravity of contig:
             gravity_on_contig = {}
@@ -380,3 +396,39 @@ class Paf:
         # Re parse PAF file:
         self.parsed = False
         self.parse_paf()
+
+    def get_query_on_target_association(self):
+        """
+        For each query, get the best matching chromosome
+        :return:
+        """
+        gravity_contig = self.compute_gravity_contigs()[0]
+        query_on_target = {}
+        for contig, chr_blocks in gravity_contig.items():
+            # Find best block:
+            max_number = 0
+            max_chr = None
+            for chrm, size in chr_blocks.items():
+                if size > max_number:
+                    max_number = size
+                    max_chr = chrm
+            if max_chr is not None:
+                query_on_target[contig] = max_chr
+            else:
+                query_on_target[contig] = None
+        return query_on_target
+
+    def build_query_on_target_association_file(self):
+        """
+        For each query, get the best matching chromosome and save it to a CSV file.
+        Use the order of queries
+        :return: content of the file
+        """
+        query_on_target = self.get_query_on_target_association()
+        content = "Query\tTarget\n"
+        for contig in self.q_order:
+            if contig in query_on_target:
+                content += "%s\t%s\n" % (contig, query_on_target[contig] or "None")
+            else:
+                content += "%s\t%s\n" % (contig, "None")
+        return content

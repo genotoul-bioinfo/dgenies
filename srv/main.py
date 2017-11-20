@@ -196,10 +196,10 @@ def get_graph():
 @app.route('/sort/<id_res>', methods=['POST'])
 def sort_graph(id_res):
     if not os.path.exists(os.path.join(APP_DATA, id_res, ".all-vs-all")):
-        paf = os.path.join(app_data, id_res, "map.paf")
+        paf_file = os.path.join(app_data, id_res, "map.paf")
         idx1 = os.path.join(app_data, id_res, "query.idx")
         idx2 = os.path.join(app_data, id_res, "target.idx")
-        paf = Paf(paf, idx1, idx2, False)
+        paf = Paf(paf_file, idx1, idx2, False)
         paf.sort()
         if paf.parsed:
             res = paf.get_d3js_data()
@@ -283,6 +283,27 @@ def dl_fasta(id_res, filename):
                 return Response(content, mimetype="application/gzip")
             content = get_file(query_fasta)
             return Response(content, mimetype="text/plain")
+    abort(404)
+
+
+@app.route('/qt-assoc/<id_res>', methods=['GET'])
+def qt_assoc(id_res):
+    res_dir = os.path.join(app_data, id_res)
+    if os.path.exists(res_dir) and os.path.isdir(res_dir):
+        paf_file = os.path.join(app_data, id_res, "map.paf")
+        idx1 = os.path.join(app_data, id_res, "query.idx")
+        idx2 = os.path.join(app_data, id_res, "target.idx")
+        try:
+            paf = Paf(paf_file, idx1, idx2, False)
+            paf.parse_paf(False)
+        except FileNotFoundError:
+            print("Unable to load data!")
+            abort(404)
+            return False
+        csv_content = paf.build_query_on_target_association_file()
+        print(csv_content)
+        return Response(csv_content, mimetype="text/plain")
+    print("PASS")
     abort(404)
 
 
