@@ -7,12 +7,15 @@ class Crons:
     def __init__(self, base_dir=None):
         self.base_dir = base_dir
         self.my_cron = CronTab(user=getpass.getuser())
-        self.clear()
 
     def clear(self):
         # Remove old crons:
         self.my_cron.remove_all(comment="dgenies")
         self.my_cron.write()
+
+    def start_all(self):
+        self.clear()
+        self.init_menage_cron()
 
     def init_menage_cron(self):
         """

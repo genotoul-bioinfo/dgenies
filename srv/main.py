@@ -47,7 +47,7 @@ app_data = config_reader.get_app_data()
 
 # Crons:
 crons = Crons(app_folder)
-crons.init_menage_cron()
+crons.start_all()
 
 
 @app.context_processor
