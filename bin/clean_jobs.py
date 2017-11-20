@@ -4,14 +4,17 @@ import os
 import sys
 import shutil
 import time
+from _datetime import datetime, timedelta
 import traceback
 import argparse
+from pony.orm import db_session, select
 
 app_folder = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "srv")
 sys.path.insert(0, app_folder)
 
 from config_reader import AppConfigReader
 from lib.functions import Functions
+from database import Job
 
 config_reader = AppConfigReader()
 
@@ -44,6 +47,22 @@ def parse_upload_folders():
                         os.remove(file)
             except OSError:
                 print(traceback.print_exc(), file=sys.stderr)
+
+
+@db_session
+def parse_database():
+    old_jobs = select(j for j in Job if j.date_created < datetime.now() - timedelta(days=max_age["data"]))
+    for job in old_jobs:
+        id_job = job.id_job
+        print("Removing job %s..." % id_job)
+        data_dir = os.path.join(APP_DATA, id_job)
+        if os.path.exists(data_dir) and os.path.isdir(data_dir):
+            if not FAKE:
+                shutil.rmtree(data_dir)
+        else:
+            print("Job %s has no data folder!" % id_job)
+        if not FAKE:
+            job.delete()
 
 
 def parse_data_folders():
@@ -88,11 +107,19 @@ if __name__ == '__main__':
     if FAKE:
         print("RUNNING IN FAKE MODE...")
         print("")
+
     print("#########################")
     print("# Parsing Upload folder #")
     print("#########################")
     print("")
     parse_upload_folders()
+    print("")
+
+    print("######################")
+    print("# Parsing Jobs in DB #")
+    print("######################")
+    print("")
+    parse_database()
     print("")
 
     print("#######################")
