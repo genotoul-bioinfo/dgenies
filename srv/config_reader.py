@@ -115,3 +115,9 @@ class AppConfigReader(object):
             return int(self.reader.get("cron", "menage_freq"))
         except (NoOptionError, NoSectionError):
             return 1
+
+    def get_local_nb_runs(self):
+        try:
+            return int(self.reader.get("jobs", "run_local"))
+        except (NoOptionError, NoSectionError):
+            return 1

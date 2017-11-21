@@ -4,3 +4,4 @@ srv/database.sqlite
 application.properties
 logs/*
 !logs/README
+srv/.local_scheduler_pid

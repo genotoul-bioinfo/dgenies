@@ -342,5 +342,27 @@ def upload():
     return jsonify({"files": [], "success": "ERR", "message": "Session not initialized. Please refresh the page."})
 
 
+@app.route("/send-mail/<id_res>", methods=['POST'])
+def send_mail(id_res):
+    allowed = False
+    key_file = None
+    if "key" in request.form:
+        key = request.form["key"]
+        res_dir = os.path.join(app_data, id_res)
+        key_file = os.path.join(res_dir, ".key")
+        if os.path.exists(key_file):
+            with open(key_file) as k_f:
+                true_key = k_f.readline().strip("\n")
+                allowed = key == true_key
+    if allowed:
+        os.remove(key_file)
+        job_mng = JobManager(id_job=id_res, mailer=mailer)
+        job_mng.set_inputs_from_res_dir()
+        job_mng.send_mail()
+        return "OK"
+    else:
+        abort(403)
+
+
 if __name__ == '__main__':
     app.run()

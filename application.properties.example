@@ -24,3 +24,7 @@ send_mail_status = True
 menage_hour = 1h00
 # Frequency (days):
 menage_freq = 1
+
+[jobs]
+# Number of parallel runs for local jobs:
+run_local = 1

@@ -14,6 +14,7 @@ import wget
 from jinja2 import Template
 import traceback
 from pathlib import Path
+from urllib import request, parse
 
 
 class JobManager:
@@ -43,6 +44,27 @@ class JobManager:
         self.idx_t = os.path.join(self.output_dir, "target.idx")
         self.logs = os.path.join(self.output_dir, "logs.txt")
         self.mailer = mailer
+
+    def set_inputs_from_res_dir(self):
+        res_dir = os.path.join(self.app_data, self.id_job)
+        query_file = os.path.join(res_dir, ".query")
+        if os.path.exists(query_file):
+            with open(query_file) as q_f:
+                file_path = q_f.readline()
+                self.query = Fasta(
+                    name=os.path.splitext(file_path.replace(".gz", ""))[0],
+                    path=file_path,
+                    type_f="local"
+                )
+        target_file = os.path.join(res_dir, ".target")
+        if os.path.exists(target_file):
+            with open(target_file) as t_f:
+                file_path = t_f.readline()
+                self.target = Fasta(
+                    name=os.path.splitext(file_path.replace(".gz", ""))[0],
+                    path=file_path,
+                    type_f="local"
+                )
 
     def __check_job_success_local(self):
         if os.path.exists(self.paf):
@@ -93,7 +115,16 @@ class JobManager:
         else:
             return "DGenies - Job failed: %s" % self.id_job
 
-    def send_mail(self, status):
+    @db_session
+    def send_mail(self):
+        # Retrieve infos:
+        job = Job.get(id_job=self.id_job)
+        if self.email is None:
+            self.email = job.email
+        status = job.status
+        self.error = job.error
+
+        # Send:
         self.mailer.send_mail([self.email], self.get_mail_subject(status), self.get_mail_content(status),
                               self.get_mail_content_html(status))
 
@@ -200,6 +231,48 @@ class JobManager:
                 correct = False
         return correct
 
+    def send_mail_post(self):
+        """
+        Send mail using POST url (we have no access to mailer)
+        """
+        key = Functions.random_string(15)
+        key_file = os.path.join(self.app_data, self.id_job, ".key")
+        with open(key_file, "w") as k_f:
+            k_f.write(key)
+        data = parse.urlencode({"key": key}).encode()
+        req = request.Request(self.web_url + "/send-mail/" + self.id_job, data=data)
+        resp = request.urlopen(req)
+        if resp.getcode() != 200:
+            print("Job %s: Send mail failed!" % self.id_job)
+
+    def run_job_in_thread(self):
+        thread = threading.Timer(1, self.run_job, kwargs={"batch_system_type": "local"})
+        thread.start()  # Start the execution
+
+    @db_session
+    def run_job(self, batch_system_type):
+        success = False
+        if batch_system_type == "local":
+            success = self.__launch_local()
+        if success:
+            job = Job.get(id_job=self.id_job)
+            job.status = "indexing"
+            db.commit()
+            target_index = os.path.join(self.output_dir, "target.idx")
+            Functions.index_file(self.target, target_index)
+            query_index = os.path.join(self.output_dir, "query.idx")
+            if self.query is not None:
+                Functions.index_file(self.query, query_index)
+            else:
+                shutil.copyfile(target_index, query_index)
+                Path(os.path.join(self.output_dir, ".all-vs-all")).touch()
+            job = Job.get(id_job=self.id_job)
+            job.status = "success"
+            db.commit()
+        if self.do_send:
+            self.send_mail_post()
+            #self.send_mail(job.status)
+
     @db_session
     def start_job(self):
         try:
@@ -208,33 +281,23 @@ class JobManager:
                 job = Job.get(id_job=self.id_job)
                 job.status = "waiting"
                 db.commit()
-                success = True
-                if self.batch_system_type == "local":
-                    success = self.__launch_local()
-                if success:
-                    job = Job.get(id_job=self.id_job)
-                    job.status = "indexing"
-                    db.commit()
-                    target_index = os.path.join(self.output_dir, "target.idx")
-                    Functions.index_file(self.target, target_index)
-                    query_index = os.path.join(self.output_dir, "query.idx")
-                    if self.query is not None:
-                        Functions.index_file(self.query, query_index)
-                    else:
-                        shutil.copyfile(target_index, query_index)
-                        Path(os.path.join(self.output_dir, ".all-vs-all")).touch()
-                    job = Job.get(id_job=self.id_job)
-                    job.status = "success"
-                    db.commit()
+            else:
+                job = Job.get(id_job=self.id_job)
+                job.status = "error"
+                job.error = "<p>Error while getting input files. Please contact the support to report the bug.</p>"
+                db.commit()
+                if self.do_send:
+                    self.send_mail()
+
         except Exception:
             print(traceback.print_exc())
             job = Job.get(id_job=self.id_job)
             job.status = "error"
             job.error = "<p>An unexpected error has occurred. Please contact the support to report the bug.</p>"
             db.commit()
-        if self.do_send:
-            job = Job.get(id_job=self.id_job)
-            self.send_mail(job.status)
+            if self.do_send:
+                self.send_mail()
+
 
     @db_session
     def launch(self):

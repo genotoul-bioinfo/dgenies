@@ -5,7 +5,11 @@
         <p>Your job has started.<br/>
             You will receive an email when it will be finished.<br/>
             Alternatively, you can refresh this page to update status.</p>
-    {% elif status == "submitted" %}
+    {% elif status == "starting" %}
+        <p>Your job is starting...<br/>
+            You will receive an email when it will be finished.<br/>
+            Alternatively, you can refresh this page to update status.</p>
+    {% elif status == "submitted" or status == "waiting" %}
         <p>Your job has been submitted.<br/>
             You will receive an email when it will be finished.<br/>
             Alternatively, you can refresh this page to update status.</p>
@@ -17,7 +21,7 @@
         <p>Your map is done. We are indexing fasta files for visualisation...<br/>
             You will receive an email when it will be finished.<br/>
             Alternatively, you can refresh this page to update status.</p>
-    {% elif status == "waiting" %}
+    {% elif status == "scheduled" %}
         <p>Your job has been shedulded. It will start soon...<br/>
             You will receive an email when it will be finished.<br/>
             Alternatively, you can refresh this page to update status.</p>

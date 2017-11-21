@@ -8,3 +8,5 @@ wget==3.2
 requests==2.18.*
 biopython==1.70
 python-crontab==2.2.*
+psutil==5.4.*
+tendo==0.2.*
