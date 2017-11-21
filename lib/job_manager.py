@@ -76,6 +76,7 @@ class JobManager:
             message += "Target: %s\n\n" % self.target.get_name()
         message += "See you soon on D-Genies,\n"
         message += "The team"
+        return message
 
     def get_mail_content_html(self, status):
         with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "mail_templates", "job_notification.html"))\
