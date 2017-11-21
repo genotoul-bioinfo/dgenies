@@ -101,9 +101,12 @@ class AppConfigReader(object):
     def get_cron_menage_hour(self):
         try:
             value = self.reader.get("cron", "menage_hour").lower()
-            match = re.match(r"(\d[0-23]+)[hH](\d[0-59]+)", value)
+            match = re.match(r"(([0-9])|([0-1][0-9])|(2[0-3]))[hH]([0-5][0-9])", value)
             if match is not None:
-                return [int(match.group(1)), int(match.group(2))]
+                return [int(match.group(1)), int(match.group(5))]
+            else:
+                print("Incorrect menage hour format!")
+                return [1, 0]
         except (NoOptionError, NoSectionError):
             return [1, 0]
 
