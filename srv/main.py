@@ -241,7 +241,7 @@ def build_fasta(id_res):
                 if os.path.exists(lock_query):
                     return jsonify({"success": True, "status": 1, "status_message": "In progress"})
                 return jsonify({"success": True, "status": 2, "status_message": "Done",
-                                "gzip": query_fasta.endswith(".gz") or query_fasta.endswith(".gz.sorted")})
+                                "gzip": False})
             else:
                 return jsonify({"success": True, "status": 1, "status_message": "In progress"})
         elif is_sorted and os.path.exists(lock_query):

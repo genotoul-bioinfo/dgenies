@@ -192,7 +192,13 @@ class Functions:
             for name, props in index.items():
                 sequence = seq[name]
                 if props["to_reverse"]:
-                    sequence = sequence[::-1]
+                    s_id = sequence.id
+                    s_name = sequence.name
+                    s_description = sequence.description
+                    sequence = sequence.reverse_complement()
+                    sequence.id = s_id
+                    sequence.name = s_name
+                    sequence.description = s_description
                 SeqIO.write(sequence, fasta_out, "fasta")
         if is_compressed:
             os.remove(fasta_file)
