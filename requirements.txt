@@ -1,7 +1,7 @@
 flask==0.12.*
 Flask-Mail==0.9.*
 Jinja2==2.9.*
-pony==0.7.*
+pony==0.7.3
 docopt==0.6.*
 numpy
 wget==3.2
