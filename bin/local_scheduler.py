@@ -60,7 +60,7 @@ def parse_started_jobs():
             jobs_started.append(job.id_job)
         else:
             print("Job %s (pid: %d) has died!" % (job.id_job, job.id_process))
-            job.status = "error"
+            job.status = "fail"
             job.error = "<p>Your job has failed for an unexpected reason. Please contact the support.</p>"
             db.commit()
             # Todo: send mail about the error

@@ -72,7 +72,7 @@ class JobManager:
                 return "success"
             else:
                 return "no-match"
-        return "error"
+        return "fail"
 
     def check_job_success(self):
         if self.batch_system_type == "local":
@@ -156,7 +156,7 @@ class JobManager:
             job.status = status
             db.commit()
             return status == "success"
-        job.status = "error"
+        job.status = "fail"
         self.error = self.search_error()
         job.error = self.error
         db.commit()
@@ -192,14 +192,14 @@ class JobManager:
             allowed = Functions.allowed_file(filename)
             if not allowed:
                 job = Job.get(id_job=self.id_job)
-                job.status = "error"
+                job.status = "fail"
                 job.error = "<p>File <b>%s</b> downloaded from <b>%s</b> is not a Fasta file!</p>" \
                             "<p>If this is unattended, please contact the support.</p>" % (filename, url)
                 db.commit()
         else:
             allowed = False
             job = Job.get(id_job=self.id_job)
-            job.status = "error"
+            job.status = "fail"
             job.error = "<p>Url <b>%s</b> is not a valid URL!</p>" \
                         "<p>If this is unattended, please contact the support.</p>" % (url)
             db.commit()
@@ -285,7 +285,7 @@ class JobManager:
                 db.commit()
             else:
                 job = Job.get(id_job=self.id_job)
-                job.status = "error"
+                job.status = "fail"
                 job.error = "<p>Error while getting input files. Please contact the support to report the bug.</p>"
                 db.commit()
                 if self.do_send:
@@ -294,7 +294,7 @@ class JobManager:
         except Exception:
             print(traceback.print_exc())
             job = Job.get(id_job=self.id_job)
-            job.status = "error"
+            job.status = "fail"
             job.error = "<p>An unexpected error has occurred. Please contact the support to report the bug.</p>"
             db.commit()
             if self.do_send:
@@ -317,7 +317,7 @@ class JobManager:
             thread.start()
         else:
             job = Job(id_job=self.id_job, email=self.email, batch_type=self.batch_system_type,
-                      date_created=datetime.datetime.now(), status="error")
+                      date_created=datetime.datetime.now(), status="fail")
             db.commit()
 
     @db_session

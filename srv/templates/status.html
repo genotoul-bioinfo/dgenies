@@ -31,7 +31,7 @@
     {% elif status == "no-match" %}
         <p>Your job is done.<br/>
         Sorry, we did not find any match between your query and your target.</p>
-    {% elif status == "error" %}
+    {% elif status == "fail" %}
         <p>{% if error == "" %}
                 Your job has failed.
                 Please try again.<br/>
