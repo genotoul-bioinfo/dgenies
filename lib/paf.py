@@ -198,8 +198,8 @@ class Paf:
             self.error = "PAF file does not exist!"
             return False
 
-        if not noise:
-            counts, bins, bars = plt.hist(lines_lens, bins=1000)
+        if not noise and nb_lines > 1000:
+            counts, bins, bars = plt.hist(lines_lens, bins=nb_lines//10)
             counts = list(counts)
             max_value = max(counts)
             max_index = counts.index(max_value)
