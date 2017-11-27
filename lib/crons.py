@@ -11,7 +11,7 @@ class Crons:
     def __init__(self, base_dir):
         self.base_dir = base_dir
         self.my_cron = CronTab(user=getpass.getuser())
-        self.config_reader = AppConfigReader()
+        self.config = AppConfigReader()
         self.local_scheduler_pid_file = os.path.join(self.base_dir, ".local_scheduler_pid")
 
     def clear(self, kill_scheduler=True):
@@ -36,8 +36,8 @@ class Crons:
         """
         Menage cron is launched at 1h00am each day
         """
-        menage_hour = self.config_reader.get_cron_menage_hour()
-        menage_freq = self.config_reader.get_cron_menage_freq()
+        menage_hour = self.config.cron_menage_hour
+        menage_freq = self.config.cron_menage_freq
         if self.base_dir is not None:
             job = self.my_cron.new(sys.executable +
                                    " {0}/bin/clean_jobs.py > {0}/logs/menage.log 2>&1".format(self.base_dir),

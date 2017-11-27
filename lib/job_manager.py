@@ -24,20 +24,11 @@ class JobManager:
         self.email = email
         self.query = query
         self.target = target
-        config_reader = AppConfigReader()
         self.error = ""
         # Get configs:
-        self.batch_system_type = config_reader.get_batch_system_type()
-        self.minimap2 = config_reader.get_minimap2_exec()
-        self.threads = config_reader.get_nb_threads()
-        self.app_data = config_reader.get_app_data()
-        self.web_url = config_reader.get_web_url()
-        self.mail_status = config_reader.get_mail_status_sender()
-        self.mail_reply = config_reader.get_mail_reply()
-        self.mail_org = config_reader.get_mail_org()
-        self.do_send = config_reader.get_send_mail_status()
+        self.config = AppConfigReader()
         # Outputs:
-        self.output_dir = os.path.join(self.app_data, id_job)
+        self.output_dir = os.path.join(self.config.app_data, id_job)
         self.paf = os.path.join(self.output_dir, "map.paf")
         self.paf_raw = os.path.join(self.output_dir, "map_raw.paf")
         self.idx_q = os.path.join(self.output_dir, "query.idx")
@@ -46,7 +37,7 @@ class JobManager:
         self.mailer = mailer
 
     def set_inputs_from_res_dir(self):
-        res_dir = os.path.join(self.app_data, self.id_job)
+        res_dir = os.path.join(self.config.app_data, self.id_job)
         query_file = os.path.join(res_dir, ".query")
         if os.path.exists(query_file):
             with open(query_file) as q_f:
@@ -75,7 +66,7 @@ class JobManager:
         return "fail"
 
     def check_job_success(self):
-        if self.batch_system_type == "local":
+        if self.config.batch_system_type == "local":
             return self.__check_job_success_local()
 
     def get_mail_content(self, status):
@@ -83,7 +74,7 @@ class JobManager:
         if status == "success":
             message += "Your job %s was completed successfully!\n\n" % self.id_job
             message += str("Your job {0} is finished. You can see  the results by clicking on the link below:\n"
-                           "{1}/result/{0}\n\n").format(self.id_job, self.web_url)
+                           "{1}/result/{0}\n\n").format(self.id_job, self.config.web_url)
         else:
             message += "Your job %s has failed!\n\n" % self.id_job
             if self.error != "":
@@ -104,7 +95,7 @@ class JobManager:
         with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "mail_templates", "job_notification.html"))\
                 as t_file:
             template = Template(t_file.read())
-            return template.render(job_name=self.id_job, status=status, url_base=self.web_url,
+            return template.render(job_name=self.id_job, status=status, url_base=self.config.web_url,
                                    query_name=self.query.get_name() if self.query is not None else "",
                                    target_name=self.target.get_name(),
                                    error=self.error)
@@ -142,7 +133,7 @@ class JobManager:
 
     @db_session
     def __launch_local(self):
-        cmd = ["run_minimap2.sh", self.minimap2, self.threads, self.target.get_path(),
+        cmd = ["run_minimap2.sh", self.config.minimap2_exec, self.config.nb_threads, self.target.get_path(),
                self.query.get_path() if self.query is not None else "NONE", self.paf, self.paf_raw]
         with open(self.logs, "w") as logs:
             p = subprocess.Popen(cmd, stdout=logs, stderr=logs)
@@ -236,11 +227,11 @@ class JobManager:
         Send mail using POST url (we have no access to mailer)
         """
         key = Functions.random_string(15)
-        key_file = os.path.join(self.app_data, self.id_job, ".key")
+        key_file = os.path.join(self.config.app_data, self.id_job, ".key")
         with open(key_file, "w") as k_f:
             k_f.write(key)
         data = parse.urlencode({"key": key}).encode()
-        req = request.Request(self.web_url + "/send-mail/" + self.id_job, data=data)
+        req = request.Request(self.config.web_url + "/send-mail/" + self.id_job, data=data)
         resp = request.urlopen(req)
         if resp.getcode() != 200:
             print("Job %s: Send mail failed!" % self.id_job)
@@ -271,9 +262,8 @@ class JobManager:
             job = Job.get(id_job=self.id_job)
             job.status = "success"
             db.commit()
-        if self.do_send:
+        if self.config.send_mail_status:
             self.send_mail_post()
-            #self.send_mail(job.status)
 
     @db_session
     def start_job(self):
@@ -288,7 +278,7 @@ class JobManager:
                 job.status = "fail"
                 job.error = "<p>Error while getting input files. Please contact the support to report the bug.</p>"
                 db.commit()
-                if self.do_send:
+                if self.config.send_mail_status:
                     self.send_mail()
 
         except Exception:
@@ -297,7 +287,7 @@ class JobManager:
             job.status = "fail"
             job.error = "<p>An unexpected error has occurred. Please contact the support to report the bug.</p>"
             db.commit()
-            if self.do_send:
+            if self.config.send_mail_status:
                 self.send_mail()
 
 
@@ -308,7 +298,7 @@ class JobManager:
             print("Old job found without result dir existing: delete it from BDD!")
             j1.delete()
         if self.target is not None:
-            job = Job(id_job=self.id_job, email=self.email, batch_type=self.batch_system_type,
+            job = Job(id_job=self.id_job, email=self.email, batch_type=self.config.batch_system_type,
                       date_created=datetime.datetime.now())
             db.commit()
             if not os.path.exists(self.output_dir):
@@ -316,7 +306,7 @@ class JobManager:
             thread = threading.Timer(1, self.start_job)
             thread.start()
         else:
-            job = Job(id_job=self.id_job, email=self.email, batch_type=self.batch_system_type,
+            job = Job(id_job=self.id_job, email=self.email, batch_type=self.config.batch_system_type,
                       date_created=datetime.datetime.now(), status="fail")
             db.commit()
 

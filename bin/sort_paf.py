@@ -32,7 +32,7 @@ def __sort_key_paf_lines(a):
     return -sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2)) * (int(a[9]) / int(a[10]))
 
 
-def __get_sorted_paf_lines(lines):
+def __get_sorted_paf_lines(lines: iter):
     paf_lines = []
     for line in lines:
         parts = line.strip("\n").split("\t")
@@ -43,8 +43,7 @@ def __get_sorted_paf_lines(lines):
 
 def init(input_f, output_f):
     with open(input_f, "r") as paf_file:
-        paf_lines = paf_file.readlines()
-        paf_lines = __get_sorted_paf_lines(paf_lines)
+        paf_lines = __get_sorted_paf_lines(paf_file)
         with open(output_f, "w") as out:
             out.write("\n".join(["\t".join(x) for x in paf_lines]))
 

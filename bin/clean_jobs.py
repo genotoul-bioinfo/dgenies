@@ -18,8 +18,8 @@ from database import Job
 
 config_reader = AppConfigReader()
 
-UPLOAD_FOLDER = config_reader.get_upload_folder()
-APP_DATA = config_reader.get_app_data()
+UPLOAD_FOLDER = config_reader.upload_folder
+APP_DATA = config_reader.app_data
 NOW = time.time()
 FAKE = False
 

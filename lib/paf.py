@@ -141,10 +141,12 @@ class Paf:
 
         try:
             with open(self.paf, "r") as paf_file:
-                paf_lines = paf_file.readlines()
-                if len(paf_lines) > self.max_nb_lines:
-                    self.sampled = True
-                for line in paf_lines[:self.max_nb_lines]:
+                nb_lines = 0
+                for line in paf_file:
+                    nb_lines += 1
+                    if nb_lines > self.max_nb_lines:
+                        self.sampled = True
+                        break
                     parts = line.strip("\n").split("\t")
                     v1 = parts[0]
                     v6 = parts[5]

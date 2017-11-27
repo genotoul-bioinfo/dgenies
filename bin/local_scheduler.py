@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import os
-import threading
 import time
 import sys
 import psutil
@@ -20,7 +19,7 @@ from config_reader import AppConfigReader
 from lib.job_manager import JobManager
 
 config_reader = AppConfigReader()
-NB_RUN = config_reader.get_local_nb_runs()
+NB_RUN = config_reader.local_nb_runs
 
 
 @db_session
@@ -32,9 +31,6 @@ def start_job(id_job):
     job_mng = JobManager(id_job=id_job, email=job.email)
     job_mng.set_inputs_from_res_dir()
     job_mng.run_job_in_thread()
-    # thread = threading.Timer(1, job_mng.start_job, kwargs={"batch_system_type": "local"})
-    # thread.daemon = True  # Daemonize thread
-    # thread.start()  # Start the execution
 
 
 @db_session

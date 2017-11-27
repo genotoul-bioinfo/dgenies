@@ -2,8 +2,8 @@ import datetime
 from config_reader import AppConfigReader
 from pony.orm import Database, Required, Optional
 
-config_reader = AppConfigReader()
-file_path = config_reader.get_database()
+config = AppConfigReader()
+file_path = config.database
 
 db = Database()
 db.bind(provider='sqlite', filename=file_path, create_db=True)

@@ -2,16 +2,21 @@ import os
 import re
 import inspect
 from configparser import RawConfigParser, NoOptionError, NoSectionError
+from lib.decorators import Singleton
 
 
-class AppConfigReader(object):
+@Singleton
+class AppConfigReader:
     """
+    Store all configs
     """
 
     CONFIG_FILE_PATH = "../application.properties"
 
     def __init__(self):
         """
+        All "get_*" functions results are stored in the "self.*" corresponding attribute
+        Example: results of the get_upload_folder function is stored in self.upload_folder
         """
         config_file = os.path.join(os.path.dirname(inspect.getfile(self.__class__)), self.CONFIG_FILE_PATH)
         if not os.path.exists(config_file):
@@ -19,6 +24,10 @@ class AppConfigReader(object):
                                     "properties are correct for you!")
         self.reader = RawConfigParser()
         self.reader.read(config_file)
+        for attr in dir(self):
+            attr_o = getattr(self, attr)
+            if attr.startswith("get_") and callable(attr_o):
+                setattr(self, attr[4:], attr_o())
 
     @staticmethod
     def replace_vars(path):

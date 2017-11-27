@@ -29,8 +29,8 @@ sqlite_file = os.path.join(app_folder, "database.sqlite")
 # Init config reader:
 config_reader = AppConfigReader()
 
-UPLOAD_FOLDER = config_reader.get_upload_folder()
-APP_DATA = config_reader.get_app_data()
+UPLOAD_FOLDER = config_reader.upload_folder
+APP_DATA = config_reader.app_data
 
 app_title = "D-GENIES - Dotplot for Genomes Interactive, E-connected and Speedy"
 
@@ -43,7 +43,7 @@ app.config['SECRET_KEY'] = 'dsqdsq-255sdA-fHfg52-25Asd5'
 mailer = Mailer(app)
 
 # Folder containing data:
-app_data = config_reader.get_app_data()
+app_data = config_reader.app_data
 
 # Crons:
 crons = Crons(app_folder)

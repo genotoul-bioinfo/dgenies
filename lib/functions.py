@@ -165,8 +165,8 @@ class Functions:
 
     @staticmethod
     def send_fasta_ready(mailer, job_name, sample_name, compressed=False):
-        config_reader = AppConfigReader()
-        web_url = config_reader.get_web_url()
+        config = AppConfigReader()
+        web_url = config.web_url
         with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "mail_templates", "dl_fasta.html")) \
                 as t_file:
             template = Template(t_file.read())
