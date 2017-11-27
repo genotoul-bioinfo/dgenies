@@ -89,7 +89,6 @@ class Paf:
         }
         for cls, c_lines in lines.items():
             for line in c_lines:
-                print(line)
                 x1 = line[0]
                 x2 = line[1]
                 y1 = line[2]
@@ -205,13 +204,10 @@ class Paf:
             max_value = max(counts)
             max_index = counts.index(max_value)
             limit_index = -1
-            print(max_value, max_index)
             for i in range(max_index, len(counts)):
                 if counts[i] < max_value / 100:
-                    print("pass")
                     limit_index = i
                     break
-            print(limit_index)
             if limit_index > -1:
                 lines = self.remove_noise(lines, bins[limit_index])
 
@@ -481,7 +477,6 @@ class Paf:
         for contig in self.q_order:
             strand = "+"
             if contig in self.q_reversed:
-                print("TRUE")
                 strand = "-" if self.q_reversed[contig] else "+"
             if contig in query_on_target:
                 content += "%s\t%s\t%s\n" % (contig, query_on_target[contig] or "None", strand)
