@@ -5,6 +5,8 @@ import shutil
 from math import sqrt
 from numpy import mean
 from pathlib import Path
+import matplotlib as mpl
+mpl.use('Agg')
 from matplotlib import pyplot as plt
 
 
