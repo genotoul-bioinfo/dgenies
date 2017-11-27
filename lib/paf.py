@@ -5,6 +5,7 @@ import shutil
 from math import sqrt
 from numpy import mean
 from pathlib import Path
+from matplotlib import pyplot as plt
 
 
 class Paf:
@@ -76,7 +77,28 @@ class Paf:
         new_index_c, new_index_o = self.__flush_blocks(index_c, new_index_c, new_index_o, current_block)
         return new_index_c, new_index_o
 
-    def parse_paf(self, merge_index=True):
+    @staticmethod
+    def remove_noise(lines, noise_limit):
+        keep_lines = {
+            "0": [],
+            "1": [],
+            "2": [],
+            "3": []
+        }
+        for cls, c_lines in lines.items():
+            for line in c_lines:
+                print(line)
+                x1 = line[0]
+                x2 = line[1]
+                y1 = line[2]
+                y2 = line[3]
+                idy = line[4]
+                len_m = sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2))
+                if len_m >= noise_limit:
+                    keep_lines[cls].append(line)
+        return keep_lines
+
+    def parse_paf(self, merge_index=True, noise=True):
         min_idy = 10000000000
         max_idy = -10000000000
         lines = {
@@ -138,6 +160,7 @@ class Paf:
 
         len_q = q_abs_current_start
         len_t = t_abs_current_start
+        lines_lens = []
 
         try:
             with open(self.paf, "r") as paf_file:
@@ -159,6 +182,8 @@ class Paf:
                     y2 = int(parts[3]) + q_abs_start[v1]
                     x1 = int(parts[7 if strand == 1 else 8]) + t_abs_start[v6]
                     x2 = int(parts[8 if strand == 1 else 7]) + t_abs_start[v6]
+                    len_m = sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2))
+                    lines_lens.append(len_m)
                     if idy < self.limit_idy[0]:
                         class_idy = "0"
                     elif idy < self.limit_idy[1]:
@@ -171,6 +196,22 @@ class Paf:
         except IOError:
             self.error = "PAF file does not exist!"
             return False
+
+        if not noise:
+            counts, bins, bars = plt.hist(lines_lens, bins=1000)
+            counts = list(counts)
+            max_value = max(counts)
+            max_index = counts.index(max_value)
+            limit_index = -1
+            print(max_value, max_index)
+            for i in range(max_index, len(counts)):
+                if counts[i] < max_value / 100:
+                    print("pass")
+                    limit_index = i
+                    break
+            print(limit_index)
+            if limit_index > -1:
+                lines = self.remove_noise(lines, bins[limit_index])
 
         self.parsed = True
         self.len_q = len_q

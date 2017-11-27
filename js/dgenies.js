@@ -1,5 +1,6 @@
 dgenies = {};
 dgenies.loading = "#loading";
+dgenies.noise = true;
 
 dgenies.notify = function (text, type="warning", delay=5000) {
     $.notify({

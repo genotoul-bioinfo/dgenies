@@ -5,6 +5,7 @@ dgenies.result.controls = {};
 
 dgenies.result.controls.init = function () {
     $("#sort-contigs").click(dgenies.result.controls.launch_sort_contigs);
+    $("#hide-noise").click(dgenies.result.controls.launch_hide_noise);
     $("form#select-zone input.submit").click(dgenies.result.controls.select_zone);
     $("form#export select").change(dgenies.result.export.export);
 };
@@ -18,6 +19,32 @@ dgenies.result.controls.launch_sort_contigs = function () {
                 {},
                 function (data) {
                     if (data["success"]) {
+                        dgenies.reset_loading_message();
+                        window.setTimeout(() => {
+                            d3.boxplot.launch(data, true);
+                        }, 0);
+                    }
+                    else {
+                        dgenies.hide_loading();
+                        dgenies.notify(data["message"] || "An error occurred! Please contact us to report the bug", "danger");
+                    }
+                }
+            );
+        }, 0);
+    }, 0);
+};
+
+dgenies.result.controls.launch_hide_noise = function () {
+    d3.boxplot.zoom.reset_scale();
+    window.setTimeout(() => {
+        dgenies.show_loading("Building...");
+        window.setTimeout(() => {
+            dgenies.post(`/freenoise/${dgenies.result.id_res}`,
+                {noise: dgenies.noise ? 0 : 1},
+                function (data) {
+                    if (data["success"]) {
+                        dgenies.noise = !dgenies.noise;
+                        $("#hide-noise").val(dgenies.noise ? "Hide noise" : "Show noise");
                         dgenies.reset_loading_message();
                         window.setTimeout(() => {
                             d3.boxplot.launch(data, true);

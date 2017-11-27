@@ -209,6 +209,20 @@ def sort_graph(id_res):
     return jsonify({"success": False, "message": "Sort is not available for All-vs-All mode"})
 
 
+@app.route('/freenoise/<id_res>', methods=['POST'])
+def free_noise(id_res):
+    paf_file = os.path.join(app_data, id_res, "map.paf")
+    idx1 = os.path.join(app_data, id_res, "query.idx")
+    idx2 = os.path.join(app_data, id_res, "target.idx")
+    paf = Paf(paf_file, idx1, idx2, False)
+    paf.parse_paf(noise=request.form["noise"] == "1")
+    if paf.parsed:
+        res = paf.get_d3js_data()
+        res["success"] = True
+        return jsonify(res)
+    return jsonify({"success": False, "message": paf.error})
+
+
 @app.route('/get-fasta-query/<id_res>', methods=['POST'])
 def build_fasta(id_res):
     res_dir = os.path.join(app_data, id_res)
