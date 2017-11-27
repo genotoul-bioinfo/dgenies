@@ -25,6 +25,7 @@ FAKE = False
 
 max_age = {
     "uploads": 1,
+    "error": 1,
     "data": 7,
     "fasta_sorted": 1
 }
@@ -51,7 +52,10 @@ def parse_upload_folders():
 
 @db_session
 def parse_database():
-    old_jobs = select(j for j in Job if j.date_created < datetime.now() - timedelta(days=max_age["data"]))
+    old_jobs = select(j for j in Job if
+                      (j.status == "success" and j.date_created < datetime.now() - timedelta(days=max_age["data"]))
+                      or (j.status != "success" and j.date_created < datetime.now() - timedelta(days=max_age["error"]))
+                      )
     for job in old_jobs:
         id_job = job.id_job
         print("Removing job %s..." % id_job)
