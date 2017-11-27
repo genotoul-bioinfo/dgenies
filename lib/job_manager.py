@@ -266,6 +266,8 @@ class JobManager:
             else:
                 shutil.copyfile(target_index, query_index)
                 Path(os.path.join(self.output_dir, ".all-vs-all")).touch()
+            if self.target is not None and os.path.exists(self.target.get_path()):
+                os.remove(self.target.get_path())
             job = Job.get(id_job=self.id_job)
             job.status = "success"
             db.commit()
