@@ -285,12 +285,6 @@ h2.title-launch {
     width: 460px;
 }
 
-h2.status {
-    font-size: 18pt;
-    margin-bottom: 15px;
-    margin-top: 10px;
-}
-
 html, body {
     height: 100%;
 }
@@ -560,4 +554,111 @@ div.submit-form select:hover {
 .beta-warning a {
     color: white;
     font-weight: bold;
+}
+
+/*
+ * Status page
+ */
+
+h2.status {
+    font-size: 18pt;
+    margin-bottom: 15px;
+    margin-top: 10px;
+}
+
+.status-body {
+    margin-top: 25px;
+    margin-bottom: 30px;
+}
+
+.progress-status {
+    position: relative;
+    width: 500px;
+    height: 30px;
+    border: solid 1px black;
+    margin-left: 55px;
+    margin-bottom: 100px;
+}
+
+.progress-status-bar {
+    position: absolute;
+    background-color: green;
+    width: 0;
+    height: 28px;
+    top: 0;
+    left: 0;
+}
+
+.progress-status-bar.getfiles {
+    width: 3.7%;
+}
+
+.progress-status-bar.waiting {
+    width: 7%;
+}
+
+.progress-status-bar.scheduled {
+    width: 10.3%;
+}
+
+.progress-status-bar.starting {
+    width: 17.5%;
+}
+
+.progress-status-bar.started {
+    width: 25.4%;
+}
+
+.progress-status-bar.indexing {
+    width: 75.4%;
+}
+
+.progress-status-bar.success, .progress-status-bar.fail, .progress-status-bar.no-match {
+    width: 100%;
+}
+
+.progress-status-bar.fail {
+    background-color: red;
+}
+
+.progress-status .tick {
+    position: absolute;
+    top:29px;
+    width: 1px;
+    height: 10px;
+    border: solid 1px black;
+}
+
+.progress-status .tick p {
+    transform: rotate(-45deg);
+    margin-left: -70px;
+    margin-top: 35px;
+    text-align: right;
+    display: block;
+    width: 80px;
+    overflow: hidden;
+}
+
+.progress-status .tick.submitted {
+    left: -1px;
+}
+
+.progress-status .tick.scheduled {
+    left: 10%;
+}
+
+.progress-status .tick.started {
+    left: 25%;
+}
+
+.progress-status .tick.indexing {
+    left: 75%;
+}
+
+.progress-status .tick.success {
+    right: -1px;
+}
+
+h2.status,div.status-body {
+    margin-left: 55px;
 }
