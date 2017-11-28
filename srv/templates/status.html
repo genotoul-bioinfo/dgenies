@@ -1,4 +1,9 @@
 {% extends 'base.html' %}
+{% block scripts %}
+    {{ super() }}
+        <script src="{{ url_for('static', filename='js/dgenies.status.js') }}" type="text/JavaScript"></script>
+{% endblock %}
+{% block onload %}dgenies.status.init('{{ status }}');{% endblock %}
 {% block content %}
     <h2 class="status">Job name: {{ id_job }}</h2>
     <div class="status-body">
