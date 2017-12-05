@@ -21,6 +21,12 @@ class Splitter:
         self.index_file = os.path.join(self.out_dir, query_index)
 
     def split(self):
+        """
+        Split contigs in smaller ones
+        :return: True if the Fasta is correct, False else
+        """
+        has_header = False
+        next_header = False  # True if next line must be a header line
         with (gzip.open(self.input_f) if self.input_gz else open(self.input_f)) as gz_file, \
                 (gzip.open(self.output_f, "wb") if self.output_gz else open(self.output_f, "w"))  as o_file:
             with (io.TextIOWrapper(gz_file) if self.input_gz else gz_file) as fasta, \
@@ -31,14 +37,24 @@ class Splitter:
                 fasta_str = ""
                 for line in fasta:
                     line = line.strip("\n")
-                    if line.startswith(">"):
-                        self.flush_contig(fasta_str, chr_name, self.size_c, enc, index_f)
+                    if re.match(r"^>.+", line) is not None:
+                        has_header = True
+                        next_header = False
+                        if chr_name is not None and len(fasta_str) > 0:
+                            self.flush_contig(fasta_str, chr_name, self.size_c, enc, index_f)
+                        elif chr_name is not None:
+                            return False
                         chr_name = re.split("\s", line[1:])[0]
                         fasta_str = ""
                         print("Parsing contig \"%s\"... " % chr_name, end="")
                     elif len(line) > 0:
+                        if next_header or re.match(r"^[ATGCNXatgcnx]+$", line) is None:
+                            return False
                         fasta_str += line
+                    elif len(line) == 0:
+                        next_header = True
                 self.flush_contig(fasta_str, chr_name, self.size_c, enc, index_f)
+        return has_header
 
     @staticmethod
     def write_contig(name, fasta, o_file):

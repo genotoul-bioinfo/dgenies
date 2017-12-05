@@ -89,6 +89,7 @@ class JobManager:
             message += "Your job %s has failed!\n\n" % self.id_job
             if self.error != "":
                 message += self.error.replace("#ID#", self.id_job).replace("<br/>", "\n")
+                message += "\n\n"
             else:
                 message += "Your job %s has failed. You can try again. " \
                            "If the problem persists, please contact the support.\n\n" % self.id_job
@@ -264,14 +265,27 @@ class JobManager:
         job = Job.get(id_job=self.id_job)
         job.status = "preparing"
         db.commit()
+        error_tail = "Please check your input file and try again."
         if self.query is not None:
             with open(os.path.join(self.output_dir, "logs.txt"), "w") as logs:
                 logs.write(self.query.get_path())
             fasta_in = self.query.get_path()
             splitter = Splitter(input_f=fasta_in, name_f=self.query.get_name(), output_f=self.get_query_split(),
                                 query_index=self.query_index_split)
-            splitter.split()
-        Functions.index_file(self.target, self.idx_t)
+            if not splitter.split():
+                job.status = "fail"
+                job.error = "<br/>".join(["Query fasta file is not valid!", error_tail])
+                db.commit()
+                if self.config.send_mail_status:
+                    self.send_mail_post()
+                return False
+        if not Functions.index_file(self.target, self.idx_t):
+            job.status = "fail"
+            job.error = "<br/>".join(["Target fasta file is not valid!", error_tail])
+            db.commit()
+            if self.config.send_mail_status:
+                self.send_mail_post()
+            return False
         job = Job.get(id_job=self.id_job)
         job.status = "prepared"
         db.commit()
