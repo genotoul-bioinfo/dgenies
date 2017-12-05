@@ -105,8 +105,10 @@ def launch_analysis():
         # Get final job id:
         id_job = re.sub('[^A-Za-z0-9_\-]+', '', id_job.replace(" ", "_"))
         id_job_orig = id_job
+        i = 2
         while os.path.exists(os.path.join(app_data, id_job)):
-            id_job = id_job_orig + "_2"
+            id_job = id_job_orig + ("_%d" % i)
+            i += 1
 
         folder_files = os.path.join(app_data, id_job)
         os.makedirs(folder_files)
