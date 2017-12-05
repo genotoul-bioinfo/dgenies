@@ -602,7 +602,11 @@ h2.status {
 }
 
 .progress-status-bar.starting {
-    width: 17.5%;
+    width: 15.3%;
+}
+
+.progress-status-bar.preparing {
+    width: 20.4%;
 }
 
 .progress-status-bar.started {

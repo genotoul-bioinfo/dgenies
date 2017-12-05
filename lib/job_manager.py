@@ -15,6 +15,9 @@ from jinja2 import Template
 import traceback
 from pathlib import Path
 from urllib import request, parse
+from bin.split_fa import Splitter
+from bin.merge_splitted_chrms import Merger
+from bin.sort_paf import Sorter
 
 
 class JobManager:
@@ -35,6 +38,12 @@ class JobManager:
         self.idx_t = os.path.join(self.output_dir, "target.idx")
         self.logs = os.path.join(self.output_dir, "logs.txt")
         self.mailer = mailer
+
+    def get_query_split(self):
+        query_split = os.path.join(self.output_dir, "split_" + os.path.basename(self.query.get_path()))
+        if query_split.endswith(".gz"):
+            return query_split[:-3]
+        return query_split
 
     def set_inputs_from_res_dir(self):
         res_dir = os.path.join(self.config.app_data, self.id_job)
@@ -58,8 +67,8 @@ class JobManager:
                 )
 
     def __check_job_success_local(self):
-        if os.path.exists(self.paf):
-            if os.path.getsize(self.paf) > 0:
+        if os.path.exists(self.paf_raw):
+            if os.path.getsize(self.paf_raw) > 0:
                 return "success"
             else:
                 return "no-match"
@@ -133,8 +142,10 @@ class JobManager:
 
     @db_session
     def __launch_local(self):
+        import time
+        start_t = time.time()
         cmd = ["run_minimap2.sh", self.config.minimap2_exec, self.config.nb_threads, self.target.get_path(),
-               self.query.get_path() if self.query is not None else "NONE", self.paf, self.paf_raw]
+               self.get_query_split() if self.query is not None else "NONE", self.paf_raw]
         with open(self.logs, "w") as logs:
             p = subprocess.Popen(cmd, stdout=logs, stderr=logs)
         job = Job.get(id_job=self.id_job)
@@ -142,6 +153,9 @@ class JobManager:
         job.status = "started"
         db.commit()
         p.wait()
+        end_t = time.time()
+        with open(os.path.join(self.output_dir, "timestamp"), "w") as tst:
+            tst.write(str(end_t - start_t) + "\n")
         if p.returncode == 0:
             status = self.check_job_success()
             job.status = status
@@ -243,6 +257,20 @@ class JobManager:
     @db_session
     def run_job(self, batch_system_type):
         success = False
+        # Do split:
+        query_split = None
+        query_index_split = os.path.join(self.output_dir, "query_split.idx")
+        if self.query is not None:
+            with open(os.path.join(self.output_dir, "logs.txt"), "w") as logs:
+                logs.write(self.query.get_path())
+            job = Job.get(id_job=self.id_job)
+            job.status = "preparing"
+            db.commit()
+            fasta_in = self.query.get_path()
+            query_split = self.get_query_split()
+            splitter = Splitter(input_f=fasta_in, name_f=self.query.get_name(), output_f=query_split,
+                                query_index=query_index_split)
+            splitter.split()
         if batch_system_type == "local":
             success = self.__launch_local()
         if success:
@@ -253,10 +281,22 @@ class JobManager:
             Functions.index_file(self.target, target_index)
             query_index = os.path.join(self.output_dir, "query.idx")
             if self.query is not None:
-                Functions.index_file(self.query, query_index)
+                print("pass1")
+                paf_raw = self.paf_raw + ".split"
+                print("pass2")
+                os.remove(query_split)
+                merger = Merger(self.paf_raw, paf_raw, query_index_split,
+                                query_index)
+                merger.merge()
+                os.remove(self.paf_raw)
+                os.remove(query_index_split)
+                self.paf_raw = paf_raw
             else:
                 shutil.copyfile(target_index, query_index)
                 Path(os.path.join(self.output_dir, ".all-vs-all")).touch()
+            sorter = Sorter(self.paf_raw, self.paf)
+            sorter.sort()
+            os.remove(self.paf_raw)
             if self.target is not None and os.path.exists(self.target.get_path()):
                 os.remove(self.target.get_path())
             job = Job.get(id_job=self.id_job)

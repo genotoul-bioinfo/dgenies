@@ -17,42 +17,48 @@ Options:
 """
 
 import os
-from docopt import docopt
 from math import sqrt
 
-__NAME__ = "PreparePAF"
+__NAME__ = "Sort_paf"
 __VERSION__ = 0.1
 
 
-def __sort_key_paf_lines(a):
-    x1 = int(a[2])
-    x2 = int(a[3])
-    y1 = int(a[7])
-    y2 = int(a[8])
-    return -sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2)) * (int(a[9]) / int(a[10]))
+class Sorter:
 
+    def __init__(self, input_f, output_f):
+        self.input_f = input_f
+        self.output_f = output_f
 
-def __get_sorted_paf_lines(lines: iter):
-    paf_lines = []
-    for line in lines:
-        parts = line.strip("\n").split("\t")
-        paf_lines.append(parts)
-    paf_lines.sort(key=lambda x: __sort_key_paf_lines(x))
-    return paf_lines
+    def sort(self):
+        with open(self.input_f, "r") as paf_file:
+            paf_lines = self._get_sorted_paf_lines(paf_file)
+            with open(self.output_f, "w") as out:
+                out.write("\n".join(["\t".join(x) for x in paf_lines]))
 
+    @staticmethod
+    def _sort_key_paf_lines(a):
+        x1 = int(a[2])
+        x2 = int(a[3])
+        y1 = int(a[7])
+        y2 = int(a[8])
+        return -sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2)) * (int(a[9]) / int(a[10]))
 
-def init(input_f, output_f):
-    with open(input_f, "r") as paf_file:
-        paf_lines = __get_sorted_paf_lines(paf_file)
-        with open(output_f, "w") as out:
-            out.write("\n".join(["\t".join(x) for x in paf_lines]))
+    def _get_sorted_paf_lines(self, lines: iter):
+        paf_lines = []
+        for line in lines:
+            parts = line.strip("\n").split("\t")
+            paf_lines.append(parts)
+        paf_lines.sort(key=lambda x: self._sort_key_paf_lines(x))
+        return paf_lines
 
 
 if __name__ == '__main__':
+    from docopt import docopt
     args = docopt(__doc__)
     if args["--version"]:
         print(__NAME__, __VERSION__)
     else:
         if not os.path.exists(args["--input"]):
             raise Exception("Input PAF file %s does not exists" % args["--input"])
-        init(args["--input"], args["--output"])
+        sorter = Sorter(args["--input"], args["--output"])
+        sorter.sort()
