@@ -70,7 +70,7 @@ class Functions:
                         contig = re.split("\s", line[1:])[0]
                         len_c = 0
                     elif len(line) > 0:
-                        if next_header or re.match(r"^[ATGCNXatgcnx]+$", line) is None:
+                        if next_header or re.match(r"^[ATGCKMRYSWBVHDXN.\-]+$", line.upper()) is None:
                             return False
                         len_c += len(line)
                     elif len(line) == 0:

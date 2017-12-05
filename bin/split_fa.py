@@ -48,7 +48,7 @@ class Splitter:
                         fasta_str = ""
                         print("Parsing contig \"%s\"... " % chr_name, end="")
                     elif len(line) > 0:
-                        if next_header or re.match(r"^[ATGCNXatgcnx]+$", line) is None:
+                        if next_header or re.match(r"^[ATGCKMRYSWBVHDXN.\-]+$", line.upper()) is None:
                             return False
                         fasta_str += line
                     elif len(line) == 0:
