@@ -32,6 +32,7 @@ class JobManager:
         self.config = AppConfigReader()
         # Outputs:
         self.output_dir = os.path.join(self.config.app_data, id_job)
+        self.query_index_split = os.path.join(self.output_dir, "query_split.idx")
         self.paf = os.path.join(self.output_dir, "map.paf")
         self.paf_raw = os.path.join(self.output_dir, "map_raw.paf")
         self.idx_q = os.path.join(self.output_dir, "query.idx")
@@ -254,45 +255,47 @@ class JobManager:
         thread = threading.Timer(1, self.run_job, kwargs={"batch_system_type": "local"})
         thread.start()  # Start the execution
 
+    def prepare_data_in_thread(self):
+        thread = threading.Timer(1, self.prepare_data)
+        thread.start()  # Start the execution
+
     @db_session
-    def run_job(self, batch_system_type):
-        success = False
-        # Do split:
-        query_split = None
-        query_index_split = os.path.join(self.output_dir, "query_split.idx")
+    def prepare_data(self):
+        job = Job.get(id_job=self.id_job)
+        job.status = "preparing"
+        db.commit()
         if self.query is not None:
             with open(os.path.join(self.output_dir, "logs.txt"), "w") as logs:
                 logs.write(self.query.get_path())
-            job = Job.get(id_job=self.id_job)
-            job.status = "preparing"
-            db.commit()
             fasta_in = self.query.get_path()
-            query_split = self.get_query_split()
-            splitter = Splitter(input_f=fasta_in, name_f=self.query.get_name(), output_f=query_split,
-                                query_index=query_index_split)
+            splitter = Splitter(input_f=fasta_in, name_f=self.query.get_name(), output_f=self.get_query_split(),
+                                query_index=self.query_index_split)
             splitter.split()
+        Functions.index_file(self.target, self.idx_t)
+        job = Job.get(id_job=self.id_job)
+        job.status = "prepared"
+        db.commit()
+
+    @db_session
+    def run_job(self, batch_system_type):
+        success = False
         if batch_system_type == "local":
             success = self.__launch_local()
         if success:
             job = Job.get(id_job=self.id_job)
-            job.status = "indexing"
+            job.status = "merging"
             db.commit()
-            target_index = os.path.join(self.output_dir, "target.idx")
-            Functions.index_file(self.target, target_index)
-            query_index = os.path.join(self.output_dir, "query.idx")
             if self.query is not None:
-                print("pass1")
                 paf_raw = self.paf_raw + ".split"
-                print("pass2")
-                os.remove(query_split)
-                merger = Merger(self.paf_raw, paf_raw, query_index_split,
-                                query_index)
+                os.remove(self.get_query_split())
+                merger = Merger(self.paf_raw, paf_raw, self.query_index_split,
+                                self.idx_q)
                 merger.merge()
                 os.remove(self.paf_raw)
-                os.remove(query_index_split)
+                os.remove(self.query_index_split)
                 self.paf_raw = paf_raw
             else:
-                shutil.copyfile(target_index, query_index)
+                shutil.copyfile(self.idx_t, self.idx_q)
                 Path(os.path.join(self.output_dir, ".all-vs-all")).touch()
             sorter = Sorter(self.paf_raw, self.paf)
             sorter.sort()

@@ -130,3 +130,9 @@ class AppConfigReader:
             return int(self.reader.get("jobs", "run_local"))
         except (NoOptionError, NoSectionError):
             return 1
+
+    def get_nb_data_prepare(self):
+        try:
+            return int(self.reader.get("jobs", "data_prepare"))
+        except (NoOptionError, NoSectionError):
+            return 2

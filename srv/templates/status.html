@@ -23,12 +23,16 @@
             <p>Your job has been submitted. We are retrieving data...<br/>
                 You will receive an email when it will be finished.<br/>
                 Alternatively, you can refresh this page to update status.</p>
-        {% elif status == "indexing" %}
-            <p>Your map is done. We are indexing fasta files for visualisation...<br/>
+        {% elif status == "merging" %}
+            <p>Your map is done. We are preparing files for visualisation...<br/>
                 You will receive an email when it will be finished.<br/>
                 Alternatively, you can refresh this page to update status.</p>
         {% elif status == "preparing" %}
-            <p>We are preparing query data...<br/>
+            <p>We are preparing data...<br/>
+                You will receive an email when it will be finished.<br/>
+                Alternatively, you can refresh this page to update status.</p>
+        {% elif status == "prepared"%}
+            <p>Your data are ready to be processed. Your job will be scheduled soon...<br/>
                 You will receive an email when it will be finished.<br/>
                 Alternatively, you can refresh this page to update status.</p>
         {% elif status == "scheduled" %}
@@ -54,9 +58,12 @@
         {% endif %}
     </div>
     <div class="progress-status">
-        <div class="progress-status-bar {{ status }}"></div>
+        <div class="progress-status-bar {{ status }}"><div class="inner"></div></div>
         <div class="tick submitted">
             <p>Submitted</p>
+        </div>
+        <div class="tick prepared">
+            <p>Prepared</p>
         </div>
         <div class="tick scheduled">
             <p>Scheduled</p>
@@ -64,8 +71,8 @@
         <div class="tick started">
             <p>Started</p>
         </div>
-        <div class="tick indexing">
-            <p>Indexing</p>
+        <div class="tick merging">
+            <p>Merging</p>
         </div>
         <div class="tick success">
             <p>Done</p>

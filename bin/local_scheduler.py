@@ -20,11 +20,19 @@ from lib.job_manager import JobManager
 
 config_reader = AppConfigReader()
 NB_RUN = config_reader.local_nb_runs
+NB_PREPARE = config_reader.nb_data_prepare
+
+DEBUG=True
+
+
+def _printer(*messages):
+    if DEBUG:
+        print(*messages)
 
 
 @db_session
 def start_job(id_job):
-    print("Start job", id_job)
+    _printer("Start job", id_job)
     job = Job.get(id_job=id_job)
     job.status = "starting"
     db.commit()
@@ -36,7 +44,7 @@ def start_job(id_job):
 @db_session
 def get_scheduled_jobs():
     all_jobs = []
-    jobs = select(j for j in Job if j.batch_type == "local" and (j.status == "waiting" or j.status == "scheduled")).\
+    jobs = select(j for j in Job if j.batch_type == "local" and (j.status == "prepared" or j.status == "scheduled")).\
         sort_by(Job.date_created)
     for job in jobs:
         all_jobs.append(job.id_job)
@@ -46,10 +54,37 @@ def get_scheduled_jobs():
 
 
 @db_session
+def prepare_job(id_job):
+    _printer("Prepare data for job:", id_job)
+    job = Job.get(id_job=id_job)
+    job.status = "preparing"
+    db.commit()
+    job_mng = JobManager(id_job=id_job, email=job.email)
+    job_mng.set_inputs_from_res_dir()
+    job_mng.prepare_data_in_thread()
+
+
+@db_session
+def get_prep_scheduled_jobs():
+    all_jobs = []
+    jobs = select(j for j in Job if j.status == "waiting").\
+        sort_by(Job.date_created)
+    for job in jobs:
+        all_jobs.append(job.id_job)
+    db.commit()
+    return all_jobs
+
+
+@db_session
+def get_preparing_jobs_nb():
+    return len(select(j for j in Job if j.status == "preparing"))
+
+
+@db_session
 def parse_started_jobs():
     jobs_started = []
     jobs = select(j for j in Job if j.batch_type == "local" and j.status == "started" or j.status == "starting"
-                  or j.status == "indexing")
+                  or j.status == "merging")
     for job in jobs:
         pid = job.id_process
         if job.status != "started" or psutil.pid_exists(pid):
@@ -65,16 +100,23 @@ def parse_started_jobs():
 
 if __name__ == '__main__':
     while True:
-        print("Checking jobs...")
+        _printer("Checking jobs...")
         scheduled_jobs = get_scheduled_jobs()
-        print("Scheduled:", len(scheduled_jobs))
+        prep_scheduled_jobs = get_prep_scheduled_jobs()
+        _printer("Waiting for preparing:", len(prep_scheduled_jobs))
+        nb_preparing_jobs = get_preparing_jobs_nb()
+        _printer("Preparing:", nb_preparing_jobs)
+        _printer("Scheduled:", len(scheduled_jobs))
         started_jobs = parse_started_jobs()
         nb_started = len(started_jobs)
-        print("Started:", nb_started)
+        _printer("Started:", nb_started)
+        while len(prep_scheduled_jobs) > 0 and nb_preparing_jobs < NB_PREPARE:
+            print("pass")
+            prepare_job(prep_scheduled_jobs.pop(0))
+            nb_preparing_jobs += 1
         while len(scheduled_jobs) > 0 and nb_started < NB_RUN:
             start_job(scheduled_jobs.pop(0))
             nb_started += 1
-
         # Wait before return
-        print("Sleeping...")
-        time.sleep(15)
+            _printer("Sleeping...")
+        time.sleep(15 if nb_preparing_jobs == 0 else 5)
