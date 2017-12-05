@@ -37,7 +37,7 @@ class Mailer:
                   "################\n\n"
                   "!!! SEND MAILS DISABLED BY CONFIGURATION !!!\n\n"
                   "(This might be disabled in production)\n\n")
-            print("Sender: %s <%s>\n" % sender if isinstance(tuple, sender) else ("None", sender))
+            print("Sender: %s <%s>\n" % sender if isinstance(sender, tuple) else ("None", sender))
             print("Reply to: %s\n" % reply)
             print("Recipients: %s\n" % ", ".join(recipients))
             print("Subject: %s\n" % subject)
