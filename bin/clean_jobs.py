@@ -7,7 +7,6 @@ import time
 from _datetime import datetime, timedelta
 import traceback
 import argparse
-from pony.orm import db_session, select
 
 app_folder = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "srv")
 sys.path.insert(0, app_folder)
@@ -50,12 +49,12 @@ def parse_upload_folders():
                 print(traceback.print_exc(), file=sys.stderr)
 
 
-@db_session
 def parse_database():
-    old_jobs = select(j for j in Job if
-                      (j.status == "success" and j.date_created < datetime.now() - timedelta(days=max_age["data"]))
-                      or (j.status != "success" and j.date_created < datetime.now() - timedelta(days=max_age["error"]))
-                      )
+    old_jobs = Job.select().where(
+                  ((Job.status == "success") & (Job.date_created < datetime.now() - timedelta(days=max_age["data"])))
+                  |
+                  ((Job.status != "success") & (Job.date_created < datetime.now() - timedelta(days=max_age["error"])))
+              )
     for job in old_jobs:
         id_job = job.id_job
         print("Removing job %s..." % id_job)
@@ -66,7 +65,7 @@ def parse_database():
         else:
             print("Job %s has no data folder!" % id_job)
         if not FAKE:
-            job.delete()
+            job.delete_instance()
 
 
 def parse_data_folders():

@@ -5,7 +5,6 @@ import time
 import sys
 import psutil
 import atexit
-from pony.orm import db_session, select
 from tendo import singleton
 
 # Allow only one instance:
@@ -15,7 +14,7 @@ app_folder = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__fil
 os.environ["PATH"] = os.path.join(app_folder, "bin") + ":" + os.environ["PATH"]
 sys.path.insert(0, app_folder)
 
-from database import Job, db
+from database import Job
 from config_reader import AppConfigReader
 from lib.job_manager import JobManager
 
@@ -42,74 +41,62 @@ def _printer(*messages):
         print(*messages)
 
 
-@db_session
 def start_job(id_job, batch_system_type="local"):
     _printer("Start job", id_job)
-    job = Job.get(id_job=id_job)
+    job = Job.get(Job.id_job == id_job)
     job.status = "starting"
-    db.commit()
+    job.save()
     job_mng = JobManager(id_job=id_job, email=job.email)
     job_mng.set_inputs_from_res_dir()
     job_mng.run_job_in_thread(batch_system_type)
 
 
-@db_session
 def get_scheduled_local_jobs():
     all_jobs = []
-    jobs = select(j for j in Job if j.batch_type == "local" and (j.status == "prepared" or j.status == "scheduled")).\
-        sort_by(Job.date_created)
+    jobs = Job.select().where((Job.batch_type == "local") & ((Job.status == "prepared") | (Job.status == "scheduled"))).\
+        order_by(Job.date_created)
     for job in jobs:
         all_jobs.append(job.id_job)
         job.status = "scheduled"
-    db.commit()
+        job.save()
     return all_jobs
 
 
-@db_session
 def get_scheduled_cluster_jobs():
     all_jobs = []
-    jobs = select(j for j in Job if j.batch_type != "local" and (j.status == "prepared" or j.status == "scheduled")).\
-        sort_by(Job.date_created)
+    jobs = Job.select().where((Job.batch_type != "local") & ((Job.status == "prepared") | (Job.status == "scheduled"))).\
+        order_by(Job.date_created)
     for job in jobs:
-        all_jobs.append({"job_id":job.id_job, "batch_type": job.batch_type})
+        all_jobs.append({"job_id": job.id_job, "batch_type": job.batch_type})
         job.status = "scheduled"
-    db.commit()
+        job.save()
     return all_jobs
 
 
-@db_session
 def prepare_job(id_job):
     _printer("Prepare data for job:", id_job)
-    job = Job.get(id_job=id_job)
+    job = Job.get(Job.id_job == id_job)
     job.status = "preparing"
-    db.commit()
+    job.save()
     job_mng = JobManager(id_job=id_job, email=job.email)
     job_mng.set_inputs_from_res_dir()
     job_mng.prepare_data_in_thread()
 
 
-@db_session
 def get_prep_scheduled_jobs():
-    all_jobs = []
-    jobs = select(j for j in Job if j.status == "waiting").\
-        sort_by(Job.date_created)
-    for job in jobs:
-        all_jobs.append(job.id_job)
-    db.commit()
-    return all_jobs
+    jobs = Job.select().where(Job.status == "waiting").order_by(Job.date_created)
+    return [j.id_job for j in jobs]
 
 
-@db_session
 def get_preparing_jobs_nb():
-    return len(select(j for j in Job if j.status == "preparing"))
+    return len(Job.select().where(Job.status == "preparing"))
 
 
-@db_session
 def parse_started_jobs():
     jobs_started = []  # Only local jobs
     cluster_jobs_started = []  # Only cluster jobs
-    jobs = select(j for j in Job if j.status == "started" or j.status == "starting"
-                  or j.status == "merging" or j.status == "scheduled-cluster")
+    jobs = Job.select().where((Job.status == "started") | (Job.status == "starting") | (Job.status == "merging") |
+                              (Job.status == "scheduled-cluster"))
     for job in jobs:
         pid = job.id_process
         if job.batch_type == "local":
@@ -119,21 +106,11 @@ def parse_started_jobs():
                 print("Job %s (pid: %d) has died!" % (job.id_job, job.id_process))
                 job.status = "fail"
                 job.error = "<p>Your job has failed for an unexpected reason. Please contact the support.</p>"
-                db.commit()
+                job.save()
                 # Todo: send mail about the error
         else:
             if job.status in ["started", "scheduled-cluster"]:
                 s = DRMAA_SESSION.session
-                decodestatus = {drmaa.JobState.UNDETERMINED: 'process status cannot be determined',
-                        drmaa.JobState.QUEUED_ACTIVE: 'job is queued and active',
-                        drmaa.JobState.SYSTEM_ON_HOLD: 'job is queued and in system hold',
-                        drmaa.JobState.USER_ON_HOLD: 'job is queued and in user hold',
-                        drmaa.JobState.USER_SYSTEM_ON_HOLD: 'job is queued and in user and system hold',
-                        drmaa.JobState.RUNNING: 'job is running',
-                        drmaa.JobState.SYSTEM_SUSPENDED: 'job is system suspended',
-                        drmaa.JobState.USER_SUSPENDED: 'job is user suspended',
-                        drmaa.JobState.DONE: 'job finished normally',
-                        drmaa.JobState.FAILED: 'job finished, but failed'}
                 status = s.jobStatus(str(job.id_process))
                 if status not in [drmaa.JobState.RUNNING, drmaa.JobState.DONE, drmaa.JobState.QUEUED_ACTIVE,
                                   drmaa.JobState.SYSTEM_ON_HOLD, drmaa.JobState.USER_ON_HOLD,
@@ -145,12 +122,12 @@ def parse_started_jobs():
                     print("Job %s (id on cluster: %d) has died!" % (job.id_job, job.id_process))
                     job.status = "fail"
                     job.error = "<p>Your job has failed for an unexpected reason. Please contact the support.</p>"
-                    db.commit()
+                    job.save()
                     # Todo: send mail about the error
                 else:
                     if job.status == "scheduled-cluster" and status == drmaa.JobState.RUNNING:
                         job.status = "started"
-                        db.commit()
+                        job.save()
                     cluster_jobs_started.append(job.id_job)
             else:
                 cluster_jobs_started.append(job.id_job)

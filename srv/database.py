@@ -1,22 +1,25 @@
-import datetime
 from config_reader import AppConfigReader
-from pony.orm import Database, Required, Optional
+from peewee import SqliteDatabase, Model, CharField, IntegerField, DateTimeField
 
 config = AppConfigReader()
 file_path = config.database
 
-db = Database()
-db.bind(provider='sqlite', filename=file_path, create_db=True)
+db = SqliteDatabase(file_path)
+db.connect()
 
 
-class Job(db.Entity):
-    id_job = Required(str)
-    email = Required(str)
-    id_process = Optional(int)
-    batch_type = Required(str)
-    status = Required(str, default="submitted")
-    date_created = Required(datetime.datetime)
-    error = Optional(str)
+class Job(Model):
+    id_job = CharField(max_length=50)
+    email = CharField()
+    id_process = IntegerField(null=True)
+    batch_type = CharField(max_length=20, default="local")
+    status = CharField(max_length=20, default="submitted")
+    date_created = DateTimeField()
+    error = CharField(default="")
+
+    class Meta:
+        database = db
 
 
-db.generate_mapping(create_tables=True)
+if not Job.table_exists():
+    Job.create_table()

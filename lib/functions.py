@@ -13,7 +13,6 @@ from Bio import SeqIO
 from jinja2 import Template
 from config_reader import AppConfigReader
 from database import Job
-from pony.orm import db_session
 
 ALLOWED_EXTENSIONS = ['fa', 'fasta', 'fna', 'fa.gz', 'fasta.gz', 'fna.gz']
 
@@ -172,9 +171,8 @@ class Functions:
         return index, sample_name
 
     @staticmethod
-    @db_session
     def get_mail_for_job(id_job):
-        j1 = Job.get(id_job=id_job)
+        j1 = Job.get(Job.id_job == id_job)
         return j1.email
 
     @staticmethod

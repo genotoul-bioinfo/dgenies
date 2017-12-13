@@ -5,8 +5,8 @@ import datetime
 import threading
 import re
 from config_reader import AppConfigReader
-from pony.orm import db_session, select
-from database import db, Job
+from database import Job
+from peewee import DoesNotExist
 from lib.Fasta import Fasta
 from lib.functions import Functions
 import requests
@@ -114,10 +114,9 @@ class JobManager:
         else:
             return "DGenies - Job failed: %s" % self.id_job
 
-    @db_session
     def send_mail(self):
         # Retrieve infos:
-        job = Job.get(id_job=self.id_job)
+        job = Job.get(Job.id_job == self.id_job)
         if self.email is None:
             self.email = job.email
         status = job.status
@@ -139,26 +138,25 @@ class JobManager:
                        "<br/>You can contact the support for more information."
         return "Your job #ID# has failed. You can try again.<br/>If the problem persists, please contact the support."
 
-    @db_session
     def __launch_local(self):
         cmd = ["run_minimap2.sh", self.config.minimap2_exec, self.config.nb_threads, self.target.get_path(),
                self.get_query_split() if self.query is not None else "NONE", self.paf_raw]
         with open(self.logs, "w") as logs:
             p = subprocess.Popen(cmd, stdout=logs, stderr=logs)
-        job = Job.get(id_job=self.id_job)
+        job = Job.get(Job.id_job == self.id_job)
         job.id_process = p.pid
         job.status = "started"
-        db.commit()
+        job.save()
         p.wait()
         if p.returncode == 0:
             status = self.check_job_success()
             job.status = status
-            db.commit()
+            job.save()
             return status == "success"
         job.status = "fail"
         self.error = self.search_error()
         job.error = self.error
-        db.commit()
+        job.save()
         return False
 
     def check_job_status_slurm(self):
@@ -189,28 +187,18 @@ class JobManager:
 
         return status == "0"
 
-    @db_session
     def update_job_status(self, status, id_process=None):
-        # job = Job.get_for_update(id_job=self.id_job)
-        # job = select(v for v in Job if v.id_job == self.id_job)[:][0]
-        # print(job.status)
-        # job.status = status
-        # if id_process is not None:
-        #     job.id_process = id_process
-        # db.commit()
-        if id_process is None:
-            sql_command = "UPDATE Job set status=\"{0}\" WHERE id_job=\"{1}\";".format(status, self.id_job)
-        else:
-            sql_command = "UPDATE Job set status=\"{0}\",id_process={2} WHERE id_job=\"{1}\";".\
-                format(status, self.id_job,id_process)
-        db.execute(sql_command)
-        db.commit()
+        job = Job.get(Job.id_job == self.id_job)
+        job.status = status
+        if id_process is not None:
+            job.id_process = id_process
+        job.save()
 
     def __launch_drmaa(self, batch_system_type):
         import drmaa
         from lib.drmaasession import DrmaaSession
         drmaa_session = DrmaaSession()
-        #with drmaa_session.session as s:
+
         s = drmaa_session.session
         jt = s.createJobTemplate()
         jt.remoteCommand = "run_minimap2.sh"
@@ -244,7 +232,6 @@ class JobManager:
             s.deleteJobTemplate(jt)
             return status == "success"
         self.update_job_status("fail")
-        db.commit()
         s.deleteJobTemplate(jt)
         return False
 
@@ -265,7 +252,6 @@ class JobManager:
             save_file.write(finale_path)
         return finale_path, name
 
-    @db_session
     def __check_url(self, fasta: Fasta):
         url = fasta.get_path()
         if url.startswith("http://") or url.startswith("https://"):
@@ -277,25 +263,24 @@ class JobManager:
         if filename is not None:
             allowed = Functions.allowed_file(filename)
             if not allowed:
-                job = Job.get(id_job=self.id_job)
+                job = Job.get(Job.id_job == self.id_job)
                 job.status = "fail"
                 job.error = "<p>File <b>%s</b> downloaded from <b>%s</b> is not a Fasta file!</p>" \
                             "<p>If this is unattended, please contact the support.</p>" % (filename, url)
-                db.commit()
+                job.save()
         else:
             allowed = False
-            job = Job.get(id_job=self.id_job)
+            job = Job.get(Job.id_job == self.id_job)
             job.status = "fail"
             job.error = "<p>Url <b>%s</b> is not a valid URL!</p>" \
                         "<p>If this is unattended, please contact the support.</p>" % (url)
-            db.commit()
+            job.save()
         return allowed
 
-    @db_session
     def getting_files(self):
-        job = Job.get(id_job=self.id_job)
+        job = Job.get(Job.id_job == self.id_job)
         job.status = "getfiles"
-        db.commit()
+        job.save()
         correct = True
         if self.query is not None:
             if self.query.get_type() == "local":
@@ -339,11 +324,10 @@ class JobManager:
         thread = threading.Timer(1, self.prepare_data)
         thread.start()  # Start the execution
 
-    @db_session
     def prepare_data(self):
-        job = Job.get(id_job=self.id_job)
+        job = Job.get(Job.id_job == self.id_job)
         job.status = "preparing"
-        db.commit()
+        job.save()
         error_tail = "Please check your input file and try again."
         if self.query is not None:
             with open(os.path.join(self.output_dir, "logs.txt"), "w") as logs:
@@ -354,22 +338,20 @@ class JobManager:
             if not splitter.split():
                 job.status = "fail"
                 job.error = "<br/>".join(["Query fasta file is not valid!", error_tail])
-                db.commit()
+                job.save()
                 if self.config.send_mail_status:
                     self.send_mail_post()
                 return False
         if not Functions.index_file(self.target, self.idx_t):
             job.status = "fail"
             job.error = "<br/>".join(["Target fasta file is not valid!", error_tail])
-            db.commit()
+            job.save()
             if self.config.send_mail_status:
                 self.send_mail_post()
             return False
-        job = Job.get(id_job=self.id_job)
         job.status = "prepared"
-        db.commit()
+        job.save()
 
-    @db_session
     def run_job(self, batch_system_type):
         success = False
         if batch_system_type == "local":
@@ -377,9 +359,9 @@ class JobManager:
         elif batch_system_type in ["slurm", "sge"]:
             success = self.__launch_drmaa(batch_system_type)
         if success:
-            job = Job.get(id_job=self.id_job)
+            job = Job.get(Job.id_job == self.id_job)
             job.status = "merging"
-            db.commit()
+            job.save()
             if self.query is not None:
                 paf_raw = self.paf_raw + ".split"
                 os.remove(self.get_query_split())
@@ -397,61 +379,58 @@ class JobManager:
             os.remove(self.paf_raw)
             if self.target is not None and os.path.exists(self.target.get_path()):
                 os.remove(self.target.get_path())
-            job = Job.get(id_job=self.id_job)
+            job = Job.get(Job.id_job == self.id_job)
             job.status = "success"
-            db.commit()
+            job.save()
         if self.config.send_mail_status:
             self.send_mail_post()
 
-    @db_session
     def start_job(self):
         try:
             success = self.getting_files()
             if success:
-                job = Job.get(id_job=self.id_job)
+                job = Job.get(Job.id_job == self.id_job)
                 job.status = "waiting"
-                db.commit()
+                job.save()
             else:
-                job = Job.get(id_job=self.id_job)
+                job = Job.get(Job.id_job == self.id_job)
                 job.status = "fail"
                 job.error = "<p>Error while getting input files. Please contact the support to report the bug.</p>"
-                db.commit()
+                job.save()
                 if self.config.send_mail_status:
                     self.send_mail()
 
         except Exception:
             print(traceback.print_exc())
-            job = Job.get(id_job=self.id_job)
+            job = Job.get(Job.id_job == self.id_job)
             job.status = "fail"
             job.error = "<p>An unexpected error has occurred. Please contact the support to report the bug.</p>"
-            db.commit()
+            job.save()
             if self.config.send_mail_status:
                 self.send_mail()
 
-
-    @db_session
     def launch(self):
-        j1 = select(j for j in Job if j.id_job == self.id_job)
+        j1 = Job.select().where(Job.id_job == self.id_job)
         if len(j1) > 0:
             print("Old job found without result dir existing: delete it from BDD!")
-            j1.delete()
+            for j11 in j1:
+                j11.delete_instance()
         if self.target is not None:
-            job = Job(id_job=self.id_job, email=self.email, batch_type=self.config.batch_system_type,
-                      date_created=datetime.datetime.now())
-            db.commit()
+            job = Job.create(id_job=self.id_job, email=self.email, batch_type=self.config.batch_system_type,
+                             date_created=datetime.datetime.now())
+            job.save()
             if not os.path.exists(self.output_dir):
                 os.mkdir(self.output_dir)
             thread = threading.Timer(1, self.start_job)
             thread.start()
         else:
-            job = Job(id_job=self.id_job, email=self.email, batch_type=self.config.batch_system_type,
-                      date_created=datetime.datetime.now(), status="fail")
-            db.commit()
+            job = Job.create(id_job=self.id_job, email=self.email, batch_type=self.config.batch_system_type,
+                             date_created=datetime.datetime.now(), status="fail")
+            job.save()
 
-    @db_session
     def status(self):
-        job = Job.get(id_job=self.id_job)
-        if job is not None:
+        try:
+            job = Job.get(Job.id_job == self.id_job)
             return job.status, job.error
-        else:
+        except DoesNotExist:
             return "unknown", ""
