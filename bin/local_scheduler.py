@@ -27,6 +27,7 @@ if config_reader.drmaa_lib_path is not None:
     try:
         import drmaa
         from lib.drmaa import DrmaaSession
+        DRMAA_SESSION = DrmaaSession()
     except ImportError:
         pass
 
@@ -34,8 +35,6 @@ NB_RUN = config_reader.local_nb_runs
 NB_PREPARE = config_reader.nb_data_prepare
 
 DEBUG=True
-
-DRMAA_SESSION = DrmaaSession()
 
 
 def _printer(*messages):
@@ -160,7 +159,8 @@ def parse_started_jobs():
 
 @atexit.register
 def cleaner():
-    DRMAA_SESSION.exit()
+    if "DRMAA_SESSION" in globals():
+        DRMAA_SESSION.exit()
 
 
 if __name__ == '__main__':
