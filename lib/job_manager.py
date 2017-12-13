@@ -208,7 +208,7 @@ class JobManager:
 
     def __launch_drmaa(self, batch_system_type):
         import drmaa
-        from lib.drmaa import DrmaaSession
+        from lib.drmaasession import DrmaaSession
         drmaa_session = DrmaaSession()
         #with drmaa_session.session as s:
         s = drmaa_session.session
