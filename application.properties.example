@@ -6,8 +6,18 @@ batch_system_type = local
 threads = 4
 web_url = http://localhost:5000
 
+[cluster]
+drmaa_lib_path = ###SET_IT###
+#Native specs: options passed to the scheduler
+### Slurm: --mem-per-cpu={0} --ntasks={1} --time={2}
+### SGE: -l mem={0},h_vmem={0} -pe parallel_smp {1}
+### Note: copy&paste specifications for your scheduler. You can customize it. Always use {0} for memory, {1} for number of CPUs ({2} for duration time if slurm). All are required
+###       if you don't want to change anything, don't edit anything.
+native_specs = ###DEFAULT###
+
 [softwares]
 minimap2 = ###DEFAULT###
+minimap2_cluster = ###DEFAULT###
 
 [database]
 sqlite_file = ###PROGRAM###/srv/database.sqlite

@@ -28,6 +28,7 @@ class JobManager:
         self.query = query
         self.target = target
         self.error = ""
+        self.id_process = "-1"
         # Get configs:
         self.config = AppConfigReader()
         # Outputs:
@@ -67,17 +68,13 @@ class JobManager:
                     type_f="local"
                 )
 
-    def __check_job_success_local(self):
+    def check_job_success(self):
         if os.path.exists(self.paf_raw):
             if os.path.getsize(self.paf_raw) > 0:
                 return "success"
             else:
                 return "no-match"
         return "fail"
-
-    def check_job_success(self):
-        if self.config.batch_system_type == "local":
-            return self.__check_job_success_local()
 
     def get_mail_content(self, status):
         message = "D-Genies\n\n"
@@ -144,8 +141,6 @@ class JobManager:
 
     @db_session
     def __launch_local(self):
-        import time
-        start_t = time.time()
         cmd = ["run_minimap2.sh", self.config.minimap2_exec, self.config.nb_threads, self.target.get_path(),
                self.get_query_split() if self.query is not None else "NONE", self.paf_raw]
         with open(self.logs, "w") as logs:
@@ -155,9 +150,6 @@ class JobManager:
         job.status = "started"
         db.commit()
         p.wait()
-        end_t = time.time()
-        with open(os.path.join(self.output_dir, "timestamp"), "w") as tst:
-            tst.write(str(end_t - start_t) + "\n")
         if p.returncode == 0:
             status = self.check_job_success()
             job.status = status
@@ -167,6 +159,93 @@ class JobManager:
         self.error = self.search_error()
         job.error = self.error
         db.commit()
+        return False
+
+    def check_job_status_slurm(self):
+        """
+        Check status of a SLURM job run
+        :return: True if the job has successfully ended
+        """
+        status = subprocess.check_output("sacct --format=state -j %s | tail -n3" % self.id_process, shell=True)\
+            .decode("utf-8").strip("\n")
+
+        status = status.split("\n")
+
+        success = True
+        for statu in status:
+            if statu.replace(" ", "") != "COMPLETED":
+                success = False
+                break
+
+        return success
+
+    def check_job_status_sge(self):
+        """
+        Check status of a SGE job run
+        :return: True if the job jas successfully ended
+        """
+        status = subprocess.check_output("qacct -j %s | grep 'failed' | tr -s ' ' | cut -d' ' -f2" % self.id_process,
+                                         shell=True).decode("utf-8").strip("\n")
+
+        return status == "0"
+
+    @db_session
+    def update_job_status(self, status, id_process=None):
+        # job = Job.get_for_update(id_job=self.id_job)
+        # job = select(v for v in Job if v.id_job == self.id_job)[:][0]
+        # print(job.status)
+        # job.status = status
+        # if id_process is not None:
+        #     job.id_process = id_process
+        # db.commit()
+        if id_process is None:
+            sql_command = "UPDATE Job set status=\"{0}\" WHERE id_job=\"{1}\";".format(status, self.id_job)
+        else:
+            sql_command = "UPDATE Job set status=\"{0}\",id_process={2} WHERE id_job=\"{1}\";".\
+                format(status, self.id_job,id_process)
+        db.execute(sql_command)
+        db.commit()
+
+    def __launch_drmaa(self, batch_system_type):
+        import drmaa
+        from lib.drmaa import DrmaaSession
+        drmaa_session = DrmaaSession()
+        #with drmaa_session.session as s:
+        s = drmaa_session.session
+        jt = s.createJobTemplate()
+        jt.remoteCommand = "run_minimap2.sh"
+        jt.args = [self.config.minimap2_cluster_exec, self.config.nb_threads, self.target.get_path(),
+                   self.get_query_split() if self.query is not None else "NONE", self.paf_raw]
+        jt.joinFiles = False
+
+        native_specs = self.config.drmaa_native_specs
+        if batch_system_type == "slurm":
+            if native_specs == "###DEFAULT###":
+                native_specs = "--mem-per-cpu={0} --ntasks={1} --time={2}"
+            jt.nativeSpecification = native_specs.format(8000, 4, "01:00:00")
+        else:
+            if native_specs == "###DEFAULT###":
+                native_specs = "-l mem={0},h_vmem={0} -pe parallel_smp {1}"
+            jt.nativeSpecification = native_specs.format(8000, 4)
+        jt.workingDirectory = self.output_dir
+        jobid = s.runJob(jt)
+        self.id_process = jobid
+
+        self.update_job_status("scheduled-cluster", jobid)
+
+        retval = s.wait(jobid, drmaa.Session.TIMEOUT_WAIT_FOREVER)
+        if retval.hasExited and (self.check_job_status_slurm() if batch_system_type == "slurm" else
+                                 self.check_job_status_sge()):
+            status = self.check_job_success()
+            # job = Job.get(id_job=self.id_job)
+            # job.status = status
+            # db.commit()
+            self.update_job_status(status)
+            s.deleteJobTemplate(jt)
+            return status == "success"
+        self.update_job_status("fail")
+        db.commit()
+        s.deleteJobTemplate(jt)
         return False
 
     def __getting_local_file(self, fasta: Fasta, type_f):
@@ -252,8 +331,8 @@ class JobManager:
         if resp.getcode() != 200:
             print("Job %s: Send mail failed!" % self.id_job)
 
-    def run_job_in_thread(self):
-        thread = threading.Timer(1, self.run_job, kwargs={"batch_system_type": "local"})
+    def run_job_in_thread(self, batch_system_type="local"):
+        thread = threading.Timer(1, self.run_job, kwargs={"batch_system_type": batch_system_type})
         thread.start()  # Start the execution
 
     def prepare_data_in_thread(self):
@@ -295,6 +374,8 @@ class JobManager:
         success = False
         if batch_system_type == "local":
             success = self.__launch_local()
+        elif batch_system_type in ["slurm", "sge"]:
+            success = self.__launch_drmaa(batch_system_type)
         if success:
             job = Job.get(id_job=self.id_job)
             job.status = "merging"

@@ -71,6 +71,13 @@ class AppConfigReader:
         except NoOptionError:
             return "minimap2"
 
+    def get_minimap2_cluster_exec(self):
+        try:
+            entry = self.reader.get("softwares", "minimap2_cluster")
+            return entry if entry != "###DEFAULT###" else "minimap2"
+        except NoOptionError:
+            return self.get_minimap2_exec()
+
     def get_database(self):
         try:
             return self.replace_vars(self.reader.get("database", "sqlite_file"))
@@ -136,3 +143,17 @@ class AppConfigReader:
             return int(self.reader.get("jobs", "data_prepare"))
         except (NoOptionError, NoSectionError):
             return 2
+
+    def get_drmaa_lib_path(self):
+        try:
+            return self.reader.get("cluster", "drmaa_lib_path")
+        except (NoOptionError, NoSectionError):
+            if self.get_batch_system_type() != "local":
+                raise Exception("No drmaa library set. It is required if the batch system type is not 'local'")
+            return None
+
+    def get_drmaa_native_specs(self):
+        try:
+            return self.reader.get("cluster", "native_specs")
+        except (NoOptionError, NoSectionError):
+            return "###DEFAULT###"

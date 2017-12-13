@@ -615,7 +615,7 @@ h2.status {
     width: 30.3%;
 }
 
-.progress-status-bar.starting {
+.progress-status-bar.starting, .progress-status-bar.scheduled-cluster {
     width: 35.2%;
 }
 

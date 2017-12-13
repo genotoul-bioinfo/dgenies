@@ -317,9 +317,7 @@ def qt_assoc(id_res):
             abort(404)
             return False
         csv_content = paf.build_query_on_target_association_file()
-        print(csv_content)
         return Response(csv_content, mimetype="text/plain")
-    print("PASS")
     abort(404)
 
 

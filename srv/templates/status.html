@@ -15,6 +15,10 @@
             <p>Your job is starting...<br/>
                 You will receive an email when it will be finished.<br/>
                 Alternatively, you can refresh this page to update status.</p>
+        {% elif status == "scheduled-cluster" %}
+            <p>Your job has been scheduled on the cluster.<br/>
+                You will receive an email when it will be finished.<br/>
+                Alternatively, you can refresh this page to update status.</p>
         {% elif status == "submitted" or status == "waiting" %}
             <p>Your job has been submitted.<br/>
                 You will receive an email when it will be finished.<br/>
