@@ -246,12 +246,9 @@ class Paf:
 
     def save_json(self, out):
         import json
-        success, data = self.parse_paf()
-        if success:
-            with open(out, "w") as out_f:
-                out_f.write(json.dumps(data))
-        else:
-            raise Exception(data)
+        data = self.get_d3js_data()
+        with open(out, "w") as out_f:
+            out_f.write(json.dumps(data))
 
     def is_contig_well_oriented(self, lines: list, contig, chrom):
         """
