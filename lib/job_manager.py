@@ -205,6 +205,7 @@ class JobManager:
         jt.args = [self.config.minimap2_cluster_exec, self.config.nb_threads, self.target.get_path(),
                    self.get_query_split() if self.query is not None else "NONE", self.paf_raw]
         jt.joinFiles = False
+        jt.errorPath = self.logs
 
         native_specs = self.config.drmaa_native_specs
         if batch_system_type == "slurm":
@@ -360,6 +361,10 @@ class JobManager:
             success = self.__launch_drmaa(batch_system_type)
         if success:
             job = Job.get(Job.id_job == self.id_job)
+            with open(self.logs) as logs:
+                measures = logs.readlines()[-1].strip("\n").split(" ")
+                job.time_elapsed = round(float(measures[0]))
+                job.mem_peak = int(measures[1])
             job.status = "merging"
             job.save()
             if self.query is not None:
@@ -431,6 +436,7 @@ class JobManager:
     def status(self):
         try:
             job = Job.get(Job.id_job == self.id_job)
-            return job.status, job.error
+            return {"status": job.status, "mem_peak": job.mem_peak, "time_elapsed": job.time_elapsed,
+                    "error": job.error}
         except DoesNotExist:
-            return "unknown", ""
+            return {"status": "unknown", "error": ""}

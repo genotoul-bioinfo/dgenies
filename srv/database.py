@@ -16,6 +16,8 @@ class Job(Model):
     status = CharField(max_length=20, default="submitted")
     date_created = DateTimeField()
     error = CharField(default="")
+    mem_peak = IntegerField(null=True)
+    time_elapsed = IntegerField(null=True)
 
     class Meta:
         database = db

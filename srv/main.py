@@ -137,9 +137,22 @@ def launch_analysis():
 @app.route('/status/<id_job>', methods=['GET'])
 def status(id_job):
     job = JobManager(id_job)
-    j_status, error = job.status()
-    return render_template("status.html", title=app_title, status=j_status, error=error.replace("#ID#", ""),
-                           id_job=id_job, menu="results")
+    j_status = job.status()
+    mem_peak = j_status["mem_peak"] if "mem_peak" in j_status else None
+    if mem_peak is not None:
+        mem_peak = "%.1f G" % (mem_peak / 1024.0 / 1024.0)
+    time_e = j_status["time_elapsed"] if "time_elapsed" in j_status else None
+    if time_e is not None:
+        if time_e < 60:
+            time_e = "%d secs" % time_e
+        else:
+            minutes = time_e // 60
+            seconds = time_e - minutes * 60
+            time_e = "%d min %d secs" % (minutes, seconds)
+    return render_template("status.html", title=app_title, status=j_status["status"],
+                           error=j_status["error"].replace("#ID#", ""),
+                           id_job=id_job, menu="results", mem_peak=mem_peak,
+                           time_elapsed=time_e)
 
 
 # Results path

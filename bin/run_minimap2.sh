@@ -14,12 +14,12 @@ if [ "$fasta_q" != "NONE" ]; then
 
 echo "Running: ${minimap_exec} -t ${nb_threads} ${fasta_t} ${fasta_q} > ${paf_raw}"
 
-${minimap_exec} -t ${nb_threads} ${fasta_t} ${fasta_q} > ${paf_raw}
+/usr/bin/time -f "%e %M" ${minimap_exec} -t ${nb_threads} ${fasta_t} ${fasta_q} > ${paf_raw}
 
 else
 
 echo "Running: ${minimap_exec} -t ${nb_threads} -X ${fasta_t} ${fasta_t} > ${paf_raw}"
 
-${minimap_exec} -t ${nb_threads} -X ${fasta_t} ${fasta_t} > ${paf_raw}
+/usr/bin/time -f "%e %M" ${minimap_exec} -t ${nb_threads} -X ${fasta_t} ${fasta_t} > ${paf_raw}
 
 fi
