@@ -7,7 +7,7 @@ import shutil
 import sys
 import re
 import traceback
-from lib.Fasta import Fasta
+from lib.fasta import Fasta
 from collections import OrderedDict
 from Bio import SeqIO
 from jinja2 import Template

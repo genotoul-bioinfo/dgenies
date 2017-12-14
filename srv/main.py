@@ -13,7 +13,7 @@ from config_reader import AppConfigReader
 from lib.job_manager import JobManager
 from lib.functions import Functions, ALLOWED_EXTENSIONS
 from lib.upload_file import UploadFile
-from lib.Fasta import Fasta
+from lib.fasta import Fasta
 from lib.mailer import Mailer
 from lib.crons import Crons
 

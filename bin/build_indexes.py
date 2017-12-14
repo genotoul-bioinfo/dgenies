@@ -25,7 +25,7 @@ __VERSION__ = 0.1
 import os
 from docopt import docopt
 from lib.functions import Functions
-from lib.Fasta import Fasta
+from lib.fasta import Fasta
 
 
 def init(output_d, query, target, query_name=None, target_name=None):

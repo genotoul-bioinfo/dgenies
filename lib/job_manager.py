@@ -7,7 +7,7 @@ import re
 from config_reader import AppConfigReader
 from database import Job
 from peewee import DoesNotExist
-from lib.Fasta import Fasta
+from lib.fasta import Fasta
 from lib.functions import Functions
 import requests
 import wget
