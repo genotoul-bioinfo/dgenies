@@ -64,6 +64,22 @@ class AppConfigReader:
         except NoOptionError:
             return "http://localhost:5000"
 
+    def get_max_upload_size(self):
+        try:
+            max_size_b = self.replace_vars(self.reader.get("global", "max_upload_size"))
+            if max_size_b == "-1":
+                return -1
+            size_v = int(max_size_b[:-1])
+            size_unit = max_size_b[-1].upper()
+            if size_unit not in ["M", "G"]:
+                raise ValueError("Max size unit must be M or G")
+            max_size = size_v * 1024 * 1024
+            if size_unit == "G":
+                max_size *= 1024
+            return max_size
+        except NoOptionError:
+            return -1
+
     def get_minimap2_exec(self):
         try:
             entry = self.reader.get("softwares", "minimap2")
@@ -157,3 +173,37 @@ class AppConfigReader:
             return self.reader.get("cluster", "native_specs")
         except (NoOptionError, NoSectionError):
             return "###DEFAULT###"
+
+    def get_max_run_local(self):
+        try:
+            return self.reader.get("cluster", "max_run_local")
+        except (NoOptionError, NoSectionError):
+            return 0
+
+    def get_min_query_size(self):
+        try:
+            size_b = self.reader.get("cluster", "min_query_size")
+            size_v = int(size_b[:-1])
+            size_unit = size_b[-1].upper()
+            if size_unit not in ["M", "G"]:
+                raise ValueError("Min query size unit must be M or G")
+            min_size = size_v * 1024 * 1024
+            if size_unit == "G":
+                min_size *= 1024
+            return min_size
+        except (NoOptionError, NoSectionError):
+            return 0
+
+    def get_min_target_size(self):
+        try:
+            size_b = self.reader.get("cluster", "min_target_size")
+            size_v = int(size_b[:-1])
+            size_unit = size_b[-1].upper()
+            if size_unit not in ["M", "G"]:
+                raise ValueError("Min query size unit must be M or G")
+            min_size = size_v * 1024 * 1024
+            if size_unit == "G":
+                min_size *= 1024
+            return min_size
+        except (NoOptionError, NoSectionError):
+            return 0

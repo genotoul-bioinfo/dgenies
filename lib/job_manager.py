@@ -18,6 +18,8 @@ from urllib import request, parse
 from bin.split_fa import Splitter
 from bin.merge_splitted_chrms import Merger
 from bin.sort_paf import Sorter
+import struct
+import binascii
 
 
 class JobManager:
@@ -40,6 +42,21 @@ class JobManager:
         self.idx_t = os.path.join(self.output_dir, "target.idx")
         self.logs = os.path.join(self.output_dir, "logs.txt")
         self.mailer = mailer
+
+    @staticmethod
+    def is_gz_file(filepath):
+        with open(filepath, 'rb') as test_f:
+            return binascii.hexlify(test_f.read(2)) == b'1f8b'
+
+    @staticmethod
+    def get_file_size(filepath: str):
+        if filepath.endswith(".gz"):
+            with open(filepath, 'rb') as f:
+                f.seek(-4, 2)
+                file_size = struct.unpack('I', f.read(4))[0]
+        else:
+            file_size = os.path.getsize(filepath)
+        return file_size
 
     def get_query_split(self):
         query_split = os.path.join(self.output_dir, "split_" + os.path.basename(self.query.get_path()))
@@ -305,11 +322,21 @@ class JobManager:
             job.save()
         return allowed
 
+    def clear(self):
+        shutil.rmtree(self.output_dir)
+
+    @staticmethod
+    def get_pending_local_number():
+        return len(Job.select().where((Job.batch_type == "local") & (Job.status != "success") & (Job.status != "fail") &
+                                      (Job.status != "no-match")))
+
     def getting_files(self):
         job = Job.get(Job.id_job == self.id_job)
         job.status = "getfiles"
         job.save()
         correct = True
+        should_be_local = True
+        max_upload_size_readable = self.config.max_upload_size / 1024 / 1024  # Set it in Mb
         if self.query is not None:
             if self.query.get_type() == "local":
                 self.query.set_path(self.__getting_local_file(self.query, "query"))
@@ -319,16 +346,57 @@ class JobManager:
                 self.query.set_name(filename)
             else:
                 correct = False
-        if correct and self.target is not None:
-            if self.target.get_type() == "local":
-                self.target.set_path(self.__getting_local_file(self.target, "target"))
-            elif self.__check_url(self.target):
-                finale_path, filename = self.__getting_file_from_url(self.target, "target")
-                self.target.set_path(finale_path)
-                self.target.set_name(filename)
-            else:
-                correct = False
-        return correct
+        if correct:
+            if self.query.get_path().endswith(".gz") and not self.is_gz_file(self.query.get_path()):
+                # Check file is correctly gzipped
+                job.status = "fail"
+                job.error = "Query file is not a correct gzip file"
+                job.save()
+                self.clear()
+                return False, True
+            # Check size:
+            file_size = self.get_file_size(self.query.get_path())
+            if -1 < self.config.max_upload_size < file_size:
+                job.status = "fail"
+                job.error = "Query file exceed size limit of %d Mb (uncompressed)" % max_upload_size_readable
+                job.save()
+                self.clear()
+                return False, True
+            if self.config.batch_system_type != "local" and file_size >= self.config.min_query_size:
+                    should_be_local = False
+
+            if self.target is not None:
+                if self.target.get_type() == "local":
+                    self.target.set_path(self.__getting_local_file(self.target, "target"))
+                elif self.__check_url(self.target):
+                    finale_path, filename = self.__getting_file_from_url(self.target, "target")
+                    self.target.set_path(finale_path)
+                    self.target.set_name(filename)
+                else:
+                    correct = False
+                if correct:
+                    if self.target.get_path().endswith(".gz") and not self.is_gz_file(self.target.get_path()):
+                        # Check file is correctly gzipped
+                        job.status = "fail"
+                        job.error = "Target file is not a correct gzip file"
+                        job.save()
+                        self.clear()
+                        return False, True
+                    # Check size:
+                    file_size = self.get_file_size(self.target.get_path())
+                    if -1 < self.config.max_upload_size < file_size:
+                        job.status = "fail"
+                        job.error = "Target file exceed size limit of %d Mb (uncompressed)" % max_upload_size_readable
+                        job.save()
+                        self.clear()
+                        return False, True
+                    if self.config.batch_system_type != "local" and file_size >= self.config.min_target_size:
+                        should_be_local = False
+        if correct and job.batch_type != "local" and should_be_local \
+                and self.get_pending_local_number() < self.config.max_run_local:
+            job.batch_type = "local"
+            job.save()
+        return correct, False
 
     def send_mail_post(self):
         """
@@ -419,16 +487,17 @@ class JobManager:
 
     def start_job(self):
         try:
-            success = self.getting_files()
+            success, error_set = self.getting_files()
             if success:
                 job = Job.get(Job.id_job == self.id_job)
                 job.status = "waiting"
                 job.save()
             else:
-                job = Job.get(Job.id_job == self.id_job)
-                job.status = "fail"
-                job.error = "<p>Error while getting input files. Please contact the support to report the bug.</p>"
-                job.save()
+                if not error_set:
+                    job = Job.get(Job.id_job == self.id_job)
+                    job.status = "fail"
+                    job.error = "<p>Error while getting input files. Please contact the support to report the bug.</p>"
+                    job.save()
                 if self.config.send_mail_status:
                     self.send_mail()
 

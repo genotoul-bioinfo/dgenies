@@ -1,26 +1,46 @@
 [global]
 upload_folder = /tmp
 data_folder = ###PROGRAM###/data
+
 # batch system type: local, sge, slurm
 batch_system_type = local
+
 threads = 4
 web_url = http://localhost:5000
+
+# Max size of uploaded files (also for files from URL):
+max_upload_size = 3G # Please set the unit: M for Megabyte or G for Gigabyte (-1 without unit to don't set a limit)
+
 
 [cluster]
 drmaa_lib_path = ###SET_IT###
 #Native specs: options passed to the scheduler
 ### Slurm: --mem-per-cpu={0} --ntasks={1} --time={2}
 ### SGE: -l mem={0},h_vmem={0} -pe parallel_smp {1}
-### Note: copy&paste specifications for your scheduler. You can customize it. Always use {0} for memory, {1} for number of CPUs ({2} for duration time if slurm). All are required
-###       if you don't want to change anything, don't edit anything.
+### Note: copy&paste specifications for your scheduler. You can customize it.
+### Always use {0} for memory, {1} for number of CPUs ({2} for duration time if slurm). All are required.
+### If you don't want to change anything, don't edit anything.
 native_specs = ###DEFAULT###
+
+# If batch_system_type is not local, small jobs can be still run locally.
+# Set to 0 to run all jobs on the cluster
+max_run_local = 10
+
+# To run only big jobs on the cluster, set the min query and target size (if max_run_local is reached, these parameters are ignores):
+# Default parameters is for jobs that runs in approx. more than 3-4 minutes and consume approx. more than 9 GO of RAM
+# Please set the unit: M for Megabyte or G for Gigabyte
+min_query_size = 500M
+min_target_size = 700M
+
 
 [softwares]
 minimap2 = ###DEFAULT###
 minimap2_cluster = ###DEFAULT###
 
+
 [database]
 sqlite_file = ###PROGRAM###/srv/database.sqlite
+
 
 [mail]
 status = mail@dgenies
@@ -28,12 +48,14 @@ reply = mail@dgenies
 org = "Dgenies team"
 send_mail_status = True
 
+
 [cron]
 ### Menage
 # Time to launch the cron:
 menage_hour = 1h00
 # Frequency (days):
 menage_freq = 1
+
 
 [jobs]
 # Number of parallel runs for local jobs:
