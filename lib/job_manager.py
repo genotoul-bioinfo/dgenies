@@ -156,10 +156,14 @@ class JobManager:
         return "Your job #ID# has failed. You can try again.<br/>If the problem persists, please contact the support."
 
     def __launch_local(self):
-        cmd = ["run_minimap2.sh", self.config.minimap2_exec, self.config.nb_threads, self.target.get_path(),
-               self.get_query_split() if self.query is not None else "NONE", self.paf_raw]
-        with open(self.logs, "w") as logs:
-            p = subprocess.Popen(cmd, stdout=logs, stderr=logs)
+        if self.query is not None:
+            cmd = ["/usr/bin/time", "-f", "%e %M", self.config.minimap2_exec, "-t", self.config.nb_threads,
+                   self.target.get_path(), self.get_query_split()]
+        else:
+            cmd = ["/usr/bin/time", "-f", "%e %M", self.config.minimap2_exec, "-t", self.config.nb_threads, "-X",
+                   self.target.get_path(), self.target.get_path()]
+        with open(self.logs, "w") as logs, open(self.paf_raw, "w") as paf_raw:
+            p = subprocess.Popen(cmd, stdout=paf_raw, stderr=logs)
         job = Job.get(Job.id_job == self.id_job)
         job.id_process = p.pid
         job.status = "started"
@@ -245,10 +249,13 @@ class JobManager:
 
         s = drmaa_session.session
         jt = s.createJobTemplate()
-        jt.remoteCommand = "run_minimap2_cluster.sh"
-        jt.args = [self.config.minimap2_cluster_exec, self.config.nb_threads, self.target.get_path(),
-                   self.get_query_split() if self.query is not None else "NONE", self.paf_raw]
+        jt.remoteCommand = self.config.minimap2_exec
+        if self.query is not None:
+            jt.args = ["-t", self.config.nb_threads, self.target.get_path(), self.get_query_split()]
+        else:
+            jt.args = ["-t", self.config.nb_threads, "-X", self.target.get_path(), self.target.get_path()]
         jt.joinFiles = False
+        jt.outputPath = ":" + self.paf_raw
         jt.errorPath = ":" + self.logs
 
         native_specs = self.config.drmaa_native_specs
