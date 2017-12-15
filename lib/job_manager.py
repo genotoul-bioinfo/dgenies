@@ -354,23 +354,24 @@ class JobManager:
             else:
                 correct = False
         if correct:
-            if self.query.get_path().endswith(".gz") and not self.is_gz_file(self.query.get_path()):
-                # Check file is correctly gzipped
-                job.status = "fail"
-                job.error = "Query file is not a correct gzip file"
-                job.save()
-                self.clear()
-                return False, True
-            # Check size:
-            file_size = self.get_file_size(self.query.get_path())
-            if -1 < self.config.max_upload_size < file_size:
-                job.status = "fail"
-                job.error = "Query file exceed size limit of %d Mb (uncompressed)" % max_upload_size_readable
-                job.save()
-                self.clear()
-                return False, True
-            if self.config.batch_system_type != "local" and file_size >= self.config.min_query_size:
-                    should_be_local = False
+            if self.query is not None:
+                if self.query.get_path().endswith(".gz") and not self.is_gz_file(self.query.get_path()):
+                    # Check file is correctly gzipped
+                    job.status = "fail"
+                    job.error = "Query file is not a correct gzip file"
+                    job.save()
+                    self.clear()
+                    return False, True
+                # Check size:
+                file_size = self.get_file_size(self.query.get_path())
+                if -1 < self.config.max_upload_size < file_size:
+                    job.status = "fail"
+                    job.error = "Query file exceed size limit of %d Mb (uncompressed)" % max_upload_size_readable
+                    job.save()
+                    self.clear()
+                    return False, True
+                if self.config.batch_system_type != "local" and file_size >= self.config.min_query_size:
+                        should_be_local = False
 
             if self.target is not None:
                 if self.target.get_type() == "local":
