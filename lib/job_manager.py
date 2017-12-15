@@ -1,7 +1,7 @@
 import os
 import shutil
 import subprocess
-import datetime
+from datetime import datetime
 import threading
 import re
 from config_reader import AppConfigReader
@@ -164,16 +164,18 @@ class JobManager:
         Check status of a SLURM job run
         :return: True if the job has successfully ended
         """
-        status = subprocess.check_output("sacct --format=state -j %s | tail -n3" % self.id_process, shell=True)\
-            .decode("utf-8").strip("\n")
+        status = subprocess.check_output("sacct -p -n --format=state,maxvmsize,elapsed -j %s" % self.id_process,
+                                         shell=True).decode("utf-8").strip("\n")
 
-        status = status.split("\n")
+        status = status.split("|")
 
-        success = True
-        for statu in status:
-            if statu.replace(" ", "") != "COMPLETED":
-                success = False
-                break
+        success = status[0] == "COMPLETED"
+        if success:
+            mem_peak = int(status[1][:-1])  # Remove the K letter
+            elapsed_full = map(int, status[2].split(":"))
+            elapsed = elapsed_full[0] * 3600 + elapsed_full[1] * 60 + elapsed_full[2]
+            with open(self.logs, "a") as logs:
+                logs.write("%s %d" % (elapsed, mem_peak))
 
         return success
 
@@ -182,8 +184,33 @@ class JobManager:
         Check status of a SGE job run
         :return: True if the job jas successfully ended
         """
-        status = subprocess.check_output("qacct -j %s | grep 'failed' | tr -s ' ' | cut -d' ' -f2" % self.id_process,
-                                         shell=True).decode("utf-8").strip("\n")
+        status = "-1"
+        start = None
+        end = None
+        mem_peak = None
+        acct = subprocess.check_output("qacct -d 1 -j %s" % self.id_process,
+                                         shell=True).decode("utf-8")
+        lines = acct.split("\n")
+        for line in lines:
+            if line.startswith("failed"):
+                status = re.split(r"\s+", line, 1)[1]
+            elif line.startswith("start_time"):
+                start = datetime.strptime(re.split(r"\s+", line, 1)[1], "%a %b %d %H:%M:%S %Y")
+            elif line.startswith("end_time"):
+                end = datetime.strptime(re.split(r"\s+", line, 1)[1], "%a %b %d %H:%M:%S %Y")
+            elif line.startswith("maxvmem"):
+                mem_peak = re.split(r"\s+", line, 1)[1]
+                if mem_peak.endswith("G"):
+                    mem_peak = int(mem_peak[-1]) * 1024 * 1024
+                elif mem_peak.endswith("M"):
+                    mem_peak = int(mem_peak[-1]) * 1024
+
+        if status == "0":
+            if start is not None and end is not None and mem_peak is not None:
+                elapsed = end - start
+                elapsed = elapsed.seconds
+                with open(self.logs, "a") as logs:
+                    logs.write("%s %d" % (elapsed, mem_peak))
 
         return status == "0"
 
@@ -201,7 +228,7 @@ class JobManager:
 
         s = drmaa_session.session
         jt = s.createJobTemplate()
-        jt.remoteCommand = "run_minimap2.sh"
+        jt.remoteCommand = "run_minimap2_cluster.sh"
         jt.args = [self.config.minimap2_cluster_exec, self.config.nb_threads, self.target.get_path(),
                    self.get_query_split() if self.query is not None else "NONE", self.paf_raw]
         jt.joinFiles = False
@@ -422,7 +449,7 @@ class JobManager:
                 j11.delete_instance()
         if self.target is not None:
             job = Job.create(id_job=self.id_job, email=self.email, batch_type=self.config.batch_system_type,
-                             date_created=datetime.datetime.now())
+                             date_created=datetime.now())
             job.save()
             if not os.path.exists(self.output_dir):
                 os.mkdir(self.output_dir)
@@ -430,7 +457,7 @@ class JobManager:
             thread.start()
         else:
             job = Job.create(id_job=self.id_job, email=self.email, batch_type=self.config.batch_system_type,
-                             date_created=datetime.datetime.now(), status="fail")
+                             date_created=datetime.now(), status="fail")
             job.save()
 
     def status(self):
