@@ -249,7 +249,7 @@ class JobManager:
 
         s = drmaa_session.session
         jt = s.createJobTemplate()
-        jt.remoteCommand = self.config.minimap2_exec
+        jt.remoteCommand = self.config.minimap2_cluster_exec
         if self.query is not None:
             jt.args = ["-t", self.config.nb_threads, self.target.get_path(), self.get_query_split()]
         else:
