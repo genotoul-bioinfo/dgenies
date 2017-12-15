@@ -172,7 +172,7 @@ class JobManager:
         success = status[0] == "COMPLETED"
         if success:
             mem_peak = int(status[1][:-1])  # Remove the K letter
-            elapsed_full = map(int, status[2].split(":"))
+            elapsed_full = list(map(int, status[2].split(":")))
             elapsed = elapsed_full[0] * 3600 + elapsed_full[1] * 60 + elapsed_full[2]
             with open(self.logs, "a") as logs:
                 logs.write("%s %d" % (elapsed, mem_peak))
