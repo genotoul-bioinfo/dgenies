@@ -46,8 +46,7 @@
         {% elif status == "success" %}
             <p>Your job was completed successfully.<br/>
                 Please <a href="/result/{{ id_job }}">click here</a> to show results.</p>
-            <p>Time elapsed: {{ time_elapsed }}<br/>
-            Peak memory usage: {{ mem_peak }}</p>
+            <p>Time elapsed: {{ time_elapsed }}</p>
         {% elif status == "no-match" %}
             <p>Your job is done.<br/>
             Sorry, we did not find any match between your query and your target.</p>
