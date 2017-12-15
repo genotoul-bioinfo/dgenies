@@ -164,7 +164,7 @@ class JobManager:
         Check status of a SLURM job run
         :return: True if the job has successfully ended
         """
-        status = subprocess.check_output("sacct -p -n --format=state,maxvmsize,elapsed -j %s" % self.id_process,
+        status = subprocess.check_output("sacct -p -n --format=state,maxvmsize,elapsed -j %s.batch" % self.id_process,
                                          shell=True).decode("utf-8").strip("\n")
 
         status = status.split("|")
@@ -232,7 +232,7 @@ class JobManager:
         jt.args = [self.config.minimap2_cluster_exec, self.config.nb_threads, self.target.get_path(),
                    self.get_query_split() if self.query is not None else "NONE", self.paf_raw]
         jt.joinFiles = False
-        jt.errorPath = self.logs
+        jt.errorPath = ":" + self.logs
 
         native_specs = self.config.drmaa_native_specs
         if batch_system_type == "slurm":
