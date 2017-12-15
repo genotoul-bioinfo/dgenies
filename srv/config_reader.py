@@ -176,7 +176,7 @@ class AppConfigReader:
 
     def get_max_run_local(self):
         try:
-            return self.reader.get("cluster", "max_run_local")
+            return int(self.reader.get("cluster", "max_run_local"))
         except (NoOptionError, NoSectionError):
             return 0
 
