@@ -130,19 +130,57 @@ dgenies.run.init_fileuploads = function () {
     })
 };
 
+dgenies.run.get_file_size_str = function(size) {
+    if (size < 1000) {
+        return size + " O";
+    }
+    else if (size < 1000000) {
+        return Math.round(size / 1024) + " Ko";
+    }
+    else if (size < 1000000000) {
+        return Math.round(size / 1048576) + " Mo";
+    }
+    return Math.round(size / 1073741824) + " Go";
+};
+
 dgenies.run.set_events = function() {
     $("input.file-query").change(function () {
+        let file_size_query = $("div.file-size.query");
         if (this.files.length > 0)
-            dgenies.run.set_filename(this.files[0].name, "query");
+            if (this.files[0].size <= 1073741824) {
+                file_size_query.html(dgenies.run.get_file_size_str(this.files[0].size));
+                dgenies.run.set_filename(this.files[0].name, "query");
+            }
+            else {
+                $(this).val("");
+                dgenies.run.set_filename("", "query");
+                dgenies.notify("File exceed the size limit (1 Go)", "danger", 2000);
+                file_size_query.html("");
+            }
         else
             dgenies.run.set_filename("", "query");
+            file_size_query.html("");
     });
+
     $("input.file-target").change(function () {
-        if (this.files.length > 0)
-            dgenies.run.set_filename(this.files[0].name, "target");
+        let file_size_target = $("div.file-size.target");
+        if (this.files.length > 0) {
+            if (this.files[0].size <= 1073741824) {
+                file_size_target.html(dgenies.run.get_file_size_str(this.files[0].size));
+                dgenies.run.set_filename(this.files[0].name, "target");
+            }
+            else {
+                $(this).val("");
+                dgenies.run.set_filename("", "target");
+                dgenies.notify("File exceed the size limit (1 Go)", "danger", 2000);
+                file_size_target.html("");
+            }
+        }
         else
             dgenies.run.set_filename("", "target");
+            file_size_target.html("");
     });
+    
     $("button#submit").click(function () {
         dgenies.run.submit();
     });

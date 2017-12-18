@@ -505,6 +505,12 @@ div.upload-success {
     background-size: 30px 30px;
 }
 
+div.file-size {
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 10px;
+}
+
 div#uploading-loading {
     height: 30px;
     line-height: 30px;
