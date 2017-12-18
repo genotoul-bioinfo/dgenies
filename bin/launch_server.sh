@@ -6,6 +6,7 @@ SCRIPTPATH=`dirname ${SCRIPT}`
 DEBUG=False
 LOCAL=False
 PORT=5000
+CRONS=True
 
 function usage()
 {
@@ -16,7 +17,24 @@ function usage()
     echo -e "\t--debug=${DEBUG}\tTrue to run in debug mode"
     echo -e "\t--local=${LOCAL}\tTrue to make the website accessible only on the hosting PC"
     echo -e "\t--port=${PORT}\tPort number onto run the server"
+    echo -e "\t--crons=${CRONS}\tStart crons (disable it only for tests)"
     echo ""
+}
+
+function is_bool()
+{
+    if [ "$1" != "True" ] && [ "$1" != "False" ]; then
+        echo "$2: error: $1 is not 'True' or 'False': invalid parameter"
+        exit 1
+    fi
+}
+
+function is_number()
+{
+    re='^[0-9]+$'
+    if ! [[ $1 =~ $re ]] ; then
+       echo "$2: error: $1 is not a number: invalid parameter"; exit 1
+    fi
 }
 
 while [ "$1" != "" ]; do
@@ -28,13 +46,20 @@ while [ "$1" != "" ]; do
             exit
             ;;
         --debug)
+            is_bool ${VALUE} "--debug"
             DEBUG=${VALUE}
             ;;
         --local)
+            is_bool ${VALUE} "--local"
             LOCAL=${VALUE}
             ;;
         --port)
+            is_number ${VALUE} "--port"
             PORT=${VALUE}
+            ;;
+        --crons)
+            is_bool ${VALUE} "--crons"
+            CRONS=${VALUE}
             ;;
         *)
             echo "ERROR: unknown parameter \"${PARAM}\""
@@ -56,4 +81,4 @@ if [ "$LOCAL" == "True" ]; then
     host="127.0.0.1"
 fi
 
-FLASK_DEBUG=${debug} FLASK_APP=${SCRIPTPATH}/../srv/main.py flask run --host=${host} --port=${PORT}
+CRONS=${CRONS} FLASK_DEBUG=${debug} FLASK_APP=${SCRIPTPATH}/../srv/main.py flask run --host=${host} --port=${PORT}
