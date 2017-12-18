@@ -1,5 +1,6 @@
 import os
 import sys
+import re
 import getpass
 import psutil
 from crontab import CronTab
@@ -55,8 +56,12 @@ class Crons:
         :return:
         """
         if self.base_dir is not None:
+            pyexec = sys.executable
+            match = re.match(r"^(.+)/lib/(python[^/]+)/site-packages$", pyexec)
+            if match:
+                pyexec = "%s/bin/%s" % (match.group(1), match.group(2))
             job = self.my_cron.new("{0}/bin/start_local_scheduler.sh {0} {1} {2} > /dev/null 2>&1 &".
-                                   format(self.base_dir, sys.executable, self.local_scheduler_pid_file),
+                                   format(self.base_dir, pyexec, self.local_scheduler_pid_file),
                                    comment="dgenies")
             job.minute.every(1)
             self.my_cron.write()
