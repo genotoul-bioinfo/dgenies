@@ -46,7 +46,7 @@ mailer = Mailer(app)
 app_data = config_reader.app_data
 
 # Crons:
-if os.getenv('CRONS') == "True":
+if os.getenv('DISABLE_CRONS') != "True":
     print("Starting crons...")
     crons = Crons(app_folder)
     crons.start_all()

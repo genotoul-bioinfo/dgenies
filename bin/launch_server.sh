@@ -6,7 +6,7 @@ SCRIPTPATH=`dirname ${SCRIPT}`
 DEBUG=False
 LOCAL=False
 PORT=5000
-CRONS=True
+DISABLE_CRONS=False
 
 function usage()
 {
@@ -59,7 +59,9 @@ while [ "$1" != "" ]; do
             ;;
         --crons)
             is_bool ${VALUE} "--crons"
-            CRONS=${VALUE}
+            if [[ ${VALUE} == "False" ]]; then
+                DISABLE_CRONS="True"
+            fi
             ;;
         *)
             echo "ERROR: unknown parameter \"${PARAM}\""
@@ -81,4 +83,4 @@ if [ "$LOCAL" == "True" ]; then
     host="127.0.0.1"
 fi
 
-CRONS=${CRONS} FLASK_DEBUG=${debug} FLASK_APP=${SCRIPTPATH}/../srv/main.py flask run --host=${host} --port=${PORT}
+DISABLE_CRONS=${DISABLE_CRONS} FLASK_DEBUG=${debug} FLASK_APP=${SCRIPTPATH}/../srv/main.py flask run --host=${host} --port=${PORT}
