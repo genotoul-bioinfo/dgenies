@@ -57,7 +57,7 @@ class Crons:
         """
         if self.base_dir is not None:
             pyexec = sys.executable
-            match = re.match(r"^(.+)/lib/(python[^/]+)/site-packages$", pyexec)
+            match = re.match(r"^(.+)/lib/(python[^/]+)/site-packages/bin/python$", pyexec)
             if match:
                 pyexec = "%s/bin/%s" % (match.group(1), match.group(2))
             job = self.my_cron.new("{0}/bin/start_local_scheduler.sh {0} {1} {2} > /dev/null 2>&1 &".
