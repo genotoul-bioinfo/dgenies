@@ -151,6 +151,15 @@ def status(id_job):
             minutes = time_e // 60
             seconds = time_e - minutes * 60
             time_e = "%d min %d secs" % (minutes, seconds)
+    format = request.args.get("format")
+    if format is not None and format == "json":
+        return jsonify({
+            "status": j_status["status"],
+            "error": j_status["error"].replace("#ID#", ""),
+            "id_job": id_job,
+            "mem_peak": mem_peak,
+            "time_elapsed": time_e
+        })
     return render_template("status.html", title=app_title, status=j_status["status"],
                            error=j_status["error"].replace("#ID#", ""),
                            id_job=id_job, menu="results", mem_peak=mem_peak,
