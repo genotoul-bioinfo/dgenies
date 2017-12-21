@@ -601,7 +601,7 @@ h2.status {
     overflow: hidden;
 }
 
-.progress-status-bar.getfiles {
+.progress-status-bar.getfiles, .progress-status-bar.getfiles-waiting {
     width: 3.7%;
 }
 

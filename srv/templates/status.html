@@ -27,6 +27,10 @@
             <p>Your job has been submitted. We are retrieving data...<br/>
                 You will receive an email when it will be finished.<br/>
                 Alternatively, you can refresh this page to update status.</p>
+        {% elif status == "getfiles-waiting" %}
+            <p>Your job has been submitted. We are retrieving data... (waiting for download...)<br/>
+                You will receive an email when it will be finished.<br/>
+                Alternatively, you can refresh this page to update status.</p>
         {% elif status == "merging" %}
             <p>Your map is done. We are preparing files for visualisation...<br/>
                 You will receive an email when it will be finished.<br/>

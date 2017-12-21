@@ -2,10 +2,11 @@ import os
 import shutil
 import subprocess
 from datetime import datetime
+import time
 import threading
 import re
 from config_reader import AppConfigReader
-from database import Job
+from database import Job, Session
 from peewee import DoesNotExist
 from lib.fasta import Fasta
 from lib.functions import Functions
@@ -337,6 +338,71 @@ class JobManager:
         return len(Job.select().where((Job.batch_type == "local") & (Job.status != "success") & (Job.status != "fail") &
                                       (Job.status != "no-match")))
 
+    def check_file(self, input_type, should_be_local, max_upload_size_readable):
+        """
+
+        :param input_type: query or target
+        :param should_be_local: True if job should be treated locally
+        :param max_upload_size_readable: max upload size human readable
+        :return: (True if correct, True if error set [for fail], True if should be local)
+        """
+        my_input = getattr(self, input_type)
+        if my_input.get_path().endswith(".gz") and not self.is_gz_file(my_input.get_path()):
+            # Check file is correctly gzipped
+            job = Job.get(Job.id_job == self.id_job)
+            job.status = "fail"
+            job.error = "Query file is not a correct gzip file"
+            job.save()
+            self.clear()
+            return False, True, None
+        # Check size:
+        file_size = self.get_file_size(my_input.get_path())
+        if -1 < self.config.max_upload_size < file_size:
+            job = Job.get(Job.id_job == self.id_job)
+            job.status = "fail"
+            job.error = "Query file exceed size limit of %d Mb (uncompressed)" % max_upload_size_readable
+            job.save()
+            self.clear()
+            return False, True, None
+        if self.config.batch_system_type != "local" and file_size >= getattr(self, "config.min_%s_size" % my_input):
+            should_be_local = False
+        return True, False, should_be_local
+
+    def download_files_with_pending(self, files_to_download, should_be_local, max_upload_size_readable):
+        job = Job.get(Job.id_job == self.id_job)
+        job.status = "getfiles-waiting"
+        job.save()
+        # Create a session:
+        s_id = Session.new()
+        session = Session.get(s_id=s_id)
+        allowed = False
+        correct = True
+        error_set = False
+        while not allowed:
+            allowed = session.ask_for_upload(True)
+            time.sleep(15)
+        if allowed:
+            session.delete_instance()
+            job.status = "getfiles"
+            job.save()
+            for file, input_type in files_to_download:
+                finale_path, filename = self.__getting_file_from_url(file, input_type)
+                my_input = getattr(self, input_type)
+                my_input.set_path(finale_path)
+                my_input.set_name(filename)
+                correct, error_set, should_be_local = self.check_file(input_type, should_be_local,
+                                                                      max_upload_size_readable)
+                if not correct:
+                    break
+
+            if correct and job.batch_type != "local" and should_be_local \
+                    and self.get_pending_local_number() < self.config.max_run_local:
+                job.batch_type = "local"
+                job.save()
+        else:
+            correct = False
+        self._after_start(correct, error_set)
+
     def getting_files(self):
         job = Job.get(Job.id_job == self.id_job)
         job.status = "getfiles"
@@ -344,63 +410,45 @@ class JobManager:
         correct = True
         should_be_local = True
         max_upload_size_readable = self.config.max_upload_size / 1024 / 1024  # Set it in Mb
+        files_to_download = []
         if self.query is not None:
             if self.query.get_type() == "local":
                 self.query.set_path(self.__getting_local_file(self.query, "query"))
+                correct, error_set, should_be_local = self.check_file("query", should_be_local,
+                                                                      max_upload_size_readable)
+                if not correct:
+                    return False, error_set
             elif self.__check_url(self.query):
-                finale_path, filename = self.__getting_file_from_url(self.query, "query")
-                self.query.set_path(finale_path)
-                self.query.set_name(filename)
+                # finale_path, filename = self.__getting_file_from_url(self.query, "query")
+                # self.query.set_path(finale_path)
+                # self.query.set_name(filename)
+                files_to_download.append([self.query, "query"])
             else:
                 correct = False
         if correct:
-            if self.query is not None:
-                if self.query.get_path().endswith(".gz") and not self.is_gz_file(self.query.get_path()):
-                    # Check file is correctly gzipped
-                    job.status = "fail"
-                    job.error = "Query file is not a correct gzip file"
-                    job.save()
-                    self.clear()
-                    return False, True
-                # Check size:
-                file_size = self.get_file_size(self.query.get_path())
-                if -1 < self.config.max_upload_size < file_size:
-                    job.status = "fail"
-                    job.error = "Query file exceed size limit of %d Mb (uncompressed)" % max_upload_size_readable
-                    job.save()
-                    self.clear()
-                    return False, True
-                if self.config.batch_system_type != "local" and file_size >= self.config.min_query_size:
-                        should_be_local = False
-
             if self.target is not None:
                 if self.target.get_type() == "local":
                     self.target.set_path(self.__getting_local_file(self.target, "target"))
+                    correct, error_set, should_be_local = self.check_file("target", should_be_local,
+                                                                          max_upload_size_readable)
+                    if not correct:
+                        return False, error_set
                 elif self.__check_url(self.target):
-                    finale_path, filename = self.__getting_file_from_url(self.target, "target")
-                    self.target.set_path(finale_path)
-                    self.target.set_name(filename)
+                    # finale_path, filename = self.__getting_file_from_url(self.target, "target")
+                    # self.target.set_path(finale_path)
+                    # self.target.set_name(filename)
+                    files_to_download.append([self.target, "target"])
                 else:
                     correct = False
-                if correct:
-                    if self.target.get_path().endswith(".gz") and not self.is_gz_file(self.target.get_path()):
-                        # Check file is correctly gzipped
-                        job.status = "fail"
-                        job.error = "Target file is not a correct gzip file"
-                        job.save()
-                        self.clear()
-                        return False, True
-                    # Check size:
-                    file_size = self.get_file_size(self.target.get_path())
-                    if -1 < self.config.max_upload_size < file_size:
-                        job.status = "fail"
-                        job.error = "Target file exceed size limit of %d Mb (uncompressed)" % max_upload_size_readable
-                        job.save()
-                        self.clear()
-                        return False, True
-                    if self.config.batch_system_type != "local" and file_size >= self.config.min_target_size:
-                        should_be_local = False
-        if correct and job.batch_type != "local" and should_be_local \
+
+        if len(files_to_download) > 0:
+            thread = threading.Timer(1, self.download_files_with_pending,
+                                     kwargs={"files_to_download": files_to_download,
+                                             "should_be_local": should_be_local,
+                                             "max_upload_size_readable": max_upload_size_readable})
+            thread.start()  # Start the execution
+
+        elif correct and job.batch_type != "local" and should_be_local \
                 and self.get_pending_local_number() < self.config.max_run_local:
             job.batch_type = "local"
             job.save()
@@ -493,21 +541,24 @@ class JobManager:
         if self.config.send_mail_status:
             self.send_mail_post()
 
+    def _after_start(self, success, error_set):
+        if success:
+            job = Job.get(Job.id_job == self.id_job)
+            job.status = "waiting"
+            job.save()
+        else:
+            if not error_set:
+                job = Job.get(Job.id_job == self.id_job)
+                job.status = "fail"
+                job.error = "<p>Error while getting input files. Please contact the support to report the bug.</p>"
+                job.save()
+            if self.config.send_mail_status:
+                self.send_mail()
+
     def start_job(self):
         try:
             success, error_set = self.getting_files()
-            if success:
-                job = Job.get(Job.id_job == self.id_job)
-                job.status = "waiting"
-                job.save()
-            else:
-                if not error_set:
-                    job = Job.get(Job.id_job == self.id_job)
-                    job.status = "fail"
-                    job.error = "<p>Error while getting input files. Please contact the support to report the bug.</p>"
-                    job.save()
-                if self.config.send_mail_status:
-                    self.send_mail()
+            self._after_start(success, error_set)
 
         except Exception:
             print(traceback.print_exc())
