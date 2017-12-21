@@ -47,6 +47,9 @@ mailer = Mailer(app)
 # Folder containing data:
 app_data = config_reader.app_data
 
+if config_reader.debug and config_reader.log_dir != "stdout" and not os.path.exists(config_reader.log_dir):
+    os.makedirs(config_reader.log_dir)
+
 # Crons:
 if os.getenv('DISABLE_CRONS') != "True":
     print("Starting crons...")

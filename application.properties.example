@@ -11,6 +11,10 @@ web_url = http://localhost:5000
 # Max size of uploaded files (also for files from URL):
 max_upload_size = 3G # Please set the unit: M for Megabyte or G for Gigabyte (-1 without unit to don't set a limit)
 
+# Debug (enable only for tests):
+debug = False
+log_dir = ###PROGRAM###/logs
+
 
 [cluster]
 drmaa_lib_path = ###SET_IT###
@@ -60,4 +64,5 @@ menage_freq = 1
 [jobs]
 # Number of parallel runs for local jobs:
 run_local = 1
+data_prepare = 2
 max_concurrent_dl = 5

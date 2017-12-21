@@ -80,6 +80,19 @@ class AppConfigReader:
         except NoOptionError:
             return -1
 
+    def get_debug(self):
+        try:
+            return self.reader.get("global", "debug").lower() == "true"
+        except NoOptionError:
+            return False
+
+    def get_log_dir(self):
+        try:
+            return self.replace_vars(self.reader.get("global", "log_dir"))
+        except NoOptionError:
+            if self.get_debug():
+                raise Exception("No log dir defined and debug=True")
+
     def get_minimap2_exec(self):
         try:
             entry = self.reader.get("softwares", "minimap2")
@@ -160,6 +173,12 @@ class AppConfigReader:
         except (NoOptionError, NoSectionError):
             return 2
 
+    def get_max_concurrent_dl(self):
+        try:
+            return int(self.reader.get("jobs", "max_concurrent_dl"))
+        except (NoOptionError, NoSectionError):
+            return 5
+
     def get_drmaa_lib_path(self):
         try:
             return self.reader.get("cluster", "drmaa_lib_path")
@@ -207,9 +226,3 @@ class AppConfigReader:
             return min_size
         except (NoOptionError, NoSectionError):
             return 0
-
-    def get_max_concurrent_dl(self):
-        try:
-            return int(self.reader.get("jobs", "max_concurrent_dl"))
-        except (NoOptionError, NoSectionError):
-            return 5

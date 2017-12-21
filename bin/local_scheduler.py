@@ -7,6 +7,7 @@ import psutil
 import atexit
 from datetime import datetime
 from tendo import singleton
+import argparse
 
 # Allow only one instance:
 me = singleton.SingleInstance()
@@ -34,12 +35,18 @@ if config_reader.drmaa_lib_path is not None:
 NB_RUN = config_reader.local_nb_runs
 NB_PREPARE = config_reader.nb_data_prepare
 
-DEBUG=True
+DEBUG = config_reader.debug
+
+LOG_FILE = "stdout"
 
 
 def _printer(*messages):
     if DEBUG:
-        print(*messages)
+        if LOG_FILE == "stdout":
+            print(*messages)
+        else:
+            with open(LOG_FILE, "a") as log_f:
+                print(*messages, file=log_f)
 
 
 def start_job(id_job, batch_system_type="local"):
@@ -177,7 +184,36 @@ def cleaner():
         DRMAA_SESSION.exit()
 
 
+def parse_args():
+    global DEBUG, LOG_FILE
+
+    parser = argparse.ArgumentParser(description="Start local scheduler")
+    parser.add_argument('-d', '--debug', type=str, required=False, help="File describing input files")
+    parser.add_argument('-l', '--log-dir', type=str, required=False, help="Url of the server")
+    args = parser.parse_args()
+
+    if args.debug is not None:
+        if args.debug.lower() == "true" or args.debug.lower == "1":
+            DEBUG = True
+        elif args.debug.lower() == "false" or args.debug.lower == "0":
+            DEBUG = False
+        else:
+            raise Exception("Invalid value for debug: %s (valid values: True, False)" % args.debug)
+
+    if args.log_dir is not None:
+        log_dir = args.log_dir
+    else:
+        log_dir = config_reader.log_dir
+
+    if DEBUG:
+        if log_dir == "stdout":
+            LOG_FILE = "stdout"
+        else:
+            LOG_FILE = os.path.join(config_reader.log_dir, "local_scheduler.log")
+
+
 if __name__ == '__main__':
+    parse_args()
 
     while True:
         _printer("Check uploads...")
