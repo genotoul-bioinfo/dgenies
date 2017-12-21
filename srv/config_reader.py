@@ -207,3 +207,9 @@ class AppConfigReader:
             return min_size
         except (NoOptionError, NoSectionError):
             return 0
+
+    def get_max_concurrent_dl(self):
+        try:
+            return int(self.reader.get("jobs", "max_concurrent_dl"))
+        except (NoOptionError, NoSectionError):
+            return 5

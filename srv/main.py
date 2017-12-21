@@ -6,7 +6,7 @@ import datetime
 import shutil
 import re
 import threading
-from flask import Flask, render_template, request, url_for, jsonify, session, Response, abort
+from flask import Flask, render_template, request, url_for, jsonify, Response, abort
 from pathlib import Path
 from lib.paf import Paf
 from config_reader import AppConfigReader
@@ -16,6 +16,8 @@ from lib.upload_file import UploadFile
 from lib.fasta import Fasta
 from lib.mailer import Mailer
 from lib.crons import Crons
+from database import Session
+from peewee import DoesNotExist
 
 import sys
 
@@ -66,8 +68,7 @@ def main():
 
 @app.route("/run", methods=['GET'])
 def run():
-    session["user_tmp_dir"] = Functions.random_string(5) + "_" + \
-                              datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S')
+    s_id = Session.new()
     id_job = Functions.random_string(5) + "_" + datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S')
     if "id_job" in request.args:
         id_job = request.args["id_job"]
@@ -75,12 +76,20 @@ def run():
     if "email" in request.args:
         email = request.args["email"]
     return render_template("run.html", title=app_title, id_job=id_job, email=email,
-                           menu="run", allowed_ext=ALLOWED_EXTENSIONS)
+                           menu="run", allowed_ext=ALLOWED_EXTENSIONS, s_id=s_id)
 
 
 # Launch analysis
 @app.route("/launch_analysis", methods=['POST'])
 def launch_analysis():
+    try:
+        session = Session.get(s_id=request.form["s_id"])
+    except DoesNotExist:
+        return jsonify({"success": False, "errors": ["Session has expired. Please refresh the page and try again"]})
+    # Reset session upload:
+    session.allow_upload = False
+    session.position = -1
+    session.save()
     id_job = request.form["id_job"]
     email = request.form["email"]
     file_query = request.form["query"]
@@ -117,19 +126,23 @@ def launch_analysis():
 
         # Save files:
         query = None
+        upload_folder = session.upload_folder
         if file_query != "":
             query_name = os.path.splitext(file_query.replace(".gz", ""))[0] if file_query_type == "local" else None
-            query_path = os.path.join(app.config["UPLOAD_FOLDER"], session["user_tmp_dir"], file_query) \
+            query_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder, file_query) \
                 if file_query_type == "local" else file_query
             query = Fasta(name=query_name, path=query_path, type_f=file_query_type)
         target_name = os.path.splitext(file_target.replace(".gz", ""))[0] if file_target_type == "local" else None
-        target_path = os.path.join(app.config["UPLOAD_FOLDER"], session["user_tmp_dir"], file_target) \
+        target_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder, file_target) \
             if file_target_type == "local" else file_target
         target = Fasta(name=target_name, path=target_path, type_f=file_target_type)
 
         # Launch job:
         job = JobManager(id_job, email, query, target, mailer)
         job.launch()
+
+        # Delete session:
+        session.delete_instance()
         return jsonify({"success": True, "redirect": url_for(".status", id_job=id_job)})
     else:
         return jsonify({"success": False, "errors": errors})
@@ -345,39 +358,70 @@ def qt_assoc(id_res):
     abort(404)
 
 
+@app.route("/ask-upload", methods=['POST'])
+def ask_upload():
+    try:
+        s_id = request.form['s_id']
+        session = Session.get(s_id=s_id)
+        allowed, position = session.ask_for_upload(True)
+        return jsonify({
+            "success": True,
+            "allowed": allowed,
+            "position": position
+        })
+    except DoesNotExist:
+        return jsonify({"success": False, "message": "Session not initialized. Please refresh the page."})
+
+
+@app.route("/ping-upload", methods=['POST'])
+def ping_upload():
+    s_id = request.form['s_id']
+    session = Session.get(s_id=s_id)
+    session.ping()
+    return "OK"
+
+
 @app.route("/upload", methods=['POST'])
 def upload():
-    if "user_tmp_dir" in session and session["user_tmp_dir"] != "":
-        folder = session["user_tmp_dir"]
-        files = request.files[list(request.files.keys())[0]]
+    try:
+        s_id = request.form['s_id']
+        session = Session.get(s_id=s_id)
+        if session.ask_for_upload(False)[0]:
+            folder = session.upload_folder
+            files = request.files[list(request.files.keys())[0]]
 
-        if files:
-            filename = files.filename
-            folder_files = os.path.join(app.config["UPLOAD_FOLDER"], folder)
-            if not os.path.exists(folder_files):
-                os.makedirs(folder_files)
-            filename = Functions.get_valid_uploaded_filename(filename, folder_files)
-            mime_type = files.content_type
+            if files:
+                filename = files.filename
+                folder_files = os.path.join(app.config["UPLOAD_FOLDER"], folder)
+                if not os.path.exists(folder_files):
+                    os.makedirs(folder_files)
+                filename = Functions.get_valid_uploaded_filename(filename, folder_files)
+                mime_type = files.content_type
 
-            if not Functions.allowed_file(files.filename):
-                result = UploadFile(name=filename, type_f=mime_type, size=0, not_allowed_msg="File type not allowed")
-                shutil.rmtree(folder_files)
+                if not Functions.allowed_file(files.filename):
+                    result = UploadFile(name=filename, type_f=mime_type, size=0, not_allowed_msg="File type not allowed")
+                    shutil.rmtree(folder_files)
 
-            else:
-                # save file to disk
-                uploaded_file_path = os.path.join(folder_files, filename)
-                files.save(uploaded_file_path)
+                else:
+                    # save file to disk
+                    uploaded_file_path = os.path.join(folder_files, filename)
+                    files.save(uploaded_file_path)
 
-                # get file size after saving
-                size = os.path.getsize(uploaded_file_path)
+                    # get file size after saving
+                    size = os.path.getsize(uploaded_file_path)
 
-                # return json for js call back
-                result = UploadFile(name=filename, type_f=mime_type, size=size)
+                    # return json for js call back
+                    result = UploadFile(name=filename, type_f=mime_type, size=size)
 
-            return jsonify({"files": [result.get_file()], "success": "OK"})
+                return jsonify({"files": [result.get_file()], "success": "OK"})
 
-        return jsonify({"files": [], "success": "404", "message": "No file provided"})
-    return jsonify({"files": [], "success": "ERR", "message": "Session not initialized. Please refresh the page."})
+            return jsonify({"files": [], "success": "404", "message": "No file provided"})
+        return jsonify({"files": [], "success": "ERR", "message": "Not allowed to upload!"})
+    except DoesNotExist:
+        return jsonify({"files": [], "success": "ERR", "message": "Session not initialized. Please refresh the page."})
+    except:  # Except all possible exceptions to prevent crashes
+        return jsonify({"files": [], "success": "ERR", "message": "An unexpected error has occurred on upload. "
+                                                                  "Please contact the support."})
 
 
 @app.route("/send-mail/<id_res>", methods=['POST'])

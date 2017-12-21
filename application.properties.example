@@ -60,3 +60,4 @@ menage_freq = 1
 [jobs]
 # Number of parallel runs for local jobs:
 run_local = 1
+max_concurrent_dl = 5

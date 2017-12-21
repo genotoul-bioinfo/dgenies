@@ -5,6 +5,7 @@ import time
 import sys
 import psutil
 import atexit
+from datetime import datetime
 from tendo import singleton
 
 # Allow only one instance:
@@ -14,7 +15,7 @@ app_folder = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__fil
 os.environ["PATH"] = os.path.join(app_folder, "bin") + ":" + os.environ["PATH"]
 sys.path.insert(0, app_folder)
 
-from database import Job
+from database import Job, Session
 from config_reader import AppConfigReader
 from lib.job_manager import JobManager
 
@@ -134,6 +135,42 @@ def parse_started_jobs():
     return jobs_started, cluster_jobs_started
 
 
+def parse_uploads_asks():
+    now = datetime.now()
+    # Get allowed:
+    all_sessions = Session.select()
+    nb_sessions = len(all_sessions)
+    _printer("All sessions:", nb_sessions)
+    sessions = Session.select().where(Session.allow_upload)
+    nb_active_dl = len(sessions)
+    _printer("Active_dl:", nb_active_dl)
+    for session in sessions:
+        if (now - session.last_ping).total_seconds() > 30:
+            _printer("Delete 1 active session")
+            session.delete_instance()  # We consider the user has left
+            nb_active_dl -= 1
+    # Get pending:
+    sessions = Session.select().where((Session.allow_upload == False) & (Session.position >= 0)).order_by(Session.position)
+    _printer("Pending:", len(sessions))
+    for session in sessions:
+        delay = (now - session.last_ping).total_seconds()
+        if delay > 30:
+            session.position = -1  # Reset position, the user has probably left
+            session.save()
+            _printer("Reset 1 session")
+        elif nb_active_dl < config_reader.max_concurrent_dl:
+            session.allow_upload = True
+            session.save()
+            nb_active_dl += 1
+            _printer("Enable 1 session")
+    # Remove old sessions:
+    for session in all_sessions:
+        delay = (now - session.last_ping).total_seconds()
+        if delay > 86400:  # Session has more than 1 day
+            session.delete_instance()  # Session has expired
+            _printer("Delete 1 outdated session")
+
+
 @atexit.register
 def cleaner():
     if "DRMAA_SESSION" in globals():
@@ -143,6 +180,9 @@ def cleaner():
 if __name__ == '__main__':
 
     while True:
+        _printer("Check uploads...")
+        parse_uploads_asks()
+        _printer("")
         _printer("Checking jobs...")
         scheduled_jobs_local = get_scheduled_local_jobs()
         scheduled_jobs_cluster = get_scheduled_cluster_jobs()
@@ -165,3 +205,4 @@ if __name__ == '__main__':
         # Wait before return
             _printer("Sleeping...")
         time.sleep(15 if nb_preparing_jobs == 0 else 5)
+        _printer("\n")

@@ -106,8 +106,14 @@ dgenies.ajax = function(url, data, success, error, method="POST") {
     );
 };
 
-dgenies.post = function(url, data, success, error) {
-    dgenies.ajax(url, data, success, error, "POST")
+dgenies.post = function(url, data, success, error, async=true) {
+    dgenies.ajax({
+        url: url,
+        data: data,
+        success: success,
+        error: error,
+        type: "POST",
+        async: async})
 };
 
 dgenies.get = function (url, data, success, error) {

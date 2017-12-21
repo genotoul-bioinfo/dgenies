@@ -4,10 +4,13 @@ if (!dgenies) {
 dgenies.run = {};
 
 // Init global variables:
+dgenies.run.s_id = null;
 dgenies.run.allowed_ext = [];
 dgenies.run.files = [undefined, undefined];
+dgenies.run.allow_upload = false;
 
-dgenies.run.init = function (allowed_ext) {
+dgenies.run.init = function (s_id, allowed_ext) {
+    dgenies.run.s_id = s_id;
     dgenies.run.allowed_ext = allowed_ext;
     dgenies.run.restore_form();
     dgenies.run.set_events();
@@ -47,6 +50,9 @@ dgenies.run.allowed_file = function (filename) {
 dgenies.run.init_fileuploads = function () {
     $('input.file-query').fileupload({
         dataType: 'json',
+        formData: {
+            "s_id": dgenies.run.s_id
+        },
         add: function (e, data) {
             let filename = data.files[0].name;
             if (dgenies.run.allowed_file(filename))
@@ -84,7 +90,9 @@ dgenies.run.init_fileuploads = function () {
     });
     $('input.file-target').fileupload({
         dataType: 'json',
-        formData: {folder: dgenies.run.upload_folder},
+        formData: {
+            "s_id": dgenies.run.s_id
+        },
         add: function (e, data) {
             let filename = data.files[0].name
             if (dgenies.run.allowed_file(filename))
@@ -244,7 +252,8 @@ dgenies.run.do_submit = function () {
             "query": $("input#query").val(),
             "query_type": $("select.query").find(":selected").text().toLowerCase(),
             "target": $("input#target").val(),
-            "target_type": $("select.target").find(":selected").text().toLowerCase()
+            "target_type": $("select.target").find(":selected").text().toLowerCase(),
+            "s_id": dgenies.run.s_id
         },
         function (data, status) {
             if (data["success"]) {
@@ -312,11 +321,48 @@ dgenies.run.reset_errors = function() {
     $("div.errors-submit ul.flashes").find("li").remove();
 };
 
+dgenies.run.ask_for_upload = function () {
+    console.log("Ask for upload...");
+    dgenies.post("/ask-upload",
+    {
+        "s_id": dgenies.run.s_id
+    },
+    function (data, status) {
+        if (data["success"]) {
+            let allow_upload = data["allowed"];
+            if (allow_upload) {
+                $("div#uploading-loading").html("Uploading files...");
+                window.setInterval(dgenies.run.ping_upload, 15000);
+                dgenies.run.upload_next();
+            }
+            else {
+                window.setTimeout(dgenies.run.ask_for_upload, 15000);
+            }
+        }
+        else {
+            dgenies.notify("message" in data ? data["message"] : "An error has occurred. Please contact the support", "danger", 3000);
+        }
+    }, undefined, false
+    );
+};
+
+dgenies.run.ping_upload = function () {
+    dgenies.post("/ping-upload",
+        {
+            "s_id": dgenies.run.s_id
+        },
+        function (data, status) {
+        }
+    );
+};
+
 dgenies.run.start_uploads = function() {
     let query_type = parseInt($("select.query").val());
+    let has_uploads = false;
     if (query_type === 0 && $("input#query").val().length > 0) {
         $("button#button-query").hide();
         dgenies.run.show_loading("query");
+        has_uploads = true;
     }
     else {
         dgenies.run.files[0] = undefined;
@@ -325,11 +371,18 @@ dgenies.run.start_uploads = function() {
     if (target_type === 0 && $("input#target").val().length > 0) {
         $("button#button-target").hide();
         dgenies.run.show_loading("target");
+        has_uploads = true;
     }
     else {
         dgenies.run.files[1] = undefined;
     }
-    dgenies.run.upload_next();
+    if (has_uploads) {
+        $("div#uploading-loading").html("Asking for upload...");
+        dgenies.run.ask_for_upload();
+    }
+    else {
+        dgenies.run.upload_next();
+    }
 };
 
 dgenies.run.show_global_loading = function () {
