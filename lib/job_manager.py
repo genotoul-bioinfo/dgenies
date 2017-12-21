@@ -364,7 +364,7 @@ class JobManager:
             job.save()
             self.clear()
             return False, True, None
-        if self.config.batch_system_type != "local" and file_size >= getattr(self, "config.min_%s_size" % input_type):
+        if self.config.batch_system_type != "local" and file_size >= getattr(self.config, "min_%s_size" % input_type):
             should_be_local = False
         return True, False, should_be_local
 
