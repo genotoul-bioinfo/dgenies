@@ -29,8 +29,8 @@ class AppConfigReader:
             if attr.startswith("get_") and callable(attr_o):
                 try:
                     setattr(self, attr[4:], attr_o())
-                except:
-                    pass
+                except Exception as e:
+                    print(e)
 
     @staticmethod
     def replace_vars(path):
@@ -72,11 +72,11 @@ class AppConfigReader:
             max_size_b = self.replace_vars(self.reader.get("global", "max_upload_size"))
             if max_size_b == "-1":
                 return -1
-            size_v = int(max_size_b[:-1])
+            size_v = float(max_size_b[:-1])
             size_unit = max_size_b[-1].upper()
             if size_unit not in ["M", "G"]:
                 raise ValueError("Max size unit must be M or G")
-            max_size = size_v * 1024 * 1024
+            max_size = int(size_v * 1024 * 1024)
             if size_unit == "G":
                 max_size *= 1024
             return max_size
