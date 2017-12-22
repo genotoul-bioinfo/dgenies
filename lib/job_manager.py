@@ -373,34 +373,39 @@ class JobManager:
         job.status = "getfiles-waiting"
         job.save()
         # Create a session:
-        s_id = Session.new()
+        s_id = Session.new(True)
         session = Session.get(s_id=s_id)
-        allowed = False
-        correct = True
-        error_set = False
-        while not allowed:
-            allowed = session.ask_for_upload(True)
-            time.sleep(15)
-        if allowed:
-            session.delete_instance()
-            job.status = "getfiles"
-            job.save()
-            for file, input_type in files_to_download:
-                finale_path, filename = self.__getting_file_from_url(file, input_type)
-                my_input = getattr(self, input_type)
-                my_input.set_path(finale_path)
-                my_input.set_name(filename)
-                correct, error_set, should_be_local = self.check_file(input_type, should_be_local,
-                                                                      max_upload_size_readable)
-                if not correct:
-                    break
 
-            if correct and job.batch_type != "local" and should_be_local \
-                    and self.get_pending_local_number() < self.config.max_run_local:
-                job.batch_type = "local"
+        try:
+            allowed = False
+            correct = True
+            error_set = False
+            while not allowed:
+                allowed = session.ask_for_upload(True)
+                time.sleep(15)
+            if allowed:
+                job.status = "getfiles"
                 job.save()
-        else:
+                for file, input_type in files_to_download:
+                    finale_path, filename = self.__getting_file_from_url(file, input_type)
+                    my_input = getattr(self, input_type)
+                    my_input.set_path(finale_path)
+                    my_input.set_name(filename)
+                    correct, error_set, should_be_local = self.check_file(input_type, should_be_local,
+                                                                          max_upload_size_readable)
+                    if not correct:
+                        break
+
+                if correct and job.batch_type != "local" and should_be_local \
+                        and self.get_pending_local_number() < self.config.max_run_local:
+                    job.batch_type = "local"
+                    job.save()
+            else:
+                correct = False
+        except:  # Except all possible exceptions
             correct = False
+            error_set = False
+        session.delete_instance()
         self._after_start(correct, error_set)
 
     def getting_files(self):

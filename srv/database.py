@@ -32,9 +32,10 @@ class Session(Model):
     allow_upload = BooleanField(default=False)
     last_ping = DateTimeField()
     position = IntegerField(default=-1)
+    keep_active = BooleanField(default=False)  # Uploads made by the server must be keep active
 
     @classmethod
-    def new(cls):
+    def new(cls, keep_active=False):
         from lib.functions import Functions
         my_s_id = Functions.random_string(20)
         while len(cls.select().where(cls.s_id == my_s_id)) > 0:
@@ -45,7 +46,8 @@ class Session(Model):
         while os.path.exists(upload_folder_path):
             upload_folder = Functions.random_string(20)
             upload_folder_path = os.path.join(tmp_dir, upload_folder)
-        cls.create(s_id=my_s_id, date_created=datetime.now(), upload_folder=upload_folder, last_ping=datetime.now())
+        cls.create(s_id=my_s_id, date_created=datetime.now(), upload_folder=upload_folder, last_ping=datetime.now(),
+                   keep_active=keep_active)
         return my_s_id
 
     def ask_for_upload(self, change_status=False):
