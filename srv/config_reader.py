@@ -27,7 +27,10 @@ class AppConfigReader:
         for attr in dir(self):
             attr_o = getattr(self, attr)
             if attr.startswith("get_") and callable(attr_o):
-                setattr(self, attr[4:], attr_o())
+                try:
+                    setattr(self, attr[4:], attr_o())
+                except:
+                    pass
 
     @staticmethod
     def replace_vars(path):
