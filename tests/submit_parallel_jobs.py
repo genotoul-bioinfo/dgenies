@@ -9,6 +9,7 @@ import re
 import argparse
 import datetime
 import time
+import sched
 import requests
 import threading
 import random
@@ -18,7 +19,7 @@ from collections import OrderedDict
 from glob import glob
 
 
-JOBS = {}
+__jobs = {}
 
 
 class bcolors:
@@ -53,9 +54,9 @@ def parse_args():
     return parser.parse_args()
 
 
-def upload_file(session, url_upload, file, output):
+def upload_file(s_id, url_upload, file, output):
     files = {'file-target': open(file, "rb")}
-    response = session.post(url_upload, files=files)
+    response = requests.post(url_upload, files=files, data={"s_id": s_id})
     is_correct = False
     if response.status_code == 200:
         json = response.json()
@@ -66,26 +67,70 @@ def upload_file(session, url_upload, file, output):
             print("ERROR: ", json, file=output)
     else:
         print("ERROR with status code %s" % response.status_code, file=output)
+
     return is_correct
 
 
 def launch_job(nb_job, url, target, query=None, email="test@xxxxx.yy", output=None):
-    global JOBS
+    global __jobs
 
     with open(output, 'w') if output is not None else sys.stdout as output_p:
-        url_run = url + "/run"
-        session = requests.Session()
-        session.get(url_run)  # To init the session
+        url_run = url + "/run-test"
+        run = requests.get(url_run)  # To init the session
+        if run.status_code != 200:
+            return False
+        s_id = run.content
+
+        # Ask for upload:
+        allowed = False
+        while not allowed:
+            response = requests.post(url + "/ask-upload", data={"s_id": s_id})
+            if response.status_code != 200:
+                print("ERR: Unable to ask upload!", file=output_p)
+                return False
+            response = response.json()
+            if response["success"]:
+                allowed = response["allowed"]
+            else:
+                print(response["message"], file=output_p)
+                return False
+            if not allowed:
+                print("Waiting for upload...", file=output_p)
+                time.sleep(15)
+
+        if not allowed:
+            print("Not allowed!", file=output_p)
+            return False
+
+        # Ping upload
+        s = sched.scheduler(time.time, time.sleep)
+        uploading = True
+
+        def ping_upload():
+            if uploading:
+                print(str(datetime.datetime.now()) + " - Ping...", file=output_p)
+                response1 = requests.post(url + "/ping-upload", data={"s_id": s_id})
+                if response1.status_code != 200:
+                    print("Warn: ping fail!", file=output_p)
+                s.enter(15, 1, ping_upload)
+
+        s.enter(15, 1, ping_upload)
+
+        thread_u = threading.Timer(0, s.run)
+        thread_u.start()
+
+        url_upload = url + "/upload"
 
         # Upload target:
-        print("Upload target: %s... " % target, end="", flush=True, file=output_p)
-        url_upload = url + "/upload"
-        is_correct = upload_file(session, url_upload, target, output_p)
+        print("Upload target: %s... " % target, file=output_p)
+        is_correct = upload_file(s_id, url_upload, target, output_p)
 
         if is_correct and query is not None:
             # Upload query:
-            print("Upload query: %s... " % query, end="", flush=True, file=output_p)
-            is_correct = upload_file(session, url_upload, query, output_p)
+            print("Upload query: %s... " % query, file=output_p)
+            is_correct = upload_file(s_id, url_upload, query, output_p)
+
+        uploading = False
 
         # Start run:
         if is_correct:
@@ -93,6 +138,7 @@ def launch_job(nb_job, url, target, query=None, email="test@xxxxx.yy", output=No
             url_launch = url + "/launch_analysis"
             id_job = random_string(5) + "_" + datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S')
             params = {
+                "s_id": s_id,
                 "id_job": id_job,
                 "email": email,
                 "query": os.path.basename(query) if query is not None else "",
@@ -100,7 +146,7 @@ def launch_job(nb_job, url, target, query=None, email="test@xxxxx.yy", output=No
                 "target": os.path.basename(target),
                 "target_type": "local"
             }
-            response = session.post(url_launch, data=params)
+            response = requests.post(url_launch, data=params)
             if response.status_code == 200:
                 print("Started!", file=output_p)
                 json = response.json()
@@ -109,7 +155,7 @@ def launch_job(nb_job, url, target, query=None, email="test@xxxxx.yy", output=No
                 id_job = status_url.rsplit("/", 1)[1]
                 is_correct = True
                 shutil.move(output, output.replace(".launched", ".submitted"))
-                JOBS[nb_job] = id_job
+                __jobs[nb_job] = id_job
             else:
                 is_correct = False
         return is_correct
@@ -162,11 +208,11 @@ def mv_file(log_file, status):
 
 
 def check_jobs(log_dir, url):
-    global JOBS
+    global __jobs
 
     status = {}
     status_url = url + "/status/"
-    nb_pending = len(JOBS)
+    nb_pending = len(__jobs)
     success = 0
     fail = 0
     no_match = 0
@@ -175,7 +221,7 @@ def check_jobs(log_dir, url):
         print("CHECKING STATUS... ", end="", flush=True)
         counts_by_status = init_counts_by_status()
         nb_pending = 0
-        for nb_subjob, id_job in JOBS.items():
+        for nb_subjob, id_job in __jobs.items():
             if id_job is not None:
                 if nb_subjob not in status or status[nb_subjob] not in ["success", "fail", "no-match"]:
                     response = requests.get(status_url + id_job + "?format=json")
@@ -236,11 +282,11 @@ if __name__ == '__main__':
                 sample = re.split(r"\s+", line.strip("\n"))
                 target = sample[0]
                 query = sample[1] if sample[1].upper() != "NONE" else None
-                n_jobs = int(sample[2])
+                n_jobs = int(sample[2]) if len(sample) >= 3 else 1
                 for i in range(0, n_jobs):
                     print("Launching job %d (%d/%d)..." % (nb_job, i+1, n_jobs))
                     nb_subjob = "%d_%d" % (nb_job, i)
-                    JOBS[nb_subjob] = None
+                    __jobs[nb_subjob] = None
                     log_file = os.path.join(logs, "job_%s.launched" % nb_subjob)
                     thread = threading.Timer(0, launch_job,
                                              kwargs={"nb_job": nb_subjob,

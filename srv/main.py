@@ -82,6 +82,14 @@ def run():
                            menu="run", allowed_ext=ALLOWED_EXTENSIONS, s_id=s_id)
 
 
+@app.route("/run-test", methods=['GET'])
+def run_test():
+    print(config_reader.allowed_ip_tests)
+    if request.remote_addr not in config_reader.allowed_ip_tests:
+        return abort(404)
+    return Session.new()
+
+
 # Launch analysis
 @app.route("/launch_analysis", methods=['POST'])
 def launch_analysis():
