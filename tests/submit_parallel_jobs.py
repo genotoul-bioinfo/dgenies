@@ -78,86 +78,107 @@ def launch_job(nb_job, url, target, query=None, email="test@xxxxx.yy", output=No
         url_run = url + "/run-test"
         run = requests.get(url_run)  # To init the session
         if run.status_code != 200:
+            print("ERR: Unable to init session!", file=output_p)
             return False
         s_id = run.content
 
-        # Ask for upload:
-        allowed = False
-        while not allowed:
-            response = requests.post(url + "/ask-upload", data={"s_id": s_id})
-            if response.status_code != 200:
-                print("ERR: Unable to ask upload!", file=output_p)
-                return False
-            response = response.json()
-            if response["success"]:
-                allowed = response["allowed"]
-            else:
-                print(response["message"], file=output_p)
-                return False
+        url_pattern = r"((http(s)?)|(ftp))://.+"
+        query_type = "local" if (query is not None and not re.match(url_pattern, query) is not None) else "url"
+        target_type = "local" if (target is not None and not re.match(url_pattern, target) is not None) else "url"
+
+        if query_type == "local" or target_type == "local":
+            # Ask for upload:
+            allowed = False
+            while not allowed:
+                response = requests.post(url + "/ask-upload", data={"s_id": s_id})
+                if response.status_code != 200:
+                    print("ERR: Unable to ask upload!", file=output_p)
+                    return False
+                response = response.json()
+                if response["success"]:
+                    allowed = response["allowed"]
+                else:
+                    print(response["message"], file=output_p)
+                    return False
+                if not allowed:
+                    print("Waiting for upload...", file=output_p)
+                    time.sleep(15)
+
             if not allowed:
-                print("Waiting for upload...", file=output_p)
-                time.sleep(15)
+                print("Not allowed!", file=output_p)
+                return False
 
-        if not allowed:
-            print("Not allowed!", file=output_p)
-            return False
+            # Ping upload
+            s = sched.scheduler(time.time, time.sleep)
+            uploading = True
 
-        # Ping upload
-        s = sched.scheduler(time.time, time.sleep)
-        uploading = True
+            def ping_upload():
+                if uploading:
+                    try:
+                        print(str(datetime.datetime.now()) + " - Ping...", file=output_p)
+                        response1 = requests.post(url + "/ping-upload", data={"s_id": s_id})
+                        if response1.status_code != 200:
+                            print("Warn: ping fail!", file=output_p)
+                        s.enter(15, 1, ping_upload)
+                    except ValueError:
+                        print("Unable to print ping to file")
+                        pass
 
-        def ping_upload():
-            if uploading:
-                print(str(datetime.datetime.now()) + " - Ping...", file=output_p)
-                response1 = requests.post(url + "/ping-upload", data={"s_id": s_id})
-                if response1.status_code != 200:
-                    print("Warn: ping fail!", file=output_p)
-                s.enter(15, 1, ping_upload)
+            s.enter(15, 1, ping_upload)
 
-        s.enter(15, 1, ping_upload)
-
-        thread_u = threading.Timer(0, s.run)
-        thread_u.start()
+            thread_u = threading.Timer(0, s.run)
+            thread_u.start()
 
         url_upload = url + "/upload"
 
         # Upload target:
-        print("Upload target: %s... " % target, file=output_p)
-        is_correct = upload_file(s_id, url_upload, target, output_p)
+        is_correct = True
+        if target_type == "local":
+            print("Upload target: %s... " % target, file=output_p)
+            is_correct = upload_file(s_id, url_upload, target, output_p)
 
-        if is_correct and query is not None:
+        if is_correct and query is not None and query_type == "local":
             # Upload query:
             print("Upload query: %s... " % query, file=output_p)
             is_correct = upload_file(s_id, url_upload, query, output_p)
 
+        if not is_correct:
+            print("ERR: error while uploading files", file=output_p)
+            uploading = False
+            return False
+
         uploading = False
 
         # Start run:
-        if is_correct:
-            print("Start job... ", end="", flush=True, file=output_p)
-            url_launch = url + "/launch_analysis"
-            id_job = random_string(5) + "_" + datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S')
-            params = {
-                "s_id": s_id,
-                "id_job": id_job,
-                "email": email,
-                "query": os.path.basename(query) if query is not None else "",
-                "query_type": "local",
-                "target": os.path.basename(target),
-                "target_type": "local"
-            }
-            response = requests.post(url_launch, data=params)
-            if response.status_code == 200:
-                print("Started!", file=output_p)
-                json = response.json()
-                status_url = json['redirect']
-                print("Show status:", url + status_url, file=output_p)
-                id_job = status_url.rsplit("/", 1)[1]
-                is_correct = True
-                shutil.move(output, output.replace(".launched", ".submitted"))
-                __jobs[nb_job] = id_job
-            else:
-                is_correct = False
+        print("Start job... ", end="", flush=True, file=output_p)
+        url_launch = url + "/launch_analysis"
+        id_job = random_string(5) + "_" + datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S')
+        if query_type == "local":
+            query = os.path.basename(query) if query is not None else ""
+        if target_type == "local":
+            target = os.path.basename(target)
+        params = {
+            "s_id": s_id,
+            "id_job": id_job,
+            "email": email,
+            "query": query if query is not None else "",
+            "query_type": query_type,
+            "target": target,
+            "target_type": target_type
+        }
+        response = requests.post(url_launch, data=params)
+        if response.status_code == 200:
+            print("Started!", file=output_p)
+            json = response.json()
+            status_url = json['redirect']
+            print("Show status:", url + status_url, file=output_p)
+            id_job = status_url.rsplit("/", 1)[1]
+            is_correct = True
+            shutil.move(output, output.replace(".launched", ".submitted"))
+            __jobs[nb_job] = id_job
+        else:
+            is_correct = False
+            print("ERR %d: Failed to launch job" % response.status_code, file=output_p)
         return is_correct
 
 
