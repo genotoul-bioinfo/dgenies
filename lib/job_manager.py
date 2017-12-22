@@ -424,12 +424,9 @@ class JobManager:
                 if not correct:
                     return False, error_set
             elif self.__check_url(self.query):
-                # finale_path, filename = self.__getting_file_from_url(self.query, "query")
-                # self.query.set_path(finale_path)
-                # self.query.set_name(filename)
                 files_to_download.append([self.query, "query"])
             else:
-                correct = False
+                return False, True
         if correct:
             if self.target is not None:
                 if self.target.get_type() == "local":
@@ -439,12 +436,9 @@ class JobManager:
                     if not correct:
                         return False, error_set
                 elif self.__check_url(self.target):
-                    # finale_path, filename = self.__getting_file_from_url(self.target, "target")
-                    # self.target.set_path(finale_path)
-                    # self.target.set_name(filename)
                     files_to_download.append([self.target, "target"])
                 else:
-                    correct = False
+                    return False, True
 
         if len(files_to_download) > 0:
             thread = threading.Timer(1, self.download_files_with_pending,

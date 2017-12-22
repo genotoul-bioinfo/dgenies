@@ -356,25 +356,41 @@ dgenies.run.ping_upload = function () {
     );
 };
 
+dgenies.run.check_url = function (url) {
+    return url.startsWith("http://") || url.startsWith("https://") || url.startsWith("ftp://");
+};
+
 dgenies.run.start_uploads = function() {
     let query_type = parseInt($("select.query").val());
     let has_uploads = false;
-    if (query_type === 0 && $("input#query").val().length > 0) {
+    let query_val = $("input#query").val();
+    if (query_type === 0 && query_val.length > 0) {
         $("button#button-query").hide();
         dgenies.run.show_loading("query");
         has_uploads = true;
     }
     else {
         dgenies.run.files[0] = undefined;
+        if (query_val !== "" && !dgenies.run.check_url(query_val)) {
+            dgenies.run.add_error("Query file: invalid URL", "error");
+            dgenies.run.enable_form();
+            return false;
+        }
     }
     let target_type = parseInt($("select.target").val());
-    if (target_type === 0 && $("input#target").val().length > 0) {
+    let target_val = $("input#target").val();
+    if (target_type === 0 && target_val.length > 0) {
         $("button#button-target").hide();
         dgenies.run.show_loading("target");
         has_uploads = true;
     }
     else {
         dgenies.run.files[1] = undefined;
+        if (target_val !== "" && !dgenies.run.check_url(target_val)) {
+            dgenies.run.add_error("Target file: invalid URL", "error");
+            dgenies.run.enable_form();
+            return false;
+        }
     }
     if (has_uploads) {
         $("div#uploading-loading").html("Asking for upload...");
