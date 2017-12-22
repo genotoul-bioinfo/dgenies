@@ -83,19 +83,6 @@ class AppConfigReader:
         except NoOptionError:
             return -1
 
-    def get_debug(self):
-        try:
-            return self.reader.get("global", "debug").lower() == "true"
-        except NoOptionError:
-            return False
-
-    def get_log_dir(self):
-        try:
-            return self.replace_vars(self.reader.get("global", "log_dir"))
-        except NoOptionError:
-            if self.get_debug():
-                raise Exception("No log dir defined and debug=True")
-
     def get_minimap2_exec(self):
         try:
             entry = self.reader.get("softwares", "minimap2")
@@ -229,3 +216,26 @@ class AppConfigReader:
             return min_size
         except (NoOptionError, NoSectionError):
             return 0
+
+    def get_debug(self):
+        try:
+            return self.reader.get("debug", "enable").lower() == "true"
+        except (NoOptionError, NoSectionError):
+            return False
+
+    def get_log_dir(self):
+        try:
+            return self.replace_vars(self.reader.get("debug", "log_dir"))
+        except (NoOptionError, NoSectionError):
+            if self.get_debug():
+                raise Exception("No log dir defined and debug=True")
+
+    def get_allowed_ip_tests(self):
+        allowed_ip = {"127.0.0.1"}
+        try:
+            allowed_ip_txt = self.reader.get("debug", "allowed_ip_tests")
+            for ip in re.split(r",(\s+)?", allowed_ip_txt):
+                allowed_ip.add(ip)
+        except (NoOptionError, NoSectionError):
+            pass
+        return allowed_ip
