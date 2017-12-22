@@ -19,7 +19,8 @@ from urllib import request, parse
 from bin.split_fa import Splitter
 from bin.merge_splitted_chrms import Merger
 from bin.sort_paf import Sorter
-import struct
+import gzip
+import io
 import binascii
 
 
@@ -52,9 +53,8 @@ class JobManager:
     @staticmethod
     def get_file_size(filepath: str):
         if filepath.endswith(".gz"):
-            with open(filepath, 'rb') as f:
-                f.seek(-4, 2)
-                file_size = struct.unpack('I', f.read(4))[0]
+            with gzip.open(filepath, 'rb') as file_obj:
+                file_size = file_obj.seek(0, io.SEEK_END)
         else:
             file_size = os.path.getsize(filepath)
         return file_size
