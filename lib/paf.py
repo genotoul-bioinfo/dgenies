@@ -450,6 +450,8 @@ class Paf:
         self.parse_paf(False)
         reorient_contigs = [contig_name]
         self.reorient_contigs_in_paf(reorient_contigs)
+        if not self.idx_q.endswith(".sorted"):
+            self.idx_q += ".sorted"
         self._update_query_index(reorient_contigs)
         self.set_sorted(True)
         self.parsed = False
