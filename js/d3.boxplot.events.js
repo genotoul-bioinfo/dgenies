@@ -21,6 +21,32 @@ d3.boxplot.events.init = function () {
     });
 };
 
+d3.boxplot.events.init_context_menu = function () {
+    d3.boxplot.svgcontainer.on("mousedown", function() {
+        let event = d3.event;
+        let rect = $("g.container")[0].getBoundingClientRect();
+        let posY = rect.top + window.scrollY,
+            height_c = rect.height;
+        let y = d3.boxplot.scale - ((event.pageY - posY) / height_c * d3.boxplot.scale);
+        d3.boxplot.query_selected = d3.boxplot.select_query(y);
+        console.log(d3.boxplot.query_selected)
+    });
+
+    let menu = new BootstrapMenu("svg.svgcontainer", {
+        actions: [{
+            name: 'Export SVG',
+            onClick: dgenies.result.export.export_svg
+        },{
+            name: 'Export PNG',
+            onClick: dgenies.result.export.export_png
+        },{
+            name: 'Reverse query',
+            isShown: function() {return d3.boxplot.name_x !== d3.boxplot.name_y},
+            onClick: dgenies.result.controls.launch_reverse_contig
+        }]
+    });
+};
+
 d3.boxplot.events.set_break_lines_visibility = function(value) {
     if (value === "0") {
         d3.boxplot.break_lines_show = false;

@@ -34,6 +34,35 @@ dgenies.result.controls.launch_sort_contigs = function () {
     }, 0);
 };
 
+dgenies.result.controls.launch_reverse_contig = function () {
+    if (d3.boxplot.query_selected !== null) {
+        d3.boxplot.zoom.reset_scale();
+        window.setTimeout(() => {
+            dgenies.show_loading("Building...");
+            window.setTimeout(() => {
+                dgenies.post(`/reverse-contig/${dgenies.result.id_res}`,
+                    {"contig": d3.boxplot.query_selected},
+                    function (data) {
+                        if (data["success"]) {
+                            dgenies.reset_loading_message();
+                            window.setTimeout(() => {
+                                d3.boxplot.launch(data, true);
+                            }, 0);
+                        }
+                        else {
+                            dgenies.hide_loading();
+                            dgenies.notify(data["message"] || "An error occurred! Please contact us to report the bug", "danger");
+                        }
+                    }
+                );
+            }, 0);
+        }, 0);
+    }
+    else {
+        dgenies.notify("Error: no query selected. Please contact us to report the bug", "danger");
+    }
+};
+
 dgenies.result.controls.launch_hide_noise = function () {
     d3.boxplot.zoom.reset_scale();
     window.setTimeout(() => {

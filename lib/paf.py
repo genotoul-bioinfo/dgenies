@@ -310,7 +310,11 @@ class Paf:
                     parts[2] = str(len_q - x2_q)
                     parts[3] = str(len_q - x1_q)
                 target.write("\t".join(parts) + "\n")
-        self.paf = sorted_file
+        if self.paf.endswith(".sorted"):
+            os.remove(self.paf)
+            shutil.move(sorted_file, self.paf)
+        else:
+            self.paf = sorted_file
         return True
 
     def _update_query_index(self, contigs_reoriented):
@@ -439,6 +443,15 @@ class Paf:
             self.set_sorted(False)
 
         # Re parse PAF file:
+        self.parsed = False
+        self.parse_paf()
+
+    def reverse_contig(self, contig_name):
+        self.parse_paf(False)
+        reorient_contigs = [contig_name]
+        self.reorient_contigs_in_paf(reorient_contigs)
+        self._update_query_index(reorient_contigs)
+        self.set_sorted(True)
         self.parsed = False
         self.parse_paf()
 

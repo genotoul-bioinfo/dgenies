@@ -18,6 +18,7 @@ d3.boxplot.zoom_enabled = true;
 d3.boxplot.min_idy = 0;
 d3.boxplot.max_idy = 0;
 d3.boxplot.zone_selected = false;
+d3.boxplot.query_selected = null;
 
 //For translations:
 d3.boxplot.translate_start = null;
@@ -119,6 +120,24 @@ d3.boxplot.launch = function(res, update=false) {
     d3.boxplot.mousetip.init();
 };
 
+d3.boxplot.select_target = function (x) {
+    for (let zone in d3.boxplot.x_zones) {
+        if (d3.boxplot.x_zones[zone][0] < x && x <= d3.boxplot.x_zones[zone][1]) {
+            return zone;
+        }
+    }
+    return null;
+};
+
+d3.boxplot.select_query = function(y) {
+    for (let zone in d3.boxplot.y_zones) {
+        if (d3.boxplot.y_zones[zone][0] < y && y <= d3.boxplot.y_zones[zone][1]) {
+            return zone;
+        }
+    }
+    return null;
+}
+
 d3.boxplot.select_zone = function (x=null, y=null, x_zone=null, y_zone=null, force=false) {
     d3.boxplot.mousetip.hide();
     dgenies.show_loading();
@@ -127,22 +146,12 @@ d3.boxplot.select_zone = function (x=null, y=null, x_zone=null, y_zone=null, for
 
             if (x_zone === null) {
                 //Search zone for X axis:
-                for (let zone in d3.boxplot.x_zones) {
-                    if (d3.boxplot.x_zones[zone][0] < x && x <= d3.boxplot.x_zones[zone][1]) {
-                        x_zone = zone;
-                        break;
-                    }
-                }
+                x_zone = d3.boxplot.select_target(x)
             }
 
             if (y_zone === null) {
                 //Search zone for Y axis:
-                for (let zone in d3.boxplot.y_zones) {
-                    if (d3.boxplot.y_zones[zone][0] < y && y <= d3.boxplot.y_zones[zone][1]) {
-                        y_zone = zone;
-                        break;
-                    }
-                }
+                y_zone = d3.boxplot.select_query(y);
             }
 
             d3.boxplot.zone_selected = [x_zone, y_zone];
@@ -847,4 +856,6 @@ d3.boxplot.draw = function (x_contigs, x_order, y_contigs, y_order) {
     }, 0);
 
     d3.boxplot.zoom.init();
+
+    d3.boxplot.events.init_context_menu();
 };

@@ -261,6 +261,23 @@ def sort_graph(id_res):
     return jsonify({"success": False, "message": "Sort is not available for All-vs-All mode"})
 
 
+@app.route('/reverse-contig/<id_res>', methods=['POST'])
+def reverse_contig(id_res):
+    contig_name = request.form["contig"]
+    if not os.path.exists(os.path.join(APP_DATA, id_res, ".all-vs-all")):
+        paf_file = os.path.join(app_data, id_res, "map.paf")
+        idx1 = os.path.join(app_data, id_res, "query.idx")
+        idx2 = os.path.join(app_data, id_res, "target.idx")
+        paf = Paf(paf_file, idx1, idx2, False)
+        paf.reverse_contig(contig_name)
+        if paf.parsed:
+            res = paf.get_d3js_data()
+            res["success"] = True
+            return jsonify(res)
+        return jsonify({"success": False, "message": paf.error})
+    return jsonify({"success": False, "message": "Sort is not available for All-vs-All mode"})
+
+
 @app.route('/freenoise/<id_res>', methods=['POST'])
 def free_noise(id_res):
     paf_file = os.path.join(app_data, id_res, "map.paf")
