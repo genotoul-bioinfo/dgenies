@@ -18,6 +18,7 @@ import traceback
 from pathlib import Path
 from urllib import request, parse
 from bin.split_fa import Splitter
+from bin.build_index import index_file
 from bin.merge_splitted_chrms import Merger
 from bin.sort_paf import Sorter
 import gzip
@@ -526,7 +527,7 @@ class JobManager:
                 if self.config.send_mail_status:
                     self.send_mail_post()
                 return False
-        if not Functions.index_file(self.target, self.idx_t):
+        if not index_file(self.target.get_path(), self.target.get_name(), self.idx_t):
             job.status = "fail"
             job.error = "<br/>".join(["Target fasta file is not valid!", error_tail])
             job.save()

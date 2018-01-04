@@ -29,7 +29,6 @@ d3.boxplot.events.init_context_menu = function () {
             height_c = rect.height;
         let y = d3.boxplot.scale - ((event.pageY - posY) / height_c * d3.boxplot.scale);
         d3.boxplot.query_selected = d3.boxplot.select_query(y);
-        console.log(d3.boxplot.query_selected)
     });
 
     let menu = new BootstrapMenu("svg.svgcontainer", {
