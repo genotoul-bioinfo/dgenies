@@ -11,6 +11,7 @@ from peewee import DoesNotExist
 from lib.fasta import Fasta
 from lib.functions import Functions
 import requests
+from requests.exceptions import ConnectionError
 import wget
 from jinja2 import Template
 import traceback
@@ -294,19 +295,45 @@ class JobManager:
         return finale_path
 
     def __getting_file_from_url(self, fasta: Fasta, type_f):
-        dl_path = wget.download(fasta.get_path(), self.output_dir, None)
+        """
+        Download file from URL
+        :param fasta: Fasta object describing the input file {Fasta}
+        :param type_f: type of the file (query or target) {str}
+        :return: Tuple:
+            [0] True if no error happened, else False
+            [1] If an error happened, True if the error was saved for the job, else False (will be saved later)
+            [2] Finale path of the downloaded file {str}
+            [3] Name of the downloaded file {str}
+        """
+        try:
+            dl_path = wget.download(fasta.get_path(), self.output_dir, None)
+        except ConnectionError:
+            job = Job.get(Job.id_job == self.id_job)
+            job.status = "fail"
+            job.error = "<p>Url <b>%s</b> is not valid!</p>" \
+                        "<p>If this is unattended, please contact the support.</p>" % fasta.get_path()
+            job.save()
+            return False, True, None, None
         filename = os.path.basename(dl_path)
         name = os.path.splitext(filename.replace(".gz", ""))[0]
         finale_path = os.path.join(self.output_dir, type_f + "_" + filename)
         shutil.move(dl_path, finale_path)
         with open(os.path.join(self.output_dir, "." + type_f), "w") as save_file:
             save_file.write(finale_path)
-        return finale_path, name
+        return True, False, finale_path, name
 
     def __check_url(self, fasta: Fasta):
         url = fasta.get_path()
         if url.startswith("http://") or url.startswith("https://"):
-            filename = requests.head(url, allow_redirects=True).url.split("/")[-1]
+            try:
+                filename = requests.head(url, allow_redirects=True).url.split("/")[-1]
+            except ConnectionError:
+                job = Job.get(Job.id_job == self.id_job)
+                job.status = "fail"
+                job.error = "<p>Url <b>%s</b> is not valid!</p>" \
+                            "<p>If this is unattended, please contact the support.</p>" % fasta.get_path()
+                job.save()
+                return False
         elif url.startswith("ftp://"):
             filename = url.split("/")[-1]
         else:
@@ -385,7 +412,9 @@ class JobManager:
                 job.status = "getfiles"
                 job.save()
                 for file, input_type in files_to_download:
-                    finale_path, filename = self.__getting_file_from_url(file, input_type)
+                    correct, error_set, finale_path, filename = self.__getting_file_from_url(file, input_type)
+                    if not correct:
+                        break
                     my_input = getattr(self, input_type)
                     my_input.set_path(finale_path)
                     my_input.set_name(filename)
@@ -407,6 +436,12 @@ class JobManager:
         self._after_start(correct, error_set)
 
     def getting_files(self):
+        """
+        Get files for the job
+        :return: Tuple:
+            [0] True if getting files succeed, False else
+            [1] If error happenned, True if error already saved for the job, False else (error will be saved later)
+        """
         job = Job.get(Job.id_job == self.id_job)
         job.status = "getfiles"
         job.save()
