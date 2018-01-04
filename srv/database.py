@@ -1,12 +1,19 @@
 import os
 from config_reader import AppConfigReader
-from peewee import SqliteDatabase, Model, CharField, IntegerField, DateTimeField, BooleanField
+from peewee import SqliteDatabase, Model, CharField, IntegerField, DateTimeField, BooleanField, MySQLDatabase
 from datetime import datetime
 
 config = AppConfigReader()
-file_path = config.database
+db_url = config.database_url
+db_type = config.database_type
 
-db = SqliteDatabase(file_path)
+if db_type == "sqlite":
+    db = SqliteDatabase(db_url)
+elif db_type == "mysql":
+    db = MySQLDatabase(host=config.database_url, port=config.database_port, user=config.database_user,
+                       passwd=config.database_password, database=config.database_db)
+else:
+    raise Exception("Unsupported database type: " + db_type)
 db.connect()
 
 

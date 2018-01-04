@@ -47,7 +47,13 @@ minimap2_cluster = ###DEFAULT###
 
 
 [database]
-sqlite_file = ###PROGRAM###/srv/database.sqlite
+type = sqlite
+url = ###PROGRAM###/srv/database.sqlite
+# Not used for sqlite:
+port =
+db =
+user =
+password =
 
 
 [mail]

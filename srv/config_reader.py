@@ -97,11 +97,61 @@ class AppConfigReader:
         except NoOptionError:
             return self.get_minimap2_exec()
 
-    def get_database(self):
+    def get_database_type(self):
         try:
-            return self.replace_vars(self.reader.get("database", "sqlite_file"))
+            return self.reader.get("database", "type")
+        except NoOptionError:
+            return "sqlite"
+
+    def get_database_url(self):
+        try:
+            return self.replace_vars(self.reader.get("database", "url"))
         except NoOptionError:
             return ":memory:"
+
+    def get_database_port(self):
+        try:
+            return int(self.reader.get("database", "port"))
+        except (NoOptionError, ValueError):
+            db_type = self.get_database_type()
+            if db_type == "mysql":
+                return 3306
+            elif db_type == "sqlite":
+                return -1
+            raise Exception("Missing parameter: database port")
+
+    def get_database_db(self):
+        try:
+            db = self.reader.get("database", "db")
+            if db == "":
+                raise ValueError()
+            return db
+        except (NoOptionError, ValueError):
+            if self.get_database_type() == "sqlite":
+                return ""
+            raise Exception("Missing parameter: database db name")
+
+    def get_database_user(self):
+        try:
+            user = self.reader.get("database", "user")
+            if user == "":
+                raise ValueError()
+            return user
+        except (NoOptionError, ValueError):
+            if self.get_database_type() == "sqlite":
+                return ""
+            raise Exception("Missing parameter: database user")
+
+    def get_database_password(self):
+        try:
+            passwd = self.reader.get("database", "password")
+            if passwd == "":
+                raise ValueError()
+            return passwd
+        except (NoOptionError, ValueError):
+            if self.get_database_type() == "sqlite":
+                return ""
+            raise Exception("Missing parameter: database password")
 
     def get_mail_status_sender(self):
         try:
