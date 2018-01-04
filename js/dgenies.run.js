@@ -168,9 +168,10 @@ dgenies.run.set_events = function() {
                 dgenies.notify(`File exceed the size limit (${max_file_size_txt})`, "danger", 2000);
                 file_size_query.html("");
             }
-        else
+        else {
             dgenies.run.set_filename("", "query");
             file_size_query.html("");
+        }
     });
 
     $("input.file-target").change(function () {
@@ -187,9 +188,10 @@ dgenies.run.set_events = function() {
                 file_size_target.html("");
             }
         }
-        else
+        else {
             dgenies.run.set_filename("", "target");
             file_size_target.html("");
+        }
     });
     
     $("button#submit").click(function () {
