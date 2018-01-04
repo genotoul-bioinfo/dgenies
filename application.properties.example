@@ -8,8 +8,12 @@ batch_system_type = local
 threads = 4
 web_url = http://localhost:5000
 
-# Max size of uploaded files (also for files from URL):
-max_upload_size = 3G # Please set the unit: M for Megabyte or G for Gigabyte (-1 without unit to don't set a limit)
+# Max size of uploaded files (also for files from URL, size uncompressed):
+# Please set the unit: M for Megabyte or G for Gigabyte (-1 without unit to don't set a limit)
+max_upload_size = 3G
+# Max upload file size (compressed or not, only for uploaded files, not from URL):
+# Please set the unit: M for Megabyte or G for Gigabyte (-1 without unit to don't set a limit)
+max_upload_file_size = 1G
 
 
 [debug]

@@ -50,13 +50,11 @@ class JobManager:
         with open(filepath, 'rb') as test_f:
             return binascii.hexlify(test_f.read(2)) == b'1f8b'
 
-    @staticmethod
-    def get_file_size(filepath: str):
-        if filepath.endswith(".gz"):
+    def get_file_size(self, filepath: str):
+        file_size = os.path.getsize(filepath)
+        if filepath.endswith(".gz") and file_size <= self.config.max_upload_size:
             with gzip.open(filepath, 'rb') as file_obj:
                 file_size = file_obj.seek(0, io.SEEK_END)
-        else:
-            file_size = os.path.getsize(filepath)
         return file_size
 
     def get_query_split(self):

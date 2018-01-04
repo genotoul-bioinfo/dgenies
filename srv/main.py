@@ -39,6 +39,7 @@ app_title = "D-GENIES - Dotplot for Genomes Interactive, E-connected and Speedy"
 # Init Flask:
 app = Flask(__name__, static_url_path='/static')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = config_reader.max_upload_file_size
 app.config['SECRET_KEY'] = 'dsqdsq-255sdA-fHfg52-25Asd5'
 
 # Init mail:
@@ -79,7 +80,8 @@ def run():
     if "email" in request.args:
         email = request.args["email"]
     return render_template("run.html", title=app_title, id_job=id_job, email=email,
-                           menu="run", allowed_ext=ALLOWED_EXTENSIONS, s_id=s_id)
+                           menu="run", allowed_ext=ALLOWED_EXTENSIONS, s_id=s_id,
+                           max_upload_file_size=config_reader.max_upload_file_size)
 
 
 @app.route("/run-test", methods=['GET'])

@@ -6,12 +6,14 @@ dgenies.run = {};
 // Init global variables:
 dgenies.run.s_id = null;
 dgenies.run.allowed_ext = [];
+dgenies.run.max_upload_file_size = -1
 dgenies.run.files = [undefined, undefined];
 dgenies.run.allow_upload = false;
 
-dgenies.run.init = function (s_id, allowed_ext) {
+dgenies.run.init = function (s_id, allowed_ext, max_upload_file_size=1073741824) {
     dgenies.run.s_id = s_id;
     dgenies.run.allowed_ext = allowed_ext;
+    dgenies.run.max_upload_file_size = max_upload_file_size
     dgenies.run.restore_form();
     dgenies.run.set_events();
     dgenies.run.init_fileuploads();
@@ -152,17 +154,18 @@ dgenies.run.get_file_size_str = function(size) {
 };
 
 dgenies.run.set_events = function() {
+    let max_file_size_txt = dgenies.run.get_file_size_str(dgenies.run.max_upload_file_size);
     $("input.file-query").change(function () {
         let file_size_query = $("div.file-size.query");
         if (this.files.length > 0)
-            if (this.files[0].size <= 1073741824) {
+            if (this.files[0].size <= dgenies.run.max_upload_file_size) {
                 file_size_query.html(dgenies.run.get_file_size_str(this.files[0].size));
                 dgenies.run.set_filename(this.files[0].name, "query");
             }
             else {
                 $(this).val("");
                 dgenies.run.set_filename("", "query");
-                dgenies.notify("File exceed the size limit (1 Go)", "danger", 2000);
+                dgenies.notify(`File exceed the size limit (${max_file_size_txt})`, "danger", 2000);
                 file_size_query.html("");
             }
         else
@@ -173,14 +176,14 @@ dgenies.run.set_events = function() {
     $("input.file-target").change(function () {
         let file_size_target = $("div.file-size.target");
         if (this.files.length > 0) {
-            if (this.files[0].size <= 1073741824) {
+            if (this.files[0].size <= dgenies.run.max_upload_file_size) {
                 file_size_target.html(dgenies.run.get_file_size_str(this.files[0].size));
                 dgenies.run.set_filename(this.files[0].name, "target");
             }
             else {
                 $(this).val("");
                 dgenies.run.set_filename("", "target");
-                dgenies.notify("File exceed the size limit (1 Go)", "danger", 2000);
+                dgenies.notify(`File exceed the size limit (${max_file_size_txt})`, "danger", 2000);
                 file_size_target.html("");
             }
         }

@@ -83,6 +83,22 @@ class AppConfigReader:
         except NoOptionError:
             return -1
 
+    def get_max_upload_file_size(self):
+        try:
+            max_size_b = self.replace_vars(self.reader.get("global", "max_upload_file_size"))
+            if max_size_b == "-1":
+                return -1
+            size_v = float(max_size_b[:-1])
+            size_unit = max_size_b[-1].upper()
+            if size_unit not in ["M", "G"]:
+                raise ValueError("Max size unit must be M or G")
+            max_size = int(size_v * 1024 * 1024)
+            if size_unit == "G":
+                max_size *= 1024
+            return max_size
+        except NoOptionError:
+            return 1024 * 1024 * 1024
+
     def get_minimap2_exec(self):
         try:
             entry = self.reader.get("softwares", "minimap2")
