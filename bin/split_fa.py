@@ -117,7 +117,7 @@ def parse_args():
 def __main__():
     args = parse_args()
     splitter = Splitter(args.input, args.name, args.output, args.size * 1000000)
-    return splitter.split()
+    return not splitter.split()
 
 
 if __name__ == '__main__':
