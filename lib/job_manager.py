@@ -253,7 +253,7 @@ class JobManager:
         jt.args = args
         if log_out == log_err:
             jt.joinFiles = True
-            jt.outputPath = log_out
+            jt.outputPath = ":" + log_out
         else:
             jt.joinFiles = False
             jt.outputPath = ":" + log_out
