@@ -44,6 +44,9 @@ max_run_local = 10
 min_query_size = 500M
 min_target_size = 700M
 
+prepare_script = ###PROGRAM###/bin/prepare_data.sh
+python3_script = python3
+
 
 [softwares]
 minimap2 = ###DEFAULT###

@@ -35,8 +35,12 @@
             <p>Your map is done. We are preparing files for visualisation...<br/>
                 You will receive an email when it will be finished.<br/>
                 Alternatively, you can refresh this page to update status.</p>
-        {% elif status == "preparing" %}
+        {% elif status == "preparing" or status == "preparing-cluster" %}
             <p>We are preparing data...<br/>
+                You will receive an email when it will be finished.<br/>
+                Alternatively, you can refresh this page to update status.</p>
+        {% elif status == "prepare-scheduled" %}
+            <p>We are preparing data... [scheduled]<br/>
                 You will receive an email when it will be finished.<br/>
                 Alternatively, you can refresh this page to update status.</p>
         {% elif status == "prepared"%}

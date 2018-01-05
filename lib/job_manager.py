@@ -243,50 +243,71 @@ class JobManager:
             job.id_process = id_process
         job.save()
 
-    def __launch_drmaa(self, batch_system_type):
+    def launch_to_cluster(self, step, batch_system_type, command, args, log_out, log_err):
         import drmaa
         from lib.drmaasession import DrmaaSession
         drmaa_session = DrmaaSession()
-
         s = drmaa_session.session
         jt = s.createJobTemplate()
-        jt.remoteCommand = self.config.minimap2_cluster_exec
-        if self.query is not None:
-            jt.args = ["-t", self.config.nb_threads, self.target.get_path(), self.get_query_split()]
+        jt.remoteCommand = command
+        jt.args = args
+        if log_out == log_err:
+            jt.joinFiles = True
+            jt.outputPath = log_out
         else:
-            jt.args = ["-t", self.config.nb_threads, "-X", self.target.get_path(), self.target.get_path()]
-        jt.joinFiles = False
-        jt.outputPath = ":" + self.paf_raw
-        jt.errorPath = ":" + self.logs
+            jt.joinFiles = False
+            jt.outputPath = ":" + log_out
+            jt.errorPath = ":" + log_err
 
         native_specs = self.config.drmaa_native_specs
         if batch_system_type == "slurm":
             if native_specs == "###DEFAULT###":
                 native_specs = "--mem-per-cpu={0} --ntasks={1} --time={2}"
-            jt.nativeSpecification = native_specs.format(8000, 4, "01:00:00")
-        else:
+            if step == "prepare":
+                jt.nativeSpecification = native_specs.format(8000, 1, "02:00:00")
+            elif step == "start":
+                jt.nativeSpecification = native_specs.format(8000, 4, "02:00:00")
+        elif batch_system_type == "sge":
             if native_specs == "###DEFAULT###":
                 native_specs = "-l mem={0},h_vmem={0} -pe parallel_smp {1}"
-            jt.nativeSpecification = native_specs.format(8000, 4)
+            if step == "prepare":
+                jt.nativeSpecification = native_specs.format(8000, 1)
+            elif step == "start":
+                jt.nativeSpecification = native_specs.format(8000, 4)
         jt.workingDirectory = self.output_dir
         jobid = s.runJob(jt)
         self.id_process = jobid
 
-        self.update_job_status("scheduled-cluster", jobid)
+        self.update_job_status("scheduled-cluster" if step == "start" else "prepare-scheduled", jobid)
 
         retval = s.wait(jobid, drmaa.Session.TIMEOUT_WAIT_FOREVER)
         if retval.hasExited and (self.check_job_status_slurm() if batch_system_type == "slurm" else
-                                 self.check_job_status_sge()):
-            status = self.check_job_success()
+        self.check_job_status_sge()):
+            if step == "start":
+                status = self.check_job_success()
+            else:
+                status = "prepared"
             # job = Job.get(id_job=self.id_job)
             # job.status = status
             # db.commit()
             self.update_job_status(status)
             s.deleteJobTemplate(jt)
-            return status == "success"
+            return status == "success" or status == "prepared"
         self.update_job_status("fail")
         s.deleteJobTemplate(jt)
         return False
+
+    def __launch_drmaa(self, batch_system_type):
+        if self.query is not None:
+            args = ["-t", self.config.nb_threads, self.target.get_path(), self.get_query_split()]
+        else:
+            args = ["-t", self.config.nb_threads, "-X", self.target.get_path(), self.target.get_path()]
+        return self.launch_to_cluster(step="start",
+                                      batch_system_type=batch_system_type,
+                                      command=self.config.minimap2_cluster_exec,
+                                      args=args,
+                                      log_out=self.paf_raw,
+                                      log_err=self.logs)
 
     def __getting_local_file(self, fasta: Fasta, type_f):
         finale_path = os.path.join(self.output_dir, type_f + "_" + os.path.basename(fasta.get_path()))
@@ -509,14 +530,23 @@ class JobManager:
         thread = threading.Timer(1, self.prepare_data)
         thread.start()  # Start the execution
 
-    def prepare_data(self):
+    def prepare_data_cluster(self, batch_system_type):
+        args = [self.config.cluster_prepare_script, self.target.get_path(), self.target.get_name(), self.idx_t]
+        if self.query is not None:
+            args += [self.query.get_path(), self.query.get_name(), self.get_query_split()]
+        return self.launch_to_cluster(step="prepare",
+                                      batch_system_type=batch_system_type,
+                                      command=self.config.cluster_python_script,
+                                      args=args,
+                                      log_out=self.logs,
+                                      log_err=self.logs)
+
+    def prepare_data_local(self):
         job = Job.get(Job.id_job == self.id_job)
         job.status = "preparing"
         job.save()
         error_tail = "Please check your input file and try again."
         if self.query is not None:
-            with open(os.path.join(self.output_dir, "logs.txt"), "w") as logs:
-                logs.write(self.query.get_path())
             fasta_in = self.query.get_path()
             splitter = Splitter(input_f=fasta_in, name_f=self.query.get_name(), output_f=self.get_query_split(),
                                 query_index=self.query_index_split)
@@ -536,6 +566,13 @@ class JobManager:
             return False
         job.status = "prepared"
         job.save()
+
+    def prepare_data(self):
+        job = Job.get(Job.id_job == self.id_job)
+        if job.batch_type == "local":
+            self.prepare_data_local()
+        else:
+            self.prepare_data_cluster(job.batch_type)
 
     def run_job(self, batch_system_type):
         success = False

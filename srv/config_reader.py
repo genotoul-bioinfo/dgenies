@@ -26,50 +26,50 @@ class AppConfigReader:
         self.reader.read(config_file)
         for attr in dir(self):
             attr_o = getattr(self, attr)
-            if attr.startswith("get_") and callable(attr_o):
+            if attr.startswith("_get_") and callable(attr_o):
                 try:
-                    setattr(self, attr[4:], attr_o())
+                    setattr(self, attr[5:], attr_o())
                 except Exception as e:
                     print(e)
 
     @staticmethod
-    def replace_vars(path):
+    def _replace_vars(path):
         return path.replace("###USER###", os.path.expanduser("~"))\
             .replace("###PROGRAM###", os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
-    def get_upload_folder(self):
+    def _get_upload_folder(self):
         try:
-            return self.replace_vars(self.reader.get("global", "upload_folder"))
+            return self._replace_vars(self.reader.get("global", "upload_folder"))
         except NoOptionError:
             raise Exception("No upload folder found in application.properties (global section)")
 
-    def get_app_data(self):
+    def _get_app_data(self):
         try:
-            return self.replace_vars(self.reader.get("global", "data_folder"))
+            return self._replace_vars(self.reader.get("global", "data_folder"))
         except NoOptionError:
             raise Exception("No data folder found in application.properties (global section)")
 
-    def get_batch_system_type(self):
+    def _get_batch_system_type(self):
         try:
             return self.reader.get("global", "batch_system_type")
         except NoOptionError:
             return "local"
 
-    def get_nb_threads(self):
+    def _get_nb_threads(self):
         try:
             return self.reader.get("global", "threads")
         except NoOptionError:
             return "4"
 
-    def get_web_url(self):
+    def _get_web_url(self):
         try:
-            return self.replace_vars(self.reader.get("global", "web_url"))
+            return self._replace_vars(self.reader.get("global", "web_url"))
         except NoOptionError:
             return "http://localhost:5000"
 
-    def get_max_upload_size(self):
+    def _get_max_upload_size(self):
         try:
-            max_size_b = self.replace_vars(self.reader.get("global", "max_upload_size"))
+            max_size_b = self._replace_vars(self.reader.get("global", "max_upload_size"))
             if max_size_b == "-1":
                 return -1
             size_v = float(max_size_b[:-1])
@@ -83,9 +83,9 @@ class AppConfigReader:
         except NoOptionError:
             return -1
 
-    def get_max_upload_file_size(self):
+    def _get_max_upload_file_size(self):
         try:
-            max_size_b = self.replace_vars(self.reader.get("global", "max_upload_file_size"))
+            max_size_b = self._replace_vars(self.reader.get("global", "max_upload_file_size"))
             if max_size_b == "-1":
                 return -1
             size_v = float(max_size_b[:-1])
@@ -99,107 +99,107 @@ class AppConfigReader:
         except NoOptionError:
             return 1024 * 1024 * 1024
 
-    def get_minimap2_exec(self):
+    def _get_minimap2_exec(self):
         try:
             entry = self.reader.get("softwares", "minimap2")
             return entry if entry != "###DEFAULT###" else "minimap2"
         except NoOptionError:
             return "minimap2"
 
-    def get_minimap2_cluster_exec(self):
+    def _get_minimap2_cluster_exec(self):
         try:
             entry = self.reader.get("softwares", "minimap2_cluster")
             return entry if entry != "###DEFAULT###" else "minimap2"
         except NoOptionError:
-            return self.get_minimap2_exec()
+            return self._get_minimap2_exec()
 
-    def get_database_type(self):
+    def _get_database_type(self):
         try:
             return self.reader.get("database", "type")
         except NoOptionError:
             return "sqlite"
 
-    def get_database_url(self):
+    def _get_database_url(self):
         try:
-            return self.replace_vars(self.reader.get("database", "url"))
+            return self._replace_vars(self.reader.get("database", "url"))
         except NoOptionError:
             return ":memory:"
 
-    def get_database_port(self):
+    def _get_database_port(self):
         try:
             return int(self.reader.get("database", "port"))
         except (NoOptionError, ValueError):
-            db_type = self.get_database_type()
+            db_type = self._get_database_type()
             if db_type == "mysql":
                 return 3306
             elif db_type == "sqlite":
                 return -1
             raise Exception("Missing parameter: database port")
 
-    def get_database_db(self):
+    def _get_database_db(self):
         try:
             db = self.reader.get("database", "db")
             if db == "":
                 raise ValueError()
             return db
         except (NoOptionError, ValueError):
-            if self.get_database_type() == "sqlite":
+            if self._get_database_type() == "sqlite":
                 return ""
             raise Exception("Missing parameter: database db name")
 
-    def get_database_user(self):
+    def _get_database_user(self):
         try:
             user = self.reader.get("database", "user")
             if user == "":
                 raise ValueError()
             return user
         except (NoOptionError, ValueError):
-            if self.get_database_type() == "sqlite":
+            if self._get_database_type() == "sqlite":
                 return ""
             raise Exception("Missing parameter: database user")
 
-    def get_database_password(self):
+    def _get_database_password(self):
         try:
             passwd = self.reader.get("database", "password")
             if passwd == "":
                 raise ValueError()
             return passwd
         except (NoOptionError, ValueError):
-            if self.get_database_type() == "sqlite":
+            if self._get_database_type() == "sqlite":
                 return ""
             raise Exception("Missing parameter: database password")
 
-    def get_mail_status_sender(self):
+    def _get_mail_status_sender(self):
         try:
-            return self.replace_vars(self.reader.get("mail", "status"))
+            return self._replace_vars(self.reader.get("mail", "status"))
         except NoOptionError:
             return "status@dgenies"
 
-    def get_mail_reply(self):
+    def _get_mail_reply(self):
         try:
-            return self.replace_vars(self.reader.get("mail", "reply"))
+            return self._replace_vars(self.reader.get("mail", "reply"))
         except NoOptionError:
             return "status@dgenies"
 
-    def get_mail_org(self):
+    def _get_mail_org(self):
         try:
-            return self.replace_vars(self.reader.get("mail", "org"))
+            return self._replace_vars(self.reader.get("mail", "org"))
         except NoOptionError:
             return None
 
-    def get_send_mail_status(self):
+    def _get_send_mail_status(self):
         try:
             return self.reader.get("mail", "send_mail_status").lower() == "true"
         except NoOptionError:
             return True
 
-    def get_disable_mail(self):
+    def _get_disable_mail(self):
         try:
             return self.reader.get("mail", "disable").lower() == "true"
         except NoOptionError:
             return False
 
-    def get_cron_menage_hour(self):
+    def _get_cron_menage_hour(self):
         try:
             value = self.reader.get("cron", "menage_hour").lower()
             match = re.match(r"(([0-9])|([0-1][0-9])|(2[0-3]))[hH]([0-5][0-9])", value)
@@ -211,51 +211,51 @@ class AppConfigReader:
         except (NoOptionError, NoSectionError):
             return [1, 0]
 
-    def get_cron_menage_freq(self):
+    def _get_cron_menage_freq(self):
         try:
             return int(self.reader.get("cron", "menage_freq"))
         except (NoOptionError, NoSectionError):
             return 1
 
-    def get_local_nb_runs(self):
+    def _get_local_nb_runs(self):
         try:
             return int(self.reader.get("jobs", "run_local"))
         except (NoOptionError, NoSectionError):
             return 1
 
-    def get_nb_data_prepare(self):
+    def _get_nb_data_prepare(self):
         try:
             return int(self.reader.get("jobs", "data_prepare"))
         except (NoOptionError, NoSectionError):
             return 2
 
-    def get_max_concurrent_dl(self):
+    def _get_max_concurrent_dl(self):
         try:
             return int(self.reader.get("jobs", "max_concurrent_dl"))
         except (NoOptionError, NoSectionError):
             return 5
 
-    def get_drmaa_lib_path(self):
+    def _get_drmaa_lib_path(self):
         try:
             return self.reader.get("cluster", "drmaa_lib_path")
         except (NoOptionError, NoSectionError):
-            if self.get_batch_system_type() != "local":
+            if self._get_batch_system_type() != "local":
                 raise Exception("No drmaa library set. It is required if the batch system type is not 'local'")
             return None
 
-    def get_drmaa_native_specs(self):
+    def _get_drmaa_native_specs(self):
         try:
             return self.reader.get("cluster", "native_specs")
         except (NoOptionError, NoSectionError):
             return "###DEFAULT###"
 
-    def get_max_run_local(self):
+    def _get_max_run_local(self):
         try:
             return int(self.reader.get("cluster", "max_run_local"))
         except (NoOptionError, NoSectionError):
             return 0
 
-    def get_min_query_size(self):
+    def _get_min_query_size(self):
         try:
             size_b = self.reader.get("cluster", "min_query_size")
             size_v = int(size_b[:-1])
@@ -269,7 +269,7 @@ class AppConfigReader:
         except (NoOptionError, NoSectionError):
             return 0
 
-    def get_min_target_size(self):
+    def _get_min_target_size(self):
         try:
             size_b = self.reader.get("cluster", "min_target_size")
             size_v = int(size_b[:-1])
@@ -283,20 +283,32 @@ class AppConfigReader:
         except (NoOptionError, NoSectionError):
             return 0
 
-    def get_debug(self):
+    def _get_cluster_prepare_script(self):
+        try:
+            return self._replace_vars(self.reader.get("cluster", "prepare_script"))
+        except (NoOptionError, NoSectionError):
+            return self._replace_vars("###PROGRAM###/bin/prepare_data.sh")
+
+    def _get_cluster_python_script(self):
+        try:
+            return self._replace_vars(self.reader.get("cluster", "python3_script"))
+        except (NoOptionError, NoSectionError):
+            return "python3"
+
+    def _get_debug(self):
         try:
             return self.reader.get("debug", "enable").lower() == "true"
         except (NoOptionError, NoSectionError):
             return False
 
-    def get_log_dir(self):
+    def _get_log_dir(self):
         try:
-            return self.replace_vars(self.reader.get("debug", "log_dir"))
+            return self._replace_vars(self.reader.get("debug", "log_dir"))
         except (NoOptionError, NoSectionError):
-            if self.get_debug():
+            if self._get_debug():
                 raise Exception("No log dir defined and debug=True")
 
-    def get_allowed_ip_tests(self):
+    def _get_allowed_ip_tests(self):
         allowed_ip = {"127.0.0.1"}
         try:
             allowed_ip_txt = self.reader.get("debug", "allowed_ip_tests")

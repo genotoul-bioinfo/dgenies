@@ -609,7 +609,7 @@ h2.status {
     width: 7%;
 }
 
-.progress-status-bar.preparing {
+.progress-status-bar.preparing, .progress-status-bar.prepare-scheduled, .progress-status-bar.preparing-cluster {
     width: 10.7%;
 }
 
