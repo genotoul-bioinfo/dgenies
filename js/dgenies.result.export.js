@@ -11,7 +11,7 @@ dgenies.result.export.get_svg = function () {
 dgenies.result.export.save_file = function(blob, format) {
     dgenies.hide_loading();
     saveAs(blob, `map_${d3.boxplot.name_y}_to_${d3.boxplot.name_x}.${format}`);
-}
+};
 
 dgenies.result.export.export_png = function() {
     dgenies.show_loading("Building files...", 180);
@@ -126,6 +126,20 @@ dgenies.result.export.export_association_table = function () {
     document.getElementById('my-download').click();
 };
 
+dgenies.result.export.export_no_association_file = function () {
+    dgenies.post("/no-assoc/" + dgenies.result.id_res,
+        {},
+        function (data, success) {
+            if (!data["empty"]) {
+                let blob = new Blob([data["file_content"]], {type: "text/plain"});
+                saveAs(blob, `nomatches_${d3.boxplot.name_y}_to_${d3.boxplot.name_x}.txt`);
+            }
+            else {
+                dgenies.notify("No contigs in query have None match with any target!", "success")
+            }
+        })
+};
+
 dgenies.result.export.export = function () {
     let select = $("form#export select");
     let selection = parseInt(select.val());
@@ -144,6 +158,9 @@ dgenies.result.export.export = function () {
             }
             else if (selection === 5) {
                 dgenies.result.export.export_association_table();
+            }
+            else if (selection === 6) {
+                dgenies.result.export.export_no_association_file();
             }
             else
                 dgenies.notify("Not supported yet!", "danger", 2000);

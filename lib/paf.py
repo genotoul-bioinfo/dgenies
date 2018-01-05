@@ -99,6 +99,31 @@ class Paf:
                     keep_lines[cls].append(line)
         return keep_lines
 
+    @staticmethod
+    def load_index(index):
+        with open(index, "r") as idx_q_f:
+            abs_start = {}
+            abs_current_start = 0
+            c_len = 0
+            name = idx_q_f.readline().strip("\n")
+            order = []
+            contigs = {}
+            reversed = {}
+            for line in idx_q_f:
+                parts = line.strip("\n").split("\t")
+                id_c = parts[0]
+                len_c = int(parts[1])
+                if len(parts) > 2:
+                    reversed[id_c] = parts[2] == "1"
+                else:
+                    reversed[id_c] = False
+                order.append(id_c)
+                abs_start[id_c] = abs_current_start
+                contigs[id_c] = len_c
+                c_len += len_c
+                abs_current_start += len_c
+            return name, order, contigs, reversed, abs_start, abs_current_start, c_len
+
     def parse_paf(self, merge_index=True, noise=True):
         min_idy = 10000000000
         max_idy = -10000000000
@@ -108,51 +133,18 @@ class Paf:
             "2": [],
             "3": []
         }
-        q_abs_start = {}
-        q_abs_current_start = 0
-        q_len = 0
         try:
-            with open(self.idx_q, "r") as idx_q_f:
-                name_q = idx_q_f.readline().strip("\n")
-                q_order = []
-                q_contigs = {}
-                q_reversed = {}
-                for line in idx_q_f:
-                    parts = line.strip("\n").split("\t")
-                    id_c = parts[0]
-                    len_c = int(parts[1])
-                    if len(parts) > 2:
-                        q_reversed[id_c] = parts[2] == "1"
-                    else:
-                        q_reversed[id_c] = False
-                    q_order.append(id_c)
-                    q_abs_start[id_c] = q_abs_current_start
-                    q_contigs[id_c] = len_c
-                    q_len += len_c
-                    q_abs_current_start += len_c
+            name_q, q_order, q_contigs, q_reversed, q_abs_start, q_abs_current_start, q_len = self.load_index(
+                self.idx_q)
             if merge_index:
                 q_contigs, q_order = self.parse_index(q_order, q_contigs, q_len)
         except IOError:
             self.error = "Index file does not exist for query!"
             return False
 
-        t_abs_start = {}
-        t_abs_current_start = 0
-        t_len = 0
         try:
-            with open(self.idx_t, "r") as idx_t_f:
-                name_t = idx_t_f.readline().strip("\n")
-                t_order = []
-                t_contigs = {}
-                for line in idx_t_f:
-                    parts = line.strip("\n").split("\t")
-                    id_c = parts[0]
-                    len_c = int(parts[1])
-                    t_order.append(id_c)
-                    t_abs_start[id_c] = t_abs_current_start
-                    t_contigs[id_c] = len_c
-                    t_len += len_c
-                    t_abs_current_start += len_c
+            name_t, t_order, t_contigs, t_reversed, t_abs_start, t_abs_current_start, t_len = self.load_index(
+                self.idx_t)
             if merge_index:
                 t_contigs, t_order = self.parse_index(t_order, t_contigs, t_len)
         except IOError:
@@ -495,3 +487,16 @@ class Paf:
             else:
                 content += "%s\t%s\t%s\n" % (contig, "None", strand)
         return content
+
+    def build_list_no_assoc(self):
+        """
+        Build list of queries that match with None target
+        :return: content of the file
+        """
+        name, contigs_list, contigs, reversed, abs_start, abs_current_start, c_len = self.load_index(self.idx_q)
+        with open(self.paf, "r") as paf:
+            for line in paf:
+                query_name = line.strip("\n").split("\t")[0]
+                if query_name in contigs_list:
+                    contigs_list.remove(query_name)
+        return "\n".join(contigs_list) + "\n"

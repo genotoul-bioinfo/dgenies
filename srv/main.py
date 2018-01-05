@@ -388,6 +388,32 @@ def qt_assoc(id_res):
     abort(404)
 
 
+@app.route('/no-assoc/<id_res>', methods=['POST'])
+def no_assoc(id_res):
+    """
+    Get contigs that match with None target
+    :param id_res: id of the result
+    """
+    res_dir = os.path.join(app_data, id_res)
+    if os.path.exists(res_dir) and os.path.isdir(res_dir):
+        paf_file = os.path.join(app_data, id_res, "map.paf")
+        idx1 = os.path.join(app_data, id_res, "query.idx")
+        idx2 = os.path.join(app_data, id_res, "target.idx")
+        try:
+            paf = Paf(paf_file, idx1, idx2, False)
+        except FileNotFoundError:
+            print("Unable to load data!")
+            abort(404)
+            return False
+        file_content = paf.build_list_no_assoc()
+        empty = file_content == "\n"
+        return jsonify({
+            "file_content": file_content,
+            "empty": empty
+        })
+    abort(404)
+
+
 @app.route("/ask-upload", methods=['POST'])
 def ask_upload():
     try:
