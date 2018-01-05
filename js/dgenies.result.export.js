@@ -126,16 +126,17 @@ dgenies.result.export.export_association_table = function () {
     document.getElementById('my-download').click();
 };
 
-dgenies.result.export.export_no_association_file = function () {
+dgenies.result.export.export_no_association_file = function (to) {
+    let on = to === "query" ? "target" : "query";
     dgenies.post("/no-assoc/" + dgenies.result.id_res,
-        {},
+        {"to": to},
         function (data, success) {
             if (!data["empty"]) {
                 let blob = new Blob([data["file_content"]], {type: "text/plain"});
-                saveAs(blob, `nomatches_${d3.boxplot.name_y}_to_${d3.boxplot.name_x}.txt`);
+                saveAs(blob, `no_${to}_matches_${d3.boxplot.name_y}_to_${d3.boxplot.name_x}.txt`);
             }
             else {
-                dgenies.notify("No contigs in query have None match with any target!", "success")
+                dgenies.notify(`No contigs in ${to} have None match with any ${on}!`, "success")
             }
         })
 };
@@ -160,7 +161,10 @@ dgenies.result.export.export = function () {
                 dgenies.result.export.export_association_table();
             }
             else if (selection === 6) {
-                dgenies.result.export.export_no_association_file();
+                dgenies.result.export.export_no_association_file("query");
+            }
+            else if (selection === 7) {
+                dgenies.result.export.export_no_association_file("target");
             }
             else
                 dgenies.notify("Not supported yet!", "danger", 2000);

@@ -488,15 +488,17 @@ class Paf:
                 content += "%s\t%s\t%s\n" % (contig, "None", strand)
         return content
 
-    def build_list_no_assoc(self):
+    def build_list_no_assoc(self, to):
         """
-        Build list of queries that match with None target
+        Build list of queries that match with None target, or the opposite
+        :param to: query or target
         :return: content of the file
         """
-        name, contigs_list, contigs, reversed, abs_start, abs_current_start, c_len = self.load_index(self.idx_q)
+        index = self.idx_q if to == "query" else self.idx_t
+        name, contigs_list, contigs, reversed, abs_start, abs_current_start, c_len = self.load_index(self.idx_t)
         with open(self.paf, "r") as paf:
             for line in paf:
-                query_name = line.strip("\n").split("\t")[0]
-                if query_name in contigs_list:
-                    contigs_list.remove(query_name)
+                c_name = line.strip("\n").split("\t")[0 if to == "query" else 5]
+                if c_name in contigs_list:
+                    contigs_list.remove(c_name)
         return "\n".join(contigs_list) + "\n"

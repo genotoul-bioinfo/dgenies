@@ -405,7 +405,7 @@ def no_assoc(id_res):
             print("Unable to load data!")
             abort(404)
             return False
-        file_content = paf.build_list_no_assoc()
+        file_content = paf.build_list_no_assoc(request.form["to"])
         empty = file_content == "\n"
         return jsonify({
             "file_content": file_content,
