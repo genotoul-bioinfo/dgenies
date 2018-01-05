@@ -531,12 +531,12 @@ class JobManager:
         thread.start()  # Start the execution
 
     def prepare_data_cluster(self, batch_system_type):
-        args = [self.config.cluster_prepare_script, self.target.get_path(), self.target.get_name(), self.idx_t]
+        args = [self.config.cluster_python_script, self.target.get_path(), self.target.get_name(), self.idx_t]
         if self.query is not None:
             args += [self.query.get_path(), self.query.get_name(), self.get_query_split()]
         return self.launch_to_cluster(step="prepare",
                                       batch_system_type=batch_system_type,
-                                      command=self.config.cluster_python_script,
+                                      command=self.config.cluster_prepare_script,
                                       args=args,
                                       log_out=self.logs,
                                       log_err=self.logs)
