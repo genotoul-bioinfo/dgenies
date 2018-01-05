@@ -235,8 +235,8 @@ if __name__ == '__main__':
         _printer("Waiting for preparing:", len(prep_scheduled_jobs))
         nb_preparing_jobs = get_preparing_jobs_nb()
         nb_preparing_jobs_cluster = get_preparing_jobs_cluster_nb()
-        _printer("Preparing:", nb_preparing_jobs, "(local)", nb_preparing_jobs_cluster[0],
-                 "[" + str(nb_preparing_jobs_cluster[1]) + "]", "(cluster)")
+        _printer("Preparing:", nb_preparing_jobs, "(local)", "".join([str(nb_preparing_jobs_cluster[0]),
+                 "[", str(nb_preparing_jobs_cluster[1]), "]"]), "(cluster)")
         _printer("Scheduled:", len(scheduled_jobs_local), "(local),", len(scheduled_jobs_cluster), "(cluster)")
         started_jobs, cluster_started_jobs = parse_started_jobs()
         nb_started = len(started_jobs)
