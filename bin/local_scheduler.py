@@ -101,14 +101,16 @@ def get_preparing_jobs_nb():
 
 
 def get_preparing_jobs_cluster_nb():
-    return len(Job.select().where(Job.status == "preparing-cluster"))
+    return len(Job.select().where(Job.status == "preparing-cluster")), \
+           len(Job.select().where(Job.status == "prepare-scheduled"))
 
 
 def parse_started_jobs():
     jobs_started = []  # Only local jobs
     cluster_jobs_started = []  # Only cluster jobs
     jobs = Job.select().where((Job.status == "started") | (Job.status == "starting") | (Job.status == "merging") |
-                              (Job.status == "scheduled-cluster"))
+                              (Job.status == "scheduled-cluster") | (Job.status == "prepare-scheduled") |
+                              (Job.status == "prepare-cluster"))
     for job in jobs:
         pid = job.id_process
         if job.batch_type == "local":
@@ -233,7 +235,8 @@ if __name__ == '__main__':
         _printer("Waiting for preparing:", len(prep_scheduled_jobs))
         nb_preparing_jobs = get_preparing_jobs_nb()
         nb_preparing_jobs_cluster = get_preparing_jobs_cluster_nb()
-        _printer("Preparing:", nb_preparing_jobs, "(local)", nb_preparing_jobs_cluster, "(cluster)")
+        _printer("Preparing:", nb_preparing_jobs, "(local)", nb_preparing_jobs_cluster[0],
+                 "[" + str(nb_preparing_jobs_cluster[1]) + "]", "(cluster)")
         _printer("Scheduled:", len(scheduled_jobs_local), "(local),", len(scheduled_jobs_cluster), "(cluster)")
         started_jobs, cluster_started_jobs = parse_started_jobs()
         nb_started = len(started_jobs)
