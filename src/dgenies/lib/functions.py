@@ -2,17 +2,15 @@ import os
 import random
 import string
 import gzip
-import io
 import shutil
 import sys
 import re
 import traceback
-from lib.fasta import Fasta
 from collections import OrderedDict
 from Bio import SeqIO
 from jinja2 import Template
-from config_reader import AppConfigReader
-from database import Job
+from dgenies.config_reader import AppConfigReader
+from dgenies.database import Job
 
 ALLOWED_EXTENSIONS = ['fa', 'fasta', 'fna', 'fa.gz', 'fasta.gz', 'fna.gz']
 

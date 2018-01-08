@@ -1,5 +1,5 @@
 import os
-from config_reader import AppConfigReader
+from .config_reader import AppConfigReader
 from peewee import SqliteDatabase, Model, CharField, IntegerField, DateTimeField, BooleanField, MySQLDatabase
 from datetime import datetime
 

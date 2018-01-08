@@ -6,10 +6,10 @@ import time
 import threading
 import re
 from config_reader import AppConfigReader
-from database import Job, Session
+from dgenies.database import Job, Session
 from peewee import DoesNotExist
-from lib.fasta import Fasta
-from lib.functions import Functions
+from .fasta import Fasta
+from .functions import Functions
 import requests
 from requests.exceptions import ConnectionError
 import wget
@@ -17,10 +17,10 @@ from jinja2 import Template
 import traceback
 from pathlib import Path
 from urllib import request, parse
-from bin.split_fa import Splitter
-from bin.build_index import index_file
-from bin.merge_splitted_chrms import Merger
-from bin.sort_paf import Sorter
+from dgenies.bin.split_fa import Splitter
+from dgenies.bin.build_index import index_file
+from dgenies.bin.merge_splitted_chrms import Merger
+from dgenies.bin.sort_paf import Sorter
 import gzip
 import io
 import binascii

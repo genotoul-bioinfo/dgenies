@@ -83,4 +83,4 @@ if [ "$LOCAL" == "True" ]; then
     host="127.0.0.1"
 fi
 
-DISABLE_CRONS=${DISABLE_CRONS} FLASK_DEBUG=${debug} FLASK_APP=${SCRIPTPATH}/../srv/main.py flask run --host=${host} --port=${PORT}
+DISABLE_CRONS=${DISABLE_CRONS} FLASK_DEBUG=${debug} FLASK_APP=dgenies flask run --host=${host} --port=${PORT}

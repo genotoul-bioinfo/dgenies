@@ -12,7 +12,7 @@ import argparse
 # Allow only one instance:
 me = singleton.SingleInstance()
 
-app_folder = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "srv")
+app_folder = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "dgenies")
 os.environ["PATH"] = os.path.join(app_folder, "bin") + ":" + os.environ["PATH"]
 sys.path.insert(0, app_folder)
 

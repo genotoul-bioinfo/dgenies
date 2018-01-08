@@ -1,4 +1,4 @@
-from config_reader import AppConfigReader
+from dgenies.config_reader import AppConfigReader
 from flask_mail import Mail, Message
 
 

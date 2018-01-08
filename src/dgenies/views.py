@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+from dgenies import app, app_title, config_reader, mailer, APP_DATA
 
 import os
 import time
@@ -6,56 +6,15 @@ import datetime
 import shutil
 import re
 import threading
-from flask import Flask, render_template, request, url_for, jsonify, Response, abort
+from flask import render_template, request, url_for, jsonify, Response, abort
 from pathlib import Path
-from lib.paf import Paf
-from config_reader import AppConfigReader
-from lib.job_manager import JobManager
-from lib.functions import Functions, ALLOWED_EXTENSIONS
-from lib.upload_file import UploadFile
-from lib.fasta import Fasta
-from lib.mailer import Mailer
-from lib.crons import Crons
-from database import Session
+from .lib.paf import Paf
+from .lib.job_manager import JobManager
+from .lib.functions import Functions, ALLOWED_EXTENSIONS
+from .lib.upload_file import UploadFile
+from .lib.fasta import Fasta
+from .database import Session
 from peewee import DoesNotExist
-
-import sys
-
-app_folder = os.path.dirname(os.path.realpath(__file__))
-sys.path.insert(0, app_folder)
-os.environ["PATH"] = os.path.join(app_folder, "bin") + ":" + os.environ["PATH"]
-
-sqlite_file = os.path.join(app_folder, "database.sqlite")
-
-
-# Init config reader:
-config_reader = AppConfigReader()
-
-UPLOAD_FOLDER = config_reader.upload_folder
-APP_DATA = config_reader.app_data
-
-app_title = "D-GENIES - Dotplot for Genomes Interactive, E-connected and Speedy"
-
-# Init Flask:
-app = Flask(__name__, static_url_path='/static')
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = config_reader.max_upload_file_size
-app.config['SECRET_KEY'] = 'dsqdsq-255sdA-fHfg52-25Asd5'
-
-# Init mail:
-mailer = Mailer(app)
-
-# Folder containing data:
-app_data = config_reader.app_data
-
-if config_reader.debug and config_reader.log_dir != "stdout" and not os.path.exists(config_reader.log_dir):
-    os.makedirs(config_reader.log_dir)
-
-# Crons:
-if os.getenv('DISABLE_CRONS') != "True":
-    print("Starting crons...")
-    crons = Crons(app_folder)
-    crons.start_all()
 
 
 @app.context_processor
@@ -130,11 +89,11 @@ def launch_analysis():
         id_job = re.sub('[^A-Za-z0-9_\-]+', '', id_job.replace(" ", "_"))
         id_job_orig = id_job
         i = 2
-        while os.path.exists(os.path.join(app_data, id_job)):
+        while os.path.exists(os.path.join(APP_DATA, id_job)):
             id_job = id_job_orig + ("_%d" % i)
             i += 1
 
-        folder_files = os.path.join(app_data, id_job)
+        folder_files = os.path.join(APP_DATA, id_job)
         os.makedirs(folder_files)
 
         # Save files:
@@ -232,9 +191,9 @@ def download_paf(id_res):
 @app.route('/get_graph', methods=['POST'])
 def get_graph():
     id_f = request.form["id"]
-    paf = os.path.join(app_data, id_f, "map.paf")
-    idx1 = os.path.join(app_data, id_f, "query.idx")
-    idx2 = os.path.join(app_data, id_f, "target.idx")
+    paf = os.path.join(APP_DATA, id_f, "map.paf")
+    idx1 = os.path.join(APP_DATA, id_f, "query.idx")
+    idx2 = os.path.join(APP_DATA, id_f, "target.idx")
 
     paf = Paf(paf, idx1, idx2)
 
@@ -248,9 +207,9 @@ def get_graph():
 @app.route('/sort/<id_res>', methods=['POST'])
 def sort_graph(id_res):
     if not os.path.exists(os.path.join(APP_DATA, id_res, ".all-vs-all")):
-        paf_file = os.path.join(app_data, id_res, "map.paf")
-        idx1 = os.path.join(app_data, id_res, "query.idx")
-        idx2 = os.path.join(app_data, id_res, "target.idx")
+        paf_file = os.path.join(APP_DATA, id_res, "map.paf")
+        idx1 = os.path.join(APP_DATA, id_res, "query.idx")
+        idx2 = os.path.join(APP_DATA, id_res, "target.idx")
         paf = Paf(paf_file, idx1, idx2, False)
         paf.sort()
         if paf.parsed:
@@ -265,9 +224,9 @@ def sort_graph(id_res):
 def reverse_contig(id_res):
     contig_name = request.form["contig"]
     if not os.path.exists(os.path.join(APP_DATA, id_res, ".all-vs-all")):
-        paf_file = os.path.join(app_data, id_res, "map.paf")
-        idx1 = os.path.join(app_data, id_res, "query.idx")
-        idx2 = os.path.join(app_data, id_res, "target.idx")
+        paf_file = os.path.join(APP_DATA, id_res, "map.paf")
+        idx1 = os.path.join(APP_DATA, id_res, "query.idx")
+        idx2 = os.path.join(APP_DATA, id_res, "target.idx")
         paf = Paf(paf_file, idx1, idx2, False)
         paf.reverse_contig(contig_name)
         if paf.parsed:
@@ -280,9 +239,9 @@ def reverse_contig(id_res):
 
 @app.route('/freenoise/<id_res>', methods=['POST'])
 def free_noise(id_res):
-    paf_file = os.path.join(app_data, id_res, "map.paf")
-    idx1 = os.path.join(app_data, id_res, "query.idx")
-    idx2 = os.path.join(app_data, id_res, "target.idx")
+    paf_file = os.path.join(APP_DATA, id_res, "map.paf")
+    idx1 = os.path.join(APP_DATA, id_res, "query.idx")
+    idx2 = os.path.join(APP_DATA, id_res, "target.idx")
     paf = Paf(paf_file, idx1, idx2, False)
     paf.parse_paf(noise=request.form["noise"] == "1")
     if paf.parsed:
@@ -294,7 +253,7 @@ def free_noise(id_res):
 
 @app.route('/get-fasta-query/<id_res>', methods=['POST'])
 def build_fasta(id_res):
-    res_dir = os.path.join(app_data, id_res)
+    res_dir = os.path.join(APP_DATA, id_res)
     lock_query = os.path.join(res_dir, ".query-fasta-build")
     is_sorted = os.path.exists(os.path.join(res_dir, ".sorted"))
     compressed = request.form["gzip"].lower() == "true"
@@ -355,7 +314,7 @@ def build_fasta(id_res):
 @app.route('/fasta-query/<id_res>', defaults={'filename': ""}, methods=['GET'])
 @app.route('/fasta-query/<id_res>/<filename>', methods=['GET'])  # Use fake URL in mail to set download file name
 def dl_fasta(id_res, filename):
-    res_dir = os.path.join(app_data, id_res)
+    res_dir = os.path.join(APP_DATA, id_res)
     lock_query = os.path.join(res_dir, ".query-fasta-build")
     is_sorted = os.path.exists(os.path.join(res_dir, ".sorted"))
     if not os.path.exists(lock_query) or not is_sorted:
@@ -371,11 +330,11 @@ def dl_fasta(id_res, filename):
 
 @app.route('/qt-assoc/<id_res>', methods=['GET'])
 def qt_assoc(id_res):
-    res_dir = os.path.join(app_data, id_res)
+    res_dir = os.path.join(APP_DATA, id_res)
     if os.path.exists(res_dir) and os.path.isdir(res_dir):
-        paf_file = os.path.join(app_data, id_res, "map.paf")
-        idx1 = os.path.join(app_data, id_res, "query.idx")
-        idx2 = os.path.join(app_data, id_res, "target.idx")
+        paf_file = os.path.join(APP_DATA, id_res, "map.paf")
+        idx1 = os.path.join(APP_DATA, id_res, "query.idx")
+        idx2 = os.path.join(APP_DATA, id_res, "target.idx")
         try:
             paf = Paf(paf_file, idx1, idx2, False)
             paf.parse_paf(False)
@@ -394,11 +353,11 @@ def no_assoc(id_res):
     Get contigs that match with None target
     :param id_res: id of the result
     """
-    res_dir = os.path.join(app_data, id_res)
+    res_dir = os.path.join(APP_DATA, id_res)
     if os.path.exists(res_dir) and os.path.isdir(res_dir):
-        paf_file = os.path.join(app_data, id_res, "map.paf")
-        idx1 = os.path.join(app_data, id_res, "query.idx")
-        idx2 = os.path.join(app_data, id_res, "target.idx")
+        paf_file = os.path.join(APP_DATA, id_res, "map.paf")
+        idx1 = os.path.join(APP_DATA, id_res, "query.idx")
+        idx2 = os.path.join(APP_DATA, id_res, "target.idx")
         try:
             paf = Paf(paf_file, idx1, idx2, False)
         except FileNotFoundError:
@@ -491,7 +450,7 @@ def send_mail(id_res):
     key_file = None
     if "key" in request.form:
         key = request.form["key"]
-        res_dir = os.path.join(app_data, id_res)
+        res_dir = os.path.join(APP_DATA, id_res)
         key_file = os.path.join(res_dir, ".key")
         if os.path.exists(key_file):
             with open(key_file) as k_f:
@@ -505,7 +464,3 @@ def send_mail(id_res):
         return "OK"
     else:
         abort(403)
-
-
-if __name__ == '__main__':
-    app.run()

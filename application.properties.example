@@ -55,7 +55,7 @@ minimap2_cluster = ###DEFAULT###
 
 [database]
 type = sqlite
-url = ###PROGRAM###/srv/database.sqlite
+url = ###USER###/.dgenies/database.sqlite
 # Not used for sqlite:
 port =
 db =

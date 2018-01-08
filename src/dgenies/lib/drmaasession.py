@@ -1,5 +1,5 @@
 import drmaa
-from lib.decorators import Singleton
+from .decorators import Singleton
 
 @Singleton
 class DrmaaSession:

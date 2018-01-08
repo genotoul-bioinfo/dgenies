@@ -2,8 +2,8 @@
 **/.directory
 */*.pyc
 .idea
-srv/database.sqlite
+dgenies/database.sqlite
 application.properties
 logs/*
 !logs/README
-srv/.local_scheduler_pid
+dgenies/.local_scheduler_pid

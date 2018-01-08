@@ -4,7 +4,7 @@ import re
 import getpass
 import psutil
 from crontab import CronTab
-from config_reader import AppConfigReader
+from dgenies.config_reader import AppConfigReader
 
 
 class Crons:

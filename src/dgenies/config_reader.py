@@ -2,7 +2,7 @@ import os
 import re
 import inspect
 from configparser import RawConfigParser, NoOptionError, NoSectionError
-from lib.decorators import Singleton
+from dgenies.lib.decorators import Singleton
 
 
 @Singleton
@@ -11,7 +11,7 @@ class AppConfigReader:
     Store all configs
     """
 
-    CONFIG_FILE_PATH = "../application.properties"
+    CONFIG_FILE_PATH = "/etc/dgenies/application.properties"
 
     def __init__(self):
         """
@@ -121,7 +121,15 @@ class AppConfigReader:
 
     def _get_database_url(self):
         try:
-            return self._replace_vars(self.reader.get("database", "url"))
+            url = self._replace_vars(self.reader.get("database", "url"))
+            if self._get_database_type() == "sqlite" and url != ":memory:":
+                parent_dir = os.path.dirname(url)
+                if not os.path.exists(parent_dir):
+                    try:
+                        os.makedirs(parent_dir)
+                    except FileNotFoundError:
+                        pass
+            return url
         except NoOptionError:
             return ":memory:"
 
