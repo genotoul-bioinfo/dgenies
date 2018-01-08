@@ -502,3 +502,18 @@ class Paf:
                 if c_name in contigs_list:
                     contigs_list.remove(c_name)
         return "\n".join(contigs_list) + "\n"
+
+    def get_summary_stats(self):
+        """
+        Get summary of identity
+        :return: table with percents by category
+        """
+        self.parse_paf(False, False)
+        percents = {}
+        total = 0
+        for cat in self.lines:
+            nb_lines = len(self.lines[cat])
+            percents[cat] = nb_lines
+            total += nb_lines
+        for cat in self.lines:
+            percents[cat] /= total

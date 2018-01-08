@@ -414,6 +414,11 @@ def no_assoc(id_res):
     abort(404)
 
 
+@app.route('/summary/<id_res>', methods=['POST'])
+def summary(id_res):
+    pass
+
+
 @app.route("/ask-upload", methods=['POST'])
 def ask_upload():
     try:
