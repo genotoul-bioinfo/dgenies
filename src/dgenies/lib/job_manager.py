@@ -5,7 +5,7 @@ from datetime import datetime
 import time
 import threading
 import re
-from config_reader import AppConfigReader
+from dgenies.config_reader import AppConfigReader
 from dgenies.database import Job, Session
 from peewee import DoesNotExist
 from .fasta import Fasta

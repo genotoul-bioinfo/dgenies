@@ -14,5 +14,6 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=reqs,
-    data_files=[('/etc/dgenies', {'application.properties':'application.properties.example'})]
+    data_files=[('/etc/dgenies', ['application.properties'])],
+    scripts=['bin/dgenies'],
 )

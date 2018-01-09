@@ -4,10 +4,7 @@ import os
 import sys
 from glob import glob
 
-app_folder = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "dgenies")
-sys.path.insert(0, app_folder)
-
-from config_reader import AppConfigReader
+from dgenies.config_reader import AppConfigReader
 
 config = AppConfigReader()
 

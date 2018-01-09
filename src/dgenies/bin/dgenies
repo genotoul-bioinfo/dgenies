@@ -1,0 +1,72 @@
+#!/usr/bin/env python3
+
+import os
+import argparse
+import webbrowser
+import threading
+
+runned = False
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Manage dgenies application")
+    subparsers = parser.add_subparsers(dest="subparser_name")
+
+    # Run the app:
+    run = subparsers.add_parser("run", help="Run the application")
+    run.add_argument("-m", "--mode", type=str, choices=["standalone", "webserver"], default="standalone",
+                            help="Mode into run the application")
+    run.add_argument("-d", "--debug", help="Run in debug mode", type=bool, const=True, nargs="?", required=False,
+                     default=False)
+    run.add_argument("-o", "--host", help="Host into run the application", type=str, required=False,
+                     default="127.0.0.1")
+    run.add_argument("-p", "--port", help="Port into run the application", type=int, required=False, default=5000)
+    run.add_argument("--no-crons", help="Do not run crons (for debug only, ignored for standalone mode)", type=bool,
+                     const=True, nargs="?", required=False, default=False)
+    run.add_argument("--no-browser", type=bool, const=True, nargs="?", required=False, default=False,
+                     help="Do not start the browser (Start of browser is always disabled in debug mode)")
+
+    # Clear data or jobs:
+    clear = subparsers.add_parser("clear", help="Clear data")
+    clear.add_argument("-c", "--crons", help="Clear crons", type=bool, const=True, nargs="?", required=False,
+                       default=False)
+    clear.add_argument("-l", "--logs", help="Clear logs", type=bool, const=True, nargs="?", required=False,
+                       default=False)
+    clear.add_argument("-j", "--jobs", help="Clear jobs", type=bool, const=True, nargs="?", required=False,
+                       default=False)
+    clear.add_argument("-m", "--max-age", help="Max age for job to delete (0 for all)", type=int, required=False,
+                       default=0)
+
+    args = parser.parse_args()
+
+    if args.subparser_name == "run":
+        return "run", [args.mode, args.debug, args.host, args.port, args.no_crons, args.no_browser]
+    if args.subparser_name == "clear":
+        if args.crons == False and args.logs == False and args.jobs == False:
+            print("Nothing to do.")
+            return "clear", None
+        return args
+
+
+def start_browser(host, port):
+    print("Starting browser...")
+    webbrowser.open("http://{0}:{1}".format(host, port))
+
+
+def run(mode="standalone", debug=False, host="127.0.0.1", port=5000, no_crons=False, no_browser=False):
+    global runned
+    os.environ['DISABLE_CRONS'] = "True" if no_crons else "False"
+    if not debug and not no_browser:
+        thread = threading.Timer(2, start_browser, kwargs={
+            "host": host,
+            "port": port
+        })
+        thread.start()
+    from dgenies import app
+    app.run(host=host, port=port, debug=debug)
+
+
+if __name__ == "__main__":
+    command, args = parse_args()
+    if command == "run":
+        run(*args)

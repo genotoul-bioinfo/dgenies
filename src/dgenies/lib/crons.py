@@ -13,7 +13,7 @@ class Crons:
         self.base_dir = base_dir
         self.my_cron = CronTab(user=getpass.getuser())
         self.config = AppConfigReader()
-        self.local_scheduler_pid_file = os.path.join(self.base_dir, ".local_scheduler_pid")
+        self.local_scheduler_pid_file = os.path.join(os.path.expanduser("~"), ".dgenies", ".local_scheduler_pid")
 
     def clear(self, kill_scheduler=True):
         # Remove old crons:
@@ -57,7 +57,7 @@ class Crons:
         """
         if self.base_dir is not None:
             pyexec = sys.executable
-            match = re.match(r"^(.+)/lib/(python[^/]+)/site-packages/bin/python$", pyexec)
+            match = re.match(r"^(.+)/lib/(python[^/]+)/((site-packages/bin/python)|())$", pyexec)
             if match:
                 pyexec = "%s/bin/%s" % (match.group(1), match.group(2))
             job = self.my_cron.new("{0}/bin/start_local_scheduler.sh {0} {1} {2} > /dev/null 2>&1 &".

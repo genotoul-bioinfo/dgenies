@@ -8,12 +8,9 @@ from _datetime import datetime, timedelta
 import traceback
 import argparse
 
-app_folder = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "dgenies")
-sys.path.insert(0, app_folder)
-
-from config_reader import AppConfigReader
-from lib.functions import Functions
-from database import Job
+from dgenies.config_reader import AppConfigReader
+from dgenies.lib.functions import Functions
+from dgenies.database import Job
 
 config_reader = AppConfigReader()
 

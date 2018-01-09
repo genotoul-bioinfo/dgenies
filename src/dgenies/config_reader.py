@@ -11,19 +11,22 @@ class AppConfigReader:
     Store all configs
     """
 
-    CONFIG_FILE_PATH = "/etc/dgenies/application.properties"
+    config_file = "/etc/dgenies/application.properties"
+    config_file_local = config_file + ".local"
 
     def __init__(self):
         """
         All "get_*" functions results are stored in the "self.*" corresponding attribute
         Example: results of the get_upload_folder function is stored in self.upload_folder
         """
-        config_file = os.path.join(os.path.dirname(inspect.getfile(self.__class__)), self.CONFIG_FILE_PATH)
-        if not os.path.exists(config_file):
+        self.app_dir = os.path.dirname(inspect.getfile(self.__class__))
+        if not os.path.exists(self.config_file):
             raise FileNotFoundError("ERROR: application.properties not found. Please copy the example file and check "
                                     "properties are correct for you!")
+        if os.path.exists(self.config_file_local):
+            self.config_file = [self.config_file, self.config_file_local]
         self.reader = RawConfigParser()
-        self.reader.read(config_file)
+        self.reader.read(self.config_file)
         for attr in dir(self):
             attr_o = getattr(self, attr)
             if attr.startswith("_get_") and callable(attr_o):
@@ -104,7 +107,7 @@ class AppConfigReader:
             entry = self.reader.get("softwares", "minimap2")
             return entry if entry != "###DEFAULT###" else "minimap2"
         except NoOptionError:
-            return "minimap2"
+            return os.path.join(self.app_dir, "bin", "minimap2")
 
     def _get_minimap2_cluster_exec(self):
         try:
@@ -245,7 +248,10 @@ class AppConfigReader:
 
     def _get_drmaa_lib_path(self):
         try:
-            return self.reader.get("cluster", "drmaa_lib_path")
+            path = self.reader.get("cluster", "drmaa_lib_path")
+            if path != "###SET_IT###":
+                return path
+            return None
         except (NoOptionError, NoSectionError):
             if self._get_batch_system_type() != "local":
                 raise Exception("No drmaa library set. It is required if the batch system type is not 'local'")

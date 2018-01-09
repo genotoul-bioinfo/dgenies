@@ -2,23 +2,18 @@
 
 import os
 import time
-import sys
 import psutil
 import atexit
 from datetime import datetime
 from tendo import singleton
 import argparse
 
+from dgenies.database import Job, Session
+from dgenies.config_reader import AppConfigReader
+from dgenies.lib.job_manager import JobManager
+
 # Allow only one instance:
 me = singleton.SingleInstance()
-
-app_folder = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "dgenies")
-os.environ["PATH"] = os.path.join(app_folder, "bin") + ":" + os.environ["PATH"]
-sys.path.insert(0, app_folder)
-
-from database import Job, Session
-from config_reader import AppConfigReader
-from lib.job_manager import JobManager
 
 config_reader = AppConfigReader()
 

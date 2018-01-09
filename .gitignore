@@ -3,7 +3,7 @@
 */*.pyc
 .idea
 dgenies/database.sqlite
-application.properties
 logs/*
 !logs/README
 dgenies/.local_scheduler_pid
+dgenies.egg-info

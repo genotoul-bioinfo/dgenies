@@ -1,1 +1,15 @@
-include dgenies/templates/*.html
+recursive-include src *.css
+recursive-include src *.eot
+recursive-include src *.gif
+recursive-include src *.html
+recursive-include src *.ico
+recursive-include src *.js
+recursive-include src *.map
+recursive-include src *.png
+recursive-include src *.py
+recursive-include src *.sh
+recursive-include src *.svg
+recursive-include src *.ttf
+recursive-include src *.woff
+recursive-include src *.woff2
+include src/dgenies/bin/minimap2
