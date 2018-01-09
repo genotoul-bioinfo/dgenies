@@ -20,11 +20,16 @@ class AppConfigReader:
         Example: results of the get_upload_folder function is stored in self.upload_folder
         """
         self.app_dir = os.path.dirname(inspect.getfile(self.__class__))
-        if not os.path.exists(self.config_file):
-            raise FileNotFoundError("ERROR: application.properties not found. Please copy the example file and check "
-                                    "properties are correct for you!")
+        config_file = []
+        if os.path.exists(self.config_file):
+            config_file.append(self.config_file)
         if os.path.exists(self.config_file_local):
-            self.config_file = [self.config_file, self.config_file_local]
+            config_file.append(self.config_file_local)
+        if len(config_file) > 0:
+            self.config_file = config_file
+        else:
+            raise FileNotFoundError("ERROR: application.properties not found. Please copy the example file and "
+                                    "check properties are correct for you!")
         self.reader = RawConfigParser()
         self.reader.read(self.config_file)
         for attr in dir(self):
@@ -105,7 +110,7 @@ class AppConfigReader:
     def _get_minimap2_exec(self):
         try:
             entry = self.reader.get("softwares", "minimap2")
-            return entry if entry != "###DEFAULT###" else "minimap2"
+            return entry if entry != "###DEFAULT###" else os.path.join(self.app_dir, "bin", "minimap2")
         except NoOptionError:
             return os.path.join(self.app_dir, "bin", "minimap2")
 
@@ -317,10 +322,14 @@ class AppConfigReader:
 
     def _get_log_dir(self):
         try:
-            return self._replace_vars(self.reader.get("debug", "log_dir"))
+            log_dir = self._replace_vars(self.reader.get("debug", "log_dir"))
         except (NoOptionError, NoSectionError):
-            if self._get_debug():
-                raise Exception("No log dir defined and debug=True")
+            log_dir = self._replace_vars("###USER###/.dgenies/logs")
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+        elif not os.path.isdir(log_dir):
+            raise TypeError("Log dir must be a directory")
+        return log_dir
 
     def _get_allowed_ip_tests(self):
         allowed_ip = {"127.0.0.1"}

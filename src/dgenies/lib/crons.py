@@ -9,8 +9,9 @@ from dgenies.config_reader import AppConfigReader
 
 class Crons:
 
-    def __init__(self, base_dir):
+    def __init__(self, base_dir, debug):
         self.base_dir = base_dir
+        self.debug = debug
         self.my_cron = CronTab(user=getpass.getuser())
         self.config = AppConfigReader()
         self.local_scheduler_pid_file = os.path.join(os.path.expanduser("~"), ".dgenies", ".local_scheduler_pid")
@@ -41,7 +42,7 @@ class Crons:
         menage_freq = self.config.cron_menage_freq
         if self.base_dir is not None:
             job = self.my_cron.new(sys.executable +
-                                   " {0}/bin/clean_jobs.py > {0}/logs/menage.log 2>&1".format(self.base_dir),
+                                   " {0}/bin/clean_jobs.py > {0}/menage.log 2>&1".format(self.config.log_dir),
                                    comment="dgenies")
             job.day.every(menage_freq)
             job.hour.on(menage_hour[0])
@@ -60,8 +61,9 @@ class Crons:
             match = re.match(r"^(.+)/lib/(python[^/]+)/((site-packages/bin/python)|())$", pyexec)
             if match:
                 pyexec = "%s/bin/%s" % (match.group(1), match.group(2))
-            job = self.my_cron.new("{0}/bin/start_local_scheduler.sh {0} {1} {2} > /dev/null 2>&1 &".
-                                   format(self.base_dir, pyexec, self.local_scheduler_pid_file),
+            logs = os.path.join(self.config.log_dir, "local_scheduler.log") if self.debug else "/dev/null"
+            job = self.my_cron.new("{0}/bin/start_local_scheduler.sh {0} {1} {2} {3} > /dev/null 2>&1 &".
+                                   format(self.base_dir, pyexec, self.local_scheduler_pid_file, logs),
                                    comment="dgenies")
             job.minute.every(1)
             self.my_cron.write()

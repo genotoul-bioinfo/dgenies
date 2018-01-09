@@ -1,5 +1,5 @@
 import os
-from .config_reader import AppConfigReader
+from dgenies.config_reader import AppConfigReader
 from peewee import SqliteDatabase, Model, CharField, IntegerField, DateTimeField, BooleanField, MySQLDatabase
 from datetime import datetime
 
@@ -43,7 +43,7 @@ class Session(Model):
 
     @classmethod
     def new(cls, keep_active=False):
-        from lib.functions import Functions
+        from dgenies.lib.functions import Functions
         my_s_id = Functions.random_string(20)
         while len(cls.select().where(cls.s_id == my_s_id)) > 0:
             my_s_id = Functions.random_string(20)

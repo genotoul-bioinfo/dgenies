@@ -15,5 +15,5 @@ setup(
     zip_safe=False,
     install_requires=reqs,
     data_files=[('/etc/dgenies', ['application.properties'])],
-    scripts=['bin/dgenies'],
+    scripts=['src/bin/dgenies'],
 )

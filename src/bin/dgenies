@@ -62,6 +62,8 @@ def run(mode="standalone", debug=False, host="127.0.0.1", port=5000, no_crons=Fa
             "port": port
         })
         thread.start()
+    if debug:
+        os.environ['LOGS'] = "True"
     from dgenies import app
     app.run(host=host, port=port, debug=debug)
 

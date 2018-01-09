@@ -192,8 +192,8 @@ def parse_args():
     global DEBUG, LOG_FILE
 
     parser = argparse.ArgumentParser(description="Start local scheduler")
-    parser.add_argument('-d', '--debug', type=str, required=False, help="File describing input files")
-    parser.add_argument('-l', '--log-dir', type=str, required=False, help="Url of the server")
+    parser.add_argument('-d', '--debug', type=str, required=False, help="Set to True to enable debug")
+    parser.add_argument('-l', '--log-dir', type=str, required=False, help="Folder into store logs")
     args = parser.parse_args()
 
     if args.debug is not None:

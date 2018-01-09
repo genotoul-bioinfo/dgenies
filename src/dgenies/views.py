@@ -8,12 +8,12 @@ import re
 import threading
 from flask import render_template, request, url_for, jsonify, Response, abort
 from pathlib import Path
-from .lib.paf import Paf
-from .lib.job_manager import JobManager
-from .lib.functions import Functions, ALLOWED_EXTENSIONS
-from .lib.upload_file import UploadFile
-from .lib.fasta import Fasta
-from .database import Session
+from dgenies.lib.paf import Paf
+from dgenies.lib.job_manager import JobManager
+from dgenies.lib.functions import Functions, ALLOWED_EXTENSIONS
+from dgenies.lib.upload_file import UploadFile
+from dgenies.lib.fasta import Fasta
+from dgenies.database import Session
 from peewee import DoesNotExist
 
 

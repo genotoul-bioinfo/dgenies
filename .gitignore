@@ -7,3 +7,4 @@ logs/*
 !logs/README
 dgenies/.local_scheduler_pid
 dgenies.egg-info
+application.properties.local

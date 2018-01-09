@@ -9,10 +9,6 @@ from .lib.crons import Crons
 import sys
 
 app_folder = os.path.dirname(os.path.realpath(__file__))
-sys.path.insert(0, app_folder)
-os.environ["PATH"] = os.path.join(app_folder, "bin") + ":" + os.environ["PATH"]
-
-sqlite_file = os.path.join(app_folder, "database.sqlite")
 
 
 # Init config reader:
@@ -38,10 +34,7 @@ if config_reader.debug and config_reader.log_dir != "stdout" and not os.path.exi
 # Crons:
 if os.getenv('DISABLE_CRONS') != "True":
     print("Starting crons...")
-    crons = Crons(app_folder)
+    crons = Crons(app_folder, config_reader.debug or os.getenv('LOGS') == "True")
     crons.start_all()
 
 from dgenies import views
-
-if __name__ == '__main__':
-    app.run()
