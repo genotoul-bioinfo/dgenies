@@ -4,6 +4,11 @@ import os
 import argparse
 import webbrowser
 import threading
+from glob import glob
+import time
+from dgenies.lib.crons import Crons
+from dgenies.config_reader import AppConfigReader
+from dgenies.bin.clean_jobs import parse_data_folders, parse_database, parse_upload_folders
 
 runned = False
 
@@ -45,7 +50,7 @@ def parse_args():
         if args.crons == False and args.logs == False and args.jobs == False:
             print("Nothing to do.")
             return "clear", None
-        return args
+        return "clear", args
 
 
 def start_browser(host, port):
@@ -54,7 +59,6 @@ def start_browser(host, port):
 
 
 def run(mode="standalone", debug=False, host="127.0.0.1", port=5000, no_crons=False, no_browser=False):
-    global runned
     os.environ['DISABLE_CRONS'] = "True" if no_crons else "False"
     if not debug and not no_browser:
         thread = threading.Timer(2, start_browser, kwargs={
@@ -64,11 +68,86 @@ def run(mode="standalone", debug=False, host="127.0.0.1", port=5000, no_crons=Fa
         thread.start()
     if debug:
         os.environ['LOGS'] = "True"
-    from dgenies import app
+    from dgenies import launch
+    app = launch()
     app.run(host=host, port=port, debug=debug)
+
+
+def clear_crons():
+    crons = Crons(None, True)
+    crons.clear()
+
+
+def clear_logs():
+    config = AppConfigReader()
+
+    if hasattr(config, "log_dir"):
+        log_files = glob(os.path.join(config.log_dir, "*.log"))
+        for file in log_files:
+            os.remove(file)
+
+    else:
+        print("No log dir defined!")
+
+
+def clear_jobs(max_data_age=7):
+    config_reader = AppConfigReader()
+
+    upload_folder = config_reader.upload_folder
+    app_data = config_reader.app_data
+    now = time.time()
+
+    max_age = {
+        "uploads": 0,
+        "error": 0,
+        "data": max_data_age,
+        "fasta_sorted": 0
+    }
+
+    print("#########################")
+    print("# Parsing Upload folder #")
+    print("#########################")
+    print("")
+    parse_upload_folders(
+        upload_folder=upload_folder,
+        now=now,
+        max_age=max_age
+    )
+    print("")
+
+    print("######################")
+    print("# Parsing Jobs in DB #")
+    print("######################")
+    print("")
+    parse_database(
+        app_data=app_data,
+        max_age=max_age
+    )
+    print("")
+
+    print("#######################")
+    print("# Parsing Data folder #")
+    print("#######################")
+    print("")
+    parse_data_folders(
+        app_data=app_data,
+        now=now,
+        max_age=max_age
+    )
+    print("")
 
 
 if __name__ == "__main__":
     command, args = parse_args()
     if command == "run":
         run(*args)
+    elif command == "clear":
+        if args.crons:
+            print("Cleaning crons...")
+            clear_crons()
+        if args.logs:
+            print("Cleaning logs...")
+            clear_logs()
+        if args.jobs:
+            print("Cleaning jobs...")
+            clear_jobs(args.max_age)

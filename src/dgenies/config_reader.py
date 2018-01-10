@@ -40,10 +40,21 @@ class AppConfigReader:
                 except Exception as e:
                     print(e)
 
-    @staticmethod
-    def _replace_vars(path):
-        return path.replace("###USER###", os.path.expanduser("~"))\
+    def _replace_vars(self, path, config=False):
+        new_path = path.replace("###USER###", os.path.expanduser("~"))\
             .replace("###PROGRAM###", os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+        if "###CONFIG###" in new_path:
+            if config:
+                raise Exception("###CONFIG### tag not allowed for config dir")
+            else:
+                return new_path.replace("###CONFIG###", self._get_config_dir())
+        return new_path
+
+    def _get_config_dir(self):
+        try:
+            return self._replace_vars(self.reader.get("global", "config_dir"), True)
+        except NoOptionError:
+            return self._replace_vars("###USER###/.dgenies")
 
     def _get_upload_folder(self):
         try:
@@ -324,7 +335,7 @@ class AppConfigReader:
         try:
             log_dir = self._replace_vars(self.reader.get("debug", "log_dir"))
         except (NoOptionError, NoSectionError):
-            log_dir = self._replace_vars("###USER###/.dgenies/logs")
+            log_dir = self._replace_vars("###CONFIG###/logs")
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
         elif not os.path.isdir(log_dir):

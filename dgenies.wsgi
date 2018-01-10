@@ -1,1 +1,3 @@
-from dgenies import app as application
+from dgenies import launch
+
+application = launch()

@@ -14,7 +14,7 @@ class Crons:
         self.debug = debug
         self.my_cron = CronTab(user=getpass.getuser())
         self.config = AppConfigReader()
-        self.local_scheduler_pid_file = os.path.join(os.path.expanduser("~"), ".dgenies", ".local_scheduler_pid")
+        self.local_scheduler_pid_file = os.path.join(self.config.config_dir, ".local_scheduler_pid")
 
     def clear(self, kill_scheduler=True):
         # Remove old crons:

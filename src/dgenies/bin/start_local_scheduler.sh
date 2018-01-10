@@ -10,7 +10,7 @@ cd ${prg_dir}
 is_started=0
 
 if [ -f "${pid_file}" ]; then
-    pid=`cat .local_scheduler_pid`
+    pid=`cat ${pid_file}`
     if ps -p"$pid" -o "pid=" > /dev/null; then
         is_started=1
     fi
