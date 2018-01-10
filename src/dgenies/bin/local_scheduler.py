@@ -22,7 +22,7 @@ if config_reader.drmaa_lib_path is not None:
     os.environ["DRMAA_LIBRARY_PATH"] = config_reader.drmaa_lib_path
     try:
         import drmaa
-        from lib.drmaasession import DrmaaSession
+        from dgenies.lib.drmaasession import DrmaaSession
         DRMAA_SESSION = DrmaaSession()
     except ImportError:
         pass
