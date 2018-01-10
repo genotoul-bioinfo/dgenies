@@ -245,7 +245,7 @@ class JobManager:
 
     def launch_to_cluster(self, step, batch_system_type, command, args, log_out, log_err):
         import drmaa
-        from lib.drmaasession import DrmaaSession
+        from dgenies.lib.drmaasession import DrmaaSession
         drmaa_session = DrmaaSession()
         s = drmaa_session.session
         jt = s.createJobTemplate()
