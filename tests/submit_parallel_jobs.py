@@ -81,6 +81,7 @@ def launch_job(nb_job, url, target, query=None, email="test@xxxxx.yy", output=No
             print("ERR: Unable to init session!", file=output_p)
             return False
         s_id = run.content
+        print("Session:", s_id, file=output_p)
 
         url_pattern = r"((http(s)?)|(ftp))://.+"
         query_type = "local" if (query is not None and not re.match(url_pattern, query) is not None) else "url"
