@@ -245,7 +245,7 @@ if __name__ == '__main__':
         nj = 0
         local_waiting_jobs = []
         while nj < len(prep_scheduled_jobs):
-            job_batch_type = prep_scheduled_jobs[0][1]
+            job_batch_type = prep_scheduled_jobs[nj][1]
             if nb_preparing_jobs < NB_PREPARE or job_batch_type != "local":
                 prepare_job(prep_scheduled_jobs[nj][0])
                 if job_batch_type == "local":
