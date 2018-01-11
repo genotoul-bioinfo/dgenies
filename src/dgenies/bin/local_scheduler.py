@@ -137,10 +137,10 @@ def parse_started_jobs():
                     if job.status == "scheduled-cluster" and status == drmaa.JobState.RUNNING:
                         job.status = "started"
                         job.save()
+                        cluster_jobs_started.append(job.id_job)
                     elif job.status == "prepare-scheduled" and status == drmaa.JobState.RUNNING:
                         job.status = "preparing-cluster"
                         job.save()
-                    cluster_jobs_started.append(job.id_job)
             else:
                 cluster_jobs_started.append(job.id_job)
     return jobs_started, cluster_jobs_started
@@ -260,6 +260,7 @@ if __name__ == '__main__':
                 move_job_to_cluster(id_job)
         while len(scheduled_jobs_local) > 0 and nb_started < NB_RUN:
             start_job(scheduled_jobs_local.pop(0))
+            nb_started += 1
         if config_reader.batch_system_type != "local" and len(scheduled_jobs_local) > config_reader.max_wait_local:
             for id_job in scheduled_jobs_local[config_reader.max_wait_local:]:
                 move_job_to_cluster(id_job)
