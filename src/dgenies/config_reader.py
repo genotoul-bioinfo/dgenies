@@ -283,7 +283,13 @@ class AppConfigReader:
         try:
             return int(self.reader.get("cluster", "max_run_local"))
         except (NoOptionError, NoSectionError):
-            return 0
+            return 10
+
+    def _get_max_wait_local(self):
+        try:
+            return int(self.reader.get("cluster", "max_wait_local"))
+        except (NoOptionError, NoSectionError):
+            return 5
 
     def _get_min_query_size(self):
         try:

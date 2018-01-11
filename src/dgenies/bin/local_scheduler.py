@@ -216,6 +216,12 @@ def parse_args():
             LOG_FILE = os.path.join(config_reader.log_dir, "local_scheduler.log")
 
 
+def move_job_to_cluster(id_job):
+    job = Job.get(Job.id_job == id_job)
+    job.batch_type = config_reader.batch_system_type
+    job.save()
+
+
 if __name__ == '__main__':
     parse_args()
 
@@ -237,6 +243,7 @@ if __name__ == '__main__':
         nb_started = len(started_jobs)
         _printer("Started:", nb_started, "(local),", len(cluster_started_jobs), "(cluster)")
         nj = 0
+        local_waiting_jobs = []
         while nj < len(prep_scheduled_jobs):
             job_batch_type = prep_scheduled_jobs[0][1]
             if nb_preparing_jobs < NB_PREPARE or job_batch_type != "local":
@@ -245,9 +252,17 @@ if __name__ == '__main__':
                     nb_preparing_jobs += 1
                 del prep_scheduled_jobs[nj]
             else:
+                if job_batch_type == "local":
+                    local_waiting_jobs.append(prep_scheduled_jobs[nj][0])
                 nj += 1
+        if config_reader.batch_system_type != "local" and len(local_waiting_jobs) > config_reader.max_wait_local:
+            for id_job in local_waiting_jobs[config_reader.max_wait_local:]:
+                move_job_to_cluster(id_job)
         while len(scheduled_jobs_local) > 0 and nb_started < NB_RUN:
             start_job(scheduled_jobs_local.pop(0))
+        if config_reader.batch_system_type != "local" and len(scheduled_jobs_local) > config_reader.max_wait_local:
+            for id_job in scheduled_jobs_local[config_reader.max_wait_local:]:
+                move_job_to_cluster(id_job)
         for job in scheduled_jobs_cluster:
             start_job(job["job_id"], job["batch_type"])
         # Wait before return
