@@ -429,7 +429,8 @@ class JobManager:
             error_set = False
             while not allowed:
                 allowed = session.ask_for_upload(True)
-                time.sleep(15)
+                if not allowed:
+                    time.sleep(15)
             if allowed:
                 job.status = "getfiles"
                 job.save()
