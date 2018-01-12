@@ -464,6 +464,7 @@ class JobManager:
         :return: Tuple:
             [0] True if getting files succeed, False else
             [1] If error happenned, True if error already saved for the job, False else (error will be saved later)
+            [2] True if no data must be downloaded (will be downloaded with pending if True)
         """
         job = Job.get(Job.id_job == self.id_job)
         job.status = "getfiles"
@@ -478,11 +479,11 @@ class JobManager:
                 correct, error_set, should_be_local = self.check_file("query", should_be_local,
                                                                       max_upload_size_readable)
                 if not correct:
-                    return False, error_set
+                    return False, error_set, True
             elif self.__check_url(self.query):
                 files_to_download.append([self.query, "query"])
             else:
-                return False, True
+                return False, True, True
         if correct:
             if self.target is not None:
                 if self.target.get_type() == "local":
@@ -490,24 +491,27 @@ class JobManager:
                     correct, error_set, should_be_local = self.check_file("target", should_be_local,
                                                                           max_upload_size_readable)
                     if not correct:
-                        return False, error_set
+                        return False, error_set, True
                 elif self.__check_url(self.target):
                     files_to_download.append([self.target, "target"])
                 else:
-                    return False, True
+                    return False, True, True
 
-        if len(files_to_download) > 0:
-            thread = threading.Timer(1, self.download_files_with_pending,
-                                     kwargs={"files_to_download": files_to_download,
-                                             "should_be_local": should_be_local,
-                                             "max_upload_size_readable": max_upload_size_readable})
-            thread.start()  # Start the execution
+        all_downloaded = True
+        if correct :
+            if len(files_to_download) > 0:
+                all_downloaded = False
+                thread = threading.Timer(0, self.download_files_with_pending,
+                                         kwargs={"files_to_download": files_to_download,
+                                                 "should_be_local": should_be_local,
+                                                 "max_upload_size_readable": max_upload_size_readable})
+                thread.start()  # Start the execution
 
-        elif correct and job.batch_type != "local" and should_be_local \
-                and self.get_pending_local_number() < self.config.max_run_local:
-            job.batch_type = "local"
-            job.save()
-        return correct, False
+            elif correct and job.batch_type != "local" and should_be_local \
+                    and self.get_pending_local_number() < self.config.max_run_local:
+                job.batch_type = "local"
+                job.save()
+        return correct, False, all_downloaded
 
     def send_mail_post(self):
         """
@@ -628,8 +632,9 @@ class JobManager:
 
     def start_job(self):
         try:
-            success, error_set = self.getting_files()
-            self._after_start(success, error_set)
+            success, error_set, all_downloaded = self.getting_files()
+            if not success or all_downloaded:
+                self._after_start(success, error_set)
 
         except Exception:
             print(traceback.print_exc())
