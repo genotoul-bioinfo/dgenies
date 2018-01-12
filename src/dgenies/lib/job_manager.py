@@ -428,7 +428,7 @@ class JobManager:
             correct = True
             error_set = False
             while not allowed:
-                allowed = session.ask_for_upload(True)
+                allowed, position = session.ask_for_upload(True)
                 if not allowed:
                     time.sleep(15)
             if allowed:
