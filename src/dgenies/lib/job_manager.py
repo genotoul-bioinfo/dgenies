@@ -429,6 +429,7 @@ class JobManager:
             allowed, position = session.ask_for_upload(True)
             while not allowed:
                 time.sleep(15)
+                session = Session.get(s_id=s_id)
                 allowed, position = session.ask_for_upload(False)
             if allowed:
                 job.status = "getfiles"
