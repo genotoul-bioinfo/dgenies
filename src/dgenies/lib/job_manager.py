@@ -39,6 +39,7 @@ class JobManager:
         self.config = AppConfigReader()
         # Outputs:
         self.output_dir = os.path.join(self.config.app_data, id_job)
+        self.preptime_file = os.path.join(self.output_dir, "prep_times")
         self.query_index_split = os.path.join(self.output_dir, "query_split.idx")
         self.paf = os.path.join(self.output_dir, "map.paf")
         self.paf_raw = os.path.join(self.output_dir, "map_raw.paf")
@@ -536,7 +537,8 @@ class JobManager:
         thread.start()  # Start the execution
 
     def prepare_data_cluster(self, batch_system_type):
-        args = [self.config.cluster_python_script, self.target.get_path(), self.target.get_name(), self.idx_t]
+        args = [self.preptime_file, self.config.cluster_python_script, self.target.get_path(), self.target.get_name(),
+                self.idx_t]
         if self.query is not None:
             args += [self.query.get_path(), self.query.get_name(), self.get_query_split()]
         return self.launch_to_cluster(step="prepare",
@@ -547,30 +549,33 @@ class JobManager:
                                       log_err=self.logs)
 
     def prepare_data_local(self):
-        job = Job.get(Job.id_job == self.id_job)
-        job.status = "preparing"
-        job.save()
-        error_tail = "Please check your input file and try again."
-        if self.query is not None:
-            fasta_in = self.query.get_path()
-            splitter = Splitter(input_f=fasta_in, name_f=self.query.get_name(), output_f=self.get_query_split(),
-                                query_index=self.query_index_split)
-            if not splitter.split():
+        with open(self.preptime_file, "w") as ptime:
+            job = Job.get(Job.id_job == self.id_job)
+            job.status = "preparing"
+            job.save()
+            ptime.write(str(int(time.time())) + "\n")
+            error_tail = "Please check your input file and try again."
+            if self.query is not None:
+                fasta_in = self.query.get_path()
+                splitter = Splitter(input_f=fasta_in, name_f=self.query.get_name(), output_f=self.get_query_split(),
+                                    query_index=self.query_index_split)
+                if not splitter.split():
+                    job.status = "fail"
+                    job.error = "<br/>".join(["Query fasta file is not valid!", error_tail])
+                    job.save()
+                    if self.config.send_mail_status:
+                        self.send_mail_post()
+                    return False
+            if not index_file(self.target.get_path(), self.target.get_name(), self.idx_t):
                 job.status = "fail"
-                job.error = "<br/>".join(["Query fasta file is not valid!", error_tail])
+                job.error = "<br/>".join(["Target fasta file is not valid!", error_tail])
                 job.save()
                 if self.config.send_mail_status:
                     self.send_mail_post()
                 return False
-        if not index_file(self.target.get_path(), self.target.get_name(), self.idx_t):
-            job.status = "fail"
-            job.error = "<br/>".join(["Target fasta file is not valid!", error_tail])
+            ptime.write(str(int(time.time())) + "\n")
+            job.status = "prepared"
             job.save()
-            if self.config.send_mail_status:
-                self.send_mail_post()
-            return False
-        job.status = "prepared"
-        job.save()
 
     def prepare_data(self):
         job = Job.get(Job.id_job == self.id_job)
@@ -589,8 +594,14 @@ class JobManager:
             job = Job.get(Job.id_job == self.id_job)
             with open(self.logs) as logs:
                 measures = logs.readlines()[-1].strip("\n").split(" ")
-                job.time_elapsed = round(float(measures[0]))
+                map_elapsed = round(float(measures[0]))
                 job.mem_peak = int(measures[1])
+            with open(self.preptime_file) as ptime:
+                lines = ptime.readlines()
+                start = int(lines[0].strip("\n"))
+                end = int(lines[1].strip("\n"))
+                prep_elapsed = end - start
+                job.time_elapsed = prep_elapsed + map_elapsed
             job.status = "merging"
             job.save()
             if self.query is not None:
