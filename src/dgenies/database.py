@@ -70,7 +70,7 @@ class Session(Model):
             position = self.position
 
         allow_upload = self.allow_upload
-        if change_status and nb_asked < 5:
+        if not allow_upload and change_status and nb_asked < 5:
             allow_upload = True
 
         self.allow_upload = allow_upload
