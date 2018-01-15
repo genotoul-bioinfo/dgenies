@@ -217,7 +217,7 @@ def print_status(counts_by_status):
 
 
 def mv_file(log_file, status):
-    log_file = glob(log_file + "*")
+    log_file = glob(log_file + ".*")
     if len(log_file) == 1:
         log_file = log_file[0]
         dirname = os.path.dirname(log_file)
