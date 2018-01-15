@@ -154,7 +154,7 @@ def status(id_job):
 # Results path
 @app.route("/result/<id_res>", methods=['GET'])
 def result(id_res):
-    my_render = render_template("results.html", title=app_title, id=id_res, menu="results", current_result=id_res)
+    my_render = render_template("result.html", title=app_title, id=id_res, menu="result", current_result=id_res)
     response = app.make_response(my_render)
     cookie = request.cookies.get("results")
     cookie = cookie.split("|") if cookie is not None else []
