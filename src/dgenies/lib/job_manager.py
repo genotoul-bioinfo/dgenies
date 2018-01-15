@@ -553,7 +553,7 @@ class JobManager:
             job = Job.get(Job.id_job == self.id_job)
             job.status = "preparing"
             job.save()
-            ptime.write(str(int(time.time())) + "\n")
+            ptime.write(str(round(time.time())) + "\n")
             error_tail = "Please check your input file and try again."
             if self.query is not None:
                 fasta_in = self.query.get_path()
@@ -573,7 +573,7 @@ class JobManager:
                 if self.config.send_mail_status:
                     self.send_mail_post()
                 return False
-            ptime.write(str(int(time.time())) + "\n")
+            ptime.write(str(round(time.time())) + "\n")
             job.status = "prepared"
             job.save()
 
@@ -605,6 +605,7 @@ class JobManager:
             job.status = "merging"
             job.save()
             if self.query is not None:
+                start = time.time()
                 paf_raw = self.paf_raw + ".split"
                 os.remove(self.get_query_split())
                 merger = Merger(self.paf_raw, paf_raw, self.query_index_split,
@@ -613,6 +614,8 @@ class JobManager:
                 os.remove(self.paf_raw)
                 os.remove(self.query_index_split)
                 self.paf_raw = paf_raw
+                end = time.time()
+                job.time_elapsed += end - start
             else:
                 shutil.copyfile(self.idx_t, self.idx_q)
                 Path(os.path.join(self.output_dir, ".all-vs-all")).touch()
