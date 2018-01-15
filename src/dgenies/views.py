@@ -375,7 +375,26 @@ def no_assoc(id_res):
 
 @app.route('/summary/<id_res>', methods=['POST'])
 def summary(id_res):
-    pass
+    paf_file = os.path.join(APP_DATA, id_res, "map.paf")
+    idx1 = os.path.join(APP_DATA, id_res, "query.idx")
+    idx2 = os.path.join(APP_DATA, id_res, "target.idx")
+    try:
+        paf = Paf(paf_file, idx1, idx2, False)
+    except FileNotFoundError:
+        return jsonify({
+            "success": False,
+            "message": "Unable to load data!"
+        })
+    percents = paf.get_summary_stats()
+    if percents is None:
+        return jsonify({
+            "success": False,
+            "message": "Build of summary failed. Please contact us to report the bug"
+        })
+    return jsonify({
+        "success": True,
+        "percents": percents
+    })
 
 
 @app.route("/ask-upload", methods=['POST'])

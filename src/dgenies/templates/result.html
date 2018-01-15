@@ -7,6 +7,7 @@
     <script src="{{ url_for('static', filename='js/dgenies.result.js') }}" type="text/JavaScript"></script>
     <script src="{{ url_for('static', filename='js/dgenies.result.controls.js') }}" type="text/JavaScript"></script>
     <script src="{{ url_for('static', filename='js/dgenies.result.export.js') }}" type="text/JavaScript"></script>
+    <script src="{{ url_for('static', filename='js/dgenies.result.summary.js') }}" type="text/JavaScript"></script>
     <script src="{{ url_for('static', filename='js/d3.min.js') }}" type="text/JavaScript"></script>
     <script src="{{ url_for('static', filename='js/d3.boxplot.js') }}" type="text/JavaScript"></script>
     <script src="{{ url_for('static', filename='js/d3.boxplot.zoom.js') }}" type="text/JavaScript"></script>
@@ -83,5 +84,8 @@
         </div>
     </div>
     <div id="export-pict" style="display: none;"></div>
+    <div id="modal-stats" style="display: none;">
+        <div id="draw-stats" style="margin-top: 15px"></div>
+    </div>
 </div>
 {% endblock %}

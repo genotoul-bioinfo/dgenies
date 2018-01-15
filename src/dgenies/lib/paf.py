@@ -8,6 +8,7 @@ from pathlib import Path
 import matplotlib as mpl
 mpl.use('Agg')
 from matplotlib import pyplot as plt
+import json
 
 
 class Paf:
@@ -128,10 +129,10 @@ class Paf:
         min_idy = 10000000000
         max_idy = -10000000000
         lines = {
-            "0": [],
-            "1": [],
-            "2": [],
-            "3": []
+            "0": [],  # idy < 0.25
+            "1": [],  # idy < 0.5
+            "2": [],  # idy < 0.75
+            "3": []  # idy > 0.75
         }
         try:
             name_q, q_order, q_contigs, q_reversed, q_abs_start, q_abs_current_start, q_len = self.load_index(
@@ -508,12 +509,35 @@ class Paf:
         Get summary of identity
         :return: table with percents by category
         """
+        summary_file = self.paf + ".summary"
+        if os.path.exists(summary_file):
+            with open(summary_file, "r") as summary_file:
+                txt = summary_file.read()
+                return json.loads(txt)
         self.parse_paf(False, False)
-        percents = {}
-        total = 0
-        for cat in self.lines:
-            nb_lines = len(self.lines[cat])
-            percents[cat] = nb_lines
-            total += nb_lines
-        for cat in self.lines:
-            percents[cat] /= total
+        if self.parsed:
+            percents = {}
+            position_idy = {}
+
+            cats = sorted(self.lines.keys())
+
+            for cat in cats:
+                for line in self.lines[cat]:
+                    position_idy.update(position_idy.fromkeys(range(line[0], line[1]+1), cat))
+                percents[cat] = 0
+
+            import time
+            start = time.time()
+
+            total = self.len_t
+            percents["-1"] = (total - len(position_idy)) / total * 100
+
+            position_idy_values = list(position_idy.values())
+            for cat in cats:
+                percents[cat] = position_idy_values.count(cat) / total * 100
+
+            with open(summary_file, "w") as summary_file:
+                summary_file.write(json.dumps(percents))
+
+            return percents
+        return None

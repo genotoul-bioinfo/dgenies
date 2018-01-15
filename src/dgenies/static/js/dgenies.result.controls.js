@@ -6,8 +6,26 @@ dgenies.result.controls = {};
 dgenies.result.controls.init = function () {
     $("#sort-contigs").click(dgenies.result.controls.launch_sort_contigs);
     $("#hide-noise").click(dgenies.result.controls.launch_hide_noise);
+    $("#summary").click(dgenies.result.controls.summary);
     $("form#select-zone input.submit").click(dgenies.result.controls.select_zone);
     $("form#export select").change(dgenies.result.export.export);
+};
+
+dgenies.result.controls.summary = function () {
+    dgenies.show_loading("Building...");
+    window.setTimeout(() => {
+        dgenies.post(`/summary/${dgenies.result.id_res}`,
+            {},
+            function (data) {
+                dgenies.hide_loading();
+                if (data["success"]) {
+                    dgenies.result.summary.show(data["percents"]);
+                }
+                else {
+                    dgenies.notify(data["message"] || "An error occurred! Please contact us to report the bug", "danger");
+                }
+            })
+    }, 0);
 };
 
 dgenies.result.controls.launch_sort_contigs = function () {

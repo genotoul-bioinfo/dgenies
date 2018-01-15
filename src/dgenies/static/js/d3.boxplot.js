@@ -34,7 +34,8 @@ d3.boxplot.color_idy = {
     "3": "#094b09",
     "2": "#2ebd40",
     "1": "#d5670b",
-    "0": "#ffd84b"
+    "0": "#ffd84b",
+    "-1": "#fff"
 };
 d3.boxplot.limit_idy = null;
 d3.boxplot.min_idy_draw = 0;
