@@ -13,8 +13,7 @@ from dgenies.lib.job_manager import JobManager
 from dgenies.lib.functions import Functions, ALLOWED_EXTENSIONS
 from dgenies.lib.upload_file import UploadFile
 from dgenies.lib.fasta import Fasta
-from dgenies.database import Session
-from peewee import DoesNotExist
+from dgenies.database import Session, DoesNotExist
 
 
 @app.context_processor
@@ -31,7 +30,7 @@ def main():
 
 @app.route("/run", methods=['GET'])
 def run():
-    s_id = Session.new()
+    s_id = Session.new().s_id
     id_job = Functions.random_string(5) + "_" + datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S')
     if "id_job" in request.args:
         id_job = request.args["id_job"]
@@ -48,20 +47,18 @@ def run_test():
     print(config_reader.allowed_ip_tests)
     if request.remote_addr not in config_reader.allowed_ip_tests:
         return abort(404)
-    return Session.new()
+    return Session.new().s_id
 
 
 # Launch analysis
 @app.route("/launch_analysis", methods=['POST'])
 def launch_analysis():
     try:
-        session = Session.get(s_id=request.form["s_id"])
+        session = Session(s_id=request.form["s_id"])
     except DoesNotExist:
         return jsonify({"success": False, "errors": ["Session has expired. Please refresh the page and try again"]})
     # Reset session upload:
-    session.allow_upload = False
-    session.position = -1
-    session.save()
+    session.reset()
     id_job = request.form["id_job"]
     email = request.form["email"]
     file_query = request.form["query"]
@@ -114,7 +111,7 @@ def launch_analysis():
         job.launch()
 
         # Delete session:
-        session.delete_instance()
+        session.remove()
         return jsonify({"success": True, "redirect": url_for(".status", id_job=id_job)})
     else:
         return jsonify({"success": False, "errors": errors})
@@ -401,7 +398,7 @@ def summary(id_res):
 def ask_upload():
     try:
         s_id = request.form['s_id']
-        session = Session.get(s_id=s_id)
+        session = Session(s_id=s_id)
         allowed, position = session.ask_for_upload(True)
         return jsonify({
             "success": True,
@@ -415,16 +412,19 @@ def ask_upload():
 @app.route("/ping-upload", methods=['POST'])
 def ping_upload():
     s_id = request.form['s_id']
-    session = Session.get(s_id=s_id)
-    session.ping()
-    return "OK"
+    try:
+        session = Session(s_id=s_id)
+        session.ping()
+        return "OK"
+    except DoesNotExist:
+        abort(404)
 
 
 @app.route("/upload", methods=['POST'])
 def upload():
     try:
         s_id = request.form['s_id']
-        session = Session.get(s_id=s_id)
+        session = Session(s_id=s_id)
         if session.ask_for_upload(False)[0]:
             folder = session.upload_folder
             files = request.files[list(request.files.keys())[0]]

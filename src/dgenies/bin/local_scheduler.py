@@ -137,37 +137,35 @@ def parse_started_jobs():
 def parse_uploads_asks():
     now = datetime.now()
     # Get allowed:
-    all_sessions = Session.select()
-    nb_sessions = len(all_sessions)
-    _printer("All sessions:", nb_sessions)
-    sessions = Session.select().where(Session.allow_upload)
+    sessions = Session.get_by_status("active")
     nb_active_dl = len(sessions)
     _printer("Active_dl:", nb_active_dl)
     for session in sessions:
         if not session.keep_active and (now - session.last_ping).total_seconds() > 30:
             _printer("Delete 1 active session:", session.s_id)
-            session.delete_instance()  # We consider the user has left
+            session.remove()  # We consider the user has left
             nb_active_dl -= 1
     # Get pending:
-    sessions = Session.select().where((Session.allow_upload == False) & (Session.position >= 0)).order_by(Session.position)
+    sessions = Session.sort_sessions(Session.get_by_status("pending"), "position")
     _printer("Pending:", len(sessions))
     for session in sessions:
         delay = (now - session.last_ping).total_seconds()
         if delay > 30:
-            session.position = -1  # Reset position, the user has probably left
-            session.save()
+            session.reset()  # Reset position, the user has probably left
             _printer("Reset 1 session:", session.s_id)
         elif nb_active_dl < config_reader.max_concurrent_dl:
-            session.allow_upload = True
-            session.save()
+            session.enable()
             nb_active_dl += 1
             _printer("Enable 1 session:", session.s_id)
     # Remove old sessions:
+    all_sessions = Session.all()
+    nb_sessions = len(all_sessions)
+    _printer("All sessions:", nb_sessions)
     for session in all_sessions:
         delay = (now - session.last_ping).total_seconds()
         if delay > 86400:  # Session has more than 1 day
             _printer("Delete 1 outdated session:", session.s_id)
-            session.delete_instance()  # Session has expired
+            session.remove()  # Session has expired
 
 
 @atexit.register

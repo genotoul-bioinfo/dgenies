@@ -3,22 +3,8 @@ import json
 import shutil
 import operator
 from dgenies.config_reader import AppConfigReader
-from peewee import SqliteDatabase, Model, CharField, IntegerField, DateTimeField, BooleanField, MySQLDatabase
 from datetime import datetime
 import dateutil.parser
-
-config = AppConfigReader()
-db_url = config.database_url
-db_type = config.database_type
-
-if db_type == "sqlite":
-    db = SqliteDatabase(db_url)
-elif db_type == "mysql":
-    db = MySQLDatabase(host=config.database_url, port=config.database_port, user=config.database_user,
-                       passwd=config.database_password, database=config.database_db)
-else:
-    raise Exception("Unsupported database type: " + db_type)
-db.connect()
 
 
 class Job:
@@ -155,18 +141,6 @@ class Job:
                         self.__setattr__("_j_" + prop, value)
                 self._loaded = True
 
-    def set(self, prop, value, save=False):
-        if not self._loaded:
-            self.load()
-        c_prop = "_j_" + prop
-        if hasattr(self, c_prop):
-            if prop == "status":
-                self._old_status = self._j_status
-            self.__setattr__(c_prop, value)
-            if save:
-                self.save()
-        raise AttributeError("Job has no property %s" % prop)
-
     def save(self):
         if not self._loaded:
             raise NotInitialized("Job is not loaded")
@@ -238,7 +212,7 @@ class Job:
             jobs = [properties["id_job"]]
             del properties["id_job"]
         else:
-            jobs = [Job(x) for x in os.listdir(config.app_data)]
+            jobs = [Job(x) for x in os.listdir(Job.config.app_data)]
 
         k = 0
         while k < len(jobs):
@@ -282,6 +256,10 @@ class Job:
     def sort_jobs(jobs: "list of Job", key_sort):
         return sorted(jobs, key=lambda x: x.__getattribute__(key_sort))
 
+    ###################
+    # PRIVATE METHODS #
+    #############################
+
     @staticmethod
     def _get_status_dir(status):
         return os.path.join(Job.config.app_data, "status", status)
@@ -304,6 +282,7 @@ class Job:
         if self._old_status is not None and self._old_status != self._j_status:
             self._unlink_old_status()
             self._create_status_link()
+        self._old_status = None
 
     def _get_data_dir(self):
         return os.path.join(self.config.app_data, self.id_job)
@@ -334,61 +313,231 @@ class DoesNotExist(Exception):
     pass
 
 
-class Session(Model):
-    s_id = CharField(max_length=20, unique=True)
-    date_created = DateTimeField()
-    upload_folder = CharField(max_length=20)
-    allow_upload = BooleanField(default=False)
-    last_ping = DateTimeField()
-    position = IntegerField(default=-1)
-    keep_active = BooleanField(default=False)  # Uploads made by the server must be keep active
+class Session:
+    config = AppConfigReader()
+    allowed_statuses = ["reset", "pending", "active"]
 
-    @classmethod
-    def new(cls, keep_active=False):
+    def __init__(self, s_id=None):
+        self.s_id = s_id
+        self._s_date_created = None
+        self._s_status = "reset"
+        self._s_upload_folder = None
+        self._s_date_last_ping = None
+        self._s_position = -1
+        self._s_keep_active = False
+        self._old_status = None
+        self._loaded = False
+
+    ##############
+    # PROPERTIES #
+    #############################
+
+    @property
+    def upload_folder(self):
+        self.load()
+        return self._s_upload_folder
+
+    @property
+    def last_ping(self):
+        self.load()
+        return self._s_date_last_ping
+
+    @property
+    def keep_active(self):
+        self.load()
+        return self._s_keep_active
+
+    ###########
+    # METHODS #
+    #############################
+
+    @staticmethod
+    def new(keep_active=False, status="reset"):
         from dgenies.lib.functions import Functions
         my_s_id = Functions.random_string(20)
-        while len(cls.select().where(cls.s_id == my_s_id)) > 0:
+        session = Session(my_s_id)
+        while session.exists():
             my_s_id = Functions.random_string(20)
+            session = Session(my_s_id)
         upload_folder = Functions.random_string(20)
-        tmp_dir = config.upload_folder
+        tmp_dir = Session.config.upload_folder
         upload_folder_path = os.path.join(tmp_dir, upload_folder)
         while os.path.exists(upload_folder_path):
             upload_folder = Functions.random_string(20)
             upload_folder_path = os.path.join(tmp_dir, upload_folder)
-        cls.create(s_id=my_s_id, date_created=datetime.now(), upload_folder=upload_folder, last_ping=datetime.now(),
-                   keep_active=keep_active)
-        return my_s_id
+        session._s_date_created = datetime.now()
+        session._s_status = status
+        session._s_upload_folder = upload_folder
+        session._s_date_last_ping = datetime.now()
+        session._s_keep_active = keep_active
+        session._loaded = True
+        session.save()
+        session._create_status_link()
+        return session
+
+    def load(self):
+        if not self._loaded:
+            with open(self._get_session_file(), "r") as data_f:
+                data = json.loads(data_f.read())
+                for prop, value in data.items():
+                    attr = "_s_" + prop
+                    if hasattr(self, attr):
+                        if prop.startswith("date_"):
+                            self.__setattr__(attr, dateutil.parser.parse(value))
+                        else:
+                            self.__setattr__(attr, value)
+                    else:
+                        raise ValueError("Invalid property: %s" % prop)
+            self._loaded = True
+
+    def save(self):
+        if not self._loaded:
+            raise NotInitialized("Session is not loaded")
+        props = {}
+        for attr in dir(self):
+            if attr.startswith("_s_"):
+                if attr.startswith("_s_date_"):
+                    props[attr[3:]] = self.__getattribute__(attr).isoformat()
+                else:
+                    props[attr[3:]] = self.__getattribute__(attr)
+        with open(self._get_session_file(), "w") as data:
+            data.write(json.dumps(props))
+        if self._old_status is not None:
+            self._change_status_link()
+            self._old_status = None
+
+    def change_status(self, new_status, save=True):
+        if new_status in Session.allowed_statuses:
+            self.load()
+            if self._s_status != new_status:
+                self._old_status = self._s_status
+                self._s_status = new_status
+                if save:
+                    self.save()
+        else:
+            raise ValueError("Invalid status: %s" % new_status)
+
+    @staticmethod
+    def get_by_status(status):
+        """
+        Get all Session objects with a given status
+        :param status:
+        :return: list of Session objects
+        """
+        status_dir = Session._get_session_status_dir(status)
+        return [Session(x) for x in os.listdir(status_dir)]
+
+    @staticmethod
+    def get_by_statuses(statuses):
+        """
+        Get all Session objects with status in the given list
+        :param statuses: list of accepted statuses
+        :return: list of Session objects
+        """
+        sessions = []
+        for status in statuses:
+            sessions += Session.get_by_status(status)
+        return sessions
+
+    @classmethod
+    def all(cls):
+        """
+        Get all Session objects, with any status
+        :return: list of Session objects
+        """
+        session_dir = Session._get_session_dir()
+        return [Session(x) for x in os.listdir(session_dir) if x != "status"]
 
     def ask_for_upload(self, change_status=False):
-        all_asked = Session.select().where(Session.position >= 0).order_by(Session.position)
+        self.load()
+        all_asked = self.get_by_statuses(["pending", "active"])
+        self.load()
         nb_asked = len(all_asked)
-        if self.position == -1:
+        if self._s_position == -1:
             if nb_asked == 0:
                 position = 0
             else:
                 position = all_asked[-1].position + 1
         else:
             change_status = False
-            position = self.position
+            position = self._s_position
 
-        allow_upload = self.allow_upload
-        if not allow_upload and change_status and nb_asked < 5:
-            allow_upload = True
+        status = "pending"
+        if self._s_status == "active" or (change_status and nb_asked < 5):
+            status = "active"
 
-        self.allow_upload = allow_upload
-        self.position = position
-        self.last_ping = datetime.now()
+        if status != self._s_status:
+            self.change_status(status, False)
+        self._s_position = position
+        self._s_date_last_ping = datetime.now()
         self.save()
 
-        return allow_upload, position
+        return status == "active", position
 
     def ping(self):
-        self.last_ping = datetime.now()
+        self.load()
+        self._s_date_last_ping = datetime.now()
         self.save()
 
-    class Meta:
-        database = db
+    def exists(self):
+        return os.path.exists(self._get_session_file())
 
+    def remove(self):
+        # We check in all available status (to be sure we delete all):
+        self.load()
+        os.remove(self._get_session_file())
+        os.remove(self._get_session_status_file(self._s_status))
+        self._loaded = False
 
-if not Session.table_exists():
-    Session.create_table()
+    def reset(self):
+        self.change_status("reset", False)
+        self._s_position = -1
+        self.save()
+
+    def enable(self):
+        self.change_status("active", True)
+
+    @staticmethod
+    def sort_sessions(sessions: "list of Sessions", key_sort):
+        return sorted(sessions, key=lambda x: x.__getattribute__("_s_" + key_sort))
+
+    ###################
+    # PRIVATE METHODS #
+    #############################
+
+    @staticmethod
+    def _get_session_dir():
+        s_dir = os.path.join(Session.config.app_data, "sessions")
+        if not os.path.exists(s_dir):
+            os.makedirs(s_dir)
+        return s_dir
+
+    def _get_session_file(self):
+        return os.path.join(self._get_session_dir(), self.s_id)
+
+    @staticmethod
+    def _get_session_status_dir(status):
+        status_dir = os.path.join(Session._get_session_dir(), "status", status)
+        if not os.path.exists(status_dir):
+            os.makedirs(status_dir)
+        return status_dir
+
+    def _get_session_status_file(self, status):
+        return os.path.join(self._get_session_status_dir(status), self.s_id)
+
+    def _unlink_old_status(self):
+        old_status_link = self._get_session_status_file(self._old_status)
+        if os.path.islink(old_status_link):
+            os.remove(old_status_link)
+
+    def _create_status_link(self):
+        new_status_dir = self._get_session_status_dir(self._s_status)
+        if not os.path.exists(new_status_dir):
+            os.makedirs(new_status_dir)
+        os.symlink(self._get_session_file(), self._get_session_status_file(self._s_status))
+
+    def _change_status_link(self):
+        if self._old_status is not None and self._old_status != self._s_status:
+            self._unlink_old_status()
+            self._create_status_link()
+        self._old_status = None
