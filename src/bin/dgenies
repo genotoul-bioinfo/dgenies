@@ -8,9 +8,21 @@ from glob import glob
 import time
 from dgenies.lib.crons import Crons
 from dgenies.config_reader import AppConfigReader
-from dgenies.bin.clean_jobs import parse_data_folders, parse_database, parse_upload_folders
+from dgenies.bin.clean_jobs import parse_database, parse_upload_folders
+from dgenies.database import Job
 
 runned = False
+
+
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
 
 
 def parse_args():
@@ -42,6 +54,10 @@ def parse_args():
     clear.add_argument("-m", "--max-age", help="Max age for job to delete (0 for all)", type=int, required=False,
                        default=0)
 
+    # Remove a job:
+    rm = subparsers.add_parser("rm", help="Remove a job")
+    rm.add_argument("name_job", metavar="JOB", type=str, nargs=1, help="Name of the job to remove")
+
     args = parser.parse_args()
 
     if args.subparser_name == "run":
@@ -51,6 +67,8 @@ def parse_args():
             print("Nothing to do.")
             return "clear", None
         return "clear", args
+    if args.subparser_name == "rm":
+        return "rm", args.name_job
 
 
 def start_browser(host, port):
@@ -125,16 +143,18 @@ def clear_jobs(max_data_age=7):
     )
     print("")
 
-    print("#######################")
-    print("# Parsing Data folder #")
-    print("#######################")
-    print("")
-    parse_data_folders(
-        app_data=app_data,
-        now=now,
-        max_age=max_age
-    )
-    print("")
+
+def remove_job(name):
+    """
+    Remove a job
+    :param name: name of the job
+    """
+    if Job.exists(name):
+        job = Job(name)
+        job.remove()
+        print("Job \"%s\" removed" % name)
+    else:
+        print(bcolors.FAIL + ("Job \"%s\" does not exists" % name) + bcolors.ENDC)
 
 
 if __name__ == "__main__":
@@ -151,3 +171,5 @@ if __name__ == "__main__":
         if args.jobs:
             print("Cleaning jobs...")
             clear_jobs(args.max_age)
+    elif command == "rm":
+        remove_job(args[0])

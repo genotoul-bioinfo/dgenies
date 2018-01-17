@@ -6,8 +6,7 @@ import time
 import threading
 import re
 from dgenies.config_reader import AppConfigReader
-from dgenies.database import Job, Session
-from peewee import DoesNotExist
+from dgenies.database import Job, Session, DoesNotExist
 from .fasta import Fasta
 from .functions import Functions
 import requests
@@ -135,7 +134,7 @@ class JobManager:
 
     def send_mail(self):
         # Retrieve infos:
-        job = Job.get(Job.id_job == self.id_job)
+        job = Job(self.id_job)
         if self.email is None:
             self.email = job.email
         status = job.status
@@ -159,14 +158,14 @@ class JobManager:
 
     def __launch_local(self):
         if self.query is not None:
-            cmd = ["/usr/bin/time", "-f", "%e %M", self.config.minimap2_exec, "-t", self.config.nb_threads,
+            cmd = ["/usr/bin/time", "-f", "%e %M", self.config.minimap2_exec, "-t", str(self.config.nb_threads),
                    self.target.get_path(), self.get_query_split()]
         else:
-            cmd = ["/usr/bin/time", "-f", "%e %M", self.config.minimap2_exec, "-t", self.config.nb_threads, "-X",
+            cmd = ["/usr/bin/time", "-f", "%e %M", self.config.minimap2_exec, "-t", str(self.config.nb_threads), "-X",
                    self.target.get_path(), self.target.get_path()]
         with open(self.logs, "w") as logs, open(self.paf_raw, "w") as paf_raw:
             p = subprocess.Popen(cmd, stdout=paf_raw, stderr=logs)
-        job = Job.get(Job.id_job == self.id_job)
+        job = Job(self.id_job)
         job.id_process = p.pid
         job.status = "started"
         job.save()
@@ -238,7 +237,7 @@ class JobManager:
         return status == "0"
 
     def update_job_status(self, status, id_process=None):
-        job = Job.get(Job.id_job == self.id_job)
+        job = Job(self.id_job)
         job.status = status
         if id_process is not None:
             job.id_process = id_process
@@ -300,9 +299,9 @@ class JobManager:
 
     def __launch_drmaa(self, batch_system_type):
         if self.query is not None:
-            args = ["-t", self.config.nb_threads, self.target.get_path(), self.get_query_split()]
+            args = ["-t", str(self.config.nb_threads), self.target.get_path(), self.get_query_split()]
         else:
-            args = ["-t", self.config.nb_threads, "-X", self.target.get_path(), self.target.get_path()]
+            args = ["-t", str(self.config.nb_threads), "-X", self.target.get_path(), self.target.get_path()]
         return self.launch_to_cluster(step="start",
                                       batch_system_type=batch_system_type,
                                       command=self.config.minimap2_cluster_exec,
@@ -331,7 +330,7 @@ class JobManager:
         try:
             dl_path = wget.download(fasta.get_path(), self.output_dir, None)
         except ConnectionError:
-            job = Job.get(Job.id_job == self.id_job)
+            job = Job(self.id_job)
             job.status = "fail"
             job.error = "<p>Url <b>%s</b> is not valid!</p>" \
                         "<p>If this is unattended, please contact the support.</p>" % fasta.get_path()
@@ -351,7 +350,7 @@ class JobManager:
             try:
                 filename = requests.head(url, allow_redirects=True).url.split("/")[-1]
             except ConnectionError:
-                job = Job.get(Job.id_job == self.id_job)
+                job = Job(self.id_job)
                 job.status = "fail"
                 job.error = "<p>Url <b>%s</b> is not valid!</p>" \
                             "<p>If this is unattended, please contact the support.</p>" % fasta.get_path()
@@ -364,14 +363,14 @@ class JobManager:
         if filename is not None:
             allowed = Functions.allowed_file(filename)
             if not allowed:
-                job = Job.get(Job.id_job == self.id_job)
+                job = Job(self.id_job)
                 job.status = "fail"
                 job.error = "<p>File <b>%s</b> downloaded from <b>%s</b> is not a Fasta file!</p>" \
                             "<p>If this is unattended, please contact the support.</p>" % (filename, url)
                 job.save()
         else:
             allowed = False
-            job = Job.get(Job.id_job == self.id_job)
+            job = Job(self.id_job)
             job.status = "fail"
             job.error = "<p>Url <b>%s</b> is not a valid URL!</p>" \
                         "<p>If this is unattended, please contact the support.</p>" % (url)
@@ -383,8 +382,8 @@ class JobManager:
 
     @staticmethod
     def get_pending_local_number():
-        return len(Job.select().where((Job.batch_type == "local") & (Job.status != "success") & (Job.status != "fail") &
-                                      (Job.status != "no-match")))
+        # TODO: select is not an optimized function: we will parse all folders. We can replace it or optimize it in a next version of the program
+        return len(Job.select({"batch_type": ["==", "local"], "status": ["not in", ["success", "fail", "no-match"]]}))
 
     def check_file(self, input_type, should_be_local, max_upload_size_readable):
         """
@@ -397,7 +396,7 @@ class JobManager:
         my_input = getattr(self, input_type)
         if my_input.get_path().endswith(".gz") and not self.is_gz_file(my_input.get_path()):
             # Check file is correctly gzipped
-            job = Job.get(Job.id_job == self.id_job)
+            job = Job(self.id_job)
             job.status = "fail"
             job.error = "Query file is not a correct gzip file"
             job.save()
@@ -406,7 +405,7 @@ class JobManager:
         # Check size:
         file_size = self.get_file_size(my_input.get_path())
         if -1 < self.config.max_upload_size < file_size:
-            job = Job.get(Job.id_job == self.id_job)
+            job = Job(self.id_job)
             job.status = "fail"
             job.error = "Query file exceed size limit of %d Mb (uncompressed)" % max_upload_size_readable
             job.save()
@@ -417,7 +416,7 @@ class JobManager:
         return True, False, should_be_local
 
     def download_files_with_pending(self, files_to_download, should_be_local, max_upload_size_readable):
-        job = Job.get(Job.id_job == self.id_job)
+        job = Job(self.id_job)
         job.status = "getfiles-waiting"
         job.save()
         # Create a session:
@@ -467,7 +466,7 @@ class JobManager:
             [1] If error happenned, True if error already saved for the job, False else (error will be saved later)
             [2] True if no data must be downloaded (will be downloaded with pending if True)
         """
-        job = Job.get(Job.id_job == self.id_job)
+        job = Job(self.id_job)
         job.status = "getfiles"
         job.save()
         correct = True
@@ -550,7 +549,7 @@ class JobManager:
 
     def prepare_data_local(self):
         with open(self.preptime_file, "w") as ptime:
-            job = Job.get(Job.id_job == self.id_job)
+            job = Job(self.id_job)
             job.status = "preparing"
             job.save()
             ptime.write(str(round(time.time())) + "\n")
@@ -578,7 +577,7 @@ class JobManager:
             job.save()
 
     def prepare_data(self):
-        job = Job.get(Job.id_job == self.id_job)
+        job = Job(self.id_job)
         if job.batch_type == "local":
             self.prepare_data_local()
         else:
@@ -591,7 +590,7 @@ class JobManager:
         elif batch_system_type in ["slurm", "sge"]:
             success = self.__launch_drmaa(batch_system_type)
         if success:
-            job = Job.get(Job.id_job == self.id_job)
+            job = Job(self.id_job)
             with open(self.logs) as logs:
                 measures = logs.readlines()[-1].strip("\n").split(" ")
                 map_elapsed = round(float(measures[0]))
@@ -624,7 +623,7 @@ class JobManager:
             os.remove(self.paf_raw)
             if self.target is not None and os.path.exists(self.target.get_path()):
                 os.remove(self.target.get_path())
-            job = Job.get(Job.id_job == self.id_job)
+            job = Job(self.id_job)
             job.status = "success"
             job.save()
         if self.config.send_mail_status:
@@ -632,12 +631,12 @@ class JobManager:
 
     def _after_start(self, success, error_set):
         if success:
-            job = Job.get(Job.id_job == self.id_job)
+            job = Job(self.id_job)
             job.status = "waiting"
             job.save()
         else:
             if not error_set:
-                job = Job.get(Job.id_job == self.id_job)
+                job = Job(self.id_job)
                 job.status = "fail"
                 job.error = "<p>Error while getting input files. Please contact the support to report the bug.</p>"
                 job.save()
@@ -652,7 +651,7 @@ class JobManager:
 
         except Exception:
             print(traceback.print_exc())
-            job = Job.get(Job.id_job == self.id_job)
+            job = Job(self.id_job)
             job.status = "fail"
             job.error = "<p>An unexpected error has occurred. Please contact the support to report the bug.</p>"
             job.save()
@@ -660,27 +659,21 @@ class JobManager:
                 self.send_mail()
 
     def launch(self):
-        j1 = Job.select().where(Job.id_job == self.id_job)
-        if len(j1) > 0:
-            print("Old job found without result dir existing: delete it from BDD!")
-            for j11 in j1:
-                j11.delete_instance()
         if self.target is not None:
-            job = Job.create(id_job=self.id_job, email=self.email, batch_type=self.config.batch_system_type,
-                             date_created=datetime.now())
-            job.save()
+            job = Job(self.id_job)
+            job.new(email=self.email, batch_type=self.config.batch_system_type)
             if not os.path.exists(self.output_dir):
                 os.mkdir(self.output_dir)
             thread = threading.Timer(1, self.start_job)
             thread.start()
         else:
-            job = Job.create(id_job=self.id_job, email=self.email, batch_type=self.config.batch_system_type,
-                             date_created=datetime.now(), status="fail")
+            job = Job(self.id_job)
+            job.new(email=self.email, batch_type=self.config.batch_system_type, status="fail")
             job.save()
 
     def status(self):
         try:
-            job = Job.get(Job.id_job == self.id_job)
+            job = Job(self.id_job)
             return {"status": job.status, "mem_peak": job.mem_peak, "time_elapsed": job.time_elapsed,
                     "error": job.error}
         except DoesNotExist:

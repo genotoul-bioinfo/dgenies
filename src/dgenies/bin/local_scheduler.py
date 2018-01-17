@@ -46,66 +46,56 @@ def _printer(*messages):
 
 def start_job(id_job, batch_system_type="local"):
     _printer("Start job", id_job)
-    job = Job.get(Job.id_job == id_job)
-    job.status = "starting"
-    job.save()
+    job = Job(id_job)
+    job.change_status("starting")
     job_mng = JobManager(id_job=id_job, email=job.email)
     job_mng.set_inputs_from_res_dir()
     job_mng.run_job_in_thread(batch_system_type)
 
 
-def get_scheduled_local_jobs():
-    all_jobs = []
-    jobs = Job.select().where((Job.batch_type == "local") & ((Job.status == "prepared") | (Job.status == "scheduled"))).\
-        order_by(Job.date_created)
+def get_scheduled_jobs():
+    local_jobs = []
+    cluster_jobs = []
+    jobs = Job.get_by_statuses(["prepared", "scheduled"])
+    jobs = Job.sort_jobs(jobs, "date_created")
     for job in jobs:
-        all_jobs.append(job.id_job)
-        job.status = "scheduled"
-        job.save()
-    return all_jobs
-
-
-def get_scheduled_cluster_jobs():
-    all_jobs = []
-    jobs = Job.select().where((Job.batch_type != "local") & ((Job.status == "prepared") | (Job.status == "scheduled"))).\
-        order_by(Job.date_created)
-    for job in jobs:
-        all_jobs.append({"job_id": job.id_job, "batch_type": job.batch_type})
-        job.status = "scheduled"
-        job.save()
-    return all_jobs
+        if job.batch_type == "local":
+            local_jobs.append(job.id_job)
+        else:
+            cluster_jobs.append(job.id_job)
+        if job.status != "scheduled":
+            job.change_status("scheduled")
+    return local_jobs, cluster_jobs
 
 
 def prepare_job(id_job):
     _printer("Prepare data for job:", id_job)
-    job = Job.get(Job.id_job == id_job)
-    job.status = "preparing"
-    job.save()
+    job = Job(id_job)
+    job.change_status("preparing")
     job_mng = JobManager(id_job=id_job, email=job.email)
     job_mng.set_inputs_from_res_dir()
     job_mng.prepare_data_in_thread()
 
 
 def get_prep_scheduled_jobs():
-    jobs = Job.select().where(Job.status == "waiting").order_by(Job.date_created)
-    return [(j.id_job, j.batch_type) for j in jobs]
+    jobs = Job.sort_jobs(Job.get_by_status("waiting"), "date_created")
+    return jobs
 
 
 def get_preparing_jobs_nb():
-    return len(Job.select().where(Job.status == "preparing"))
+    return len(Job.get_by_status("preparing"))
 
 
 def get_preparing_jobs_cluster_nb():
-    return len(Job.select().where(Job.status == "preparing-cluster")), \
-           len(Job.select().where(Job.status == "prepare-scheduled"))
+    return len(Job.get_by_status("preparing-cluster")), \
+           len(Job.get_by_status("prepare-scheduled"))
 
 
 def parse_started_jobs():
     jobs_started = []  # Only local jobs
     cluster_jobs_started = []  # Only cluster jobs
-    jobs = Job.select().where((Job.status == "started") | (Job.status == "starting") | (Job.status == "merging") |
-                              (Job.status == "scheduled-cluster") | (Job.status == "prepare-scheduled") |
-                              (Job.status == "prepare-cluster"))
+    jobs = Job.get_by_statuses(["started", "starting", "merging", "scheduled-cluster", "prepare-scheduled",
+                                "prepare-cluster"])
     for job in jobs:
         pid = job.id_process
         if job.batch_type == "local":
@@ -135,12 +125,10 @@ def parse_started_jobs():
                     # Todo: send mail about the error
                 else:
                     if job.status == "scheduled-cluster" and status == drmaa.JobState.RUNNING:
-                        job.status = "started"
-                        job.save()
+                        job.change_status("started")
                         cluster_jobs_started.append(job.id_job)
                     elif job.status == "prepare-scheduled" and status == drmaa.JobState.RUNNING:
-                        job.status = "preparing-cluster"
-                        job.save()
+                        job.change_status("preparing-cluster")
             else:
                 cluster_jobs_started.append(job.id_job)
     return jobs_started, cluster_jobs_started
@@ -217,7 +205,7 @@ def parse_args():
 
 
 def move_job_to_cluster(id_job):
-    job = Job.get(Job.id_job == id_job)
+    job = Job(id_job)
     job.batch_type = config_reader.batch_system_type
     job.save()
 
@@ -230,8 +218,7 @@ if __name__ == '__main__':
         parse_uploads_asks()
         _printer("")
         _printer("Checking jobs...")
-        scheduled_jobs_local = get_scheduled_local_jobs()
-        scheduled_jobs_cluster = get_scheduled_cluster_jobs()
+        scheduled_jobs_local, scheduled_jobs_cluster = get_scheduled_jobs()
         prep_scheduled_jobs = get_prep_scheduled_jobs()
         _printer("Waiting for preparing:", len(prep_scheduled_jobs))
         nb_preparing_jobs = get_preparing_jobs_nb()
@@ -245,15 +232,16 @@ if __name__ == '__main__':
         nj = 0
         local_waiting_jobs = []
         while nj < len(prep_scheduled_jobs):
-            job_batch_type = prep_scheduled_jobs[nj][1]
+            job = prep_scheduled_jobs[nj]
+            job_batch_type = job.batch_type
             if nb_preparing_jobs < NB_PREPARE or job_batch_type != "local":
-                prepare_job(prep_scheduled_jobs[nj][0])
+                prepare_job(job.id_job)
                 if job_batch_type == "local":
                     nb_preparing_jobs += 1
                 del prep_scheduled_jobs[nj]
             else:
                 if job_batch_type == "local":
-                    local_waiting_jobs.append(prep_scheduled_jobs[nj][0])
+                    local_waiting_jobs.append(job.id_job)
                 nj += 1
         if config_reader.batch_system_type != "local" and len(local_waiting_jobs) > config_reader.max_wait_local:
             for id_job in local_waiting_jobs[config_reader.max_wait_local:]:

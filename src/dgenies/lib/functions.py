@@ -135,7 +135,7 @@ class Functions:
 
     @staticmethod
     def get_mail_for_job(id_job):
-        j1 = Job.get(Job.id_job == id_job)
+        j1 = Job(id_job)
         return j1.email
 
     @staticmethod

@@ -76,9 +76,9 @@ class AppConfigReader:
 
     def _get_nb_threads(self):
         try:
-            return self.reader.get("global", "threads")
+            return int(self.reader.get("global", "threads"))
         except NoOptionError:
-            return "4"
+            return 4
 
     def _get_web_url(self):
         try:
