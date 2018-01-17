@@ -9,6 +9,7 @@ import matplotlib as mpl
 mpl.use('Agg')
 from matplotlib import pyplot as plt
 import json
+from collections import Counter
 
 
 class Paf:
@@ -517,24 +518,20 @@ class Paf:
         self.parse_paf(False, False)
         if self.parsed:
             percents = {}
-            position_idy = {}
+            position_idy = ["-1"] * self.len_t
 
             cats = sorted(self.lines.keys())
 
             for cat in cats:
                 for line in self.lines[cat]:
-                    position_idy.update(position_idy.fromkeys(range(line[0], line[1]+1), cat))
-                percents[cat] = 0
+                    start = line[0]
+                    end = line[1]+1
+                    position_idy[start:end] = [cat] * (end - start)
 
-            import time
-            start = time.time()
+            counts = Counter(position_idy)
 
-            total = self.len_t
-            percents["-1"] = (total - len(position_idy)) / total * 100
-
-            position_idy_values = list(position_idy.values())
-            for cat in cats:
-                percents[cat] = position_idy_values.count(cat) / total * 100
+            for cat in counts:
+                percents[cat] = counts[cat] / self.len_t * 100
 
             with open(summary_file, "w") as summary_file:
                 summary_file.write(json.dumps(percents))
