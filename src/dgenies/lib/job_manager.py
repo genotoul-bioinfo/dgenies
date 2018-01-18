@@ -414,8 +414,8 @@ class JobManager:
         job = Job(self.id_job)
         job.change_status("getfiles-waiting")
         # Create a session:
-        s_id = Session.new(True)
-        session = Session(s_id=s_id)
+        session = Session.new(True)
+        s_id = session.s_id
 
         try:
             correct = True
