@@ -32,7 +32,6 @@ dgenies.result.summary.show = function(percents) {
                 label = "> 75 %";
                 break;
         }
-        console.log(percent);
         x += percent_value;
         percent_value = percent in percents ? percents[percent] : 0;
         container.append("rect")
