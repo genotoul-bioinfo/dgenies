@@ -13,7 +13,7 @@ from dgenies.lib.job_manager import JobManager
 from dgenies.lib.functions import Functions, ALLOWED_EXTENSIONS
 from dgenies.lib.upload_file import UploadFile
 from dgenies.lib.fasta import Fasta
-from dgenies.database import Session, DoesNotExist
+from dgenies.database import Job, Session, DoesNotExist
 
 
 @app.context_processor
@@ -84,14 +84,9 @@ def launch_analysis():
     if form_pass:
         # Get final job id:
         id_job = re.sub('[^A-Za-z0-9_\-]+', '', id_job.replace(" ", "_"))
-        id_job_orig = id_job
-        i = 2
-        while os.path.exists(os.path.join(APP_DATA, id_job)):
-            id_job = id_job_orig + ("_%d" % i)
-            i += 1
 
-        folder_files = os.path.join(APP_DATA, id_job)
-        os.makedirs(folder_files)
+        job = Job.new(id_job=id_job, email=email, batch_type=config_reader.batch_system_type)
+        id_job = job.id_job
 
         # Save files:
         query = None
@@ -107,7 +102,7 @@ def launch_analysis():
         target = Fasta(name=target_name, path=target_path, type_f=file_target_type)
 
         # Launch job:
-        job = JobManager(id_job, email, query, target, mailer)
+        job = JobManager(job, query, target, mailer)
         job.launch()
 
         # Delete session:
@@ -120,12 +115,16 @@ def launch_analysis():
 # Status of a job
 @app.route('/status/<id_job>', methods=['GET'])
 def status(id_job):
-    job = JobManager(id_job)
-    j_status = job.status()
-    mem_peak = j_status["mem_peak"] if "mem_peak" in j_status else None
+    try:
+        job = Job(id_job)
+    except DoesNotExist:
+        return render_template("status.html", title=app_title, status="unknown",
+                               error="", id_job=id_job, menu="results", mem_peak=None,
+                               time_elapsed=None)
+    mem_peak = job.mem_peak
     if mem_peak is not None:
         mem_peak = "%.1f G" % (mem_peak / 1024.0 / 1024.0)
-    time_e = j_status["time_elapsed"] if "time_elapsed" in j_status else None
+    time_e = job.time_elapsed
     if time_e is not None:
         if time_e < 60:
             time_e = "%d secs" % time_e
@@ -136,14 +135,14 @@ def status(id_job):
     format = request.args.get("format")
     if format is not None and format == "json":
         return jsonify({
-            "status": j_status["status"],
-            "error": j_status["error"].replace("#ID#", ""),
+            "status": job.status,
+            "error": job.error.replace("#ID#", ""),
             "id_job": id_job,
             "mem_peak": mem_peak,
             "time_elapsed": time_e
         })
-    return render_template("status.html", title=app_title, status=j_status["status"],
-                           error=j_status["error"].replace("#ID#", ""),
+    return render_template("status.html", title=app_title, status=job.status,
+                           error=job.error.replace("#ID#", ""),
                            id_job=id_job, menu="results", mem_peak=mem_peak,
                            time_elapsed=time_e)
 
@@ -477,7 +476,11 @@ def send_mail(id_res):
                 allowed = key == true_key
     if allowed:
         os.remove(key_file)
-        job_mng = JobManager(id_job=id_res, mailer=mailer)
+        try:
+            job = Job(id_job=id_res)
+        except DoesNotExist:
+            raise abort(404)
+        job_mng = JobManager(job=job, mailer=mailer)
         job_mng.set_inputs_from_res_dir()
         job_mng.send_mail()
         return "OK"

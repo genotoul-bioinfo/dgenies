@@ -10,7 +10,7 @@ import dateutil.parser
 class Job:
     config = AppConfigReader()
 
-    def __init__(self, id_job: str):
+    def __init__(self, id_job: str, _load=True):
         if os.path.sep in id_job:
             raise ValueError("Invalid caracter for job id: %s" % os.path.sep)
         self.id_job = id_job
@@ -24,6 +24,8 @@ class Job:
         self._j_mem_peak = -1
         self._j_time_elapsed = -1
         self._old_status = None
+        if _load:
+            self._load()
 
     ##############
     # PROPERTIES #
@@ -31,47 +33,38 @@ class Job:
 
     @property
     def email(self):
-        self.load()
         return self._j_email
 
     @email.setter
     def email(self, value):
-        self.load()
         self._j_email = value
 
     @property
     def date_created(self):
-        self.load()
         return self._j_date_created
 
     @date_created.setter
     def date_created(self, value):
-        self.load()
         self._j_date_created = value
 
     @property
     def id_process(self):
-        self.load()
         return self._j_id_process
 
     @id_process.setter
     def id_process(self, value):
-        self.load()
         self._j_id_process = value
 
     @property
     def batch_type(self):
-        self.load()
         return self._j_batch_type
 
     @batch_type.setter
     def batch_type(self, value):
-        self.load()
         self._j_batch_type = value
 
     @property
     def status(self):
-        self.load()
         return self._j_status
 
     @status.setter
@@ -80,66 +73,64 @@ class Job:
 
     @property
     def error(self):
-        self.load()
         return self._j_error
 
     @error.setter
     def error(self, value):
-        self.load()
         self._j_error = value
 
     @property
     def mem_peak(self):
-        self.load()
         return self._j_mem_peak
 
     @mem_peak.setter
     def mem_peak(self, value):
-        self.load()
         self._j_mem_peak = value
 
     @property
     def time_elapsed(self):
-        self.load()
         return self._j_time_elapsed
 
     @time_elapsed.setter
     def time_elapsed(self, value):
-        self.load()
         self._j_time_elapsed = value
+
+    @property
+    def output_dir(self):
+        return self._get_data_dir()
 
     ###########
     # METHODS #
     #############################
 
-    def new(self, email: str, batch_type: str="local", status: str="submitted", id_process: int=-1):
+    @classmethod
+    def new(cls, id_job: str, email: str, batch_type: str="local", status: str="submitted", id_process: int=-1):
         props = locals()
-        del props["self"]
+        del props["cls"]
+
+        id_job_orig = id_job
+        n = 2
+        while cls.exists(id_job):
+            id_job = "%s_%d" % (id_job_orig, n)
+            n += 1
+
+        job = Job(id_job, False)
 
         for prop, value in props.items():
-            self.__setattr__("_j_" + prop, value)
+            job.__setattr__("_j_" + prop, value)
 
-        self._j_date_created = datetime.now()
-        self._j_error = ""
-        self._j_mem_peak = -1
-        self._j_time_elapsed = -1
+        job._j_date_created = datetime.now()
+        job._j_error = ""
+        job._j_mem_peak = -1
+        job._j_time_elapsed = -1
 
-        self._loaded = True
-        self.save()
+        job._loaded = True
+        job.save()
 
         # Link in status dir:
-        self._create_status_link()
+        job._create_status_link()
 
-    def load(self):
-        if not self._loaded:
-            with open(self._get_data_file(True), "r") as data:
-                data = json.loads(data.read())
-                for prop, value in data.items():
-                    if prop.startswith("date_"):
-                        self.__setattr__("_j_" + prop, dateutil.parser.parse(value))
-                    else:
-                        self.__setattr__("_j_" + prop, value)
-                self._loaded = True
+        return job
 
     def save(self):
         if not self._loaded:
@@ -172,14 +163,12 @@ class Job:
         return jobs
 
     def change_status(self, new_status, save=True):
-        self.load()
         self._old_status = self._j_status
         self._j_status = new_status
         if save:
             self.save()
 
     def remove(self):
-        self.load()
         self._loaded = False
         job_dir = self._get_data_dir()
         if os.path.exists(job_dir) and os.path.isdir(job_dir):
@@ -212,13 +201,13 @@ class Job:
             jobs = [properties["id_job"]]
             del properties["id_job"]
         else:
-            jobs = [Job(x) for x in os.listdir(Job.config.app_data)]
+            jobs = [Job(x, False) for x in os.listdir(Job.config.app_data)]
 
         k = 0
         while k < len(jobs):
             job = jobs[k]
             try:
-                job.load()
+                job._load()
             except (ValueError, TypeError):
                 jobs.remove(job)
             else:
@@ -242,9 +231,9 @@ class Job:
 
         return jobs
 
-    @staticmethod
-    def exists(id_job):
-        app_data = Job.config.app_data
+    @classmethod
+    def exists(cls, id_job):
+        app_data = cls.config.app_data
         job_dir = os.path.join(app_data, id_job)
         if os.path.exists(job_dir):
             if not os.path.isdir(job_dir):
@@ -259,6 +248,20 @@ class Job:
     ###################
     # PRIVATE METHODS #
     #############################
+
+    def _load(self):
+        if not self._loaded:
+            with open(self._get_data_file(True), "r") as data:
+                data = json.loads(data.read())
+                for prop, value in data.items():
+                    if prop.startswith("date_"):
+                        self.__setattr__("_j_" + prop, dateutil.parser.parse(value))
+                    else:
+                        self.__setattr__("_j_" + prop, value)
+                self._loaded = True
+
+    def _get_data_dir(self):
+        return os.path.join(self.config.app_data, self.id_job)
 
     @staticmethod
     def _get_status_dir(status):
@@ -283,9 +286,6 @@ class Job:
             self._unlink_old_status()
             self._create_status_link()
         self._old_status = None
-
-    def _get_data_dir(self):
-        return os.path.join(self.config.app_data, self.id_job)
 
     def _get_data_file(self, exists=False):
         job_dir = self._get_data_dir()
@@ -317,7 +317,7 @@ class Session:
     config = AppConfigReader()
     allowed_statuses = ["reset", "pending", "active"]
 
-    def __init__(self, s_id=None):
+    def __init__(self, s_id=None, _load=True):
         self.s_id = s_id
         self._s_date_created = None
         self._s_status = "reset"
@@ -327,6 +327,8 @@ class Session:
         self._s_keep_active = False
         self._old_status = None
         self._loaded = False
+        if _load:
+            self._load()
 
     ##############
     # PROPERTIES #
@@ -334,17 +336,14 @@ class Session:
 
     @property
     def upload_folder(self):
-        self.load()
         return self._s_upload_folder
 
     @property
     def last_ping(self):
-        self.load()
         return self._s_date_last_ping
 
     @property
     def keep_active(self):
-        self.load()
         return self._s_keep_active
 
     ###########
@@ -355,7 +354,7 @@ class Session:
     def new(keep_active=False, status="reset"):
         from dgenies.lib.functions import Functions
         my_s_id = Functions.random_string(20)
-        session = Session(my_s_id)
+        session = Session(my_s_id, False)
         while session.exists():
             my_s_id = Functions.random_string(20)
             session = Session(my_s_id)
@@ -375,21 +374,6 @@ class Session:
         session._create_status_link()
         return session
 
-    def load(self):
-        if not self._loaded:
-            with open(self._get_session_file(), "r") as data_f:
-                data = json.loads(data_f.read())
-                for prop, value in data.items():
-                    attr = "_s_" + prop
-                    if hasattr(self, attr):
-                        if prop.startswith("date_"):
-                            self.__setattr__(attr, dateutil.parser.parse(value))
-                        else:
-                            self.__setattr__(attr, value)
-                    else:
-                        raise ValueError("Invalid property: %s" % prop)
-            self._loaded = True
-
     def save(self):
         if not self._loaded:
             raise NotInitialized("Session is not loaded")
@@ -408,7 +392,6 @@ class Session:
 
     def change_status(self, new_status, save=True):
         if new_status in Session.allowed_statuses:
-            self.load()
             if self._s_status != new_status:
                 self._old_status = self._s_status
                 self._s_status = new_status
@@ -449,9 +432,7 @@ class Session:
         return [Session(x) for x in os.listdir(session_dir) if x != "status"]
 
     def ask_for_upload(self, change_status=False):
-        self.load()
         all_asked = self.get_by_statuses(["pending", "active"])
-        self.load()
         nb_asked = len(all_asked)
         if self._s_position == -1:
             if nb_asked == 0:
@@ -475,7 +456,6 @@ class Session:
         return status == "active", position
 
     def ping(self):
-        self.load()
         self._s_date_last_ping = datetime.now()
         self.save()
 
@@ -484,7 +464,6 @@ class Session:
 
     def remove(self):
         # We check in all available status (to be sure we delete all):
-        self.load()
         os.remove(self._get_session_file())
         os.remove(self._get_session_status_file(self._s_status))
         self._loaded = False
@@ -504,6 +483,21 @@ class Session:
     ###################
     # PRIVATE METHODS #
     #############################
+
+    def _load(self):
+        if not self._loaded:
+            with open(self._get_session_file(), "r") as data_f:
+                data = json.loads(data_f.read())
+                for prop, value in data.items():
+                    attr = "_s_" + prop
+                    if hasattr(self, attr):
+                        if prop.startswith("date_"):
+                            self.__setattr__(attr, dateutil.parser.parse(value))
+                        else:
+                            self.__setattr__(attr, value)
+                    else:
+                        raise ValueError("Invalid property: %s" % prop)
+            self._loaded = True
 
     @staticmethod
     def _get_session_dir():

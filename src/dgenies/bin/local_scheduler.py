@@ -48,7 +48,7 @@ def start_job(id_job, batch_system_type="local"):
     _printer("Start job", id_job)
     job = Job(id_job)
     job.change_status("starting")
-    job_mng = JobManager(id_job=id_job, email=job.email)
+    job_mng = JobManager(job=job)
     job_mng.set_inputs_from_res_dir()
     job_mng.run_job_in_thread(batch_system_type)
 
@@ -72,7 +72,7 @@ def prepare_job(id_job):
     _printer("Prepare data for job:", id_job)
     job = Job(id_job)
     job.change_status("preparing")
-    job_mng = JobManager(id_job=id_job, email=job.email)
+    job_mng = JobManager(job=job)
     job_mng.set_inputs_from_res_dir()
     job_mng.prepare_data_in_thread()
 

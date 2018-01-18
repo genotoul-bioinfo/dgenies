@@ -27,9 +27,9 @@ import binascii
 
 class JobManager:
 
-    def __init__(self, id_job: str, email: str=None, query: Fasta=None, target: Fasta=None, mailer=None):
-        self.id_job = id_job
-        self.email = email
+    def __init__(self, job: Job, query: Fasta=None, target: Fasta=None, mailer=None):
+        self.id_job = job.id_job
+        self.output_dir = job.output_dir
         self.query = query
         self.target = target
         self.error = ""
@@ -37,7 +37,6 @@ class JobManager:
         # Get configs:
         self.config = AppConfigReader()
         # Outputs:
-        self.output_dir = os.path.join(self.config.app_data, id_job)
         self.preptime_file = os.path.join(self.output_dir, "prep_times")
         self.query_index_split = os.path.join(self.output_dir, "query_split.idx")
         self.paf = os.path.join(self.output_dir, "map.paf")
@@ -172,8 +171,7 @@ class JobManager:
         p.wait()
         if p.returncode == 0:
             status = self.check_job_success()
-            job.status = status
-            job.save()
+            job.change_status(status)
             return status == "success"
         job.status = "fail"
         self.error = self.search_error()
@@ -287,9 +285,6 @@ class JobManager:
                 status = self.check_job_success()
             else:
                 status = "prepared"
-            # job = Job.get(id_job=self.id_job)
-            # job.status = status
-            # db.commit()
             self.update_job_status(status)
             s.deleteJobTemplate(jt)
             return status == "success" or status == "prepared"
@@ -378,7 +373,8 @@ class JobManager:
         return allowed
 
     def clear(self):
-        shutil.rmtree(self.output_dir)
+        job = Job(self.id_job)
+        job.remove()
 
     @staticmethod
     def get_pending_local_number():
@@ -417,11 +413,10 @@ class JobManager:
 
     def download_files_with_pending(self, files_to_download, should_be_local, max_upload_size_readable):
         job = Job(self.id_job)
-        job.status = "getfiles-waiting"
-        job.save()
+        job.change_status("getfiles-waiting")
         # Create a session:
         s_id = Session.new(True)
-        session = Session.get(s_id=s_id)
+        session = Session(s_id=s_id)
 
         try:
             correct = True
@@ -429,11 +424,10 @@ class JobManager:
             allowed, position = session.ask_for_upload(True)
             while not allowed:
                 time.sleep(15)
-                session = Session.get(s_id=s_id)
+                session = Session(s_id=s_id)
                 allowed, position = session.ask_for_upload(False)
             if allowed:
-                job.status = "getfiles"
-                job.save()
+                job.change_status("getfiles")
                 for file, input_type in files_to_download:
                     correct, error_set, finale_path, filename = self.__getting_file_from_url(file, input_type)
                     if not correct:
@@ -455,7 +449,7 @@ class JobManager:
         except:  # Except all possible exceptions
             correct = False
             error_set = False
-        session.delete_instance()
+        session.remove()
         self._after_start(correct, error_set)
 
     def getting_files(self):
@@ -467,8 +461,7 @@ class JobManager:
             [2] True if no data must be downloaded (will be downloaded with pending if True)
         """
         job = Job(self.id_job)
-        job.status = "getfiles"
-        job.save()
+        job.change_status("getfiles")
         correct = True
         should_be_local = True
         max_upload_size_readable = self.config.max_upload_size / 1024 / 1024  # Set it in Mb
@@ -550,8 +543,7 @@ class JobManager:
     def prepare_data_local(self):
         with open(self.preptime_file, "w") as ptime:
             job = Job(self.id_job)
-            job.status = "preparing"
-            job.save()
+            job.change_status("preparing")
             ptime.write(str(round(time.time())) + "\n")
             error_tail = "Please check your input file and try again."
             if self.query is not None:
@@ -573,8 +565,7 @@ class JobManager:
                     self.send_mail_post()
                 return False
             ptime.write(str(round(time.time())) + "\n")
-            job.status = "prepared"
-            job.save()
+            job.change_status("prepared")
 
     def prepare_data(self):
         job = Job(self.id_job)
@@ -601,8 +592,7 @@ class JobManager:
                 end = int(lines[1].strip("\n"))
                 prep_elapsed = end - start
                 job.time_elapsed = prep_elapsed + map_elapsed
-            job.status = "merging"
-            job.save()
+            job.change_status("merging")
             if self.query is not None:
                 start = time.time()
                 paf_raw = self.paf_raw + ".split"
@@ -624,16 +614,14 @@ class JobManager:
             if self.target is not None and os.path.exists(self.target.get_path()):
                 os.remove(self.target.get_path())
             job = Job(self.id_job)
-            job.status = "success"
-            job.save()
+            job.change_status("success")
         if self.config.send_mail_status:
             self.send_mail_post()
 
     def _after_start(self, success, error_set):
         if success:
             job = Job(self.id_job)
-            job.status = "waiting"
-            job.save()
+            job.change_status("waiting")
         else:
             if not error_set:
                 job = Job(self.id_job)
@@ -660,21 +648,8 @@ class JobManager:
 
     def launch(self):
         if self.target is not None:
-            job = Job(self.id_job)
-            job.new(email=self.email, batch_type=self.config.batch_system_type)
-            if not os.path.exists(self.output_dir):
-                os.mkdir(self.output_dir)
             thread = threading.Timer(1, self.start_job)
             thread.start()
         else:
             job = Job(self.id_job)
-            job.new(email=self.email, batch_type=self.config.batch_system_type, status="fail")
-            job.save()
-
-    def status(self):
-        try:
-            job = Job(self.id_job)
-            return {"status": job.status, "mem_peak": job.mem_peak, "time_elapsed": job.time_elapsed,
-                    "error": job.error}
-        except DoesNotExist:
-            return {"status": "unknown", "error": ""}
+            job.change_status("fail")
