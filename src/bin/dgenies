@@ -9,7 +9,7 @@ import time
 from dgenies.lib.crons import Crons
 from dgenies.config_reader import AppConfigReader
 from dgenies.bin.clean_jobs import parse_database, parse_upload_folders
-from dgenies.database import Job
+from dgenies.database import Job, Session, DoesNotExist
 
 runned = False
 
@@ -47,28 +47,35 @@ def parse_args():
     clear = subparsers.add_parser("clear", help="Clear data")
     clear.add_argument("-c", "--crons", help="Clear crons", type=bool, const=True, nargs="?", required=False,
                        default=False)
-    clear.add_argument("-l", "--logs", help="Clear logs", type=bool, const=True, nargs="?", required=False,
-                       default=False)
-    clear.add_argument("-j", "--jobs", help="Clear jobs", type=bool, const=True, nargs="?", required=False,
-                       default=False)
+    clear.add_argument("-l", "--logs", help="Clear logs", action="store_true")
+    clear.add_argument("-j", "--jobs", help="Clear jobs", action="store_true")
+    clear.add_argument("-s", "--sessions", help="Clear sessions", action="store_true")
     clear.add_argument("-m", "--max-age", help="Max age for job to delete (0 for all)", type=int, required=False,
                        default=0)
 
     # Remove a job:
     rm = subparsers.add_parser("rm", help="Remove a job")
-    rm.add_argument("name_job", metavar="JOB", type=str, nargs=1, help="Name of the job to remove")
+    rm.add_argument("-j", "--job", help="Remove a job", action="store_true")
+    rm.add_argument("-s", "--session", help="Remove a session", action="store_true")
+    rm.add_argument("id", metavar="ID", type=str, help="Id to remove")
 
     args = parser.parse_args()
 
     if args.subparser_name == "run":
         return "run", [args.mode, args.debug, args.host, args.port, args.no_crons, args.no_browser]
     if args.subparser_name == "clear":
-        if args.crons == False and args.logs == False and args.jobs == False:
+        if not args.crons and not args.logs and not args.jobs and not args.sessions:
             print("Nothing to do.")
             return "clear", None
         return "clear", args
     if args.subparser_name == "rm":
-        return "rm", args.name_job
+        if not args.job and not args.session:
+            print("Error: please add -j OR -s argument")
+            return "rm", None
+        elif args.job and args.session:
+            print("Error: -j and -s options are mutually exclusive")
+            return "rm", None
+        return "rm", args
 
 
 def start_browser(host, port):
@@ -144,24 +151,43 @@ def clear_jobs(max_data_age=7):
     print("")
 
 
-def remove_job(name):
+def clear_sessions():
+    sessions = Session.all()
+    for session in sessions:
+        session.remove()
+
+
+def remove_job(id_job):
     """
     Remove a job
-    :param name: name of the job
+    :param id_job: id of the job
     """
-    if Job.exists(name):
-        job = Job(name)
+    if Job.exists(id_job):
+        job = Job(id_job)
         job.remove()
-        print("Job \"%s\" removed" % name)
+        print("Job \"%s\" removed" % id_job)
     else:
-        print(bcolors.FAIL + ("Job \"%s\" does not exists" % name) + bcolors.ENDC)
+        print(bcolors.FAIL + ("Job \"%s\" does not exists" % id_job) + bcolors.ENDC)
+
+
+def remove_session(s_id):
+    """
+    Remove a session
+    :param s_id: id of the session
+    :return:
+    """
+    try:
+        Session(s_id).remove()
+        print("Session \"%s\" removed" % s_id)
+    except DoesNotExist:
+        print(bcolors.FAIL + ("Session \"%s\" does not exists" % s_id) + bcolors.ENDC)
 
 
 if __name__ == "__main__":
     command, args = parse_args()
     if command == "run":
         run(*args)
-    elif command == "clear":
+    elif command == "clear" and args is not None:
         if args.crons:
             print("Cleaning crons...")
             clear_crons()
@@ -171,5 +197,12 @@ if __name__ == "__main__":
         if args.jobs:
             print("Cleaning jobs...")
             clear_jobs(args.max_age)
-    elif command == "rm":
-        remove_job(args[0])
+        if args.sessions:
+            print("Cleaning sessions...")
+            clear_sessions()
+
+    elif command == "rm" and args is not None:
+        if args.job:
+            remove_job(args.id)
+        elif args.session:
+            remove_session(args.id)

@@ -460,7 +460,8 @@ class Session:
         self.save()
 
     def exists(self):
-        return os.path.exists(self._get_session_file())
+        s_file = self._get_session_file()
+        return os.path.exists(s_file) and os.path.isfile(s_file)
 
     def remove(self):
         # We check in all available status (to be sure we delete all):
