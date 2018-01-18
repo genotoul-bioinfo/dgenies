@@ -134,13 +134,12 @@ class JobManager:
     def send_mail(self):
         # Retrieve infos:
         job = Job(self.id_job)
-        if self.email is None:
-            self.email = job.email
+        email = job.email
         status = job.status
         self.error = job.error
 
         # Send:
-        self.mailer.send_mail([self.email], self.get_mail_subject(status), self.get_mail_content(status),
+        self.mailer.send_mail([email], self.get_mail_subject(status), self.get_mail_content(status),
                               self.get_mail_content_html(status))
 
     def search_error(self):
