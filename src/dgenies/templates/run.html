@@ -8,6 +8,9 @@
     <!-- The File Upload validation plugin -->
     <script src="{{ url_for('static', filename='js/jquery.fileupload-validate.js') }}"></script>
     <script src="{{ url_for('static', filename='js/dgenies.run.js') }}" type="text/JavaScript"></script>
+    <script type="text/javascript">
+        let dgenies_reserved_words = ["{{reserved_words | join('","') | safe }}"]
+    </script>
 {% endblock %}
 {% block onload %}dgenies.run.init('{{ s_id }}',{{ allowed_ext }}, {{ max_upload_file_size }});{% endblock %}
 {% block content %}

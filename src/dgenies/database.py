@@ -486,7 +486,7 @@ class Session:
 
     def _load(self):
         if not self._loaded:
-            with open(self._get_session_file(), "r") as data_f:
+            with open(self._get_session_file(True), "r") as data_f:
                 data = json.loads(data_f.read())
                 for prop, value in data.items():
                     attr = "_s_" + prop
@@ -506,8 +506,11 @@ class Session:
             os.makedirs(s_dir)
         return s_dir
 
-    def _get_session_file(self):
-        return os.path.join(self._get_session_dir(), self.s_id)
+    def _get_session_file(self, exists=False):
+        s_file = os.path.join(self._get_session_dir(), self.s_id)
+        if not os.path.exists(s_file) and exists:
+            raise DoesNotExist("Session %s does not exists" % self.s_id)
+        return s_file
 
     @staticmethod
     def _get_session_status_dir(status):

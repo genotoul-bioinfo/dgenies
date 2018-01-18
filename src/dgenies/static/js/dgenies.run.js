@@ -9,6 +9,7 @@ dgenies.run.allowed_ext = [];
 dgenies.run.max_upload_file_size = -1
 dgenies.run.files = [undefined, undefined];
 dgenies.run.allow_upload = false;
+dgenies.run.ping_interval = null
 
 dgenies.run.init = function (s_id, allowed_ext, max_upload_file_size=1073741824) {
     dgenies.run.s_id = s_id;
@@ -243,7 +244,7 @@ dgenies.run.enable_form = function () {
     dgenies.run.hide_loading("query");
     dgenies.run.hide_loading("target");
     dgenies.run.hide_success("query");
-    dgenies.run.hide_success("fasta");
+    dgenies.run.hide_success("target");
     dgenies.run.files = [undefined, undefined];
     dgenies.run.restore_form();
 };
@@ -264,6 +265,21 @@ dgenies.run.do_submit = function () {
             if (data["success"]) {
                 window.location = data["redirect"];
             }
+            else {
+                if (dgenies.run.ping_interval !== null) {
+                    clearInterval(dgenies.run.ping_interval);
+                    dgenies.run.ping_interval = null;
+                }
+                if ("errors" in data) {
+                    for (let i = 0; i < data["errors"].length; i++) {
+                        dgenies.notify(data["errors"][i], "danger", 3000);
+                    }
+                }
+                else {
+                    dgenies.notify("An error has occurred. Please contact the support", "danger", 3000);
+                }
+                dgenies.run.enable_form();
+            }
         }
         );
 };
@@ -276,9 +292,15 @@ dgenies.run.valid_form = function () {
     let has_errors = false;
 
     // Check name:
-    if ($("input#id_job").val().length === 0) {
+    let name_job = $("input#id_job").val();
+    if (name_job.length === 0) {
         $("label.id-job").addClass("error");
         dgenies.run.add_error("Name of your job is required!");
+        has_errors = true;
+    }
+    else if (dgenies_reserved_words.indexOf(name_job) > -1) {
+        $("label.id-job").addClass("error");
+        dgenies.run.add_error("Name of your job is not allowed (reserved word)!");
         has_errors = true;
     }
 
@@ -337,7 +359,7 @@ dgenies.run.ask_for_upload = function () {
             let allow_upload = data["allowed"];
             if (allow_upload) {
                 $("div#uploading-loading").html("Uploading files...");
-                window.setInterval(dgenies.run.ping_upload, 15000);
+                dgenies.run.ping_interval = window.setInterval(dgenies.run.ping_upload, 15000);
                 dgenies.run.upload_next();
             }
             else {

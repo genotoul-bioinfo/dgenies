@@ -1,4 +1,4 @@
-from dgenies import app, app_title, config_reader, mailer, APP_DATA
+from dgenies import app, app_title, config_reader, mailer, APP_DATA, reserved_words
 
 import os
 import time
@@ -39,7 +39,7 @@ def run():
         email = request.args["email"]
     return render_template("run.html", title=app_title, id_job=id_job, email=email,
                            menu="run", allowed_ext=ALLOWED_EXTENSIONS, s_id=s_id,
-                           max_upload_file_size=config_reader.max_upload_file_size)
+                           max_upload_file_size=config_reader.max_upload_file_size, reserved_words=reserved_words)
 
 
 @app.route("/run-test", methods=['GET'])
@@ -60,6 +60,8 @@ def launch_analysis():
     # Reset session upload:
     session.reset()
     id_job = request.form["id_job"]
+    if id_job in reserved_words:
+        return jsonify({"success": False, "errors": ["Job name %s is not allowed!" % id_job]})
     email = request.form["email"]
     file_query = request.form["query"]
     file_query_type = request.form["query_type"]

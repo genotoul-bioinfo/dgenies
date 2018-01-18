@@ -11,6 +11,7 @@ app_title = None
 APP_DATA = None
 config_reader = None
 mailer = None
+reserved_words = ["sessions", "status"]
 
 
 def launch():
