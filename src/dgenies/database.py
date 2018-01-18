@@ -346,6 +346,10 @@ class Session:
     def keep_active(self):
         return self._s_keep_active
 
+    @property
+    def position(self):
+        return self._s_position
+
     ###########
     # METHODS #
     #############################
