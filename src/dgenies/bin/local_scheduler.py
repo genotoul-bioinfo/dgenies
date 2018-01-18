@@ -60,9 +60,9 @@ def get_scheduled_jobs():
     jobs = Job.sort_jobs(jobs, "date_created")
     for job in jobs:
         if job.batch_type == "local":
-            local_jobs.append(job.id_job)
+            local_jobs.append(job)
         else:
-            cluster_jobs.append(job.id_job)
+            cluster_jobs.append(job)
         if job.status != "scheduled":
             job.change_status("scheduled")
     return local_jobs, cluster_jobs
@@ -245,13 +245,13 @@ if __name__ == '__main__':
             for id_job in local_waiting_jobs[config_reader.max_wait_local:]:
                 move_job_to_cluster(id_job)
         while len(scheduled_jobs_local) > 0 and nb_started < NB_RUN:
-            start_job(scheduled_jobs_local.pop(0))
+            start_job(scheduled_jobs_local.pop(0).id_job)
             nb_started += 1
         if config_reader.batch_system_type != "local" and len(scheduled_jobs_local) > config_reader.max_wait_local:
             for id_job in scheduled_jobs_local[config_reader.max_wait_local:]:
                 move_job_to_cluster(id_job)
         for job in scheduled_jobs_cluster:
-            start_job(job["job_id"], job["batch_type"])
+            start_job(job.id_job, job.batch_type)
         # Wait before return
         _printer("Sleeping...")
         time.sleep(15)
