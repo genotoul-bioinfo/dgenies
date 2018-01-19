@@ -5,6 +5,7 @@ import shutil
 import operator
 from dgenies.config_reader import AppConfigReader
 from datetime import datetime
+import time
 import dateutil.parser
 import threading
 
@@ -271,18 +272,24 @@ class Job:
         if not self._loaded:
             j_file = self._get_data_file(True)
             i = 0
-            if not os.path.exists(j_file):
-                raise DoesNotExist("Job does not exists or is not initialized")
-            try:
-                with open(j_file, "r") as data:
-                    data = json.loads(data.read())
-                    for prop, value in data.items():
-                        if prop.startswith("date_"):
-                            self.__setattr__("_j_" + prop, dateutil.parser.parse(value))
-                        else:
-                            self.__setattr__("_j_" + prop, value)
-                    self._loaded = True
-            except JSONDecodeError:
+            success = False
+            while not success and i < 50:
+                if not os.path.exists(j_file):
+                    raise DoesNotExist("Job does not exists or is not initialized")
+                try:
+                    with open(j_file, "r") as data:
+                        data = json.loads(data.read())
+                        for prop, value in data.items():
+                            if prop.startswith("date_"):
+                                self.__setattr__("_j_" + prop, dateutil.parser.parse(value))
+                            else:
+                                self.__setattr__("_j_" + prop, value)
+                        self._loaded = True
+                    success = True
+                except JSONDecodeError:
+                    time.sleep(0.05)
+                    i += 1
+            if not success:
                 raise DoesNotExist("Job does not exists or is not initialized")
 
     def _get_data_dir(self):
@@ -542,21 +549,27 @@ class Session:
         if not self._loaded:
             s_file = self._get_session_file(True)
             i = 0
-            if not os.path.exists(s_file):
-                raise DoesNotExist("Session has been deleted")
-            try:
-                with open(s_file, "r") as data_f:
-                    data = json.loads(data_f.read())
-                    for prop, value in data.items():
-                        attr = "_s_" + prop
-                        if hasattr(self, attr):
-                            if prop.startswith("date_"):
-                                self.__setattr__(attr, dateutil.parser.parse(value))
+            success = False
+            while not success and i < 50:
+                if not os.path.exists(s_file):
+                    raise DoesNotExist("Session has been deleted")
+                try:
+                    with open(s_file, "r") as data_f:
+                        data = json.loads(data_f.read())
+                        for prop, value in data.items():
+                            attr = "_s_" + prop
+                            if hasattr(self, attr):
+                                if prop.startswith("date_"):
+                                    self.__setattr__(attr, dateutil.parser.parse(value))
+                                else:
+                                    self.__setattr__(attr, value)
                             else:
-                                self.__setattr__(attr, value)
-                        else:
-                            raise ValueError("Invalid property: %s" % prop)
-            except JSONDecodeError:
+                                raise ValueError("Invalid property: %s" % prop)
+                    success = True
+                except JSONDecodeError:
+                    time.sleep(0.05)
+                    i += 1
+            if not success:
                 raise DoesNotExist("Session does not exists or is not initialized")
             self._loaded = True
 
