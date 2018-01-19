@@ -1,10 +1,12 @@
 import os
 import json
+from json.decoder import JSONDecodeError
 import shutil
 import operator
 from dgenies.config_reader import AppConfigReader
 from datetime import datetime
 import dateutil.parser
+import threading
 
 
 class Job:
@@ -125,14 +127,14 @@ class Job:
         job._j_time_elapsed = -1
 
         job._loaded = True
-        job.save()
+        job.save(False)
 
         # Link in status dir:
         job._create_status_link()
 
         return job
 
-    def save(self):
+    def save(self, exists=True):
         if not self._loaded:
             raise NotInitialized("Job is not loaded")
         props = {}
@@ -142,7 +144,10 @@ class Job:
                     props[attr[3:]] = self.__getattribute__(attr).isoformat()
                 else:
                     props[attr[3:]] = self.__getattribute__(attr)
-        with open(self._get_data_file(), "w") as data:
+        data_file = self._get_data_file()
+        if exists and not os.path.exists(data_file):
+            raise DoesNotExist("Job does not exists anymore")
+        with open(data_file, "w") as data:
             data.write(json.dumps(props))
         if self._old_status is not None:
             self._change_status_link()
@@ -152,7 +157,13 @@ class Job:
     def get_by_status(status):
         status_dir = Job._get_status_dir(status)
         if os.path.exists(status_dir) and os.path.isdir(status_dir):
-            return [Job(x) for x in os.listdir(status_dir)]
+            jobs = []
+            for folder in os.listdir(status_dir):
+                try:
+                    jobs.append(Job(folder))
+                except DoesNotExist:
+                    pass
+            return jobs
         return []
 
     @staticmethod
@@ -168,7 +179,7 @@ class Job:
         if save:
             self.save()
 
-    def remove(self):
+    def remove(self, safe=True):
         self._loaded = False
         job_dir = self._get_data_dir()
         if os.path.exists(job_dir) and os.path.isdir(job_dir):
@@ -177,6 +188,9 @@ class Job:
         status_link = self._get_status_link(self._j_status)
         if os.path.islink(status_link):
             os.remove(status_link)
+        if safe:
+            thread = threading.Timer(2, self.remove, kwargs={"safe": False})
+            thread.start()
 
     @staticmethod
     def select(properties: dict):
@@ -208,7 +222,7 @@ class Job:
             job = jobs[k]
             try:
                 job._load()
-            except (ValueError, TypeError):
+            except (ValueError, TypeError, DoesNotExist):
                 jobs.remove(job)
             else:
                 match = True
@@ -238,7 +252,11 @@ class Job:
         if os.path.exists(job_dir):
             if not os.path.isdir(job_dir):
                 raise TypeError("Folder %s exists but is not a folder")
-            return True
+            try:
+                Job(id_job)
+                return True
+            except (ValueError, TypeError, DoesNotExist):
+                return False
         return False
 
     @staticmethod
@@ -251,14 +269,21 @@ class Job:
 
     def _load(self):
         if not self._loaded:
-            with open(self._get_data_file(True), "r") as data:
-                data = json.loads(data.read())
-                for prop, value in data.items():
-                    if prop.startswith("date_"):
-                        self.__setattr__("_j_" + prop, dateutil.parser.parse(value))
-                    else:
-                        self.__setattr__("_j_" + prop, value)
-                self._loaded = True
+            j_file = self._get_data_file(True)
+            i = 0
+            if not os.path.exists(j_file):
+                raise DoesNotExist("Job does not exists or is not initialized")
+            try:
+                with open(j_file, "r") as data:
+                    data = json.loads(data.read())
+                    for prop, value in data.items():
+                        if prop.startswith("date_"):
+                            self.__setattr__("_j_" + prop, dateutil.parser.parse(value))
+                        else:
+                            self.__setattr__("_j_" + prop, value)
+                    self._loaded = True
+            except JSONDecodeError:
+                raise DoesNotExist("Job does not exists or is not initialized")
 
     def _get_data_dir(self):
         return os.path.join(self.config.app_data, self.id_job)
@@ -374,11 +399,11 @@ class Session:
         session._s_date_last_ping = datetime.now()
         session._s_keep_active = keep_active
         session._loaded = True
-        session.save()
+        session.save(False)
         session._create_status_link()
         return session
 
-    def save(self):
+    def save(self, exists=True):
         if not self._loaded:
             raise NotInitialized("Session is not loaded")
         props = {}
@@ -388,7 +413,10 @@ class Session:
                     props[attr[3:]] = self.__getattribute__(attr).isoformat()
                 else:
                     props[attr[3:]] = self.__getattribute__(attr)
-        with open(self._get_session_file(), "w") as data:
+        s_file = self._get_session_file()
+        if exists and not os.path.exists(s_file):
+            raise DoesNotExist("Session does not exists anymore")
+        with open(s_file, "w") as data:
             data.write(json.dumps(props))
         if self._old_status is not None:
             self._change_status_link()
@@ -412,7 +440,13 @@ class Session:
         :return: list of Session objects
         """
         status_dir = Session._get_session_status_dir(status)
-        return [Session(x) for x in os.listdir(status_dir)]
+        sessions = []
+        for file in os.listdir(status_dir):
+            try:
+                sessions.append(Session(file))
+            except DoesNotExist:
+                pass
+        return sessions
 
     @staticmethod
     def get_by_statuses(statuses):
@@ -433,7 +467,14 @@ class Session:
         :return: list of Session objects
         """
         session_dir = Session._get_session_dir()
-        return [Session(x) for x in os.listdir(session_dir) if x != "status"]
+        sessions = []
+        for file in os.listdir(session_dir):
+            if os.path.isfile(file):
+                try:
+                    sessions.append(Session(file))
+                except DoesNotExist:
+                    pass
+        return sessions
 
     def ask_for_upload(self, change_status=False):
         all_asked = self.get_by_statuses(["pending", "active"])
@@ -467,11 +508,19 @@ class Session:
         s_file = self._get_session_file()
         return os.path.exists(s_file) and os.path.isfile(s_file)
 
-    def remove(self):
+    def remove(self, safe=True):
         # We check in all available status (to be sure we delete all):
-        os.remove(self._get_session_file())
-        os.remove(self._get_session_status_file(self._s_status))
+        try:
+            os.remove(self._get_session_file())
+        except FileNotFoundError:
+            pass
+        status_file = self._get_session_status_file(self._s_status)
+        if os.path.exists(status_file):
+            os.remove(status_file)
         self._loaded = False
+        if safe:
+            thread = threading.Timer(1, self.remove, kwargs={"safe": False})
+            thread.start()
 
     def reset(self):
         self.change_status("reset", False)
@@ -491,17 +540,24 @@ class Session:
 
     def _load(self):
         if not self._loaded:
-            with open(self._get_session_file(True), "r") as data_f:
-                data = json.loads(data_f.read())
-                for prop, value in data.items():
-                    attr = "_s_" + prop
-                    if hasattr(self, attr):
-                        if prop.startswith("date_"):
-                            self.__setattr__(attr, dateutil.parser.parse(value))
+            s_file = self._get_session_file(True)
+            i = 0
+            if not os.path.exists(s_file):
+                raise DoesNotExist("Session has been deleted")
+            try:
+                with open(s_file, "r") as data_f:
+                    data = json.loads(data_f.read())
+                    for prop, value in data.items():
+                        attr = "_s_" + prop
+                        if hasattr(self, attr):
+                            if prop.startswith("date_"):
+                                self.__setattr__(attr, dateutil.parser.parse(value))
+                            else:
+                                self.__setattr__(attr, value)
                         else:
-                            self.__setattr__(attr, value)
-                    else:
-                        raise ValueError("Invalid property: %s" % prop)
+                            raise ValueError("Invalid property: %s" % prop)
+            except JSONDecodeError:
+                raise DoesNotExist("Session does not exists or is not initialized")
             self._loaded = True
 
     @staticmethod

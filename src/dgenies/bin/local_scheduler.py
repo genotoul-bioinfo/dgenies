@@ -8,7 +8,7 @@ from datetime import datetime
 from tendo import singleton
 import argparse
 
-from dgenies.database import Job, Session
+from dgenies.database import Job, Session, DoesNotExist
 from dgenies.config_reader import AppConfigReader
 from dgenies.lib.job_manager import JobManager
 
@@ -153,10 +153,16 @@ def parse_uploads_asks():
     for session in sessions:
         delay = (now - session.last_ping).total_seconds()
         if delay > 30:
-            session.reset()  # Reset position, the user has probably left
+            try:
+                session.reset()  # Reset position, the user has probably left
+            except DoesNotExist:
+                pass
             _printer("Reset 1 session:", session.s_id)
         elif nb_active_dl < config_reader.max_concurrent_dl:
-            session.enable()
+            try:
+                session.enable()
+            except DoesNotExist:
+                pass
             nb_active_dl += 1
             _printer("Enable 1 session:", session.s_id)
     # Remove old sessions:
