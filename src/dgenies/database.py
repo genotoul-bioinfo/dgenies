@@ -351,6 +351,10 @@ class Session:
 
     def __init__(self, s_id=None, _load=True):
         self.s_id = s_id
+        self._changes = []
+        # !!!
+        # WARN!!!! Never change _s_ attributes values directly, use properties instead
+        # !!!
         self._s_date_created = None
         self._s_status = "reset"
         self._s_upload_folder = None
@@ -367,20 +371,61 @@ class Session:
     #############################
 
     @property
+    def date_created(self):
+        return self._s_date_created
+
+    @date_created.setter
+    def date_created(self, value):
+        self._s_date_created = value
+        self._changes.append("date_created")
+
+    @property
+    def status(self):
+        return self._s_status
+
+    @status.setter
+    def status(self, value):
+        if value in Session.allowed_statuses:
+            self._s_status = value
+            self._changes.append("status")
+        else:
+            raise ValueError("Invalid status: %s" % value)
+
+    @property
     def upload_folder(self):
         return self._s_upload_folder
+
+    @upload_folder.setter
+    def upload_folder(self, value):
+        self._s_upload_folder = value
+        self._changes.append("upload_folder")
 
     @property
     def last_ping(self):
         return self._s_date_last_ping
 
-    @property
-    def keep_active(self):
-        return self._s_keep_active
+    @last_ping.setter
+    def last_ping(self, value):
+        self._s_date_last_ping = value
+        self._changes.append("date_last_ping")
 
     @property
     def position(self):
         return self._s_position
+
+    @position.setter
+    def position(self, value):
+        self._s_position = value
+        self._changes.append("position")
+
+    @property
+    def keep_active(self):
+        return self._s_keep_active
+
+    @keep_active.setter
+    def keep_active(self, value):
+        self._s_keep_active = value
+        self._changes.append("keep_active")
 
     ###########
     # METHODS #
@@ -388,6 +433,13 @@ class Session:
 
     @staticmethod
     def new(keep_active=False, status="reset"):
+        """
+        Create a new session
+        Note: it's the only function we can change _s_ attributes directly
+        :param keep_active:
+        :param status:
+        :return:
+        """
         from dgenies.lib.functions import Functions
         my_s_id = Functions.random_string(20)
         session = Session(my_s_id, False)
@@ -423,21 +475,30 @@ class Session:
         s_file = self._get_session_file()
         if exists and not os.path.exists(s_file):
             raise DoesNotExist("Session does not exists anymore")
-        with open(s_file, "w") as data:
-            data.write(json.dumps(props))
+        if exists:
+            self._lock_write()
+            data = self._get_data()
+            if "status" in self._changes:
+                self._old_status = data["status"]
+            else:
+                self._old_status = None
+            for prop in self._changes:
+                data[prop] = props[prop]
+            with open(s_file, "w") as data_f:
+                data_f.write(json.dumps(data))
+            self._unlock_write()
+        else:
+            with open(s_file, "w") as data:
+                data.write(json.dumps(props))
         if self._old_status is not None:
             self._change_status_link()
             self._old_status = None
+        self._changes = []
 
     def change_status(self, new_status, save=True):
-        if new_status in Session.allowed_statuses:
-            if self._s_status != new_status:
-                self._old_status = self._s_status
-                self._s_status = new_status
-                if save:
-                    self.save()
-        else:
-            raise ValueError("Invalid status: %s" % new_status)
+        self.status = new_status
+        if save:
+            self.save()
 
     @staticmethod
     def get_by_status(status):
@@ -476,7 +537,7 @@ class Session:
         session_dir = Session._get_session_dir()
         sessions = []
         for file in os.listdir(session_dir):
-            if file != "status":
+            if file not in ["status", "lock"]:
                 try:
                     sessions.append(Session(file))
                 except DoesNotExist:
@@ -486,29 +547,29 @@ class Session:
     def ask_for_upload(self, change_status=False):
         all_asked = self.get_by_statuses(["pending", "active"])
         nb_asked = len(all_asked)
-        if self._s_position == -1:
+        if self.position == -1:
             if nb_asked == 0:
                 position = 0
             else:
                 position = all_asked[-1].position + 1
         else:
             change_status = False
-            position = self._s_position
+            position = self.position
 
         status = "pending"
-        if self._s_status == "active" or (change_status and nb_asked < 5):
+        if self.status == "active" or (change_status and nb_asked < 5):
             status = "active"
 
-        if status != self._s_status:
-            self.change_status(status, False)
-        self._s_position = position
-        self._s_date_last_ping = datetime.now()
+        if status != self.status:
+            self.status = status
+        self.position = position
+        self.last_ping = datetime.now()
         self.save()
 
         return status == "active", position
 
     def ping(self):
-        self._s_date_last_ping = datetime.now()
+        self.last_ping = datetime.now()
         self.save()
 
     def exists(self):
@@ -521,7 +582,7 @@ class Session:
             os.remove(self._get_session_file())
         except FileNotFoundError:
             pass
-        status_file = self._get_session_status_file(self._s_status)
+        status_file = self._get_session_status_file(self.status)
         if os.path.islink(status_file):
             os.remove(status_file)
         self._loaded = False
@@ -530,8 +591,8 @@ class Session:
             thread.start()
 
     def reset(self):
-        self.change_status("reset", False)
-        self._s_position = -1
+        self.status = "reset"
+        self.position = -1
         self.save()
 
     def enable(self):
@@ -545,32 +606,58 @@ class Session:
     # PRIVATE METHODS #
     #############################
 
+    def _get_lock_write_file(self):
+        lock_dir = os.path.join(self._get_session_dir(), "lock")
+        if not os.path.exists(lock_dir):
+            os.makedirs(lock_dir)
+        return os.path.join(lock_dir, self.s_id)
+
+    def _lock_write(self):
+        lock_file = self._get_lock_write_file()
+        locked = False
+        tries = 0
+        while not locked and tries < 50:
+            try:
+                with open(lock_file, "x") as lock_f:
+                    lock_f.write(datetime.now().isoformat())
+                locked = True
+            except FileExistsError:
+                time.sleep(0.05)
+                tries += 1
+        if not locked:
+            raise LockError("Unable to lock session %s" % self.s_id)
+
+    def _unlock_write(self):
+        lock_file = self._get_lock_write_file()
+        if os.path.exists(lock_file):
+            os.remove(lock_file)
+
+    def _get_data(self):
+        s_file = self._get_session_file(True)
+        i = 0
+        while i < 50:
+            if not os.path.exists(s_file):
+                raise DoesNotExist("Session has been deleted")
+            try:
+                with open(s_file, "r") as data_f:
+                    return json.loads(data_f.read())
+            except JSONDecodeError:
+                time.sleep(0.05)
+                i += 1
+        raise DoesNotExist("Session does not exists or is not initialized")
+
     def _load(self):
         if not self._loaded:
-            s_file = self._get_session_file(True)
-            i = 0
-            success = False
-            while not success and i < 50:
-                if not os.path.exists(s_file):
-                    raise DoesNotExist("Session has been deleted")
-                try:
-                    with open(s_file, "r") as data_f:
-                        data = json.loads(data_f.read())
-                        for prop, value in data.items():
-                            attr = "_s_" + prop
-                            if hasattr(self, attr):
-                                if prop.startswith("date_"):
-                                    self.__setattr__(attr, dateutil.parser.parse(value))
-                                else:
-                                    self.__setattr__(attr, value)
-                            else:
-                                raise ValueError("Invalid property: %s" % prop)
-                    success = True
-                except JSONDecodeError:
-                    time.sleep(0.05)
-                    i += 1
-            if not success:
-                raise DoesNotExist("Session does not exists or is not initialized")
+            data = self._get_data()
+            for prop, value in data.items():
+                attr = "_s_" + prop
+                if hasattr(self, attr):
+                    if prop.startswith("date_"):
+                        self.__setattr__(attr, dateutil.parser.parse(value))
+                    else:
+                        self.__setattr__(attr, value)
+                else:
+                    raise ValueError("Invalid property: %s" % prop)
             self._loaded = True
 
     @staticmethod
@@ -602,13 +689,17 @@ class Session:
             os.remove(old_status_link)
 
     def _create_status_link(self):
-        new_status_dir = self._get_session_status_dir(self._s_status)
+        new_status_dir = self._get_session_status_dir(self.status)
         if not os.path.exists(new_status_dir):
             os.makedirs(new_status_dir)
-        os.symlink(self._get_session_file(), self._get_session_status_file(self._s_status))
+        os.symlink(self._get_session_file(), self._get_session_status_file(self.status))
 
     def _change_status_link(self):
-        if self._old_status is not None and self._old_status != self._s_status:
+        if self._old_status is not None and self._old_status != self.status:
             self._unlink_old_status()
             self._create_status_link()
         self._old_status = None
+
+
+class LockError(Exception):
+    pass
