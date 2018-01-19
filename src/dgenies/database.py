@@ -469,7 +469,7 @@ class Session:
         session_dir = Session._get_session_dir()
         sessions = []
         for file in os.listdir(session_dir):
-            if os.path.isfile(file):
+            if file != "status":
                 try:
                     sessions.append(Session(file))
                 except DoesNotExist:
@@ -515,7 +515,7 @@ class Session:
         except FileNotFoundError:
             pass
         status_file = self._get_session_status_file(self._s_status)
-        if os.path.exists(status_file):
+        if os.path.islink(status_file):
             os.remove(status_file)
         self._loaded = False
         if safe:
