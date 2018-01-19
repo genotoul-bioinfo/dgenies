@@ -8,16 +8,53 @@ from datetime import datetime
 import time
 import dateutil.parser
 import threading
+import abc
 
 
-class Job:
+class Database:
+
+    def __init__(self, d_id, type):
+        self.id = d_id
+        self.type = type
+
+    @abc.abstractmethod
+    def _get_lock_write_file(self):
+        return ""
+
+    def _lock_write(self):
+        lock_file = self._get_lock_write_file()
+        locked = False
+        tries = 0
+        while not locked and tries < 50:
+            try:
+                with open(lock_file, "x") as lock_f:
+                    lock_f.write(datetime.now().isoformat())
+                locked = True
+            except FileExistsError:
+                time.sleep(0.05)
+                tries += 1
+        if not locked:
+            raise LockError("Unable to lock %s %s" % (self.type, self.id))
+
+    def _unlock_write(self):
+        lock_file = self._get_lock_write_file()
+        if os.path.exists(lock_file):
+            os.remove(lock_file)
+
+
+class Job(Database):
     config = AppConfigReader()
 
     def __init__(self, id_job: str, _load=True):
         if os.path.sep in id_job:
             raise ValueError("Invalid caracter for job id: %s" % os.path.sep)
-        self.id_job = id_job
+        super().__init__(id_job, "job")
+        self.id_job = self.id
+        self._changes = []
         self._loaded = False
+        # !!!
+        # WARN!!!! Never change _j_ attributes values directly, use properties instead
+        # !!!
         self._j_email = None,
         self._j_date_created = None
         self._j_id_process = -1
@@ -41,6 +78,7 @@ class Job:
     @email.setter
     def email(self, value):
         self._j_email = value
+        self._changes.append("email")
 
     @property
     def date_created(self):
@@ -49,6 +87,7 @@ class Job:
     @date_created.setter
     def date_created(self, value):
         self._j_date_created = value
+        self._changes.append("date_created")
 
     @property
     def id_process(self):
@@ -57,6 +96,7 @@ class Job:
     @id_process.setter
     def id_process(self, value):
         self._j_id_process = value
+        self._changes.append("id_process")
 
     @property
     def batch_type(self):
@@ -65,6 +105,7 @@ class Job:
     @batch_type.setter
     def batch_type(self, value):
         self._j_batch_type = value
+        self._changes.append("batch_type")
 
     @property
     def status(self):
@@ -72,7 +113,8 @@ class Job:
 
     @status.setter
     def status(self, value):
-        self.change_status(value, False)
+        self._j_status = value
+        self._changes.append("status")
 
     @property
     def error(self):
@@ -81,6 +123,7 @@ class Job:
     @error.setter
     def error(self, value):
         self._j_error = value
+        self._changes.append("error")
 
     @property
     def mem_peak(self):
@@ -89,6 +132,7 @@ class Job:
     @mem_peak.setter
     def mem_peak(self, value):
         self._j_mem_peak = value
+        self._changes.append("mem_peak")
 
     @property
     def time_elapsed(self):
@@ -97,6 +141,7 @@ class Job:
     @time_elapsed.setter
     def time_elapsed(self, value):
         self._j_time_elapsed = value
+        self._changes.append("time_elapsed")
 
     @property
     def output_dir(self):
@@ -108,6 +153,16 @@ class Job:
 
     @classmethod
     def new(cls, id_job: str, email: str, batch_type: str="local", status: str="submitted", id_process: int=-1):
+        """
+        Create a new job
+        Note: it's the only method we can change _j_ attributes directly
+        :param id_job:
+        :param email:
+        :param batch_type:
+        :param status:
+        :param id_process:
+        :return:
+        """
         props = locals()
         del props["cls"]
 
@@ -148,8 +203,21 @@ class Job:
         data_file = self._get_data_file()
         if exists and not os.path.exists(data_file):
             raise DoesNotExist("Job does not exists anymore")
-        with open(data_file, "w") as data:
-            data.write(json.dumps(props))
+        if exists:
+            self._lock_write()
+            data = self._get_data()
+            if "status" in self._changes:
+                self._old_status = data["status"]
+            else:
+                self._old_status = None
+            for prop in self._changes:
+                data[prop] = props[prop]
+            with open(data_file, "w") as data_f:
+                data_f.write(json.dumps(data))
+            self._unlock_write()
+        else:
+            with open(data_file, "w") as data:
+                data.write(json.dumps(props))
         if self._old_status is not None:
             self._change_status_link()
             self._old_status = None
@@ -175,8 +243,7 @@ class Job:
         return jobs
 
     def change_status(self, new_status, save=True):
-        self._old_status = self._j_status
-        self._j_status = new_status
+        self.status = new_status
         if save:
             self.save()
 
@@ -186,7 +253,7 @@ class Job:
         if os.path.exists(job_dir) and os.path.isdir(job_dir):
             shutil.rmtree(job_dir)
         # Remove status link:
-        status_link = self._get_status_link(self._j_status)
+        status_link = self._get_status_link(self.status)
         if os.path.islink(status_link):
             os.remove(status_link)
         if safe:
@@ -268,29 +335,35 @@ class Job:
     # PRIVATE METHODS #
     #############################
 
+    def _get_data(self):
+        j_file = self._get_data_file(True)
+        i = 0
+        while i < 50:
+            if not os.path.exists(j_file):
+                raise DoesNotExist("Job does not exists or is not initialized")
+            try:
+                with open(j_file, "r") as data:
+                    return json.loads(data.read())
+            except JSONDecodeError:
+                time.sleep(0.05)
+                i += 1
+        raise DoesNotExist("Job does not exists or is not initialized")
+
     def _load(self):
         if not self._loaded:
-            j_file = self._get_data_file(True)
-            i = 0
-            success = False
-            while not success and i < 50:
-                if not os.path.exists(j_file):
-                    raise DoesNotExist("Job does not exists or is not initialized")
-                try:
-                    with open(j_file, "r") as data:
-                        data = json.loads(data.read())
-                        for prop, value in data.items():
-                            if prop.startswith("date_"):
-                                self.__setattr__("_j_" + prop, dateutil.parser.parse(value))
-                            else:
-                                self.__setattr__("_j_" + prop, value)
-                        self._loaded = True
-                    success = True
-                except JSONDecodeError:
-                    time.sleep(0.05)
-                    i += 1
-            if not success:
-                raise DoesNotExist("Job does not exists or is not initialized")
+            data = self._get_data()
+            for prop, value in data.items():
+                if prop.startswith("date_"):
+                    self.__setattr__("_j_" + prop, dateutil.parser.parse(value))
+                else:
+                    self.__setattr__("_j_" + prop, value)
+            self._loaded = True
+
+    def _get_lock_write_file(self):
+        lock_dir = os.path.join(self._get_data_dir(), "lock")
+        if not os.path.exists(lock_dir):
+            os.makedirs(lock_dir)
+        return os.path.join(lock_dir, self.id_job)
 
     def _get_data_dir(self):
         return os.path.join(self.config.app_data, self.id_job)
@@ -308,13 +381,13 @@ class Job:
             os.remove(old_status_link)
 
     def _create_status_link(self):
-        new_status_dir = self._get_status_dir(self._j_status)
+        new_status_dir = self._get_status_dir(self.status)
         if not os.path.exists(new_status_dir):
             os.makedirs(new_status_dir)
-        os.symlink(self._get_data_dir(), self._get_status_link(self._j_status))
+        os.symlink(self._get_data_dir(), self._get_status_link(self.status))
 
     def _change_status_link(self):
-        if self._old_status is not None and self._old_status != self._j_status:
+        if self._old_status is not None and self._old_status != self.status:
             self._unlink_old_status()
             self._create_status_link()
         self._old_status = None
@@ -345,12 +418,13 @@ class DoesNotExist(Exception):
     pass
 
 
-class Session:
+class Session(Database):
     config = AppConfigReader()
     allowed_statuses = ["reset", "pending", "active"]
 
     def __init__(self, s_id=None, _load=True):
-        self.s_id = s_id
+        super().__init__(s_id, "session")
+        self.s_id = self.id
         self._changes = []
         # !!!
         # WARN!!!! Never change _s_ attributes values directly, use properties instead
@@ -611,26 +685,6 @@ class Session:
         if not os.path.exists(lock_dir):
             os.makedirs(lock_dir)
         return os.path.join(lock_dir, self.s_id)
-
-    def _lock_write(self):
-        lock_file = self._get_lock_write_file()
-        locked = False
-        tries = 0
-        while not locked and tries < 50:
-            try:
-                with open(lock_file, "x") as lock_f:
-                    lock_f.write(datetime.now().isoformat())
-                locked = True
-            except FileExistsError:
-                time.sleep(0.05)
-                tries += 1
-        if not locked:
-            raise LockError("Unable to lock session %s" % self.s_id)
-
-    def _unlock_write(self):
-        lock_file = self._get_lock_write_file()
-        if os.path.exists(lock_file):
-            os.remove(lock_file)
 
     def _get_data(self):
         s_file = self._get_session_file(True)
