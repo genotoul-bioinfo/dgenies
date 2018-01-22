@@ -318,6 +318,7 @@ if __name__ == '__main__':
                                                      "email": args.email,
                                                      "output": log_file})
                     thread.start()  # Start the execution
+                    time.sleep(0.01)
                 nb_job += 1
         time.sleep(5)
         check_jobs(logs, url)
