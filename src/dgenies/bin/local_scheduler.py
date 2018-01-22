@@ -148,13 +148,13 @@ def parse_uploads_asks():
             session.remove()  # We consider the user has left
             nb_active_dl -= 1
     # Get pending:
-    sessions = Session.sort_sessions(Session.get_by_status("pending"), "position")
+    sessions = Session.sort_sessions(Session.get_by_status("pending"), "date_created")
     _printer("Pending:", len(sessions))
     for session in sessions:
         delay = (now - session.last_ping).total_seconds()
         if delay > 30:
             try:
-                session.reset()  # Reset position, the user has probably left
+                session.reset()  # Reset session, the user has probably left
             except DoesNotExist:
                 pass
             _printer("Reset 1 session:", session.s_id)

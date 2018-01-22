@@ -400,11 +400,10 @@ def ask_upload():
     try:
         s_id = request.form['s_id']
         session = Session(s_id=s_id)
-        allowed, position = session.ask_for_upload(True)
+        allowed = session.ask_for_upload(True)
         return jsonify({
             "success": True,
-            "allowed": allowed,
-            "position": position
+            "allowed": allowed
         })
     except DoesNotExist:
         return jsonify({"success": False, "message": "Session not initialized. Please refresh the page."})
@@ -426,7 +425,7 @@ def upload():
     try:
         s_id = request.form['s_id']
         session = Session(s_id=s_id)
-        if session.ask_for_upload(False)[0]:
+        if session.ask_for_upload(False):
             folder = session.upload_folder
             files = request.files[list(request.files.keys())[0]]
 

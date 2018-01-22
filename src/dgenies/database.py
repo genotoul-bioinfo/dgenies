@@ -13,6 +13,17 @@ import abc
 
 class Database:
 
+    _ops = {
+        "==": operator.eq,
+        "!=": operator.ne,
+        ">=": operator.ge,
+        ">": operator.gt,
+        "<=": operator.le,
+        "<": operator.lt,
+        "in": lambda a, b: a in b,
+        "not in": lambda a, b: a not in b
+    }
+
     def __init__(self, d_id, type):
         self.id = d_id
         self.type = type
@@ -260,24 +271,14 @@ class Job(Database):
             thread = threading.Timer(2, self.remove, kwargs={"safe": False})
             thread.start()
 
-    @staticmethod
-    def select(properties: dict):
+    @classmethod
+    def select(cls, properties: dict):
         """
         Select jobs with some properties
         :param properties: dict of properties with in values the value and the operator:
             {"prop1": [">", 25], "prop2": ["==", "success"], ...}
         :return:
         """
-        ops = {
-            "==": operator.eq,
-            "!=": operator.ne,
-            ">=": operator.ge,
-            ">": operator.gt,
-            "<=": operator.le,
-            "<": operator.lt,
-            "in": lambda a, b: a in b,
-            "not in": lambda a, b: a not in b
-        }
 
         if "id_job" in properties:
             jobs = [properties["id_job"]]
@@ -295,7 +296,7 @@ class Job(Database):
             else:
                 match = True
                 for my_property, value in properties.items():
-                    if value[0] not in ops:
+                    if value[0] not in cls._ops:
                         raise ValueError("Invalid operator: %s" % value[0])
                     try:
                         j_value = job.__getattribute__(my_property)
@@ -303,7 +304,7 @@ class Job(Database):
                         match = False
                         break
                     else:
-                        if not ops[value[0]](j_value, value[1]):
+                        if not cls._ops[value[0]](j_value, value[1]):
                             match = False
                             break
                 if not match:
@@ -433,7 +434,6 @@ class Session(Database):
         self._s_status = "reset"
         self._s_upload_folder = None
         self._s_date_last_ping = None
-        self._s_position = -1
         self._s_keep_active = False
         self._old_status = None
         self._loaded = False
@@ -482,15 +482,6 @@ class Session(Database):
     def last_ping(self, value):
         self._s_date_last_ping = value
         self._changes.append("date_last_ping")
-
-    @property
-    def position(self):
-        return self._s_position
-
-    @position.setter
-    def position(self, value):
-        self._s_position = value
-        self._changes.append("position")
 
     @property
     def keep_active(self):
@@ -574,32 +565,49 @@ class Session(Database):
         if save:
             self.save()
 
-    @staticmethod
-    def get_by_status(status):
+    @classmethod
+    def get_by_status(cls, status, conditions=()):
         """
         Get all Session objects with a given status
         :param status:
+        :param conditions: list of conditions to apply to selection
         :return: list of Session objects
         """
         status_dir = Session._get_session_status_dir(status)
         sessions = []
         for file in os.listdir(status_dir):
             try:
-                sessions.append(Session(file))
+                session = Session(file)
+                accept = True
+                for condition in conditions:
+                    if condition[1] not in cls._ops:
+                        raise ValueError("Invalid operator: %s" % condition[1])
+                    try:
+                        s_value = session.__getattribute__(condition[0])
+                    except AttributeError:
+                        accept = False
+                        break
+                    else:
+                        if not cls._ops[condition[1]](s_value, condition[2]):
+                            accept = False
+                            break
+                if accept:
+                    sessions.append(session)
             except DoesNotExist:
                 pass
         return sessions
 
-    @staticmethod
-    def get_by_statuses(statuses):
+    @classmethod
+    def get_by_statuses(cls, statuses, conditions=()):
         """
         Get all Session objects with status in the given list
         :param statuses: list of accepted statuses
+        :param conditions: list of conditions to apply to selection
         :return: list of Session objects
         """
         sessions = []
         for status in statuses:
-            sessions += Session.get_by_status(status)
+            sessions += cls.get_by_status(status, conditions)
         return sessions
 
     @classmethod
@@ -619,16 +627,10 @@ class Session(Database):
         return sessions
 
     def ask_for_upload(self, change_status=False):
-        all_asked = self.get_by_statuses(["pending", "active"])
+        all_asked = self.get_by_statuses(["pending", "active"], [["date_created", "<=", self.date_created]])
         nb_asked = len(all_asked)
-        if self.position == -1:
-            if nb_asked == 0:
-                position = 0
-            else:
-                position = all_asked[-1].position + 1
-        else:
+        if self.status != "reset":
             change_status = False
-            position = self.position
 
         status = "pending"
         if self.status == "active" or (change_status and nb_asked < 5):
@@ -636,11 +638,10 @@ class Session(Database):
 
         if status != self.status:
             self.status = status
-        self.position = position
         self.last_ping = datetime.now()
         self.save()
 
-        return status == "active", position
+        return status == "active"
 
     def ping(self):
         self.last_ping = datetime.now()
@@ -666,7 +667,6 @@ class Session(Database):
 
     def reset(self):
         self.status = "reset"
-        self.position = -1
         self.save()
 
     def enable(self):

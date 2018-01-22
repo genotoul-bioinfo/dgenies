@@ -6,7 +6,7 @@ import time
 import threading
 import re
 from dgenies.config_reader import AppConfigReader
-from dgenies.database import Job, Session, DoesNotExist
+from dgenies.database import Job, Session
 from .fasta import Fasta
 from .functions import Functions
 import requests
@@ -27,7 +27,7 @@ import binascii
 
 class JobManager:
 
-    def __init__(self, job: Job, query: Fasta=None, target: Fasta=None, mailer=None):
+    def __init__(self, job: Job, query: Fasta = None, target: Fasta = None, mailer=None):
         self.id_job = job.id_job
         self.output_dir = job.output_dir
         self.query = query
@@ -208,7 +208,7 @@ class JobManager:
         end = None
         mem_peak = None
         acct = subprocess.check_output("qacct -d 1 -j %s" % self.id_process,
-                                         shell=True).decode("utf-8")
+                                       shell=True).decode("utf-8")
         lines = acct.split("\n")
         for line in lines:
             if line.startswith("failed"):
@@ -279,7 +279,7 @@ class JobManager:
 
         retval = s.wait(jobid, drmaa.Session.TIMEOUT_WAIT_FOREVER)
         if retval.hasExited and (self.check_job_status_slurm() if batch_system_type == "slurm" else
-        self.check_job_status_sge()):
+                self.check_job_status_sge()):
             if step == "start":
                 status = self.check_job_success()
             else:
@@ -420,11 +420,11 @@ class JobManager:
         try:
             correct = True
             error_set = False
-            allowed, position = session.ask_for_upload(True)
+            allowed = session.ask_for_upload(True)
             while not allowed:
                 time.sleep(15)
                 session = Session(s_id=s_id)
-                allowed, position = session.ask_for_upload(False)
+                allowed = session.ask_for_upload(False)
             if allowed:
                 job.change_status("getfiles")
                 for file, input_type in files_to_download:
@@ -490,7 +490,7 @@ class JobManager:
                     return False, True, True
 
         all_downloaded = True
-        if correct :
+        if correct:
             if len(files_to_download) > 0:
                 all_downloaded = False
                 thread = threading.Timer(0, self.download_files_with_pending,
