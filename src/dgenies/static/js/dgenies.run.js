@@ -243,7 +243,7 @@ dgenies.run.enable_form = function () {
     dgenies.run.hide_loading("query");
     dgenies.run.hide_loading("target");
     dgenies.run.hide_success("query");
-    dgenies.run.hide_success("fasta");
+    dgenies.run.hide_success("target");
     dgenies.run.files = [undefined, undefined];
     dgenies.run.restore_form();
 };

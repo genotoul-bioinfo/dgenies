@@ -31,16 +31,17 @@ def main():
 
 @app.route("/run", methods=['GET'])
 def run():
-    s_id = Session.new()
-    id_job = Functions.random_string(5) + "_" + datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S')
-    if "id_job" in request.args:
-        id_job = request.args["id_job"]
-    email = ""
-    if "email" in request.args:
-        email = request.args["email"]
-    return render_template("run.html", title=app_title, id_job=id_job, email=email,
-                           menu="run", allowed_ext=ALLOWED_EXTENSIONS, s_id=s_id,
-                           max_upload_file_size=config_reader.max_upload_file_size)
+    with Session.connect():
+        s_id = Session.new()
+        id_job = Functions.random_string(5) + "_" + datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S')
+        if "id_job" in request.args:
+            id_job = request.args["id_job"]
+        email = ""
+        if "email" in request.args:
+            email = request.args["email"]
+        return render_template("run.html", title=app_title, id_job=id_job, email=email,
+                               menu="run", allowed_ext=ALLOWED_EXTENSIONS, s_id=s_id,
+                               max_upload_file_size=config_reader.max_upload_file_size)
 
 
 @app.route("/run-test", methods=['GET'])
@@ -48,14 +49,16 @@ def run_test():
     print(config_reader.allowed_ip_tests)
     if request.remote_addr not in config_reader.allowed_ip_tests:
         return abort(404)
-    return Session.new()
+    with Session.connect():
+        return Session.new()
 
 
 # Launch analysis
 @app.route("/launch_analysis", methods=['POST'])
 def launch_analysis():
     try:
-        session = Session.get(s_id=request.form["s_id"])
+        with Session.connect():
+            session = Session.get(s_id=request.form["s_id"])
     except DoesNotExist:
         return jsonify({"success": False, "errors": ["Session has expired. Please refresh the page and try again"]})
     # Reset session upload:
@@ -401,12 +404,12 @@ def summary(id_res):
 def ask_upload():
     try:
         s_id = request.form['s_id']
-        session = Session.get(s_id=s_id)
-        allowed, position = session.ask_for_upload(True)
+        with Session.connect():
+            session = Session.get(s_id=s_id)
+            allowed = session.ask_for_upload(True)
         return jsonify({
             "success": True,
-            "allowed": allowed,
-            "position": position
+            "allowed": allowed
         })
     except DoesNotExist:
         return jsonify({"success": False, "message": "Session not initialized. Please refresh the page."})
@@ -415,8 +418,9 @@ def ask_upload():
 @app.route("/ping-upload", methods=['POST'])
 def ping_upload():
     s_id = request.form['s_id']
-    session = Session.get(s_id=s_id)
-    session.ping()
+    with Session.connect():
+        session = Session.get(s_id=s_id)
+        session.ping()
     return "OK"
 
 
@@ -424,38 +428,39 @@ def ping_upload():
 def upload():
     try:
         s_id = request.form['s_id']
-        session = Session.get(s_id=s_id)
-        if session.ask_for_upload(False)[0]:
-            folder = session.upload_folder
-            files = request.files[list(request.files.keys())[0]]
+        with Session.connect():
+            session = Session.get(s_id=s_id)
+            if session.ask_for_upload(False):
+                folder = session.upload_folder
+                files = request.files[list(request.files.keys())[0]]
 
-            if files:
-                filename = files.filename
-                folder_files = os.path.join(app.config["UPLOAD_FOLDER"], folder)
-                if not os.path.exists(folder_files):
-                    os.makedirs(folder_files)
-                filename = Functions.get_valid_uploaded_filename(filename, folder_files)
-                mime_type = files.content_type
+                if files:
+                    filename = files.filename
+                    folder_files = os.path.join(app.config["UPLOAD_FOLDER"], folder)
+                    if not os.path.exists(folder_files):
+                        os.makedirs(folder_files)
+                    filename = Functions.get_valid_uploaded_filename(filename, folder_files)
+                    mime_type = files.content_type
 
-                if not Functions.allowed_file(files.filename):
-                    result = UploadFile(name=filename, type_f=mime_type, size=0, not_allowed_msg="File type not allowed")
-                    shutil.rmtree(folder_files)
+                    if not Functions.allowed_file(files.filename):
+                        result = UploadFile(name=filename, type_f=mime_type, size=0, not_allowed_msg="File type not allowed")
+                        shutil.rmtree(folder_files)
 
-                else:
-                    # save file to disk
-                    uploaded_file_path = os.path.join(folder_files, filename)
-                    files.save(uploaded_file_path)
+                    else:
+                        # save file to disk
+                        uploaded_file_path = os.path.join(folder_files, filename)
+                        files.save(uploaded_file_path)
 
-                    # get file size after saving
-                    size = os.path.getsize(uploaded_file_path)
+                        # get file size after saving
+                        size = os.path.getsize(uploaded_file_path)
 
-                    # return json for js call back
-                    result = UploadFile(name=filename, type_f=mime_type, size=size)
+                        # return json for js call back
+                        result = UploadFile(name=filename, type_f=mime_type, size=size)
 
-                return jsonify({"files": [result.get_file()], "success": "OK"})
+                    return jsonify({"files": [result.get_file()], "success": "OK"})
 
-            return jsonify({"files": [], "success": "404", "message": "No file provided"})
-        return jsonify({"files": [], "success": "ERR", "message": "Not allowed to upload!"})
+                return jsonify({"files": [], "success": "404", "message": "No file provided"})
+            return jsonify({"files": [], "success": "ERR", "message": "Not allowed to upload!"})
     except DoesNotExist:
         return jsonify({"files": [], "success": "ERR", "message": "Session not initialized. Please refresh the page."})
     except:  # Except all possible exceptions to prevent crashes

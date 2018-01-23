@@ -135,15 +135,16 @@ class JobManager:
 
     def send_mail(self):
         # Retrieve infos:
-        job = Job.get(Job.id_job == self.id_job)
-        if self.email is None:
-            self.email = job.email
-        status = job.status
-        self.error = job.error
+        with Job.connect():
+            job = Job.get(Job.id_job == self.id_job)
+            if self.email is None:
+                self.email = job.email
+            status = job.status
+            self.error = job.error
 
-        # Send:
-        self.mailer.send_mail([self.email], self.get_mail_subject(status), self.get_mail_content(status),
-                              self.get_mail_content_html(status))
+            # Send:
+            self.mailer.send_mail([self.email], self.get_mail_subject(status), self.get_mail_content(status),
+                                  self.get_mail_content_html(status))
 
     def search_error(self):
         logs = os.path.join(self.output_dir, "logs.txt")
@@ -166,20 +167,21 @@ class JobManager:
                    self.target.get_path(), self.target.get_path()]
         with open(self.logs, "w") as logs, open(self.paf_raw, "w") as paf_raw:
             p = subprocess.Popen(cmd, stdout=paf_raw, stderr=logs)
-        job = Job.get(Job.id_job == self.id_job)
-        job.id_process = p.pid
-        job.status = "started"
-        job.save()
-        p.wait()
-        if p.returncode == 0:
-            status = self.check_job_success()
-            job.status = status
+        with Job.connect():
+            job = Job.get(Job.id_job == self.id_job)
+            job.id_process = p.pid
+            job.status = "started"
             job.save()
-            return status == "success"
-        job.status = "fail"
-        self.error = self.search_error()
-        job.error = self.error
-        job.save()
+            p.wait()
+            if p.returncode == 0:
+                status = self.check_job_success()
+                job.status = status
+                job.save()
+                return status == "success"
+            job.status = "fail"
+            self.error = self.search_error()
+            job.error = self.error
+            job.save()
         return False
 
     def check_job_status_slurm(self):
@@ -238,11 +240,12 @@ class JobManager:
         return status == "0"
 
     def update_job_status(self, status, id_process=None):
-        job = Job.get(Job.id_job == self.id_job)
-        job.status = status
-        if id_process is not None:
-            job.id_process = id_process
-        job.save()
+        with Job.connect():
+            job = Job.get(Job.id_job == self.id_job)
+            job.status = status
+            if id_process is not None:
+                job.id_process = id_process
+            job.save()
 
     def launch_to_cluster(self, step, batch_system_type, command, args, log_out, log_err):
         import drmaa
@@ -331,11 +334,12 @@ class JobManager:
         try:
             dl_path = wget.download(fasta.get_path(), self.output_dir, None)
         except ConnectionError:
-            job = Job.get(Job.id_job == self.id_job)
-            job.status = "fail"
-            job.error = "<p>Url <b>%s</b> is not valid!</p>" \
-                        "<p>If this is unattended, please contact the support.</p>" % fasta.get_path()
-            job.save()
+            with Job.connect():
+                job = Job.get(Job.id_job == self.id_job)
+                job.status = "fail"
+                job.error = "<p>Url <b>%s</b> is not valid!</p>" \
+                            "<p>If this is unattended, please contact the support.</p>" % fasta.get_path()
+                job.save()
             return False, True, None, None
         filename = os.path.basename(dl_path)
         name = os.path.splitext(filename.replace(".gz", ""))[0]
@@ -351,11 +355,12 @@ class JobManager:
             try:
                 filename = requests.head(url, allow_redirects=True).url.split("/")[-1]
             except ConnectionError:
-                job = Job.get(Job.id_job == self.id_job)
-                job.status = "fail"
-                job.error = "<p>Url <b>%s</b> is not valid!</p>" \
-                            "<p>If this is unattended, please contact the support.</p>" % fasta.get_path()
-                job.save()
+                with Job.connect():
+                    job = Job.get(Job.id_job == self.id_job)
+                    job.status = "fail"
+                    job.error = "<p>Url <b>%s</b> is not valid!</p>" \
+                                "<p>If this is unattended, please contact the support.</p>" % fasta.get_path()
+                    job.save()
                 return False
         elif url.startswith("ftp://"):
             filename = url.split("/")[-1]
@@ -364,18 +369,20 @@ class JobManager:
         if filename is not None:
             allowed = Functions.allowed_file(filename)
             if not allowed:
-                job = Job.get(Job.id_job == self.id_job)
-                job.status = "fail"
-                job.error = "<p>File <b>%s</b> downloaded from <b>%s</b> is not a Fasta file!</p>" \
-                            "<p>If this is unattended, please contact the support.</p>" % (filename, url)
-                job.save()
+                with Job.connect():
+                    job = Job.get(Job.id_job == self.id_job)
+                    job.status = "fail"
+                    job.error = "<p>File <b>%s</b> downloaded from <b>%s</b> is not a Fasta file!</p>" \
+                                "<p>If this is unattended, please contact the support.</p>" % (filename, url)
+                    job.save()
         else:
             allowed = False
-            job = Job.get(Job.id_job == self.id_job)
-            job.status = "fail"
-            job.error = "<p>Url <b>%s</b> is not a valid URL!</p>" \
-                        "<p>If this is unattended, please contact the support.</p>" % (url)
-            job.save()
+            with Job.connect():
+                job = Job.get(Job.id_job == self.id_job)
+                job.status = "fail"
+                job.error = "<p>Url <b>%s</b> is not a valid URL!</p>" \
+                            "<p>If this is unattended, please contact the support.</p>" % (url)
+                job.save()
         return allowed
 
     def clear(self):
@@ -383,8 +390,9 @@ class JobManager:
 
     @staticmethod
     def get_pending_local_number():
-        return len(Job.select().where((Job.batch_type == "local") & (Job.status != "success") & (Job.status != "fail") &
-                                      (Job.status != "no-match")))
+        with Job.connect():
+            return len(Job.select().where((Job.batch_type == "local") & (Job.status != "success") &
+                                          (Job.status != "fail") & (Job.status != "no-match")))
 
     def check_file(self, input_type, should_be_local, max_upload_size_readable):
         """
@@ -394,70 +402,72 @@ class JobManager:
         :param max_upload_size_readable: max upload size human readable
         :return: (True if correct, True if error set [for fail], True if should be local)
         """
-        my_input = getattr(self, input_type)
-        if my_input.get_path().endswith(".gz") and not self.is_gz_file(my_input.get_path()):
-            # Check file is correctly gzipped
-            job = Job.get(Job.id_job == self.id_job)
-            job.status = "fail"
-            job.error = "Query file is not a correct gzip file"
-            job.save()
-            self.clear()
-            return False, True, None
-        # Check size:
-        file_size = self.get_file_size(my_input.get_path())
-        if -1 < self.config.max_upload_size < file_size:
-            job = Job.get(Job.id_job == self.id_job)
-            job.status = "fail"
-            job.error = "Query file exceed size limit of %d Mb (uncompressed)" % max_upload_size_readable
-            job.save()
-            self.clear()
-            return False, True, None
-        if self.config.batch_system_type != "local" and file_size >= getattr(self.config, "min_%s_size" % input_type):
-            should_be_local = False
+        with Job.connect():
+            my_input = getattr(self, input_type)
+            if my_input.get_path().endswith(".gz") and not self.is_gz_file(my_input.get_path()):
+                # Check file is correctly gzipped
+                job = Job.get(Job.id_job == self.id_job)
+                job.status = "fail"
+                job.error = "Query file is not a correct gzip file"
+                job.save()
+                self.clear()
+                return False, True, None
+            # Check size:
+            file_size = self.get_file_size(my_input.get_path())
+            if -1 < self.config.max_upload_size < file_size:
+                job = Job.get(Job.id_job == self.id_job)
+                job.status = "fail"
+                job.error = "Query file exceed size limit of %d Mb (uncompressed)" % max_upload_size_readable
+                job.save()
+                self.clear()
+                return False, True, None
+            if self.config.batch_system_type != "local" and file_size >= getattr(self.config, "min_%s_size" % input_type):
+                should_be_local = False
         return True, False, should_be_local
 
     def download_files_with_pending(self, files_to_download, should_be_local, max_upload_size_readable):
-        job = Job.get(Job.id_job == self.id_job)
-        job.status = "getfiles-waiting"
-        job.save()
-        # Create a session:
-        s_id = Session.new(True)
-        session = Session.get(s_id=s_id)
+        with Job.connect():
+            job = Job.get(Job.id_job == self.id_job)
+            job.status = "getfiles-waiting"
+            job.save()
+            # Create a session:
+            s_id = Session.new(True)
+            session = Session.get(s_id=s_id)
 
-        try:
-            correct = True
-            error_set = False
-            allowed, position = session.ask_for_upload(True)
-            while not allowed:
-                time.sleep(15)
-                session = Session.get(s_id=s_id)
-                allowed, position = session.ask_for_upload(False)
-            if allowed:
-                job.status = "getfiles"
-                job.save()
-                for file, input_type in files_to_download:
-                    correct, error_set, finale_path, filename = self.__getting_file_from_url(file, input_type)
-                    if not correct:
-                        break
-                    my_input = getattr(self, input_type)
-                    my_input.set_path(finale_path)
-                    my_input.set_name(filename)
-                    correct, error_set, should_be_local = self.check_file(input_type, should_be_local,
-                                                                          max_upload_size_readable)
-                    if not correct:
-                        break
-
-                if correct and job.batch_type != "local" and should_be_local \
-                        and self.get_pending_local_number() < self.config.max_run_local:
-                    job.batch_type = "local"
+            try:
+                correct = True
+                error_set = False
+                allowed = session.ask_for_upload(True)
+                while not allowed:
+                    time.sleep(15)
+                    session = Session.get(s_id=s_id)
+                    allowed = session.ask_for_upload(False)
+                if allowed:
+                    job.status = "getfiles"
                     job.save()
-            else:
+                    for file, input_type in files_to_download:
+                        correct, error_set, finale_path, filename = self.__getting_file_from_url(file, input_type)
+                        if not correct:
+                            break
+                        my_input = getattr(self, input_type)
+                        my_input.set_path(finale_path)
+                        my_input.set_name(filename)
+                        correct, error_set, should_be_local = self.check_file(input_type, should_be_local,
+                                                                              max_upload_size_readable)
+                        if not correct:
+                            break
+
+                    if correct and job.batch_type != "local" and should_be_local \
+                            and self.get_pending_local_number() < self.config.max_run_local:
+                        job.batch_type = "local"
+                        job.save()
+                else:
+                    correct = False
+            except:  # Except all possible exceptions
                 correct = False
-        except:  # Except all possible exceptions
-            correct = False
-            error_set = False
-        session.delete_instance()
-        self._after_start(correct, error_set)
+                error_set = False
+            session.delete_instance()
+            self._after_start(correct, error_set)
 
     def getting_files(self):
         """
@@ -467,51 +477,52 @@ class JobManager:
             [1] If error happenned, True if error already saved for the job, False else (error will be saved later)
             [2] True if no data must be downloaded (will be downloaded with pending if True)
         """
-        job = Job.get(Job.id_job == self.id_job)
-        job.status = "getfiles"
-        job.save()
-        correct = True
-        should_be_local = True
-        max_upload_size_readable = self.config.max_upload_size / 1024 / 1024  # Set it in Mb
-        files_to_download = []
-        if self.query is not None:
-            if self.query.get_type() == "local":
-                self.query.set_path(self.__getting_local_file(self.query, "query"))
-                correct, error_set, should_be_local = self.check_file("query", should_be_local,
-                                                                      max_upload_size_readable)
-                if not correct:
-                    return False, error_set, True
-            elif self.__check_url(self.query):
-                files_to_download.append([self.query, "query"])
-            else:
-                return False, True, True
-        if correct:
-            if self.target is not None:
-                if self.target.get_type() == "local":
-                    self.target.set_path(self.__getting_local_file(self.target, "target"))
-                    correct, error_set, should_be_local = self.check_file("target", should_be_local,
+        with Job.connect():
+            job = Job.get(Job.id_job == self.id_job)
+            job.status = "getfiles"
+            job.save()
+            correct = True
+            should_be_local = True
+            max_upload_size_readable = self.config.max_upload_size / 1024 / 1024  # Set it in Mb
+            files_to_download = []
+            if self.query is not None:
+                if self.query.get_type() == "local":
+                    self.query.set_path(self.__getting_local_file(self.query, "query"))
+                    correct, error_set, should_be_local = self.check_file("query", should_be_local,
                                                                           max_upload_size_readable)
                     if not correct:
                         return False, error_set, True
-                elif self.__check_url(self.target):
-                    files_to_download.append([self.target, "target"])
+                elif self.__check_url(self.query):
+                    files_to_download.append([self.query, "query"])
                 else:
                     return False, True, True
+            if correct:
+                if self.target is not None:
+                    if self.target.get_type() == "local":
+                        self.target.set_path(self.__getting_local_file(self.target, "target"))
+                        correct, error_set, should_be_local = self.check_file("target", should_be_local,
+                                                                              max_upload_size_readable)
+                        if not correct:
+                            return False, error_set, True
+                    elif self.__check_url(self.target):
+                        files_to_download.append([self.target, "target"])
+                    else:
+                        return False, True, True
 
-        all_downloaded = True
-        if correct :
-            if len(files_to_download) > 0:
-                all_downloaded = False
-                thread = threading.Timer(0, self.download_files_with_pending,
-                                         kwargs={"files_to_download": files_to_download,
-                                                 "should_be_local": should_be_local,
-                                                 "max_upload_size_readable": max_upload_size_readable})
-                thread.start()  # Start the execution
+            all_downloaded = True
+            if correct :
+                if len(files_to_download) > 0:
+                    all_downloaded = False
+                    thread = threading.Timer(0, self.download_files_with_pending,
+                                             kwargs={"files_to_download": files_to_download,
+                                                     "should_be_local": should_be_local,
+                                                     "max_upload_size_readable": max_upload_size_readable})
+                    thread.start()  # Start the execution
 
-            elif correct and job.batch_type != "local" and should_be_local \
-                    and self.get_pending_local_number() < self.config.max_run_local:
-                job.batch_type = "local"
-                job.save()
+                elif correct and job.batch_type != "local" and should_be_local \
+                        and self.get_pending_local_number() < self.config.max_run_local:
+                    job.batch_type = "local"
+                    job.save()
         return correct, False, all_downloaded
 
     def send_mail_post(self):
@@ -549,7 +560,7 @@ class JobManager:
                                       log_err=self.logs)
 
     def prepare_data_local(self):
-        with open(self.preptime_file, "w") as ptime:
+        with open(self.preptime_file, "w") as ptime, Job.connect():
             job = Job.get(Job.id_job == self.id_job)
             job.status = "preparing"
             job.save()
@@ -578,11 +589,12 @@ class JobManager:
             job.save()
 
     def prepare_data(self):
-        job = Job.get(Job.id_job == self.id_job)
-        if job.batch_type == "local":
-            self.prepare_data_local()
-        else:
-            self.prepare_data_cluster(job.batch_type)
+        with Job.connect():
+            job = Job.get(Job.id_job == self.id_job)
+            if job.batch_type == "local":
+                self.prepare_data_local()
+            else:
+                self.prepare_data_cluster(job.batch_type)
 
     def run_job(self, batch_system_type):
         success = False
@@ -591,58 +603,60 @@ class JobManager:
         elif batch_system_type in ["slurm", "sge"]:
             success = self.__launch_drmaa(batch_system_type)
         if success:
-            job = Job.get(Job.id_job == self.id_job)
-            with open(self.logs) as logs:
-                measures = logs.readlines()[-1].strip("\n").split(" ")
-                map_elapsed = round(float(measures[0]))
-                job.mem_peak = int(measures[1])
-            with open(self.preptime_file) as ptime:
-                lines = ptime.readlines()
-                start = int(lines[0].strip("\n"))
-                end = int(lines[1].strip("\n"))
-                prep_elapsed = end - start
-                job.time_elapsed = prep_elapsed + map_elapsed
-            job.status = "merging"
-            job.save()
-            if self.query is not None:
-                start = time.time()
-                paf_raw = self.paf_raw + ".split"
-                os.remove(self.get_query_split())
-                merger = Merger(self.paf_raw, paf_raw, self.query_index_split,
-                                self.idx_q)
-                merger.merge()
+            with Job.connect():
+                job = Job.get(Job.id_job == self.id_job)
+                with open(self.logs) as logs:
+                    measures = logs.readlines()[-1].strip("\n").split(" ")
+                    map_elapsed = round(float(measures[0]))
+                    job.mem_peak = int(measures[1])
+                with open(self.preptime_file) as ptime:
+                    lines = ptime.readlines()
+                    start = int(lines[0].strip("\n"))
+                    end = int(lines[1].strip("\n"))
+                    prep_elapsed = end - start
+                    job.time_elapsed = prep_elapsed + map_elapsed
+                job.status = "merging"
+                job.save()
+                if self.query is not None:
+                    start = time.time()
+                    paf_raw = self.paf_raw + ".split"
+                    os.remove(self.get_query_split())
+                    merger = Merger(self.paf_raw, paf_raw, self.query_index_split,
+                                    self.idx_q)
+                    merger.merge()
+                    os.remove(self.paf_raw)
+                    os.remove(self.query_index_split)
+                    self.paf_raw = paf_raw
+                    end = time.time()
+                    job.time_elapsed += end - start
+                else:
+                    shutil.copyfile(self.idx_t, self.idx_q)
+                    Path(os.path.join(self.output_dir, ".all-vs-all")).touch()
+                sorter = Sorter(self.paf_raw, self.paf)
+                sorter.sort()
                 os.remove(self.paf_raw)
-                os.remove(self.query_index_split)
-                self.paf_raw = paf_raw
-                end = time.time()
-                job.time_elapsed += end - start
-            else:
-                shutil.copyfile(self.idx_t, self.idx_q)
-                Path(os.path.join(self.output_dir, ".all-vs-all")).touch()
-            sorter = Sorter(self.paf_raw, self.paf)
-            sorter.sort()
-            os.remove(self.paf_raw)
-            if self.target is not None and os.path.exists(self.target.get_path()):
-                os.remove(self.target.get_path())
-            job = Job.get(Job.id_job == self.id_job)
-            job.status = "success"
-            job.save()
+                if self.target is not None and os.path.exists(self.target.get_path()):
+                    os.remove(self.target.get_path())
+                job = Job.get(Job.id_job == self.id_job)
+                job.status = "success"
+                job.save()
         if self.config.send_mail_status:
             self.send_mail_post()
 
     def _after_start(self, success, error_set):
-        if success:
-            job = Job.get(Job.id_job == self.id_job)
-            job.status = "waiting"
-            job.save()
-        else:
-            if not error_set:
+        with Job.connect():
+            if success:
                 job = Job.get(Job.id_job == self.id_job)
-                job.status = "fail"
-                job.error = "<p>Error while getting input files. Please contact the support to report the bug.</p>"
+                job.status = "waiting"
                 job.save()
-            if self.config.send_mail_status:
-                self.send_mail()
+            else:
+                if not error_set:
+                    job = Job.get(Job.id_job == self.id_job)
+                    job.status = "fail"
+                    job.error = "<p>Error while getting input files. Please contact the support to report the bug.</p>"
+                    job.save()
+                if self.config.send_mail_status:
+                    self.send_mail()
 
     def start_job(self):
         try:
@@ -652,36 +666,39 @@ class JobManager:
 
         except Exception:
             print(traceback.print_exc())
-            job = Job.get(Job.id_job == self.id_job)
-            job.status = "fail"
-            job.error = "<p>An unexpected error has occurred. Please contact the support to report the bug.</p>"
-            job.save()
-            if self.config.send_mail_status:
-                self.send_mail()
+            with Job.connect():
+                job = Job.get(Job.id_job == self.id_job)
+                job.status = "fail"
+                job.error = "<p>An unexpected error has occurred. Please contact the support to report the bug.</p>"
+                job.save()
+                if self.config.send_mail_status:
+                    self.send_mail()
 
     def launch(self):
-        j1 = Job.select().where(Job.id_job == self.id_job)
-        if len(j1) > 0:
-            print("Old job found without result dir existing: delete it from BDD!")
-            for j11 in j1:
-                j11.delete_instance()
-        if self.target is not None:
-            job = Job.create(id_job=self.id_job, email=self.email, batch_type=self.config.batch_system_type,
-                             date_created=datetime.now())
-            job.save()
-            if not os.path.exists(self.output_dir):
-                os.mkdir(self.output_dir)
-            thread = threading.Timer(1, self.start_job)
-            thread.start()
-        else:
-            job = Job.create(id_job=self.id_job, email=self.email, batch_type=self.config.batch_system_type,
-                             date_created=datetime.now(), status="fail")
-            job.save()
+        with Job.connect():
+            j1 = Job.select().where(Job.id_job == self.id_job)
+            if len(j1) > 0:
+                print("Old job found without result dir existing: delete it from BDD!")
+                for j11 in j1:
+                    j11.delete_instance()
+            if self.target is not None:
+                job = Job.create(id_job=self.id_job, email=self.email, batch_type=self.config.batch_system_type,
+                                 date_created=datetime.now())
+                job.save()
+                if not os.path.exists(self.output_dir):
+                    os.mkdir(self.output_dir)
+                thread = threading.Timer(1, self.start_job)
+                thread.start()
+            else:
+                job = Job.create(id_job=self.id_job, email=self.email, batch_type=self.config.batch_system_type,
+                                 date_created=datetime.now(), status="fail")
+                job.save()
 
     def status(self):
         try:
-            job = Job.get(Job.id_job == self.id_job)
-            return {"status": job.status, "mem_peak": job.mem_peak, "time_elapsed": job.time_elapsed,
-                    "error": job.error}
+            with Job.connect():
+                job = Job.get(Job.id_job == self.id_job)
+                return {"status": job.status, "mem_peak": job.mem_peak, "time_elapsed": job.time_elapsed,
+                        "error": job.error}
         except DoesNotExist:
             return {"status": "unknown", "error": ""}

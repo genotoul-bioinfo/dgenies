@@ -35,22 +35,23 @@ def parse_upload_folders(upload_folder, now, max_age, fake=False):
 
 
 def parse_database(app_data, max_age, fake=False):
-    old_jobs = Job.select().where(
-                  ((Job.status == "success") & (Job.date_created < datetime.now() - timedelta(days=max_age["data"])))
-                  |
-                  ((Job.status != "success") & (Job.date_created < datetime.now() - timedelta(days=max_age["error"])))
-              )
-    for job in old_jobs:
-        id_job = job.id_job
-        print("Removing job %s..." % id_job)
-        data_dir = os.path.join(app_data, id_job)
-        if os.path.exists(data_dir) and os.path.isdir(data_dir):
+    with Job.connect():
+        old_jobs = Job.select().where(
+                      ((Job.status == "success") & (Job.date_created < datetime.now() - timedelta(days=max_age["data"])))
+                      |
+                      ((Job.status != "success") & (Job.date_created < datetime.now() - timedelta(days=max_age["error"])))
+                  )
+        for job in old_jobs:
+            id_job = job.id_job
+            print("Removing job %s..." % id_job)
+            data_dir = os.path.join(app_data, id_job)
+            if os.path.exists(data_dir) and os.path.isdir(data_dir):
+                if not fake:
+                    shutil.rmtree(data_dir)
+            else:
+                print("Job %s has no data folder!" % id_job)
             if not fake:
-                shutil.rmtree(data_dir)
-        else:
-            print("Job %s has no data folder!" % id_job)
-        if not fake:
-            job.delete_instance()
+                job.delete_instance()
 
 
 def parse_data_folders(app_data, now, max_age, fake=False):

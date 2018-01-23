@@ -135,8 +135,9 @@ class Functions:
 
     @staticmethod
     def get_mail_for_job(id_job):
-        j1 = Job.get(Job.id_job == id_job)
-        return j1.email
+        with Job.connect():
+            j1 = Job.get(Job.id_job == id_job)
+            return j1.email
 
     @staticmethod
     def send_fasta_ready(mailer, job_name, sample_name, compressed=False):

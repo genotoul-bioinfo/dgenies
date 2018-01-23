@@ -1,6 +1,6 @@
 import os
 from dgenies.config_reader import AppConfigReader
-from peewee import SqliteDatabase, Model, CharField, IntegerField, DateTimeField, BooleanField, MySQLDatabase
+from peewee import SqliteDatabase, Model, CharField, IntegerField, DateTimeField, BooleanField, MySQLDatabase, OperationalError
 from datetime import datetime
 
 config = AppConfigReader()
@@ -14,10 +14,39 @@ elif db_type == "mysql":
                        passwd=config.database_password, database=config.database_db)
 else:
     raise Exception("Unsupported database type: " + db_type)
-db.connect()
 
 
-class Job(Model):
+class Database:
+
+    nb_open = 0
+
+    def __init__(self):
+        pass
+
+    def __enter__(self):
+        Database.nb_open += 1
+        try:
+            db.connect()
+        except OperationalError:
+            pass
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        Database.nb_open -= 1
+        if Database.nb_open == 0:
+            db.close()
+
+
+class BaseModel(Model):
+
+    class Meta:
+        database = db
+
+    @classmethod
+    def connect(cls):
+        return Database()
+
+
+class Job(BaseModel):
     id_job = CharField(max_length=50, unique=True)
     email = CharField()
     id_process = IntegerField(null=True)
@@ -28,17 +57,13 @@ class Job(Model):
     mem_peak = IntegerField(null=True)
     time_elapsed = IntegerField(null=True)
 
-    class Meta:
-        database = db
 
-
-class Session(Model):
+class Session(BaseModel):
     s_id = CharField(max_length=20, unique=True)
     date_created = DateTimeField()
     upload_folder = CharField(max_length=20)
-    allow_upload = BooleanField(default=False)
     last_ping = DateTimeField()
-    position = IntegerField(default=-1)
+    status = CharField(default="reset")
     keep_active = BooleanField(default=False)  # Uploads made by the server must be keep active
 
     @classmethod
@@ -58,27 +83,21 @@ class Session(Model):
         return my_s_id
 
     def ask_for_upload(self, change_status=False):
-        all_asked = Session.select().where(Session.position >= 0).order_by(Session.position)
+        all_asked = Session.select().where((Session.status == "pending") | (Session.status == "active")).\
+            order_by(Session.date_created)
         nb_asked = len(all_asked)
-        if self.position == -1:
-            if nb_asked == 0:
-                position = 0
-            else:
-                position = all_asked[-1].position + 1
-        else:
+        if self.status != "reset":
             change_status = False
-            position = self.position
 
-        allow_upload = self.allow_upload
-        if not allow_upload and change_status and nb_asked < 5:
-            allow_upload = True
+        status = "pending"
+        if self.status == "active" or (change_status and nb_asked < 5):
+            status = "active"
 
-        self.allow_upload = allow_upload
-        self.position = position
+        self.status = status
         self.last_ping = datetime.now()
         self.save()
 
-        return allow_upload, position
+        return self.status == "active"
 
     def ping(self):
         self.last_ping = datetime.now()
