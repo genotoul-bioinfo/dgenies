@@ -1,17 +1,23 @@
 import os
 from dgenies.config_reader import AppConfigReader
 from peewee import SqliteDatabase, Model, CharField, IntegerField, DateTimeField, BooleanField, MySQLDatabase, OperationalError
+from playhouse.shortcuts import RetryOperationalError
 from datetime import datetime
 
 config = AppConfigReader()
 db_url = config.database_url
 db_type = config.database_type
 
+
+class MyRetryDB(RetryOperationalError, MySQLDatabase):
+    pass
+
+
 if db_type == "sqlite":
     db = SqliteDatabase(db_url)
 elif db_type == "mysql":
-    db = MySQLDatabase(host=config.database_url, port=config.database_port, user=config.database_user,
-                       passwd=config.database_password, database=config.database_db)
+    db = MyRetryDB(host=config.database_url, port=config.database_port, user=config.database_user,
+                   passwd=config.database_password, database=config.database_db)
 else:
     raise Exception("Unsupported database type: " + db_type)
 
@@ -102,9 +108,6 @@ class Session(BaseModel):
     def ping(self):
         self.last_ping = datetime.now()
         self.save()
-
-    class Meta:
-        database = db
 
 
 if not Job.table_exists():
