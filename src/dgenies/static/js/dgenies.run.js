@@ -9,6 +9,7 @@ dgenies.run.allowed_ext = [];
 dgenies.run.max_upload_file_size = -1
 dgenies.run.files = [undefined, undefined];
 dgenies.run.allow_upload = false;
+dgenies.run.ping_interval = null
 
 dgenies.run.init = function (s_id, allowed_ext, max_upload_file_size=1073741824) {
     dgenies.run.s_id = s_id;
@@ -193,7 +194,7 @@ dgenies.run.set_events = function() {
             file_size_target.html("");
         }
     });
-    
+
     $("button#submit").click(function () {
         dgenies.run.submit();
     });
@@ -263,6 +264,21 @@ dgenies.run.do_submit = function () {
         function (data, status) {
             if (data["success"]) {
                 window.location = data["redirect"];
+            }
+            else {
+                if (dgenies.run.ping_interval !== null) {
+                    clearInterval(dgenies.run.ping_interval);
+                    dgenies.run.ping_interval = null;
+                }
+                if ("errors" in data) {
+                    for (let i = 0; i < data["errors"].length; i++) {
+                        dgenies.notify(data["errors"][i], "danger", 3000);
+                    }
+                }
+                else {
+                    dgenies.notify("An error has occurred. Please contact the support", "danger", 3000);
+                }
+                dgenies.run.enable_form();
             }
         }
         );
@@ -337,7 +353,7 @@ dgenies.run.ask_for_upload = function () {
             let allow_upload = data["allowed"];
             if (allow_upload) {
                 $("div#uploading-loading").html("Uploading files...");
-                window.setInterval(dgenies.run.ping_upload, 15000);
+                dgenies.run.ping_interval = window.setInterval(dgenies.run.ping_upload, 15000);
                 dgenies.run.upload_next();
             }
             else {
