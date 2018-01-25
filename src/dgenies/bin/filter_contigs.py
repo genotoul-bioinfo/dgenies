@@ -5,7 +5,7 @@ import re
 import shutil
 try:
     from dgenies.bin.index import Index
-except ModuleNotFoundError:
+except ImportError:
     from index import Index
 from Bio import SeqIO
 
