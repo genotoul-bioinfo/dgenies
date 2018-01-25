@@ -149,6 +149,7 @@ def parse_started_jobs():
                         elif job.status == "prepare-scheduled" and status == drmaa.JobState.RUNNING:
                             job.status = "preparing-cluster"
                             job.save()
+                        cluster_jobs_started.append(job.id_job)
                 else:
                     cluster_jobs_started.append(job.id_job)
     return jobs_started, cluster_jobs_started
