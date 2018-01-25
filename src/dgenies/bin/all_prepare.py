@@ -5,7 +5,7 @@ import time
 import os
 from split_fa import Splitter
 from filter_contigs import Filter
-from build_index import index_file
+from index import index_file
 
 parser = argparse.ArgumentParser(description="Split huge contigs")
 parser.add_argument('-q', '--query', type=str, required=False, help="Query fasta file")
