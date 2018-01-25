@@ -46,7 +46,20 @@
 <p>Sequences compared in this analysis:</p>
 <p><em>Target:</em> {{ target_name }}<br/>
 {% if query_name != "" %}
-    <em>Query:</em> {{ query_name }}</p>
+    <em>Query:</em> {{ query_name }}
+</p>
+
+{% if status == "success" %}
+    {% if target_filtered %}
+        <p>Note: target fasta has been filtered because it contains too small contigs.<br/>
+            To see which contigs has been removed from the analysis,
+            <a href="{{ url_base }}/filter-out/{{ job_name }}/target">click here</a>.</p>
+    {% endif %}
+    {% if query_filtered %}
+        <p>Note: query fasta has been filtered because it contains too small contigs.<br/>
+            To see which contigs has been removed from the analysis,
+            <a href="{{ url_base }}/filter-out/{{ job_name }}/query">click here</a>.</p>
+    {% endif %}
 {% endif %}
 
 <p>See you soon on D-Genies,</p>

@@ -151,7 +151,8 @@ def status(id_job):
     return render_template("status.html", title=app_title, status=j_status["status"],
                            error=j_status["error"].replace("#ID#", ""),
                            id_job=id_job, menu="results", mem_peak=mem_peak,
-                           time_elapsed=time_e)
+                           time_elapsed=time_e,
+                           query_filtered=job.is_query_filtered(), target_filtered=job.is_target_filtered())
 
 
 # Results path
@@ -175,8 +176,11 @@ def get_file(file, gzip=False):  # pragma: no cover
         # - send_file
         # This should not be so non-obvious
         return open(file, "rb" if gzip else "r").read()
+    except FileNotFoundError:
+        abort(404)
     except IOError as exc:
-        return str(exc)
+        print(exc)
+        abort(500)
 
 
 @app.route("/paf/<id_res>", methods=['GET'])
@@ -398,6 +402,21 @@ def summary(id_res):
         "success": True,
         "percents": percents
     })
+
+
+def get_filter_out(id_res, type_f):
+    filter_file = os.path.join(APP_DATA, id_res, ".filter-" + type_f)
+    return Response(get_file(filter_file), mimetype="text/plain")
+
+
+@app.route('/filter-out/<id_res>/query')
+def get_filter_out_query(id_res):
+    return get_filter_out(id_res=id_res, type_f="query")
+
+
+@app.route('/filter-out/<id_res>/target')
+def get_filter_out_target(id_res):
+    return get_filter_out(id_res=id_res, type_f="target")
 
 
 @app.route("/ask-upload", methods=['POST'])

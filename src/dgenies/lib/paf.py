@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import re
 import shutil
 from math import sqrt
 from numpy import mean
@@ -10,6 +11,54 @@ mpl.use('Agg')
 from matplotlib import pyplot as plt
 import json
 from collections import Counter
+
+
+class Index:
+
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def load(index_file, merge_splits=False):
+        with open(index_file, "r") as idx_q_f:
+            abs_start = {}
+            abs_current_start = 0
+            c_len = 0
+            name = idx_q_f.readline().strip("\n")
+            order = []
+            contigs = {}
+            reversed_c = {}
+            for line in idx_q_f:
+                parts = line.strip("\n").split("\t")
+                id_c = parts[0]
+                is_split = False
+                if merge_splits:
+                    match = re.match(r"(.+)_###_\d+", id_c)
+                    if match is not None:
+                        id_c = match.group(1)
+                        is_split = True
+                len_c = int(parts[1])
+                if len(parts) > 2:
+                    reversed_c[id_c] = parts[2] == "1"
+                else:
+                    reversed_c[id_c] = False
+                if not is_split or (is_split and id_c not in order):
+                    order.append(id_c)
+                    abs_start[id_c] = abs_current_start
+                    contigs[id_c] = len_c
+                else:
+                    contigs[id_c] += len_c
+                c_len += len_c
+                abs_current_start += len_c
+            return name, order, contigs, reversed_c, abs_start, c_len
+
+    @staticmethod
+    def save(index_file, name, contigs, order, reversed_c):
+        with open(index_file, "w") as idx:
+            idx.write(name + "\n")
+            for contig in order:
+                idx.write("\t".join([contig, str(contigs[contig]), "1" if reversed_c[contig] else "0"])
+                          + "\n")
 
 
 class Paf:
@@ -101,31 +150,6 @@ class Paf:
                     keep_lines[cls].append(line)
         return keep_lines
 
-    @staticmethod
-    def load_index(index):
-        with open(index, "r") as idx_q_f:
-            abs_start = {}
-            abs_current_start = 0
-            c_len = 0
-            name = idx_q_f.readline().strip("\n")
-            order = []
-            contigs = {}
-            reversed = {}
-            for line in idx_q_f:
-                parts = line.strip("\n").split("\t")
-                id_c = parts[0]
-                len_c = int(parts[1])
-                if len(parts) > 2:
-                    reversed[id_c] = parts[2] == "1"
-                else:
-                    reversed[id_c] = False
-                order.append(id_c)
-                abs_start[id_c] = abs_current_start
-                contigs[id_c] = len_c
-                c_len += len_c
-                abs_current_start += len_c
-            return name, order, contigs, reversed, abs_start, abs_current_start, c_len
-
     def parse_paf(self, merge_index=True, noise=True):
         min_idy = 10000000000
         max_idy = -10000000000
@@ -136,25 +160,21 @@ class Paf:
             "3": []  # idy > 0.75
         }
         try:
-            name_q, q_order, q_contigs, q_reversed, q_abs_start, q_abs_current_start, q_len = self.load_index(
-                self.idx_q)
+            name_q, q_order, q_contigs, q_reversed, q_abs_start, len_q = Index.load(self.idx_q)
             if merge_index:
-                q_contigs, q_order = self.parse_index(q_order, q_contigs, q_len)
+                q_contigs, q_order = self.parse_index(q_order, q_contigs, len_q)
         except IOError:
             self.error = "Index file does not exist for query!"
             return False
 
         try:
-            name_t, t_order, t_contigs, t_reversed, t_abs_start, t_abs_current_start, t_len = self.load_index(
-                self.idx_t)
+            name_t, t_order, t_contigs, t_reversed, t_abs_start, len_t = Index.load(self.idx_t)
             if merge_index:
-                t_contigs, t_order = self.parse_index(t_order, t_contigs, t_len)
+                t_contigs, t_order = self.parse_index(t_order, t_contigs, len_t)
         except IOError:
             self.error = "Index file does not exist for target!"
             return False
 
-        len_q = q_abs_current_start
-        len_t = t_abs_current_start
         lines_lens = []
 
         try:
@@ -497,7 +517,7 @@ class Paf:
         :return: content of the file
         """
         index = self.idx_q if to == "query" else self.idx_t
-        name, contigs_list, contigs, reversed, abs_start, abs_current_start, c_len = self.load_index(self.idx_t)
+        name, contigs_list, contigs, reversed, abs_start, c_len = Index.load(self.idx_t)
         with open(self.paf, "r") as paf:
             for line in paf:
                 c_name = line.strip("\n").split("\t")[0 if to == "query" else 5]

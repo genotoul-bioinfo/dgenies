@@ -55,6 +55,16 @@
             <p>Your job was completed successfully.<br/>
                 Please <a href="/result/{{ id_job }}">click here</a> to show results.</p>
             <p>Time elapsed: {{ time_elapsed }}</p>
+            {% if target_filtered %}
+                <p>Note: target fasta has been filtered because it contains too small contigs.<br/>
+                    To see which contigs has been removed from the analysis,
+                    <a href="/filter-out/{{ id_job }}/target">click here</a>.</p>
+            {% endif %}
+            {% if query_filtered %}
+                <p>Note: query fasta has been filtered because it contains too small contigs.<br/>
+                    To see which contigs has been removed from the analysis,
+                    <a href="/filter-out/{{ id_job }}/query">click here</a>.</p>
+            {% endif %}
         {% elif status == "no-match" %}
             <p>Your job is done.<br/>
             Sorry, we did not find any match between your query and your target.</p>

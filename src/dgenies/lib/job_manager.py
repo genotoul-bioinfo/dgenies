@@ -19,6 +19,7 @@ from pathlib import Path
 from urllib import request, parse
 from dgenies.bin.split_fa import Splitter
 from dgenies.bin.build_index import index_file
+from dgenies.bin.filter_contigs import Filter
 from dgenies.bin.merge_splitted_chrms import Merger
 from dgenies.bin.sort_paf import Sorter
 import gzip
@@ -95,6 +96,12 @@ class JobManager:
                 return "no-match"
         return "fail"
 
+    def is_query_filtered(self):
+        return os.path.exists(os.path.join(self.output_dir, ".filter-query"))
+
+    def is_target_filtered(self):
+        return os.path.exists(os.path.join(self.output_dir, ".filter-target"))
+
     def get_mail_content(self, status):
         message = "D-Genies\n\n"
         if status == "success":
@@ -114,6 +121,15 @@ class JobManager:
             message += "Target: %s\nQuery: %s\n\n" % (self.target.get_name(), self.query.get_name())
         else:
             message += "Target: %s\n\n" % self.target.get_name()
+        if status == "success":
+            if self.is_target_filtered():
+                message += str("Note: target fasta has been filtered because it contains too small contigs."
+                               "To see which contigs has been removed from the analysis, click on the link below:\n"
+                               "{1}/filter-out/{0}/target\n\n").format(self.id_job, self.config.web_url)
+            if self.is_query_filtered():
+                message += str("Note: query fasta has been filtered because it contains too small contigs."
+                               "To see which contigs has been removed from the analysis, click on the link below:\n"
+                               "{1}/filter-out/{0}/query\n\n").format(self.id_job, self.config.web_url)
         message += "See you soon on D-Genies,\n"
         message += "The team"
         return message
@@ -125,7 +141,8 @@ class JobManager:
             return template.render(job_name=self.id_job, status=status, url_base=self.config.web_url,
                                    query_name=self.query.get_name() if self.query is not None else "",
                                    target_name=self.target.get_name(),
-                                   error=self.error)
+                                   error=self.error,
+                                   target_filtered=self.is_target_filtered(), query_filtered=self.is_query_filtered())
 
     def get_mail_subject(self, status):
         if status == "success" or status == "no-match":
@@ -143,8 +160,10 @@ class JobManager:
             self.error = job.error
 
             # Send:
-            self.mailer.send_mail([self.email], self.get_mail_subject(status), self.get_mail_content(status),
-                                  self.get_mail_content_html(status))
+            self.mailer.send_mail(recipients=[self.email],
+                                  subject=self.get_mail_subject(status),
+                                  message=self.get_mail_content(status),
+                                  message_html=self.get_mail_content_html(status))
 
     def search_error(self):
         logs = os.path.join(self.output_dir, "logs.txt")
@@ -548,13 +567,17 @@ class JobManager:
         thread.start()  # Start the execution
 
     def prepare_data_cluster(self, batch_system_type):
-        args = [self.preptime_file, self.config.cluster_python_script, self.target.get_path(), self.target.get_name(),
-                self.idx_t]
+        args = [self.config.cluster_prepare_script,
+                "-t", self.target.get_path(),
+                "-m", self.target.get_name(),
+                "-p", self.preptime_file]
         if self.query is not None:
-            args += [self.query.get_path(), self.query.get_name(), self.get_query_split()]
+            args += ["-q", self.query.get_path(),
+                     "-u", self.get_query_split(),
+                     "-n", self.query.get_name()]
         return self.launch_to_cluster(step="prepare",
                                       batch_system_type=batch_system_type,
-                                      command=self.config.cluster_prepare_script,
+                                      command=self.config.cluster_python_script,
                                       args=args,
                                       log_out=self.logs,
                                       log_err=self.logs)
@@ -570,14 +593,55 @@ class JobManager:
                 fasta_in = self.query.get_path()
                 splitter = Splitter(input_f=fasta_in, name_f=self.query.get_name(), output_f=self.get_query_split(),
                                     query_index=self.query_index_split)
-                if not splitter.split():
+                if splitter.split():
+                    filtered_fasta = os.path.join(os.path.dirname(self.get_query_split()), "filtered_" +
+                                                  os.path.basename(self.get_query_split()))
+                    filter_f = Filter(fasta=self.get_query_split(),
+                                      index_file=self.query_index_split,
+                                      type_f="query",
+                                      min_filtered=round(splitter.nb_contigs / 4),
+                                      split=True,
+                                      out_fasta=filtered_fasta,
+                                      replace_fa=True)
+                    filter_f.filter()
+                else:
                     job.status = "fail"
                     job.error = "<br/>".join(["Query fasta file is not valid!", error_tail])
                     job.save()
                     if self.config.send_mail_status:
                         self.send_mail_post()
                     return False
-            if not index_file(self.target.get_path(), self.target.get_name(), self.idx_t):
+            uncompressed = None
+            if self.target.get_path().endswith(".gz"):
+                uncompressed = self.target.get_path()[:-3]
+            success, nb_contigs = index_file(self.target.get_path(), self.target.get_name(), self.idx_t, uncompressed)
+            if success:
+                in_fasta = self.target.get_path()
+                if uncompressed is not None:
+                    in_fasta = uncompressed
+                filtered_fasta = os.path.join(os.path.dirname(in_fasta), "filtered_" + os.path.basename(in_fasta))
+                filter_f = Filter(fasta=in_fasta,
+                                  index_file=self.idx_t,
+                                  type_f="target",
+                                  min_filtered=round(nb_contigs / 4),
+                                  split=False,
+                                  out_fasta=filtered_fasta,
+                                  replace_fa=True)
+                is_filtered = filter_f.filter()
+                if uncompressed is not None:
+                    if is_filtered:
+                        os.remove(self.target.get_path())
+                        self.target.set_path(uncompressed)
+                        with open(os.path.join(self.output_dir, ".target"), "w") as save_file:
+                            save_file.write(uncompressed)
+                    else:
+                        os.remove(uncompressed)
+            else:
+                if uncompressed is not None:
+                    try:
+                        os.remove(uncompressed)
+                    except FileNotFoundError:
+                        pass
                 job.status = "fail"
                 job.error = "<br/>".join(["Target fasta file is not valid!", error_tail])
                 job.save()

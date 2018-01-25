@@ -19,11 +19,12 @@ class Splitter:
         self.output_gz = output_f.endswith(".gz")
         self.out_dir = os.path.dirname(output_f)
         self.index_file = os.path.join(self.out_dir, query_index)
+        self.nb_contigs = 0
 
     def split(self):
         """
         Split contigs in smaller ones
-        :return: True if the Fasta is correct, False else
+        :return: True if the Fasta is correct, else False
         """
         has_header = False
         next_header = False  # True if next line must be a header line
@@ -41,6 +42,7 @@ class Splitter:
                         has_header = True
                         next_header = False
                         if chr_name is not None and len(fasta_str) > 0:
+                            self.nb_contigs += 1
                             self.flush_contig(fasta_str, chr_name, self.size_c, enc, index_f)
                         elif chr_name is not None:
                             return False
@@ -53,6 +55,7 @@ class Splitter:
                         fasta_str += line
                     elif len(line) == 0:
                         next_header = True
+                self.nb_contigs += 1
                 self.flush_contig(fasta_str, chr_name, self.size_c, enc, index_f)
         return has_header
 
