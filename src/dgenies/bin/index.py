@@ -5,6 +5,54 @@ import re
 import gzip
 
 
+class Index:
+
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def load(index_file, merge_splits=False):
+        with open(index_file, "r") as idx_q_f:
+            abs_start = {}
+            abs_current_start = 0
+            c_len = 0
+            name = idx_q_f.readline().strip("\n")
+            order = []
+            contigs = {}
+            reversed_c = {}
+            for line in idx_q_f:
+                parts = line.strip("\n").split("\t")
+                id_c = parts[0]
+                is_split = False
+                if merge_splits:
+                    match = re.match(r"(.+)_###_\d+", id_c)
+                    if match is not None:
+                        id_c = match.group(1)
+                        is_split = True
+                len_c = int(parts[1])
+                if len(parts) > 2:
+                    reversed_c[id_c] = parts[2] == "1"
+                else:
+                    reversed_c[id_c] = False
+                if not is_split or (is_split and id_c not in order):
+                    order.append(id_c)
+                    abs_start[id_c] = abs_current_start
+                    contigs[id_c] = len_c
+                else:
+                    contigs[id_c] += len_c
+                c_len += len_c
+                abs_current_start += len_c
+            return name, order, contigs, reversed_c, abs_start, c_len
+
+    @staticmethod
+    def save(index_file, name, contigs, order, reversed_c):
+        with open(index_file, "w") as idx:
+            idx.write(name + "\n")
+            for contig in order:
+                idx.write("\t".join([contig, str(contigs[contig]), "1" if reversed_c[contig] else "0"])
+                          + "\n")
+
+
 def index_file(fasta_path, fasta_name, out, write_fa=None):
     has_header = False
     next_header = False  # True if next line must be a header line

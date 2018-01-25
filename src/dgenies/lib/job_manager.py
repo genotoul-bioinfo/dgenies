@@ -18,7 +18,7 @@ import traceback
 from pathlib import Path
 from urllib import request, parse
 from dgenies.bin.split_fa import Splitter
-from dgenies.bin.build_index import index_file
+from dgenies.bin.index import index_file
 from dgenies.bin.filter_contigs import Filter
 from dgenies.bin.merge_splitted_chrms import Merger
 from dgenies.bin.sort_paf import Sorter

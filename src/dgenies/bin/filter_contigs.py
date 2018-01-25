@@ -3,7 +3,10 @@
 import os
 import re
 import shutil
-from dgenies.lib.paf import Index
+try:
+    from dgenies.bin.index import Index
+except ModuleNotFoundError:
+    from index import Index
 from Bio import SeqIO
 
 
