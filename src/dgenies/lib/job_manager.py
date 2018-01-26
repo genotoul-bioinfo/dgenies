@@ -74,11 +74,9 @@ class JobManager:
         if os.path.exists(query_file):
             with open(query_file) as q_f:
                 file_path = q_f.readline()
-                file_path_dir = os.path.dirname(file_path)
-                split_query = glob.glob(os.path.join(file_path_dir, "split_query_*"))
                 self.query = Fasta(
                     name=os.path.splitext(os.path.basename(file_path.replace(".gz", "")).split("_", 1)[1])[0],
-                    path=file_path if len(split_query) == 0 else split_query,
+                    path=file_path,
                     type_f="local"
                 )
         target_file = os.path.join(res_dir, ".target")
