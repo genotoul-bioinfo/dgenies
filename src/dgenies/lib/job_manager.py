@@ -25,6 +25,7 @@ from dgenies.bin.sort_paf import Sorter
 import gzip
 import io
 import binascii
+import glob
 
 
 class JobManager:
@@ -73,9 +74,11 @@ class JobManager:
         if os.path.exists(query_file):
             with open(query_file) as q_f:
                 file_path = q_f.readline()
+                file_path_dir = os.path.dirname(file_path)
+                split_query = glob.glob(os.path.join(file_path_dir, "split_query_*"))
                 self.query = Fasta(
                     name=os.path.splitext(os.path.basename(file_path.replace(".gz", "")).split("_", 1)[1])[0],
-                    path=file_path,
+                    path=file_path if len(split_query) == 0 else split_query,
                     type_f="local"
                 )
         target_file = os.path.join(res_dir, ".target")
@@ -325,6 +328,7 @@ class JobManager:
             args = ["-t", self.config.nb_threads, self.target.get_path(), self.get_query_split()]
         else:
             args = ["-t", self.config.nb_threads, "-X", self.target.get_path(), self.target.get_path()]
+        print(args)
         return self.launch_to_cluster(step="start",
                                       batch_system_type=batch_system_type,
                                       command=self.config.minimap2_cluster_exec,
