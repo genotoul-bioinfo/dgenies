@@ -329,7 +329,6 @@ class JobManager:
             args = ["-t", self.config.nb_threads, self.target.get_path(), self.get_query_split()]
         else:
             args = ["-t", self.config.nb_threads, "-X", self.target.get_path(), self.target.get_path()]
-        print(args)
         return self.launch_to_cluster(step="start",
                                       batch_system_type=batch_system_type,
                                       command=self.config.minimap2_cluster_exec,
