@@ -7,6 +7,7 @@ try:
     from dgenies.bin.index import Index
 except ImportError:
     from index import Index
+from pathlib import Path
 from Bio import SeqIO
 
 
@@ -49,12 +50,18 @@ class Filter:
         n95_contig = None
         n95_value = 0.95 * c_len
         pos = -1
+        len_small_contigs = 0
+        len_1_pct = 0.01 * c_len
         for contig in contigs_order:
             pos += 1
             sum_l += contigs[contig]
+            if contigs[contig] < len_1_pct:
+                len_small_contigs += contigs[contig]
             if sum_l >= n95_value:
                 n95_contig = contig
-                break
+
+        if self.type_f == "query" and len_small_contigs >= 0.7 * 0.95 * c_len:
+            Path(os.path.join(os.path.dirname(self.fasta), ".do-sort")).touch()
 
         # Min length of contigs
         min_length = 0.05 * contigs[n95_contig]

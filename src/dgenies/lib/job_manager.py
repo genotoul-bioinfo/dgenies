@@ -22,6 +22,7 @@ from dgenies.bin.index import index_file
 from dgenies.bin.filter_contigs import Filter
 from dgenies.bin.merge_splitted_chrms import Merger
 from dgenies.bin.sort_paf import Sorter
+from dgenies.lib.paf import Paf
 import gzip
 import io
 import binascii
@@ -705,9 +706,21 @@ class JobManager:
                 os.remove(self.paf_raw)
                 if self.target is not None and os.path.exists(self.target.get_path()):
                     os.remove(self.target.get_path())
-                job = Job.get(Job.id_job == self.id_job)
-                job.status = "success"
-                job.save()
+                if os.path.isfile(os.path.join(self.output_dir, ".do-sort")):
+                    paf = Paf(paf=self.paf,
+                              idx_q=self.idx_q,
+                              idx_t=self.idx_t,
+                              auto_parse=False)
+                    paf.sort()
+                    if not paf.parsed:
+                        success = False
+                        job = Job.get(Job.id_job == self.id_job)
+                        job.status = "fail"
+                        job.error = "Error while sorting query. Please contact us to report the bug"
+                if success:
+                    job = Job.get(Job.id_job == self.id_job)
+                    job.status = "success"
+                    job.save()
         if self.config.send_mail_status:
             self.send_mail_post()
 
