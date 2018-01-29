@@ -291,7 +291,7 @@ class JobManager:
                 jt.nativeSpecification = native_specs.format(8000, 1, "02:00:00")
             elif step == "start":
                 jt.nativeSpecification = native_specs.format(
-                    self.config.cluster_memory / self.config.cluster_threads * 1000, self.config.cluster_threads,
+                    self.config.cluster_memory // self.config.cluster_threads * 1000, self.config.cluster_threads,
                     "02:00:00")
         elif batch_system_type == "sge":
             if native_specs == "###DEFAULT###":
@@ -300,7 +300,7 @@ class JobManager:
                 jt.nativeSpecification = native_specs.format(8000, 1)
             elif step == "start":
                 jt.nativeSpecification = native_specs.format(
-                    self.config.cluster_memory / self.config.cluster_threads * 1000, self.config.cluster_threads)
+                    self.config.cluster_memory // self.config.cluster_threads * 1000, self.config.cluster_threads)
         jt.workingDirectory = self.output_dir
         jobid = s.runJob(jt)
         self.id_process = jobid
