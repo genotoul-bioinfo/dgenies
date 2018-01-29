@@ -76,7 +76,7 @@ class AppConfigReader:
 
     def _get_nb_threads(self):
         try:
-            return self.reader.get("global", "threads")
+            return self.reader.get("global", "threads_local")
         except NoOptionError:
             return "4"
 
@@ -330,6 +330,21 @@ class AppConfigReader:
             return self._replace_vars(self.reader.get("cluster", "python3_script"))
         except (NoOptionError, NoSectionError):
             return "python3"
+
+    def _get_cluster_memory(self):
+        try:
+            memory = int(self.reader.get("cluster", "memory"))
+            if memory % self._get_cluster_threads() != 0:
+                raise ValueError("ERROR in config: cluster memory must be divisible by the number of cluster threads!")
+            return memory
+        except (NoOptionError, NoSectionError):
+            return 32
+
+    def _get_cluster_threads(self):
+        try:
+            return int(self.reader.get("cluster", "threads"))
+        except (NoOptionError, NoSectionError):
+            return 4
 
     def _get_debug(self):
         try:
