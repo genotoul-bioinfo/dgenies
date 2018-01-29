@@ -30,12 +30,30 @@ d3.boxplot.old_translate = null;
 d3.boxplot.scale = 1000;
 d3.boxplot.content_lines_width = d3.boxplot.scale / 400;
 d3.boxplot.break_lines_width = d3.boxplot.scale / 1500;
+d3.boxplot.color_idy_theme = "default";
+d3.boxplot.color_idy_themes = ["default", "colorblind", "black&white"]
 d3.boxplot.color_idy = {
-    "3": "#094b09",
-    "2": "#2ebd40",
-    "1": "#d5670b",
-    "0": "#ffd84b",
-    "-1": "#fff"
+    "default": {
+        "3": "#094b09",
+        "2": "#2ebd40",
+        "1": "#d5670b",
+        "0": "#ffd84b",
+        "-1": "#fff"
+    },
+    "colorblind": {
+        "3": "#000",
+        "2": "#006DDB",
+        "1": "#DB6E00",
+        "0": "#FFB677",
+        "-1": "#fff"
+    },
+    "black&white": {
+        "3": "#000",
+        "2": "#626262",
+        "1": "#9c9c9c",
+        "0": "#DDDCDC",
+        "-1": "#fff"
+    }
 };
 d3.boxplot.limit_idy = null;
 d3.boxplot.min_idy_draw = 0;
@@ -599,7 +617,7 @@ d3.boxplot._sort_color_idy = function(a, b) {
 
 d3.boxplot.draw_legend = function () {
     d3.select("#legend .draw").html(""); //Empty legend
-    let color_idy = d3.boxplot.color_idy;
+    let color_idy = d3.boxplot.color_idy[d3.boxplot.color_idy_theme];
     let color_idy_len = Object.keys(color_idy).length;
     let color_idy_order = ["3", "2", "1", "0"];
     let color_idy_labels = [d3.boxplot.limit_idy[2].toString(), d3.boxplot.limit_idy[1].toString(),
@@ -689,13 +707,37 @@ d3.boxplot.__draw_idy_lines = function (idy, lines, x_len, y_len) {
         if (lines[idy].length > 0) {
             d3.boxplot.container.append("path")
                 .attr("d", d3.boxplot.__lineFunction(lines[idy], min_size, max_size, x_len, y_len))
-                .attr("class", "content-lines s_" + min_size.toString().replace(".", "_"))
+                .attr("class", "content-lines s_" + min_size.toString().replace(".", "_") + " idy_" + idy)
                 .attr("stroke-width", d3.boxplot.content_lines_width + "px")
-                .attr("stroke", d3.boxplot.color_idy[idy])
+                .attr("stroke", d3.boxplot.color_idy[d3.boxplot.color_idy_theme][idy])
                 .attr("stroke-linecap", d3.boxplot.linecap);
         }
     }
-}
+};
+
+d3.boxplot.switch_color_theme = function () {
+    let current_theme = d3.boxplot.color_idy_theme;
+    let idx = d3.boxplot.color_idy_themes.indexOf(current_theme)
+    if (idx < d3.boxplot.color_idy_themes.length -1) {
+        idx ++;
+    }
+    else {
+        idx = 0;
+    }
+    d3.boxplot.change_color_theme(d3.boxplot.color_idy_themes[idx]);
+};
+
+d3.boxplot.change_color_theme = function (theme) {
+    if (d3.boxplot.color_idy_themes.indexOf(theme) === -1) {
+        throw "Theme not valid!"
+    }
+    for (let idy=0; idy <4; idy++) {
+        d3.boxplot.color_idy_theme = theme;
+        d3.boxplot.container.selectAll("path.idy_" + idy.toString())
+            .attr("stroke", d3.boxplot.color_idy[d3.boxplot.color_idy_theme][idy])
+    }
+    d3.boxplot.draw_legend();
+};
 
 d3.boxplot.draw_lines = function (lines=d3.boxplot.lines, x_len=d3.boxplot.x_len, y_len=d3.boxplot.y_len) {
 

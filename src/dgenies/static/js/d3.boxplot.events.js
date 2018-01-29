@@ -19,6 +19,8 @@ d3.boxplot.events.init = function () {
     $("input#chroms-limits").change(function() {
         d3.boxplot.events.set_break_lines_visibility(this.value);
     });
+    $("div#legend div.draw").on("click", d3.boxplot.switch_color_theme);
+
 };
 
 d3.boxplot.events.init_context_menu = function () {
