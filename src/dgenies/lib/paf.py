@@ -348,65 +348,65 @@ class Paf:
         Sort contigs according to reference target and reorient them if needed
         """
         self.parse_paf(False)
+        sorted_file = self.paf + ".sorted"
         if not self.sorted:  # Do the sort
-            gravity_contig , lines_on_block = self.compute_gravity_contigs()
+            if not self.paf.endswith(".sorted") and not self.idx_q.endswith(".sorted") and \
+                    (not os.path.exists(self.paf + ".sorted") or not os.path.exists(self.idx_q + ".sorted")):
+                gravity_contig , lines_on_block = self.compute_gravity_contigs()
 
-            # For each contig, find best block, and deduce gravity of contig:
-            gravity_on_contig = {}
-            reorient_contigs = []
-            for contig, chr_blocks in gravity_contig.items():
-                # Find best block:
-                max_number = 0
-                max_chr = None
-                for chrm, size in chr_blocks.items():
-                    if size > max_number:
-                        max_number = size
-                        max_chr = chrm
+                # For each contig, find best block, and deduce gravity of contig:
+                gravity_on_contig = {}
+                reorient_contigs = []
+                for contig, chr_blocks in gravity_contig.items():
+                    # Find best block:
+                    max_number = 0
+                    max_chr = None
+                    for chrm, size in chr_blocks.items():
+                        if size > max_number:
+                            max_number = size
+                            max_chr = chrm
 
-                # Compute gravity of contig:
-                nb_items = 0
-                sum_items = 0
-                lines_on_selected_block = lines_on_block[(contig, max_chr)]
-                for med in lines_on_selected_block:
-                    sum_items += med[0] * med[1]
-                    nb_items += med[1]
-                gravity_on_contig[contig] = sum_items / nb_items
+                    # Compute gravity of contig:
+                    nb_items = 0
+                    sum_items = 0
+                    lines_on_selected_block = lines_on_block[(contig, max_chr)]
+                    for med in lines_on_selected_block:
+                        sum_items += med[0] * med[1]
+                        nb_items += med[1]
+                    gravity_on_contig[contig] = sum_items / nb_items
 
-                # Check if contig must be re-oriented:
-                if len(lines_on_selected_block) > 0:
-                    if not self.is_contig_well_oriented(lines_on_selected_block, contig, max_chr):
-                        reorient_contigs.append(contig)
+                    # Check if contig must be re-oriented:
+                    if len(lines_on_selected_block) > 0:
+                        if not self.is_contig_well_oriented(lines_on_selected_block, contig, max_chr):
+                            reorient_contigs.append(contig)
 
-            # Sort contigs:
-            self.q_order.sort(key=lambda x: gravity_on_contig[x] if x in gravity_on_contig else self.len_q + 1000)
+                # Sort contigs:
+                self.q_order.sort(key=lambda x: gravity_on_contig[x] if x in gravity_on_contig else self.len_q + 1000)
 
-            self.idx_q += ".sorted"
+                self.idx_q += ".sorted"
 
-            with open(self.idx_q, "w") as idx_q_f:
-                idx_q_f.write(self.name_q + "\n")
-                for contig in self.q_order:
-                    idx_q_f.write("\t".join([contig, str(self.q_contigs[contig])]) + "\n")
+                with open(self.idx_q, "w") as idx_q_f:
+                    idx_q_f.write(self.name_q + "\n")
+                    for contig in self.q_order:
+                        idx_q_f.write("\t".join([contig, str(self.q_contigs[contig])]) + "\n")
 
-            # Re-orient contigs:
-            if len(reorient_contigs) > 0:
-                self.reorient_contigs_in_paf(reorient_contigs)
+                # Re-orient contigs:
+                if len(reorient_contigs) > 0:
+                    self.reorient_contigs_in_paf(reorient_contigs)
+                else:
+                    shutil.copyfile(self.paf, sorted_file)
+
+                # Update index:
+                self._update_query_index(reorient_contigs)
+
             else:
-                sorted_file = self.paf + ".sorted"
-                shutil.copyfile(self.paf, sorted_file)
-                self.paf = sorted_file
-
-            # Update index:
-            self._update_query_index(reorient_contigs)
-
+                self.idx_q += ".sorted"
             self.set_sorted(True)
+            self.paf = sorted_file
 
         else:  # Undo the sort
-            if os.path.exists(self.paf):
-                os.remove(self.paf)
-                self.paf = self.paf.replace(".sorted", "")
-            if os.path.exists(self.idx_q):
-                os.remove(self.idx_q)
-                self.idx_q = self.idx_q.replace(".sorted", "")
+            self.paf = self.paf.replace(".sorted", "")
+            self.idx_q = self.idx_q.replace(".sorted", "")
             self.set_sorted(False)
 
         # Re parse PAF file:
