@@ -224,6 +224,7 @@ dgenies.run.change_fasta_type = function (fasta, type, keep_url=false) {
             input.val("");
         container.width(348);
     }
+    $("div.file-size." + fasta).html("");
 };
 
 dgenies.run.set_filename = function (name, fasta) {
