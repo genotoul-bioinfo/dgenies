@@ -10,7 +10,7 @@ from collections import OrderedDict
 from Bio import SeqIO
 from jinja2 import Template
 from dgenies.config_reader import AppConfigReader
-from dgenies.database import Job
+from dgenies.database import Job, Gallery
 
 ALLOWED_EXTENSIONS = ['fa', 'fasta', 'fna', 'fa.gz', 'fasta.gz', 'fna.gz']
 
@@ -190,3 +190,15 @@ class Functions:
         os.remove(lock_file)
         index, sample_name = Functions.read_index(index_file)
         Functions.send_fasta_ready(mailer, job_name, sample_name, compressed)
+
+    @staticmethod
+    def get_gallery_items():
+        items = []
+        for item in Gallery.select():
+            items.append({
+                "name": item.name,
+                "id_job": item.job.id_job,
+                "picture": item.picture
+            })
+        return items
+

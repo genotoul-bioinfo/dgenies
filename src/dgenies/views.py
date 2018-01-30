@@ -6,7 +6,7 @@ import datetime
 import shutil
 import re
 import threading
-from flask import render_template, request, url_for, jsonify, Response, abort
+from flask import render_template, request, url_for, jsonify, Response, abort, send_file
 from pathlib import Path
 from dgenies.lib.paf import Paf
 from dgenies.lib.job_manager import JobManager
@@ -166,6 +166,19 @@ def result(id_res):
         cookie.insert(0, id_res)
     response.set_cookie(key="results", value="|".join(cookie), path="/")
     return response
+
+
+@app.route("/gallery", methods=['GET'])
+def gallery():
+    return render_template("gallery.html", items=Functions.get_gallery_items(), menu="gallery")
+
+
+@app.route("/gallery/<filename>", methods=['GET'])
+def gallery_file(filename):
+    try:
+        return send_file(os.path.join(config_reader.app_data, "gallery", filename))
+    except FileNotFoundError:
+        abort(404)
 
 
 def get_file(file, gzip=False):  # pragma: no cover

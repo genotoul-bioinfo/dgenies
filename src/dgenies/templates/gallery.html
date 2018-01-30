@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block scripts %}
+    <style>
+        .item-gallery {
+            display: inline-block;
+            width: 350px;
+            margin-right: 15px;
+            margin-bottom: 15px;
+            margin-top: 15px;
+        }
+        .item-gallery p {
+            text-align: center;
+        }
+        a:hover {
+            text-decoration: none !important;
+        }
+        p.empty {
+            margin-top: 15px;
+        }
+    </style>
+{% endblock %}
+{% block content %}
+    {% if items|length > 0 %}
+        {% for item in items %}
+            <a href="/result/{{ item.id_job }}">
+                <div class="item-gallery">
+                    <p>{{ item.name }}</p>
+                    <img src="/gallery/{{ item.picture }}" alt="illustration" width="100%"/>
+                </div>
+            </a>
+        {% endfor %}
+    {% else %}
+        <p class="empty">Gallery is empty!</p>
+    {% endif %}
+{% endblock %}

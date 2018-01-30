@@ -9,8 +9,12 @@ import time
 from dgenies.lib.crons import Crons
 from dgenies.config_reader import AppConfigReader
 from dgenies.bin.clean_jobs import parse_data_folders, parse_database, parse_upload_folders
+from dgenies.database import Gallery, Job
+from peewee import DoesNotExist
 
 runned = False
+
+config = AppConfigReader()
 
 
 def parse_args():
@@ -42,6 +46,28 @@ def parse_args():
     clear.add_argument("-m", "--max-age", help="Max age for job to delete (0 for all)", type=int, required=False,
                        default=0)
 
+    # Gallery:
+    gallery = subparsers.add_parser("gallery", help="Manage gallery")
+    subparsers_gallery = gallery.add_subparsers()
+
+    # Gallery add:
+    gallery_add = subparsers_gallery.add_parser("add", help="Add new job to the gallery")
+    gallery_add.set_defaults(which="add")
+    gallery_add.add_argument("-i", "--id-job", type=str, required=True,
+                             help="Id (name) of the job to add to the gallery")
+    gallery_add.add_argument("-n", "--name", type=str, required=True, help="Name to show in the gallery for the job")
+    gallery_add.add_argument("-p", "--pict", type=str, required=True, help="Name of the file that illustrate the job")
+
+    # Gallery del:
+    gallery_del = subparsers_gallery.add_parser("del", help="Delete a job from the gallery")
+    gallery_del.set_defaults(which="del")
+    gallery_del.add_argument("-i", "--id-job", type=str, required=False,
+                             help="Id (name) of the job to delete from the gallery")
+    gallery_del.add_argument("-n", "--name", type=str, required=False,
+                             help="Name of the job shown in the gallery")
+    gallery_del.add_argument("--remove-pict", help="Clear crons", type=bool, const=True, nargs="?", required=False,
+                       default=False)
+
     args = parser.parse_args()
 
     if args.subparser_name == "run":
@@ -51,6 +77,8 @@ def parse_args():
             print("Nothing to do.")
             return "clear", None
         return "clear", args
+    if args.subparser_name == "gallery":
+        return "gallery_" + args.which, args
 
 
 def start_browser(host, port):
@@ -79,8 +107,6 @@ def clear_crons():
 
 
 def clear_logs():
-    config = AppConfigReader()
-
     if hasattr(config, "log_dir"):
         log_files = glob(os.path.join(config.log_dir, "*.log"))
         for file in log_files:
@@ -91,10 +117,9 @@ def clear_logs():
 
 
 def clear_jobs(max_data_age=7):
-    config_reader = AppConfigReader()
 
-    upload_folder = config_reader.upload_folder
-    app_data = config_reader.app_data
+    upload_folder = config.upload_folder
+    app_data = config.app_data
     now = time.time()
 
     max_age = {
@@ -119,7 +144,7 @@ def clear_jobs(max_data_age=7):
     print("# Parsing Jobs in DB #")
     print("######################")
     print("")
-    parse_database(
+    gallery_jobs = parse_database(
         app_data=app_data,
         max_age=max_age
     )
@@ -132,9 +157,42 @@ def clear_jobs(max_data_age=7):
     parse_data_folders(
         app_data=app_data,
         now=now,
-        max_age=max_age
+        max_age=max_age,
+        gallery_jobs=gallery_jobs
     )
     print("")
+
+
+def add_to_gallery(id_job, name, picture):
+    try:
+        job = Job.get(id_job=id_job)
+    except DoesNotExist:
+        print("Error: job \"%s\" does not exists!" % id_job)
+        exit(1)
+    pict_file = os.path.join(config.app_data, "gallery", picture)
+    if not os.path.exists(pict_file):
+        print("Error: file \"%s\" does not exists!" % pict_file)
+        exit(1)
+    item = Gallery.create(job=job, name=name, picture=picture)
+    item.save()
+
+
+def del_from_gallery_by_id(id_job):
+    items = Gallery.select().join(Job).where(Job.id_job == id_job)
+    list_pictures = []
+    for item in items:
+        list_pictures.append(item.picture)
+        item.delete_instance()
+    return list_pictures
+
+
+def del_from_gallery_by_name(name):
+    items = Gallery.select().where(Gallery.name == name)
+    list_pictures = []
+    for item in items:
+        list_pictures.append(item.picture)
+        item.delete_instance()
+    return list_pictures
 
 
 if __name__ == "__main__":
@@ -151,3 +209,19 @@ if __name__ == "__main__":
         if args.jobs:
             print("Cleaning jobs...")
             clear_jobs(args.max_age)
+    elif command == "gallery_add":
+        add_to_gallery(args.id_job, args.name, args.pict)
+    elif command == "gallery_del":
+        if args.id_job is None and args.name is None:
+            print("Error: please give an id or a name for the job!")
+            exit(1)
+        if args.id_job is not None:
+            pictures = del_from_gallery_by_id(args.id_job)
+        else:
+            pictures = del_from_gallery_by_name(args.name)
+        if args.remove_pict:
+            for picture in pictures:
+                try:
+                    os.remove(os.path.join(config.app_data, "gallery", picture))
+                except FileNotFoundError:
+                    pass

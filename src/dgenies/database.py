@@ -1,6 +1,7 @@
 import os
 from dgenies.config_reader import AppConfigReader
-from peewee import SqliteDatabase, Model, CharField, IntegerField, DateTimeField, BooleanField, MySQLDatabase, OperationalError
+from peewee import SqliteDatabase, Model, CharField, IntegerField, DateTimeField, BooleanField, MySQLDatabase, \
+    OperationalError, ForeignKeyField
 from playhouse.shortcuts import RetryOperationalError
 from datetime import datetime
 
@@ -64,6 +65,12 @@ class Job(BaseModel):
     time_elapsed = IntegerField(null=True)
 
 
+class Gallery(BaseModel):
+    job = ForeignKeyField(Job)
+    name = CharField()
+    picture = CharField()
+
+
 class Session(BaseModel):
     s_id = CharField(max_length=20, unique=True)
     date_created = DateTimeField()
@@ -112,6 +119,9 @@ class Session(BaseModel):
 
 if not Job.table_exists():
     Job.create_table()
+
+if not Gallery.table_exists():
+    Gallery.create_table()
 
 if not Session.table_exists():
     Session.create_table()
