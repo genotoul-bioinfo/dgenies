@@ -34,7 +34,7 @@ dgenies.result.summary.show = function(percents) {
         }
         console.log(percent);
         x += percent_value;
-        percent_value = percents[percent];
+        percent_value = percent in percents ? percents[percent] : 0;
         container.append("rect")
             .attr("x", x + "%")
             .attr("y", 0)
