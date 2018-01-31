@@ -19,7 +19,12 @@ dgenies.result.controls.summary = function () {
             function (data) {
                 dgenies.hide_loading();
                 if (data["success"]) {
-                    dgenies.result.summary.show(data["percents"]);
+                    if (data["status"] === "done") {
+                        dgenies.result.summary.show(data["percents"]);
+                    }
+                    else if (data["status"] === "waiting") {
+                        dgenies.result.controls.summary();
+                    }
                 }
                 else {
                     dgenies.notify(data["message"] || "An error occurred! Please contact us to report the bug", "danger");

@@ -405,15 +405,44 @@ def summary(id_res):
             "success": False,
             "message": "Unable to load data!"
         })
-    percents = paf.get_summary_stats()
-    if percents is None:
+    percents = None
+    s_status = "waiting"  # Accepted values: waiting, done, fail
+    status_file = os.path.join(APP_DATA, id_res, ".summarize")
+    fail_file = status_file + ".fail"
+    if not os.path.exists(status_file):  # The job is finished or not started
+        if not os.path.exists(fail_file):  # The job has not started yet or has successfully ended
+            percents = paf.get_summary_stats()
+            if percents is None:  # The job has not started yet
+                Path(status_file).touch()
+                thread = threading.Timer(0, paf.build_summary_stats, kwargs={"status_file": status_file})
+                thread.start()
+            else:  # The job has successfully ended
+                s_status = "done"
+        else:  # The job has failed
+            s_status = "fail"
+
+    if s_status == "waiting":  # The job is running
+        # Check if the job end in the next 30 seconds
+        nb_iter = 0
+        while os.path.exists(status_file) and not os.path.exists(fail_file) and nb_iter < 10:
+            time.sleep(3)
+            nb_iter += 1
+        if not os.path.exists(status_file):  # The job has ended
+            percents = paf.get_summary_stats()
+            if percents is None:  # The job has failed
+                s_status = "fail"
+            else:  # The job has successfully ended
+                s_status = "done"
+
+    if s_status == "fail":
         return jsonify({
             "success": False,
             "message": "Build of summary failed. Please contact us to report the bug"
         })
     return jsonify({
         "success": True,
-        "percents": percents
+        "percents": percents,
+        "status": s_status
     })
 
 

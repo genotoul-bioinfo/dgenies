@@ -478,16 +478,12 @@ class Paf:
                     contigs_list.remove(c_name)
         return "\n".join(contigs_list) + "\n"
 
-    def get_summary_stats(self):
+    def build_summary_stats(self, status_file):
         """
         Get summary of identity
         :return: table with percents by category
         """
         summary_file = self.paf + ".summary"
-        if os.path.exists(summary_file):
-            with open(summary_file, "r") as summary_file:
-                txt = summary_file.read()
-                return json.loads(txt)
         self.parse_paf(False, False)
         if self.parsed:
             percents = {}
@@ -509,5 +505,15 @@ class Paf:
             with open(summary_file, "w") as summary_file:
                 summary_file.write(json.dumps(percents))
 
+            os.remove(status_file)
             return percents
+        shutil.move(status_file, status_file + ".fail")
+        return None
+
+    def get_summary_stats(self):
+        summary_file = self.paf + ".summary"
+        if os.path.exists(summary_file):
+            with open(summary_file, "r") as summary_file:
+                txt = summary_file.read()
+                return json.loads(txt)
         return None
