@@ -41,13 +41,13 @@ dgenies.result.summary.show = function(percents) {
             .attr("width", percent_value + "%")
             .attr("height", "50px")
             .attr("stroke", "none")
-            .attr("fill", d3.boxplot.color_idy[percent]);
+            .attr("fill", d3.boxplot.color_idy[d3.boxplot.color_idy_theme][percent]);
         container.append("rect")
             .attr("x", 5)
             .attr("y", 70 + (i * 30))
             .attr("width", "10px")
             .attr("height", "10px")
-            .attr("fill", d3.boxplot.color_idy[percent])
+            .attr("fill", d3.boxplot.color_idy[d3.boxplot.color_idy_theme][percent])
             .style("stroke", "#000")
             .style("stroke-width", "1px");
         container.append("text")
