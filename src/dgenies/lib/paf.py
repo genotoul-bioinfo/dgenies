@@ -493,8 +493,8 @@ class Paf:
 
             for cat in cats:
                 for line in self.lines[cat]:
-                    start = line[0]
-                    end = line[1]+1
+                    start = min(line[0], line[1])
+                    end = max(line[0], line[1]) + 1
                     position_idy[start:end] = [cat] * (end - start)
 
             counts = Counter(position_idy)
