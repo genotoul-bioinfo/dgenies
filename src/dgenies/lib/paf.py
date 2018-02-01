@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import os
-import re
 import shutil
 from math import sqrt
 from numpy import mean
@@ -10,7 +9,6 @@ import matplotlib as mpl
 mpl.use('Agg')
 from matplotlib import pyplot as plt
 import json
-from collections import Counter
 from dgenies.bin.index import Index
 
 
@@ -478,29 +476,178 @@ class Paf:
                     contigs_list.remove(c_name)
         return "\n".join(contigs_list) + "\n"
 
+    def _find_pos(self, start: int, end: int, cat: int, all_pos: list, next_search: int, min_search, max_search):
+        """
+        Find position to position line
+        :param start:
+        :param end:
+        :param all_pos:
+        :param next_search:
+        :return:
+        """
+        item = all_pos[next_search]
+        i_start = item[0]
+        i_end = item[1]
+        i_cat = item[2]
+        with open("logs.txt", "a") as logs:
+            print("CAT", cat, i_cat, type(cat), type(i_cat), file=logs)
+        if i_start < start < i_end:
+            # iiiiiiiiiiiiiiiiiiiiii
+            # ******ccccccccccc...
+            if end < i_end:
+                # iiiiiiiiiiiiiiiiiiiiii
+                # ******ccccccccccc...
+                if i_cat < cat:
+                    all_pos.remove(item)
+                    all_pos.insert(next_search, (end+1, i_end, i_cat))
+                    all_pos.insert(next_search, (start, end, cat))
+                    all_pos.insert(next_search, (i_start, start-1, i_cat))
+                else:
+                    pass  # Nothing to do: the best captures the worst
+            elif end == i_end:
+                # iiiiiiiiiiiiiiiiiiiiii
+                # ******cccccccccccccccc
+                if i_cat < cat:
+                    all_pos.remove(item)
+                    all_pos.insert(next_search, (start, end, cat))
+                    all_pos.insert(next_search, (i_start, start-1, i_cat))
+                else:
+                    pass  # Nothing to do: the best captures the worst
+            elif end > i_end:
+                # iiiiiiiiiiiiiiiiiiiiii*********
+                # ******ccccccccccccccccccccccccc
+                c_end = end
+                next_s = next_search + 1
+                if next_search < len(all_pos) - 1 and all_pos[next_search+1][0] < end:
+                    c_end = all_pos[next_search+1][0]-1
+                if i_cat < cat:
+                    all_pos.remove(item)
+                    all_pos.insert(next_search, (start, end, cat))
+                    all_pos.insert(next_search, (i_start, start-1, i_cat))
+                elif i_cat == cat:
+                    all_pos[next_search] = (i_start, c_end, cat)
+                elif i_cat > cat:
+                    all_pos.insert(next_search+1, (i_end+1, c_end, cat))
+                    next_s += 1
+                if end != c_end:
+                    print("PASS0")
+                    with open("logs.txt", "a") as logs:
+                        print("PASS0", end, c_end, all_pos[next_search+1][0], next_search, file=logs)
+                    all_pos = self._find_pos(c_end+1, end, cat, all_pos, next_s, min_search=next_search,
+                                             max_search=max_search)
+
+        elif i_start < end < i_end:
+            # ********iiiiiiiiiiiiiiiiiiiiiiii
+            #      ...cccccccccccccc**********
+            if start == i_start:
+                # ********iiiiiiiiiiiiiiiiiiiiiiii
+                # ********cccccccccccccc**********
+                if i_cat < cat:
+                    all_pos.remove(item)
+                    all_pos.insert(next_search, (start, end, cat))
+                    all_pos.insert(next_search, (end+1, i_end, i_cat))
+                else:
+                    pass  # Nothing to do: the best captures the worst
+            else:  # start < i_start (start > i_start already checked before)
+                # ********iiiiiiiiiiiiiiiiiiiiiiii
+                # cccccccccccccccccccccc**********
+                c_start = start
+                if next_search > 0 and all_pos[next_search-1][1] > start:
+                    c_start = all_pos[next_search-1][1] + 1
+                if i_cat < cat:
+                    all_pos.remove(item)
+                    all_pos.insert(next_search, (end+1, i_end, i_cat))
+                    all_pos.insert(next_search, (c_start, end, i_cat))
+                elif i_cat == cat:
+                    all_pos[next_search] = (c_start, i_end, cat)
+                elif i_cat > cat:
+                    all_pos.insert(next_search, (c_start, i_start-1, cat))
+                if start != c_start:
+                    print("PASS1")
+                    all_pos = self._find_pos(start, c_start-1, cat, all_pos, next_search - 1, min_search=min_search,
+                                             max_search=next_search)
+
+        elif start == i_start and end == i_end:
+            if cat > i_cat:
+                all_pos[next_search] = (start, end, cat)
+            else:
+                pass  # Nothing to do
+
+        else:  # No overlap found
+            if start < i_start:
+                # ************...********iiiiiiiiiiiiiiiiii
+                # cccccccccc**...**************************
+                if next_search == min_search:
+                    all_pos.insert(next_search, (start, end, cat))
+                elif all_pos[next_search - 1][1] < start:
+                    all_pos.insert(next_search, (start, end, cat))
+                else:
+                    with open("logs.txt", "a") as logs:
+                        print("IF", next_search, len(all_pos), min_search, max_search, file=logs)
+                    all_pos = self._find_pos(start, end, cat, all_pos,
+                                             min(min_search + int((next_search-min_search)/2), next_search-1),
+                                             min_search=min_search,
+                                             max_search=next_search-1)
+            else:  # start > i_end
+                # iiiiiiiiiiiiiiiiii******...**************
+                # ************************...**cccccccccccc
+                if next_search == max_search:
+                    all_pos.append((start, end, cat))
+                elif all_pos[next_search+1][0] > end:
+                    all_pos.insert(next_search+1, (start, end, cat))
+                else:
+                    with open("logs.txt", "a") as logs:
+                        print("ELSE", next_search, len(all_pos), min_search, max_search, file=logs)
+                    all_pos = self._find_pos(start, end, cat, all_pos,
+                                             max(next_search + int((max_search-next_search) / 2), next_search+1),
+                                             min_search=next_search+1,
+                                             max_search=max_search)
+
+        return all_pos
+
     def build_summary_stats(self, status_file):
         """
         Get summary of identity
         :return: table with percents by category
         """
+        print("P1")
         summary_file = self.paf + ".summary"
         self.parse_paf(False, False)
         if self.parsed:
-            percents = {}
-            position_idy = ["-1"] * self.len_t
+            percents = {"-1": self.len_t}
+            position_idy = []
 
             cats = sorted(self.lines.keys())
 
             for cat in cats:
+                percents[cat] = 0
+                #self.lines[cat].sort(key=lambda k: k[0])
                 for line in self.lines[cat]:
-                    start = line[0]
-                    end = line[1]+1
-                    position_idy[start:end] = [cat] * (end - start)
+                    start = min(line[0], line[1])
+                    end = max(line[0], line[1])+1
+                    if len(position_idy) == 0:
+                        position_idy.append((start, end, int(cat)))
+                    else:
+                        position_idy = self._find_pos(start, end, int(cat), position_idy, int(len(position_idy) / 2), 0,
+                                                      len(position_idy)-1)
+                    # position_idy[start:end] = [cat] * (end - start)
 
-            counts = Counter(position_idy)
+            print("P2")
 
-            for cat in counts:
-                percents[cat] = counts[cat] / self.len_t * 100
+            for line in position_idy:
+                count = line[1] - line[0]
+                percents[str(line[2])] += count
+                percents["-1"] -= count
+
+            print("P3")
+
+            print(percents)
+
+            for cat in percents:
+                percents[cat] = percents[cat] / self.len_t * 100
+            print(self.len_t)
+
+            print("P4")
 
             with open(summary_file, "w") as summary_file:
                 summary_file.write(json.dumps(percents))
