@@ -485,23 +485,28 @@ class Paf:
         :param next_search:
         :return:
         """
+        if start == 82909225 and end == 82921831:
+            s = 0 # bidon
+        elif start == 82917437 and end == 82928921:
+            s = 1 # bidon
         item = all_pos[next_search]
         i_start = item[0]
         i_end = item[1]
         i_cat = item[2]
         with open("logs.txt", "a") as logs:
             print("CAT", cat, i_cat, type(cat), type(i_cat), file=logs)
-        if i_start < start < i_end:
+        if i_start <= start < i_end:
             # iiiiiiiiiiiiiiiiiiiiii
             # ******ccccccccccc...
             if end < i_end:
                 # iiiiiiiiiiiiiiiiiiiiii
-                # ******ccccccccccc...
+                # ******ccccccccccc*****
                 if i_cat < cat:
                     all_pos.remove(item)
                     all_pos.insert(next_search, (end+1, i_end, i_cat))
                     all_pos.insert(next_search, (start, end, cat))
-                    all_pos.insert(next_search, (i_start, start-1, i_cat))
+                    if start > i_start:
+                        all_pos.insert(next_search, (i_start, start-1, i_cat))
                 else:
                     pass  # Nothing to do: the best captures the worst
             elif end == i_end:
@@ -510,7 +515,8 @@ class Paf:
                 if i_cat < cat:
                     all_pos.remove(item)
                     all_pos.insert(next_search, (start, end, cat))
-                    all_pos.insert(next_search, (i_start, start-1, i_cat))
+                    if start > i_start:
+                        all_pos.insert(next_search, (i_start, start-1, i_cat))
                 else:
                     pass  # Nothing to do: the best captures the worst
             elif end > i_end:
@@ -522,8 +528,10 @@ class Paf:
                     c_end = all_pos[next_search+1][0]-1
                 if i_cat < cat:
                     all_pos.remove(item)
-                    all_pos.insert(next_search, (start, end, cat))
-                    all_pos.insert(next_search, (i_start, start-1, i_cat))
+                    all_pos.insert(next_search, (start, c_end, cat))
+                    if start > i_start:
+                        all_pos.insert(next_search, (i_start, start-1, i_cat))
+                        next_s += 1
                 elif i_cat == cat:
                     all_pos[next_search] = (i_start, c_end, cat)
                 elif i_cat > cat:
@@ -536,7 +544,7 @@ class Paf:
                     all_pos = self._find_pos(c_end+1, end, cat, all_pos, next_s, min_search=next_search,
                                              max_search=max_search)
 
-        elif i_start < end < i_end:
+        elif i_start < end <= i_end:
             # ********iiiiiiiiiiiiiiiiiiiiiiii
             #      ...cccccccccccccc**********
             if start == i_start:
@@ -545,7 +553,8 @@ class Paf:
                 if i_cat < cat:
                     all_pos.remove(item)
                     all_pos.insert(next_search, (start, end, cat))
-                    all_pos.insert(next_search, (end+1, i_end, i_cat))
+                    if end < i_end:
+                        all_pos.insert(next_search, (end+1, i_end, i_cat))
                 else:
                     pass  # Nothing to do: the best captures the worst
             else:  # start < i_start (start > i_start already checked before)
@@ -556,7 +565,8 @@ class Paf:
                     c_start = all_pos[next_search-1][1] + 1
                 if i_cat < cat:
                     all_pos.remove(item)
-                    all_pos.insert(next_search, (end+1, i_end, i_cat))
+                    if end < i_end:
+                        all_pos.insert(next_search, (end+1, i_end, i_cat))
                     all_pos.insert(next_search, (c_start, end, i_cat))
                 elif i_cat == cat:
                     all_pos[next_search] = (c_start, i_end, cat)
@@ -566,6 +576,35 @@ class Paf:
                     print("PASS1")
                     all_pos = self._find_pos(start, c_start-1, cat, all_pos, next_search - 1, min_search=min_search,
                                              max_search=next_search)
+
+        elif i_start > start and i_end < end:
+            # ******iiiiiiiii*******
+            # cccccccccccccccccccccc
+            c_start = start
+            if next_search > 0 and all_pos[next_search - 1][1] > start:
+                c_start = all_pos[next_search - 1][1] + 1
+            c_end = end
+            next_s = next_search + 1
+            if next_search < len(all_pos) - 1 and all_pos[next_search + 1][0] < end:
+                c_end = all_pos[next_search + 1][0] - 1
+            if i_cat < cat:
+                all_pos.remove(item)
+                all_pos.insert(next_search, (c_start, c_end, cat))
+            elif i_cat == cat:
+                all_pos[next_search] = (c_start, c_end, cat)
+            else:
+                all_pos.remove(item)
+                all_pos.insert(next_search, (i_end+1, c_end, cat))
+                all_pos.insert(next_search, (i_start, i_end, i_cat))
+                all_pos.insert(next_search, (c_start, i_start-1, cat))
+                next_s = next_search + 3
+            # Search for adjacents:
+            if c_start != start:
+                all_pos = self._find_pos(start, c_start - 1, cat, all_pos, next_search - 1, min_search=min_search,
+                                         max_search=next_search)
+            if c_end != end:
+                all_pos = self._find_pos(c_end + 1, end, cat, all_pos, next_s, min_search=next_search,
+                                         max_search=max_search)
 
         elif start == i_start and end == i_end:
             if cat > i_cat:
@@ -624,7 +663,7 @@ class Paf:
                 #self.lines[cat].sort(key=lambda k: k[0])
                 for line in self.lines[cat]:
                     start = min(line[0], line[1])
-                    end = max(line[0], line[1])+1
+                    end = max(line[0], line[1])
                     if len(position_idy) == 0:
                         position_idy.append((start, end, int(cat)))
                     else:
@@ -632,9 +671,19 @@ class Paf:
                                                       len(position_idy)-1)
                     # position_idy[start:end] = [cat] * (end - start)
 
+            all_pos = ["*"] * self.len_t
+
             print("P2")
 
             for line in position_idy:
+                # if 82917437 <= line[0] <= 82928921 or 82917437 <= line[1] <= 82928921:
+                #     print(line)
+                # for pos in range(line[0], line[1]):
+                #     if all_pos[pos] == "*":
+                #         all_pos[pos] = "1"
+                #     else:
+                #         print(line)
+                #         raise Exception("There is an overlap!!!!!!")
                 count = line[1] - line[0]
                 percents[str(line[2])] += count
                 percents["-1"] -= count
