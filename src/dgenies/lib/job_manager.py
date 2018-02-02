@@ -276,6 +276,7 @@ class JobManager:
         jt = s.createJobTemplate()
         jt.remoteCommand = command
         jt.args = args
+        jt.jobName = "_".join([step, self.id_job])
         if log_out == log_err:
             jt.joinFiles = True
             jt.outputPath = ":" + log_out
