@@ -18,7 +18,7 @@ import traceback
 from pathlib import Path
 from urllib import request, parse
 from dgenies.bin.split_fa import Splitter
-from dgenies.bin.index import index_file
+from dgenies.bin.index import index_file, Index
 from dgenies.bin.filter_contigs import Filter
 from dgenies.bin.merge_splitted_chrms import Merger
 from dgenies.bin.sort_paf import Sorter
@@ -291,9 +291,15 @@ class JobManager:
             if step == "prepare":
                 jt.nativeSpecification = native_specs.format(8000, 1, "02:00:00")
             elif step == "start":
-                jt.nativeSpecification = native_specs.format(
-                    self.config.cluster_memory // self.config.cluster_threads * 1000, self.config.cluster_threads,
-                    "02:00:00")
+                memory = self.config.cluster_memory
+                if self.query is None:
+                    memory = self.config.cluster_memory_ava
+                    if memory > 32:
+                        name, order, contigs, reversed_c, abs_start, c_len = Index.load(self.idx_t, False)
+                        if c_len <= 500000000:
+                            memory = 32
+                jt.nativeSpecification = native_specs.format(memory // self.config.cluster_threads * 1000,
+                                                             self.config.cluster_threads, "02:00:00")
         elif batch_system_type == "sge":
             if native_specs == "###DEFAULT###":
                 native_specs = "-l mem={0},h_vmem={0} -pe parallel_smp {1}"

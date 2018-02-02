@@ -340,6 +340,15 @@ class AppConfigReader:
         except (NoOptionError, NoSectionError):
             return 32
 
+    def _get_cluster_memory_ava(self):
+        try:
+            memory = int(self.reader.get("cluster", "memory_ava"))
+            if memory % self._get_cluster_threads() != 0:
+                raise ValueError("ERROR in config: cluster memory must be divisible by the number of cluster threads!")
+            return memory
+        except (NoOptionError, NoSectionError):
+            return self._get_cluster_memory()
+
     def _get_cluster_threads(self):
         try:
             return int(self.reader.get("cluster", "threads"))
