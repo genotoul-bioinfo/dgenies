@@ -10,6 +10,7 @@ mpl.use('Agg')
 from matplotlib import pyplot as plt
 import json
 from dgenies.bin.index import Index
+from intervaltree import IntervalTree
 
 
 class Paf:
@@ -476,173 +477,141 @@ class Paf:
                     contigs_list.remove(c_name)
         return "\n".join(contigs_list) + "\n"
 
-    def _find_pos(self, start: int, end: int, cat: int, all_pos: list, next_search: int, min_search, max_search):
-        """
-        Find position to position line
-        :param start:
-        :param end:
-        :param all_pos:
-        :param next_search:
-        :return:
-        """
-        if start == 82909225 and end == 82921831:
-            s = 0 # bidon
-        elif start == 82917437 and end == 82928921:
-            s = 1 # bidon
-        item = all_pos[next_search]
-        i_start = item[0]
-        i_end = item[1]
-        i_cat = item[2]
-        with open("logs.txt", "a") as logs:
-            print("CAT", cat, i_cat, type(cat), type(i_cat), file=logs)
-        if i_start <= start < i_end:
-            # iiiiiiiiiiiiiiiiiiiiii
-            # ******ccccccccccc...
-            if end < i_end:
-                # iiiiiiiiiiiiiiiiiiiiii
-                # ******ccccccccccc*****
-                if i_cat < cat:
-                    all_pos.remove(item)
-                    all_pos.insert(next_search, (end+1, i_end, i_cat))
-                    all_pos.insert(next_search, (start, end, cat))
-                    if start > i_start:
-                        all_pos.insert(next_search, (i_start, start-1, i_cat))
-                else:
-                    pass  # Nothing to do: the best captures the worst
-            elif end == i_end:
-                # iiiiiiiiiiiiiiiiiiiiii
-                # ******cccccccccccccccc
-                if i_cat < cat:
-                    all_pos.remove(item)
-                    all_pos.insert(next_search, (start, end, cat))
-                    if start > i_start:
-                        all_pos.insert(next_search, (i_start, start-1, i_cat))
-                else:
-                    pass  # Nothing to do: the best captures the worst
-            elif end > i_end:
-                # iiiiiiiiiiiiiiiiiiiiii*********
-                # ******ccccccccccccccccccccccccc
-                c_end = end
-                next_s = next_search + 1
-                if next_search < len(all_pos) - 1 and all_pos[next_search+1][0] < end:
-                    c_end = all_pos[next_search+1][0]-1
-                if i_cat < cat:
-                    all_pos.remove(item)
-                    all_pos.insert(next_search, (start, c_end, cat))
-                    if start > i_start:
-                        all_pos.insert(next_search, (i_start, start-1, i_cat))
-                        next_s += 1
-                elif i_cat == cat:
-                    all_pos[next_search] = (i_start, c_end, cat)
-                elif i_cat > cat:
-                    all_pos.insert(next_search+1, (i_end+1, c_end, cat))
-                    next_s += 1
-                if end != c_end:
-                    print("PASS0")
-                    with open("logs.txt", "a") as logs:
-                        print("PASS0", end, c_end, all_pos[next_search+1][0], next_search, file=logs)
-                    all_pos = self._find_pos(c_end+1, end, cat, all_pos, next_s, min_search=next_search,
-                                             max_search=max_search)
+    def _add_percents(self, percents, item):
+        i_count = item.length()
+        percents[str(item.data)] += i_count
+        percents["-1"] -= i_count
+        return percents
 
-        elif i_start < end <= i_end:
-            # ********iiiiiiiiiiiiiiiiiiiiiiii
-            #      ...cccccccccccccc**********
-            if start == i_start:
-                # ********iiiiiiiiiiiiiiiiiiiiiiii
-                # ********cccccccccccccc**********
-                if i_cat < cat:
-                    all_pos.remove(item)
-                    all_pos.insert(next_search, (start, end, cat))
-                    if end < i_end:
-                        all_pos.insert(next_search, (end+1, i_end, i_cat))
-                else:
-                    pass  # Nothing to do: the best captures the worst
-            else:  # start < i_start (start > i_start already checked before)
-                # ********iiiiiiiiiiiiiiiiiiiiiiii
-                # cccccccccccccccccccccc**********
-                c_start = start
-                if next_search > 0 and all_pos[next_search-1][1] > start:
-                    c_start = all_pos[next_search-1][1] + 1
-                if i_cat < cat:
-                    all_pos.remove(item)
-                    if end < i_end:
-                        all_pos.insert(next_search, (end+1, i_end, i_cat))
-                    all_pos.insert(next_search, (c_start, end, i_cat))
-                elif i_cat == cat:
-                    all_pos[next_search] = (c_start, i_end, cat)
-                elif i_cat > cat:
-                    all_pos.insert(next_search, (c_start, i_start-1, cat))
-                if start != c_start:
-                    print("PASS1")
-                    all_pos = self._find_pos(start, c_start-1, cat, all_pos, next_search - 1, min_search=min_search,
-                                             max_search=next_search)
+    def _remove_overlaps(self, position_idy: IntervalTree, percents: dict):
+        i = 0
+        #position_idy_final = []
+        while len(position_idy) > 0:
+            item = position_idy.pop()
+            # print("ITEM", item)
+            start = item.begin
+            end = item.end
+            if len(position_idy) == 1331:
+                k = "stop" # bidon
+            cat = item.data
+            overlaps = position_idy.search(start,end)
+            if len(overlaps) > 0:
+                has_overlap = False
+                for overlap in overlaps:
+                    #print("OVERLAP", overlap)
+                    if has_overlap:
+                        break
+                    o_start = overlap.begin
+                    o_end = overlap.end
+                    o_cat = overlap.data
+                    if not position_idy.containsi(o_start, o_end, o_cat):
+                        continue
+                    if o_start == 101099524 and o_end == 101104878:
+                        k = "stop" # bidon
+                    if start < o_start:
+                        if end <= o_end:
+                            # cccccccccccccc*******
+                            # *****ooooooooo[ooooooo]
+                            if o_cat < cat:
+                                if end < o_end:
+                                    # No overlap with the current item, we stay has_overlap as False
+                                    position_idy.discard(overlap)
+                                    position_idy[end:o_end] = o_cat
+                                else:
+                                    position_idy.discard(overlap)  # No kept overlap
+                            elif o_cat == cat:
+                                if end < o_end:
+                                    has_overlap = True
+                                    position_idy.discard(overlap)
+                                    position_idy[start:o_end] = cat
+                                else:
+                                    position_idy.discard(overlap)  # No kept overlap
+                            else:
+                                has_overlap = True
+                                position_idy.discard(overlap)
+                                position_idy[start:o_start] = cat
+                                position_idy[o_start:o_end] = o_cat
+                        else:  # end > o_end
+                            # ccccccccccccccccccc
+                            # *****oooooooooo****
+                            if o_cat <= cat:
+                                position_idy.discard(overlap)  # No kept overlap
+                            else:  # o_cat > cat
+                                has_overlap = True
+                                position_idy.discard(overlap)
+                                position_idy[start:o_start] = cat
+                                position_idy[o_start:o_end] = o_cat
+                                position_idy[o_end:end] = cat
+                    elif start == o_start:
+                        if end < o_end:
+                            # cccccccccccc*******
+                            # ooooooooooooooooooo
+                            if o_cat < cat:
+                                # No overlap with the current item, we stay has_overlap as False
+                                position_idy.discard(overlap)
+                                position_idy[end:o_end] = o_cat
+                            elif o_cat == cat:
+                                has_overlap = True
+                                position_idy.discard(overlap)
+                                position_idy[start:o_end] = cat
+                            else:  # o_cat > cat
+                                # The overlap just contains current item
+                                has_overlap = True
+                        elif end == o_end:
+                            # ***cccccccccccccccc***
+                            # ***oooooooooooooooo***
+                            if o_cat <= cat:
+                                position_idy.discard(overlap)  # No kept overlap
+                            else:
+                                # The overlap just contains current item
+                                has_overlap = True
+                        else:  # end > o_end
+                            # ccccccccccccccccccccccccccccc
+                            # oooooooooooooooooooo*********
+                            if o_cat <= cat:
+                                # current item just contains the overlap
+                                position_idy.discard(overlap)
+                            else:
+                                has_overlap = True
+                                position_idy.discard(overlap)
+                                position_idy[o_start:o_end] = o_cat
+                                position_idy[o_end:end] = cat
+                    else:  # start > o_start
+                        if end <= o_end:
+                            # ******ccccccccc*******
+                            # ooooooooooooooo[ooooooo]
+                            if o_cat < cat:
+                                has_overlap=True
+                                position_idy.discard(overlap)
+                                position_idy[o_start:start] = o_cat
+                                position_idy[start:end] = cat
+                                if end < o_end:
+                                    position_idy[end:o_end] = o_cat
+                            else:  # o_cat >= cat
+                                # Overlap just contains the item
+                                has_overlap = True
+                        else: # end > o_end
+                            # ******ccccccccccccccccccccc
+                            # ooooooooooooooooo**********
+                            if o_cat < cat:
+                                has_overlap = True
+                                position_idy.discard(overlap)
+                                position_idy[o_start:start] = o_cat
+                                position_idy[start:end] = cat
+                            elif o_cat == cat:
+                                has_overlap = True
+                                position_idy.discard(overlap)
+                                position_idy[o_start:end] = cat
+                            else:  # o_cat > cat
+                                has_overlap = True
+                                position_idy[o_end:end] = cat
+                if not has_overlap:
+                    percents = self._add_percents(percents, item)
 
-        elif i_start > start and i_end < end:
-            # ******iiiiiiiii*******
-            # cccccccccccccccccccccc
-            c_start = start
-            if next_search > 0 and all_pos[next_search - 1][1] > start:
-                c_start = all_pos[next_search - 1][1] + 1
-            c_end = end
-            next_s = next_search + 1
-            if next_search < len(all_pos) - 1 and all_pos[next_search + 1][0] < end:
-                c_end = all_pos[next_search + 1][0] - 1
-            if i_cat < cat:
-                all_pos.remove(item)
-                all_pos.insert(next_search, (c_start, c_end, cat))
-            elif i_cat == cat:
-                all_pos[next_search] = (c_start, c_end, cat)
             else:
-                all_pos.remove(item)
-                all_pos.insert(next_search, (i_end+1, c_end, cat))
-                all_pos.insert(next_search, (i_start, i_end, i_cat))
-                all_pos.insert(next_search, (c_start, i_start-1, cat))
-                next_s = next_search + 3
-            # Search for adjacents:
-            if c_start != start:
-                all_pos = self._find_pos(start, c_start - 1, cat, all_pos, next_search - 1, min_search=min_search,
-                                         max_search=next_search)
-            if c_end != end:
-                all_pos = self._find_pos(c_end + 1, end, cat, all_pos, next_s, min_search=next_search,
-                                         max_search=max_search)
+                percents = self._add_percents(percents, item)
 
-        elif start == i_start and end == i_end:
-            if cat > i_cat:
-                all_pos[next_search] = (start, end, cat)
-            else:
-                pass  # Nothing to do
-
-        else:  # No overlap found
-            if start < i_start:
-                # ************...********iiiiiiiiiiiiiiiiii
-                # cccccccccc**...**************************
-                if next_search == min_search:
-                    all_pos.insert(next_search, (start, end, cat))
-                elif all_pos[next_search - 1][1] < start:
-                    all_pos.insert(next_search, (start, end, cat))
-                else:
-                    with open("logs.txt", "a") as logs:
-                        print("IF", next_search, len(all_pos), min_search, max_search, file=logs)
-                    all_pos = self._find_pos(start, end, cat, all_pos,
-                                             min(min_search + int((next_search-min_search)/2), next_search-1),
-                                             min_search=min_search,
-                                             max_search=next_search-1)
-            else:  # start > i_end
-                # iiiiiiiiiiiiiiiiii******...**************
-                # ************************...**cccccccccccc
-                if next_search == max_search:
-                    all_pos.append((start, end, cat))
-                elif all_pos[next_search+1][0] > end:
-                    all_pos.insert(next_search+1, (start, end, cat))
-                else:
-                    with open("logs.txt", "a") as logs:
-                        print("ELSE", next_search, len(all_pos), min_search, max_search, file=logs)
-                    all_pos = self._find_pos(start, end, cat, all_pos,
-                                             max(next_search + int((max_search-next_search) / 2), next_search+1),
-                                             min_search=next_search+1,
-                                             max_search=max_search)
-
-        return all_pos
+        return percents
 
     def build_summary_stats(self, status_file):
         """
@@ -654,41 +623,20 @@ class Paf:
         self.parse_paf(False, False)
         if self.parsed:
             percents = {"-1": self.len_t}
-            position_idy = []
+            position_idy = IntervalTree()
 
             cats = sorted(self.lines.keys())
 
             for cat in cats:
                 percents[cat] = 0
-                #self.lines[cat].sort(key=lambda k: k[0])
                 for line in self.lines[cat]:
                     start = min(line[0], line[1])
-                    end = max(line[0], line[1])
-                    if len(position_idy) == 0:
-                        position_idy.append((start, end, int(cat)))
-                    else:
-                        position_idy = self._find_pos(start, end, int(cat), position_idy, int(len(position_idy) / 2), 0,
-                                                      len(position_idy)-1)
-                    # position_idy[start:end] = [cat] * (end - start)
+                    end = max(line[0], line[1]) + 1
+                    position_idy[start:end] = int(cat)
 
-            all_pos = ["*"] * self.len_t
+            percents = self._remove_overlaps(position_idy, percents)
 
             print("P2")
-
-            for line in position_idy:
-                # if 82917437 <= line[0] <= 82928921 or 82917437 <= line[1] <= 82928921:
-                #     print(line)
-                # for pos in range(line[0], line[1]):
-                #     if all_pos[pos] == "*":
-                #         all_pos[pos] = "1"
-                #     else:
-                #         print(line)
-                #         raise Exception("There is an overlap!!!!!!")
-                count = line[1] - line[0]
-                percents[str(line[2])] += count
-                percents["-1"] -= count
-
-            print("P3")
 
             print(percents)
 
