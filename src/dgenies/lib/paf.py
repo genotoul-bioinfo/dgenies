@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import os
-import re
 import shutil
 from math import sqrt
 from numpy import mean
@@ -10,8 +9,8 @@ import matplotlib as mpl
 mpl.use('Agg')
 from matplotlib import pyplot as plt
 import json
-from collections import Counter
 from dgenies.bin.index import Index
+from intervaltree import IntervalTree
 
 
 class Paf:
@@ -478,6 +477,134 @@ class Paf:
                     contigs_list.remove(c_name)
         return "\n".join(contigs_list) + "\n"
 
+    def _add_percents(self, percents, item):
+        i_count = item.length()
+        percents[str(item.data)] += i_count
+        percents["-1"] -= i_count
+        return percents
+
+    def _remove_overlaps(self, position_idy: IntervalTree, percents: dict):
+        while len(position_idy) > 0:
+            item = position_idy.pop()
+            start = item.begin
+            end = item.end
+            cat = item.data
+            overlaps = position_idy.search(start,end)
+            if len(overlaps) > 0:
+                has_overlap = False
+                for overlap in overlaps:
+                    if has_overlap:
+                        break
+                    o_start = overlap.begin
+                    o_end = overlap.end
+                    o_cat = overlap.data
+                    if not position_idy.containsi(o_start, o_end, o_cat):
+                        continue
+                    if start < o_start:
+                        if end <= o_end:
+                            # cccccccccccccc*******
+                            # *****ooooooooo[ooooooo]
+                            if o_cat < cat:
+                                if end < o_end:
+                                    # No overlap with the current item, we stay has_overlap as False
+                                    position_idy.discard(overlap)
+                                    position_idy[end:o_end] = o_cat
+                                else:
+                                    position_idy.discard(overlap)  # No kept overlap
+                            elif o_cat == cat:
+                                if end < o_end:
+                                    has_overlap = True
+                                    position_idy.discard(overlap)
+                                    position_idy[start:o_end] = cat
+                                else:
+                                    position_idy.discard(overlap)  # No kept overlap
+                            else:
+                                has_overlap = True
+                                position_idy.discard(overlap)
+                                position_idy[start:o_start] = cat
+                                position_idy[o_start:o_end] = o_cat
+                        else:  # end > o_end
+                            # ccccccccccccccccccc
+                            # *****oooooooooo****
+                            if o_cat <= cat:
+                                position_idy.discard(overlap)  # No kept overlap
+                            else:  # o_cat > cat
+                                has_overlap = True
+                                position_idy.discard(overlap)
+                                position_idy[start:o_start] = cat
+                                position_idy[o_start:o_end] = o_cat
+                                position_idy[o_end:end] = cat
+                    elif start == o_start:
+                        if end < o_end:
+                            # cccccccccccc*******
+                            # ooooooooooooooooooo
+                            if o_cat < cat:
+                                # No overlap with the current item, we stay has_overlap as False
+                                position_idy.discard(overlap)
+                                position_idy[end:o_end] = o_cat
+                            elif o_cat == cat:
+                                has_overlap = True
+                                position_idy.discard(overlap)
+                                position_idy[start:o_end] = cat
+                            else:  # o_cat > cat
+                                # The overlap just contains current item
+                                has_overlap = True
+                        elif end == o_end:
+                            # ***cccccccccccccccc***
+                            # ***oooooooooooooooo***
+                            if o_cat <= cat:
+                                position_idy.discard(overlap)  # No kept overlap
+                            else:
+                                # The overlap just contains current item
+                                has_overlap = True
+                        else:  # end > o_end
+                            # ccccccccccccccccccccccccccccc
+                            # oooooooooooooooooooo*********
+                            if o_cat <= cat:
+                                # current item just contains the overlap
+                                position_idy.discard(overlap)
+                            else:
+                                has_overlap = True
+                                position_idy.discard(overlap)
+                                position_idy[o_start:o_end] = o_cat
+                                position_idy[o_end:end] = cat
+                    else:  # start > o_start
+                        if end <= o_end:
+                            # ******ccccccccc*******
+                            # ooooooooooooooo[ooooooo]
+                            if o_cat < cat:
+                                has_overlap=True
+                                position_idy.discard(overlap)
+                                position_idy[o_start:start] = o_cat
+                                position_idy[start:end] = cat
+                                if end < o_end:
+                                    position_idy[end:o_end] = o_cat
+                            else:  # o_cat >= cat
+                                # Overlap just contains the item
+                                has_overlap = True
+                        else: # end > o_end
+                            # ******ccccccccccccccccccccc
+                            # ooooooooooooooooo**********
+                            if o_cat < cat:
+                                has_overlap = True
+                                position_idy.discard(overlap)
+                                position_idy[o_start:start] = o_cat
+                                position_idy[start:end] = cat
+                            elif o_cat == cat:
+                                has_overlap = True
+                                position_idy.discard(overlap)
+                                position_idy[o_start:end] = cat
+                            else:  # o_cat > cat
+                                has_overlap = True
+                                position_idy[o_end:end] = cat
+                if not has_overlap:
+                    percents = self._add_percents(percents, item)
+
+            else:
+                percents = self._add_percents(percents, item)
+
+        return percents
+
     def build_summary_stats(self, status_file):
         """
         Get summary of identity
@@ -486,21 +613,22 @@ class Paf:
         summary_file = self.paf + ".summary"
         self.parse_paf(False, False)
         if self.parsed:
-            percents = {}
-            position_idy = ["-1"] * self.len_t
+            percents = {"-1": self.len_t}
+            position_idy = IntervalTree()
 
             cats = sorted(self.lines.keys())
 
             for cat in cats:
+                percents[cat] = 0
                 for line in self.lines[cat]:
                     start = min(line[0], line[1])
                     end = max(line[0], line[1]) + 1
-                    position_idy[start:end] = [cat] * (end - start)
+                    position_idy[start:end] = int(cat)
 
-            counts = Counter(position_idy)
+            percents = self._remove_overlaps(position_idy, percents)
 
-            for cat in counts:
-                percents[cat] = counts[cat] / self.len_t * 100
+            for cat in percents:
+                percents[cat] = percents[cat] / self.len_t * 100
 
             with open(summary_file, "w") as summary_file:
                 summary_file.write(json.dumps(percents))
