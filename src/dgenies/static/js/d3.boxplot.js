@@ -98,7 +98,7 @@ d3.boxplot.init = function (id_res=null, from_file=false) {
     }
 };
 
-d3.boxplot.launch = function(res, update=false) {
+d3.boxplot.launch = function(res, update=false, noise_change=false) {
     dgenies.fill_select_zones(res["x_order"], res["y_order"]);
     if (res["sorted"]) {
         $("input#sort-contigs").val("Undo sort");
@@ -124,6 +124,10 @@ d3.boxplot.launch = function(res, update=false) {
     d3.boxplot.min_idy = res["min_idy"];
     d3.boxplot.max_idy = res["max_idy"];
     d3.boxplot.limit_idy = res["limit_idy"];
+    if (!noise_change) {
+        dgenies.noise = true;
+    }
+    $("#hide-noise").val(dgenies.noise ? "Hide noise" : "Show noise");
     d3.boxplot.draw(res["x_contigs"], res["x_order"], res["y_contigs"], res["y_order"]);
     if (!update) {
         $("div#draw").resizable({

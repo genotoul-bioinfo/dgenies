@@ -96,10 +96,9 @@ dgenies.result.controls.launch_hide_noise = function () {
                 function (data) {
                     if (data["success"]) {
                         dgenies.noise = !dgenies.noise;
-                        $("#hide-noise").val(dgenies.noise ? "Hide noise" : "Show noise");
                         dgenies.reset_loading_message();
                         window.setTimeout(() => {
-                            d3.boxplot.launch(data, true);
+                            d3.boxplot.launch(data, true, true);
                         }, 0);
                     }
                     else {
