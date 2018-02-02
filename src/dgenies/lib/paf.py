@@ -484,21 +484,15 @@ class Paf:
         return percents
 
     def _remove_overlaps(self, position_idy: IntervalTree, percents: dict):
-        i = 0
-        #position_idy_final = []
         while len(position_idy) > 0:
             item = position_idy.pop()
-            # print("ITEM", item)
             start = item.begin
             end = item.end
-            if len(position_idy) == 1331:
-                k = "stop" # bidon
             cat = item.data
             overlaps = position_idy.search(start,end)
             if len(overlaps) > 0:
                 has_overlap = False
                 for overlap in overlaps:
-                    #print("OVERLAP", overlap)
                     if has_overlap:
                         break
                     o_start = overlap.begin
@@ -506,8 +500,6 @@ class Paf:
                     o_cat = overlap.data
                     if not position_idy.containsi(o_start, o_end, o_cat):
                         continue
-                    if o_start == 101099524 and o_end == 101104878:
-                        k = "stop" # bidon
                     if start < o_start:
                         if end <= o_end:
                             # cccccccccccccc*******
@@ -618,7 +610,6 @@ class Paf:
         Get summary of identity
         :return: table with percents by category
         """
-        print("P1")
         summary_file = self.paf + ".summary"
         self.parse_paf(False, False)
         if self.parsed:
@@ -636,15 +627,8 @@ class Paf:
 
             percents = self._remove_overlaps(position_idy, percents)
 
-            print("P2")
-
-            print(percents)
-
             for cat in percents:
                 percents[cat] = percents[cat] / self.len_t * 100
-            print(self.len_t)
-
-            print("P4")
 
             with open(summary_file, "w") as summary_file:
                 summary_file.write(json.dumps(percents))
