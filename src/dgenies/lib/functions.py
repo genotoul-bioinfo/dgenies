@@ -200,6 +200,20 @@ class Functions:
             i += 1
         return "%.1f %s" % (size, units[i])
 
+    @staticmethod
+    def get_readable_time(seconds):
+        time_r = "%d s" % seconds
+        if seconds >= 60:
+            minutes = seconds // 60
+            seconds = seconds - (minutes * 60)
+            time_r = "%d min %d s" % (minutes, seconds)
+            if minutes >= 60:
+                hours = minutes // 60
+                minutes = minutes - (hours * 60)
+                time_r = "%d h %d min %d s" % (hours, minutes, seconds)
+        return time_r
+
+
 
     @staticmethod
     def get_gallery_items():
@@ -212,7 +226,7 @@ class Functions:
                 "query": item.query,
                 "target": item.target,
                 "mem_peak": Functions.get_readable_size(item.job.mem_peak),
-                "time_elapsed": item.job.time_elapsed
+                "time_elapsed": Functions.get_readable_time(item.job.time_elapsed)
             })
         return items
 
