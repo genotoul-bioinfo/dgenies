@@ -68,6 +68,8 @@ class Job(BaseModel):
 class Gallery(BaseModel):
     job = ForeignKeyField(Job)
     name = CharField()
+    query = CharField()
+    target = CharField()
     picture = CharField()
 
 

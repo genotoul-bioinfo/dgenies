@@ -192,13 +192,27 @@ class Functions:
         Functions.send_fasta_ready(mailer, job_name, sample_name, compressed)
 
     @staticmethod
+    def get_readable_size(size):
+        units = ["Kb", "Mb", "Gb"]
+        i = 0
+        while size >= 1024 and i < 3:
+            size /= 1024.0
+            i += 1
+        return "%.1f %s" % (size, units[i])
+
+
+    @staticmethod
     def get_gallery_items():
         items = []
         for item in Gallery.select():
             items.append({
                 "name": item.name,
                 "id_job": item.job.id_job,
-                "picture": item.picture
+                "picture": item.picture,
+                "query": item.query,
+                "target": item.target,
+                "mem_peak": Functions.get_readable_size(item.job.mem_peak),
+                "time_elapsed": item.job.time_elapsed
             })
         return items
 

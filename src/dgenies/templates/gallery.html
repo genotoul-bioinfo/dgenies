@@ -30,6 +30,42 @@
                 </div>
             </a>
         {% endfor %}
+        <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>
+                    Reference genome
+                </th>
+                <th>
+                    Query genome
+                </th>
+                <th>
+                    Time elapsed
+                </th>
+                <th>
+                    Maximum RAM usage
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for item in items %}
+            <tr>
+                <td>
+                    {{ item.target }}
+                </td>
+                <td>
+                    {{ item.query }}
+                </td>
+                <td>
+                    {{ item.time_elapsed }}
+                </td>
+                <td>
+                    {{ item.mem_peak }}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+        </table>
     {% else %}
         <p class="empty">Gallery is empty!</p>
     {% endif %}

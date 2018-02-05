@@ -56,6 +56,8 @@ def parse_args():
     gallery_add.add_argument("-i", "--id-job", type=str, required=True,
                              help="Id (name) of the job to add to the gallery")
     gallery_add.add_argument("-n", "--name", type=str, required=True, help="Name to show in the gallery for the job")
+    gallery_add.add_argument("-q", "--query", type=str, required=True, help="Name of the query")
+    gallery_add.add_argument("-t", "--target", type=str, required=True, help="Name of the target")
     gallery_add.add_argument("-p", "--pict", type=str, required=True, help="Name of the file that illustrate the job")
 
     # Gallery del:
@@ -163,18 +165,19 @@ def clear_jobs(max_data_age=7):
     print("")
 
 
-def add_to_gallery(id_job, name, picture):
+def add_to_gallery(id_job, name, picture, query, target):
     try:
         job = Job.get(id_job=id_job)
     except DoesNotExist:
         print("Error: job \"%s\" does not exists!" % id_job)
         exit(1)
-    pict_file = os.path.join(config.app_data, "gallery", picture)
-    if not os.path.exists(pict_file):
-        print("Error: file \"%s\" does not exists!" % pict_file)
-        exit(1)
-    item = Gallery.create(job=job, name=name, picture=picture)
-    item.save()
+    else:
+        pict_file = os.path.join(config.app_data, "gallery", picture)
+        if not os.path.exists(pict_file):
+            print("Error: file \"%s\" does not exists!" % pict_file)
+            exit(1)
+        item = Gallery.create(job=job, name=name, picture=picture, query=query, target=target)
+        item.save()
 
 
 def del_from_gallery_by_id(id_job):
@@ -210,7 +213,7 @@ if __name__ == "__main__":
             print("Cleaning jobs...")
             clear_jobs(args.max_age)
     elif command == "gallery_add":
-        add_to_gallery(args.id_job, args.name, args.pict)
+        add_to_gallery(args.id_job, args.name, args.pict, args.query, args.target)
     elif command == "gallery_del":
         if args.id_job is None and args.name is None:
             print("Error: please give an id or a name for the job!")
