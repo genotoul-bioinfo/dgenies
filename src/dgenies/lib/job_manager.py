@@ -433,22 +433,25 @@ class JobManager:
         :param max_upload_size_readable: max upload size human readable
         :return: (True if correct, True if error set [for fail], True if should be local)
         """
+        if input_type == "target" and self.query is None:
+            max_upload_size_readable = self.config.max_upload_size_ava / 1024 / 1024
         with Job.connect():
             my_input = getattr(self, input_type)
             if my_input.get_path().endswith(".gz") and not self.is_gz_file(my_input.get_path()):
                 # Check file is correctly gzipped
                 job = Job.get(Job.id_job == self.id_job)
                 job.status = "fail"
-                job.error = "Query file is not a correct gzip file"
+                job.error = input_type + " file is not a correct gzip file"
                 job.save()
                 self.clear()
                 return False, True, None
             # Check size:
             file_size = self.get_file_size(my_input.get_path())
-            if -1 < self.config.max_upload_size < file_size:
+            if -1 < (self.config.max_upload_size if (input_type == "query" or self.query is not None)
+                     else self.config.max_upload_size_ava) < file_size:
                 job = Job.get(Job.id_job == self.id_job)
                 job.status = "fail"
-                job.error = "Query file exceed size limit of %d Mb (uncompressed)" % max_upload_size_readable
+                job.error = input_type + " file exceed size limit of %d Mb (uncompressed)" % max_upload_size_readable
                 job.save()
                 self.clear()
                 return False, True, None
