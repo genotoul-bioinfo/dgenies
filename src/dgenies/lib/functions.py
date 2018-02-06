@@ -142,13 +142,14 @@ class Functions:
             return j1.email
 
     @staticmethod
-    def send_fasta_ready(mailer, job_name, sample_name, compressed=False, path="fasta-query", status="success"):
+    def send_fasta_ready(mailer, job_name, sample_name, compressed=False, path="fasta-query", status="success",
+                         ext="fasta"):
         web_url = Functions.config.web_url
         with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "mail_templates", "dl_fasta.html")) \
                 as t_file:
             template = Template(t_file.read())
             message_html = template.render(job_name=job_name, status=status, url_base=web_url,
-                                           sample_name=sample_name, compressed=compressed, path=path)
+                                           sample_name=sample_name, compressed=compressed, path=path, ext=ext)
         message = "D-Genies\n\n" \
                   "Job %s - Download fasta\n\n" % job_name
         message += "Query fasta file for job %s (query: %s) is ready to download.\n" % (job_name, sample_name)

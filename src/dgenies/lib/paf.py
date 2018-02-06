@@ -716,10 +716,13 @@ class Paf:
         except Exception:
             o_fasta = None
             status="fail"
+            query_fasta = "_._"
 
+        parts = os.path.basename(query_fasta).rsplit(".", 1)
         Functions.send_fasta_ready(mailer=self.mailer,
                                    job_name=self.id_job,
-                                   sample_name="as_reference_" + os.path.basename(query_fasta).rsplit(".", 1)[0],
+                                   sample_name="as_reference_" + parts[0],
+                                   ext=parts[1],
                                    compressed=False,
                                    path="download",
                                    status=status)
