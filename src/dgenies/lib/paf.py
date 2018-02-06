@@ -685,9 +685,7 @@ class Paf:
             o_fasta = os.path.join(os.path.dirname(query_fasta), "as_reference_" + os.path.basename(query_fasta))
             if o_fasta.endswith(".gz"):
                 o_fasta = o_fasta[:-3]
-            if os.path.exists(o_fasta):
-                query_fasta = o_fasta
-            else:
+            if not os.path.exists(o_fasta):
                 uncompressed = False
                 if query_fasta.endswith(".gz"):
                     uncompressed = True
@@ -719,14 +717,13 @@ class Paf:
                     os.remove(query_fasta)
             status = "success"
         except Exception:
-            o_fasta = None
+            o_fasta = "_._"
             status="fail"
-            query_fasta = "_._"
 
-        parts = os.path.basename(query_fasta).rsplit(".", 1)
+        parts = os.path.basename(o_fasta).rsplit(".", 1)
         Functions.send_fasta_ready(mailer=self.mailer,
                                    job_name=self.id_job,
-                                   sample_name="as_reference_" + parts[0],
+                                   sample_name=parts[0],
                                    ext=parts[1],
                                    compressed=False,
                                    path="download",
