@@ -683,6 +683,8 @@ class Paf:
             if not os.path.isfile(query_fasta):
                 raise Exception("Query fasta does not exists")
             o_fasta = os.path.join(os.path.dirname(query_fasta), "as_reference_" + os.path.basename(query_fasta))
+            if o_fasta.endswith(".gz"):
+                o_fasta = o_fasta[:-3]
             if not os.path.exists(o_fasta):
                 uncompressed = False
                 if query_fasta.endswith(".gz"):
