@@ -24,7 +24,7 @@ def launch():
     UPLOAD_FOLDER = config_reader.upload_folder
     APP_DATA = config_reader.app_data
 
-    app_title = "D-GENIES - Dotplot for Genomes Interactive, E-connected and Speedy"
+    app_title = "D-GENIES - Dotplot large Genomes in an Interactive, Efficient and Simple way"
 
     # Init Flask:
     app = Flask(__name__, static_url_path='/static')

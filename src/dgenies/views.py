@@ -13,7 +13,7 @@ from dgenies.lib.job_manager import JobManager
 from dgenies.lib.functions import Functions, ALLOWED_EXTENSIONS
 from dgenies.lib.upload_file import UploadFile
 from dgenies.lib.fasta import Fasta
-from dgenies.database import Session
+from dgenies.database import Session, Gallery
 from peewee import DoesNotExist
 
 
@@ -26,7 +26,12 @@ def get_launched_results():
 # Main
 @app.route("/", methods=['GET'])
 def main():
-    return render_template("index.html", title=app_title, menu="index")
+    pict = Gallery.select().order_by("id")
+    if len(pict) > 0:
+        pict = pict[0].picture
+    else:
+        pict = None
+    return render_template("index.html", title=app_title, menu="index", pict=pict)
 
 
 @app.route("/run", methods=['GET'])
