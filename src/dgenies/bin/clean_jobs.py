@@ -81,6 +81,7 @@ def parse_data_folders(app_data, now, max_age, gallery_jobs, fake=False):
                 query_name_file = os.path.join(file, ".query")
                 if os.path.exists(query_name_file):
                     with open(query_name_file) as query_file:
+                        query_filename = query_file.read().strip("\n")
                         sorted_file = Functions.get_fasta_file(file, "query", True)
                         if not sorted_file.endswith(".sorted"):
                             sorted_file = None
@@ -91,6 +92,14 @@ def parse_data_folders(app_data, now, max_age, gallery_jobs, fake=False):
                                 print("Removing fasta file %s..." % sorted_file)
                                 if not fake:
                                     os.remove(sorted_file)
+                        query_reference = os.path.join(file, "as_reference_" + os.path.basename(query_filename))
+                        if os.path.exists(query_reference):
+                            create_date = os.path.getctime(query_reference)
+                            age = (now - create_date) / 86400  # Age in days
+                            if age > max_age["fasta_sorted"]:
+                                print("Removing fasta file %s..." % query_reference)
+                                if not fake:
+                                    os.remove(query_reference)
 
 
 if __name__ == '__main__':
