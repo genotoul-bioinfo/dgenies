@@ -678,40 +678,41 @@ class Paf:
         try:
             if not self.sorted:
                 raise Exception("Contigs must be sorted to do that!")
-            contigs_assoc = self.get_queries_on_target_association()
             with open(os.path.join(self.data_dir, ".query")) as query_file:
                 query_fasta = query_file.read().strip("\n")
             if not os.path.isfile(query_fasta):
                 raise Exception("Query fasta does not exists")
-            uncompressed = False
-            if query_fasta.endswith(".gz"):
-                uncompressed = True
-                query_fasta = Functions.uncompress(query_fasta)
-            query_f = SeqIO.index(query_fasta, "fasta")
             o_fasta = os.path.join(os.path.dirname(query_fasta), "as_reference_" + os.path.basename(query_fasta))
-            mapped_queries = set()
-            with open(o_fasta, "w") as out:
-                for target in self.t_order:
-                    if target in contigs_assoc:
-                        queries = sorted(contigs_assoc[target], key=lambda x: self.q_order.index(x))
-                        seq = SeqRecord(Seq(""))
-                        for query in queries:
-                            mapped_queries.add(query)
-                            new_seq = query_f[query]
-                            if self.q_reversed[query]:
-                                new_seq = new_seq.reverse_complement()
-                            seq += new_seq
-                            seq += 100 * "N"
-                        seq = seq[:-100]
-                        seq.id = seq.name = seq.description = target
-                        SeqIO.write(seq, out, "fasta")
-                for contig in self.q_order:
-                    if contig not in mapped_queries:
-                        seq = query_f[contig]
-                        seq.id += "_unaligned"
-                        SeqIO.write(seq, out, "fasta")
-            if uncompressed:
-                os.remove(query_fasta)
+            if not os.path.exists(o_fasta):
+                uncompressed = False
+                if query_fasta.endswith(".gz"):
+                    uncompressed = True
+                    query_fasta = Functions.uncompress(query_fasta)
+                query_f = SeqIO.index(query_fasta, "fasta")
+                contigs_assoc = self.get_queries_on_target_association()
+                mapped_queries = set()
+                with open(o_fasta, "w") as out:
+                    for target in self.t_order:
+                        if target in contigs_assoc:
+                            queries = sorted(contigs_assoc[target], key=lambda x: self.q_order.index(x))
+                            seq = SeqRecord(Seq(""))
+                            for query in queries:
+                                mapped_queries.add(query)
+                                new_seq = query_f[query]
+                                if self.q_reversed[query]:
+                                    new_seq = new_seq.reverse_complement()
+                                seq += new_seq
+                                seq += 100 * "N"
+                            seq = seq[:-100]
+                            seq.id = seq.name = seq.description = target
+                            SeqIO.write(seq, out, "fasta")
+                    for contig in self.q_order:
+                        if contig not in mapped_queries:
+                            seq = query_f[contig]
+                            seq.id += "_unaligned"
+                            SeqIO.write(seq, out, "fasta")
+                if uncompressed:
+                    os.remove(query_fasta)
             status = "success"
         except Exception:
             o_fasta = None
