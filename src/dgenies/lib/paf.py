@@ -685,7 +685,9 @@ class Paf:
             o_fasta = os.path.join(os.path.dirname(query_fasta), "as_reference_" + os.path.basename(query_fasta))
             if o_fasta.endswith(".gz"):
                 o_fasta = o_fasta[:-3]
-            if not os.path.exists(o_fasta):
+            if os.path.exists(o_fasta):
+                query_fasta = o_fasta
+            else:
                 uncompressed = False
                 if query_fasta.endswith(".gz"):
                     uncompressed = True
