@@ -48,6 +48,8 @@ class Paf:
         self.error = False
         self.mailer = mailer
         self.id_job = id_job
+        self.q_abs_start = {}
+        self.t_abs_start = {}
 
         if auto_parse:
             self.parse_paf()
@@ -120,6 +122,7 @@ class Paf:
         }
         try:
             name_q, q_order, q_contigs, q_reversed, q_abs_start, len_q = Index.load(self.idx_q)
+            self.q_abs_start = q_abs_start
             if merge_index:
                 q_contigs, q_order = self.parse_index(q_order, q_contigs, len_q)
         except IOError:
@@ -128,6 +131,7 @@ class Paf:
 
         try:
             name_t, t_order, t_contigs, t_reversed, t_abs_start, len_t = Index.load(self.idx_t)
+            self.t_abs_start = t_abs_start
             if merge_index:
                 t_contigs, t_order = self.parse_index(t_order, t_contigs, len_t)
         except IOError:
@@ -430,23 +434,45 @@ class Paf:
         self.parsed = False
         self.parse_paf()
 
-    def get_query_on_target_association(self):
+    def get_query_on_target_association(self, with_coords=True):
         """
         For each query, get the best matching chromosome
         :return:
         """
-        gravity_contig = self.compute_gravity_contigs()[0]
+        gravity_contig, lines_on_block = self.compute_gravity_contigs()
         query_on_target = {}
         for contig, chr_blocks in gravity_contig.items():
             # Find best block:
             max_number = 0
             max_chr = None
+            min_target = -1
+            max_target = -1
+            min_query = -1
+            max_query = -1
             for chrm, size in chr_blocks.items():
                 if size > max_number:
                     max_number = size
                     max_chr = chrm
+                    min_target = -1
+                    max_target = -1
+                    min_query = -1
+                    max_query = -1
+                    if with_coords:
+                        for line in lines_on_block[(contig, chrm)]:
+                            x1 = min(line[3], line[4]) - self.t_abs_start[chrm]
+                            x2 = max(line[3], line[4]) - self.t_abs_start[chrm]
+                            if x1 < min_target or min_target == -1:
+                                min_target = x1
+                            if x2 > max_target:
+                                max_target = x2
+                            y1 = min(line[5], line[6]) - self.q_abs_start[contig]
+                            y2 = max(line[5], line[6]) - self.q_abs_start[contig]
+                            if y1 < min_query or min_query == -1:
+                                min_query = y1
+                            if y2 > max_query:
+                                max_query = y2
             if max_chr is not None:
-                query_on_target[contig] = max_chr
+                query_on_target[contig] = (max_chr, min_query, max_query, min_target, max_target)
             else:
                 query_on_target[contig] = None
         return query_on_target
@@ -478,16 +504,32 @@ class Paf:
         Use the order of queries
         :return: content of the file
         """
-        query_on_target = self.get_query_on_target_association()
-        content = "Query\tTarget\tStrand\n"
+        query_on_target = self.get_query_on_target_association(with_coords=True)
+        content = "Query\tTarget\tStrand\tQ-len\tQ-start\tQ-stop\tT-len\tT-start\tT-stop\n"
         for contig in self.q_order:
             strand = "+"
             if contig in self.q_reversed:
                 strand = "-" if self.q_reversed[contig] else "+"
             if contig in query_on_target:
-                content += "%s\t%s\t%s\n" % (contig, query_on_target[contig] or "None", strand)
+                min_target = str(query_on_target[contig][3])
+                if min_target == "-1":
+                    min_target = "na"
+                max_target = str(query_on_target[contig][4])
+                if max_target == "-1":
+                    max_target = "na"
+                min_query = str(query_on_target[contig][1])
+                if min_query == "-1":
+                    min_query = "na"
+                max_query = str(query_on_target[contig][2])
+                if max_query == "-1":
+                    max_query = "na"
+                chrm = query_on_target[contig][0]
+                content += "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" % (contig, chrm or "None", strand,
+                                                                     str(self.q_contigs[contig]), min_query, max_query,
+                                                                     str(self.t_contigs[chrm]), min_target, max_target)
             else:
-                content += "%s\t%s\t%s\n" % (contig, "None", strand)
+                content += "%s\t%s\t%s\t%s\tna\tna\tna\tna\tna\n" % (contig, "None", strand,
+                                                                     str(self.q_contigs[contig]))
         return content
 
     def build_list_no_assoc(self, to):
