@@ -103,10 +103,12 @@ d3.boxplot.launch = function(res, update=false, noise_change=false) {
     if (res["sorted"]) {
         $("input#sort-contigs").val("Undo sort");
         $("#export").find("select option[value=4]").show();
+        $("#export").find("select option[value=8]").show();
     }
     else {
         $("input#sort-contigs").val("Sort contigs");
         $("#export").find("select option[value=4]").hide();
+        $("#export").find("select option[value=8]").hide();
     }
     d3.boxplot.name_x = res["name_x"];
     d3.boxplot.name_y = res["name_y"];

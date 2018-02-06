@@ -5,24 +5,29 @@ import shutil
 from math import sqrt
 from numpy import mean
 from pathlib import Path
+import json
+from dgenies.bin.index import Index
+from dgenies.lib.functions import Functions
+from intervaltree import IntervalTree
 import matplotlib as mpl
 mpl.use('Agg')
 from matplotlib import pyplot as plt
-import json
-from dgenies.bin.index import Index
-from intervaltree import IntervalTree
+from Bio import SeqIO
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
 
 
 class Paf:
     limit_idy = [0.25, 0.5, 0.75]
     max_nb_lines = 100000
 
-    def __init__(self, paf: str, idx_q: str, idx_t: str, auto_parse: bool=True):
+    def __init__(self, paf: str, idx_q: str, idx_t: str, auto_parse: bool=True, mailer=None, id_job=None):
         self.paf = paf
         self.idx_q = idx_q
         self.idx_t = idx_t
         self.sorted = False
-        if os.path.exists(os.path.join(os.path.dirname(paf), ".sorted")):
+        self.data_dir = os.path.dirname(paf)
+        if os.path.exists(os.path.join(self.data_dir, ".sorted")):
             self.paf += ".sorted"
             self.idx_q += ".sorted"
             self.sorted = True
@@ -41,6 +46,8 @@ class Paf:
         self.name_t = None
         self.parsed = False
         self.error = False
+        self.mailer = mailer
+        self.id_job = id_job
 
         if auto_parse:
             self.parse_paf()
@@ -444,6 +451,27 @@ class Paf:
                 query_on_target[contig] = None
         return query_on_target
 
+    def get_queries_on_target_association(self):
+        """
+        For each target, get the list of queries associated to it
+        :return:
+        """
+        gravity_contig = self.compute_gravity_contigs()[0]
+        queries_on_target = {}
+        for contig, chr_blocks in gravity_contig.items():
+            # Find best block:
+            max_number = 0
+            max_chr = None
+            for chrm, size in chr_blocks.items():
+                if size > max_number:
+                    max_number = size
+                    max_chr = chrm
+            if max_chr is not None:
+                if max_chr not in queries_on_target:
+                    queries_on_target[max_chr] = []
+                queries_on_target[max_chr].append(contig)
+        return queries_on_target
+
     def build_query_on_target_association_file(self):
         """
         For each query, get the best matching chromosome and save it to a CSV file.
@@ -645,3 +673,54 @@ class Paf:
                 txt = summary_file.read()
                 return json.loads(txt)
         return None
+
+    def build_query_chr_as_reference(self):
+        try:
+            if not self.sorted:
+                raise Exception("Contigs must be sorted to do that!")
+            contigs_assoc = self.get_queries_on_target_association()
+            with open(os.path.join(self.data_dir, ".query")) as query_file:
+                query_fasta = query_file.read().strip("\n")
+            if not os.path.isfile(query_fasta):
+                raise Exception("Query fasta does not exists")
+            uncompressed = False
+            if query_fasta.endswith(".gz"):
+                uncompressed = True
+                query_fasta = Functions.uncompress(query_fasta)
+            query_f = SeqIO.index(query_fasta, "fasta")
+            o_fasta = os.path.join(os.path.dirname(query_fasta), "as_reference_" + os.path.basename(query_fasta))
+            mapped_queries = set()
+            with open(o_fasta, "w") as out:
+                for target in self.t_order:
+                    if target in contigs_assoc:
+                        queries = sorted(contigs_assoc[target], key=lambda x: self.q_order.index(x))
+                        seq = SeqRecord(Seq(""))
+                        for query in queries:
+                            mapped_queries.add(query)
+                            new_seq = query_f[query]
+                            if self.q_reversed[query]:
+                                new_seq = new_seq.reverse_complement()
+                            seq += new_seq
+                            seq += 100 * "N"
+                        seq = seq[:-100]
+                        seq.id = seq.name = seq.description = target
+                        SeqIO.write(seq, out, "fasta")
+                for contig in self.q_order:
+                    if contig not in mapped_queries:
+                        seq = query_f[contig]
+                        seq.id += "_unaligned"
+                        SeqIO.write(seq, out, "fasta")
+            if uncompressed:
+                os.remove(query_fasta)
+            status = "success"
+        except Exception:
+            o_fasta = None
+            status="fail"
+
+        Functions.send_fasta_ready(mailer=self.mailer,
+                                   job_name=self.id_job,
+                                   sample_name="as_reference_" + os.path.basename(query_fasta).rsplit(".")[0],
+                                   compressed=False,
+                                   path="download",
+                                   status=status)
+        return o_fasta

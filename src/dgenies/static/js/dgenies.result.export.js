@@ -141,6 +141,19 @@ dgenies.result.export.export_no_association_file = function (to) {
         })
 };
 
+dgenies.result.export.export_query_as_reference_fasta = function() {
+    dgenies.post(`/build-query-as-reference/${dgenies.result.id_res}`,
+        {},
+        function (data, success) {
+            if (data["success"]) {
+                dgenies.notify("You will receive a mail soon with the link to download your Fasta file", "success")
+            }
+            else {
+                dgenies.notify(`An error has occurred. Please contact the support`, "fatal")
+            }
+        });
+}
+
 dgenies.result.export.export = function () {
     let select = $("form#export select");
     let selection = parseInt(select.val());
@@ -165,6 +178,9 @@ dgenies.result.export.export = function () {
             }
             else if (selection === 7) {
                 dgenies.result.export.export_no_association_file("target");
+            }
+            else if (selection === 8) {
+                dgenies.result.export.export_query_as_reference_fasta();
             }
             else
                 dgenies.notify("Not supported yet!", "danger", 2000);

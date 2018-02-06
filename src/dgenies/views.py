@@ -331,6 +331,26 @@ def build_fasta(id_res):
                         "message": "Unable to get fasta file for query. Please contact us to report the bug"})
 
 
+@app.route('/build-query-as-reference/<id_res>', methods=['POST'])
+def get_query_as_reference(id_res):
+    paf_file = os.path.join(APP_DATA, id_res, "map.paf")
+    idx1 = os.path.join(APP_DATA, id_res, "query.idx")
+    idx2 = os.path.join(APP_DATA, id_res, "target.idx")
+    paf = Paf(paf_file, idx1, idx2, False, mailer=mailer, id_job=id_res)
+    paf.parse_paf(False, True)
+    thread = threading.Timer(0, paf.build_query_chr_as_reference)
+    thread.start()
+    return jsonify({"success": True})
+
+
+@app.route('/download/<id_res>/<filename>')
+def download_file(id_res, filename):
+    file_dl = os.path.join(APP_DATA, id_res, filename)
+    if os.path.isfile(file_dl):
+        return send_file(file_dl)
+    return abort(404)
+
+
 @app.route('/fasta-query/<id_res>', defaults={'filename': ""}, methods=['GET'])
 @app.route('/fasta-query/<id_res>/<filename>', methods=['GET'])  # Use fake URL in mail to set download file name
 def dl_fasta(id_res, filename):

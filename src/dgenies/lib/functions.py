@@ -17,6 +17,8 @@ ALLOWED_EXTENSIONS = ['fa', 'fasta', 'fna', 'fa.gz', 'fasta.gz', 'fna.gz']
 
 class Functions:
 
+    config = AppConfigReader()
+
     @staticmethod
     def allowed_file(filename):
         return '.' in filename and \
@@ -140,14 +142,13 @@ class Functions:
             return j1.email
 
     @staticmethod
-    def send_fasta_ready(mailer, job_name, sample_name, compressed=False):
-        config = AppConfigReader()
-        web_url = config.web_url
+    def send_fasta_ready(mailer, job_name, sample_name, compressed=False, path="fasta-query", status="success"):
+        web_url = Functions.config.web_url
         with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "mail_templates", "dl_fasta.html")) \
                 as t_file:
             template = Template(t_file.read())
-            message_html = template.render(job_name=job_name, status="success", url_base=web_url,
-                                           sample_name=sample_name, compressed=compressed)
+            message_html = template.render(job_name=job_name, status=status, url_base=web_url,
+                                           sample_name=sample_name, compressed=compressed, path=path)
         message = "D-Genies\n\n" \
                   "Job %s - Download fasta\n\n" % job_name
         message += "Query fasta file for job %s (query: %s) is ready to download.\n" % (job_name, sample_name)
@@ -155,6 +156,8 @@ class Functions:
         message += "%s/fasta-query/%s/%s" % (web_url, job_name, sample_name + ".fasta" + (".gz" if compressed else ""))
         mailer.send_mail([Functions.get_mail_for_job(job_name)], "Job %s - Download fasta" % job_name, message,
                          message_html)
+
+
 
     @staticmethod
     def sort_fasta(job_name, fasta_file, index_file, lock_file, compress=False, mailer=None):
@@ -229,4 +232,3 @@ class Functions:
                 "time_elapsed": Functions.get_readable_time(item.job.time_elapsed)
             })
         return items
-

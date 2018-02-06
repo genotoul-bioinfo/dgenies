@@ -29,7 +29,7 @@
 <p>Hi,</p>
 {% if status == "success" %}
     <p>Query fasta file for job {{ job_name }} (query: {{ sample_name }}) is ready to download.<br/>
-        You can <a href="{{ url_base }}/fasta-query/{{ job_name }}/{{ sample_name }}.fasta{% if compressed %}.gz{% endif %}">click here</a> to download it.</p>
+        You can <a href="{{ url_base }}/{{ path }}/{{ job_name }}/{{ sample_name }}.fasta{% if compressed %}.gz{% endif %}">click here</a> to download it.</p>
 {% else %}
     <p>Build of query fasta file for job {{ job_name }} has failed. You can try again. If the problem persists, please contact the support.</p>
 {% endif %}
