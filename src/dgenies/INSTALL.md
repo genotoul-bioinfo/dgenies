@@ -56,6 +56,7 @@ Some python modules are required (will be automatically installed by the command
     drmaa==0.7.*
     intervaltree==2.1.*
     argparse==1.4
+    Markdown==2.6.*
     
     
     
