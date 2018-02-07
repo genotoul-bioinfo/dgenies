@@ -14,6 +14,7 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=reqs,
-    data_files=[('/etc/dgenies', ['application.properties'])],
+    data_files=[('/etc/dgenies', ['application.properties']),
+                ('/var/www', ['dgenies.wsgi'])],
     scripts=['src/bin/dgenies'],
 )
