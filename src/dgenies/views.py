@@ -1,4 +1,4 @@
-from dgenies import app, app_title, config_reader, mailer, APP_DATA
+from dgenies import app, app_title, app_folder, config_reader, mailer, APP_DATA
 
 import os
 import time
@@ -6,7 +6,7 @@ import datetime
 import shutil
 import re
 import threading
-from flask import render_template, request, url_for, jsonify, Response, abort, send_file
+from flask import render_template, request, url_for, jsonify, Response, abort, send_file, Markup
 from pathlib import Path
 from dgenies.lib.paf import Paf
 from dgenies.lib.job_manager import JobManager
@@ -15,6 +15,8 @@ from dgenies.lib.upload_file import UploadFile
 from dgenies.lib.fasta import Fasta
 from dgenies.database import Session, Gallery
 from peewee import DoesNotExist
+from markdown import Markdown
+from markdown.extensions.toc import TocExtension
 
 
 @app.context_processor
@@ -199,6 +201,16 @@ def get_file(file, gzip=False):  # pragma: no cover
     except IOError as exc:
         print(exc)
         abort(500)
+
+
+@app.route("/install", methods=['GET'])
+def install():
+    with open(os.path.join(app_folder, "INSTALL.md"), "r") as install_instr:
+        content = install_instr.read()
+    md = Markdown(extensions=[TocExtension(baselevel=1)])
+    content = Markup(md.convert(content))
+    toc = Markup(md.toc)
+    return render_template("install.html", menu="install", title=app_title, content=content, toc=toc)
 
 
 @app.route("/paf/<id_res>", methods=['GET'])

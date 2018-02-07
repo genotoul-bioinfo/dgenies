@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block scripts %}
+    {{ super() }}
+    <style>
+        #plan-back, #body {
+            display: inline-block;
+            vertical-align: top;
+            width: 290px;
+            padding-left: 10px;
+
+        }
+        #plan-back {
+            margin-top: 30px;
+            background: #515151;
+            height: 100%;
+            position: fixed;
+        }
+        #plan {
+            width: 300px;
+            padding-top: 20px;
+            margin-left: -30px;
+        }
+        #plan ul {
+            list-style: none;
+            margin-left: -10px;
+        }
+        #plan a {
+            color: #ffffff;
+            font-weight: bold;
+        }
+        #body {
+            width: calc(100% - 300px);
+            margin-left: 295px !important;
+        }
+    </style>
+{% endblock %}
+{% block content %}
+
+    <div id="plan-back">
+        <div id="plan">
+            {{ toc }}
+        </div>
+    </div>
+
+    <div id="body">
+        {{ content }}
+    </div>
+
+{% endblock %}

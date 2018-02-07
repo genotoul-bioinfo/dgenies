@@ -11,10 +11,11 @@ app_title = None
 APP_DATA = None
 config_reader = None
 mailer = None
+app_folder = None
 
 
 def launch():
-    global app, app_title, APP_DATA, config_reader, mailer
+    global app, app_title, app_folder, APP_DATA, config_reader, mailer
     app_folder = os.path.dirname(os.path.realpath(__file__))
 
 
