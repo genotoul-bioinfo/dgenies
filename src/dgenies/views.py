@@ -175,7 +175,7 @@ def result(id_res):
 
 @app.route("/gallery", methods=['GET'])
 def gallery():
-    return render_template("gallery.html", items=Functions.get_gallery_items(), menu="gallery")
+    return render_template("gallery.html", items=Functions.get_gallery_items(), menu="gallery", title=app_title)
 
 
 @app.route("/gallery/<filename>", methods=['GET'])

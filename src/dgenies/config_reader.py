@@ -242,21 +242,21 @@ class AppConfigReader:
         except NoOptionError:
             return False
 
-    def _get_cron_menage_hour(self):
+    def _get_cron_clean_time(self):
         try:
-            value = self.reader.get("cron", "menage_hour").lower()
+            value = self.reader.get("cron", "clean_time").lower()
             match = re.match(r"(([0-9])|([0-1][0-9])|(2[0-3]))[hH]([0-5][0-9])", value)
             if match is not None:
                 return [int(match.group(1)), int(match.group(5))]
             else:
-                print("Incorrect menage hour format!")
+                print("Incorrect clean hour format!")
                 return [1, 0]
         except (NoOptionError, NoSectionError):
             return [1, 0]
 
-    def _get_cron_menage_freq(self):
+    def _get_cron_clean_freq(self):
         try:
-            return int(self.reader.get("cron", "menage_freq"))
+            return int(self.reader.get("cron", "clean_freq"))
         except (NoOptionError, NoSectionError):
             return 1
 
@@ -341,9 +341,9 @@ class AppConfigReader:
         except (NoOptionError, NoSectionError):
             return self._replace_vars("###PROGRAM###/bin/prepare_data.sh")
 
-    def _get_cluster_python_script(self):
+    def _get_cluster_python_exec(self):
         try:
-            return self._replace_vars(self.reader.get("cluster", "python3_script"))
+            return self._replace_vars(self.reader.get("cluster", "python3_exec"))
         except (NoOptionError, NoSectionError):
             return "python3"
 

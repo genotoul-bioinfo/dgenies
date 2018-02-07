@@ -13,3 +13,4 @@ tendo==0.2.*
 matplotlib==2.1.*
 drmaa==0.7.*
 intervaltree==2.1.*
+argparse==1.4

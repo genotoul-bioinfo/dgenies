@@ -31,22 +31,22 @@ class Crons:
 
     def start_all(self):
         self.clear(False)
-        self.init_menage_cron()
+        self.init_clean_cron()
         self.init_launch_local_cron()
 
-    def init_menage_cron(self):
+    def init_clean_cron(self):
         """
-        Menage cron is launched at 1h00am each day
+        Clean cron is launched at 1h00am each day
         """
-        menage_hour = self.config.cron_menage_hour
-        menage_freq = self.config.cron_menage_freq
+        clean_time = self.config.cron_clean_time
+        clean_freq = self.config.cron_clean_freq
         if self.base_dir is not None:
             job = self.my_cron.new(sys.executable +
-                                   " {0}/bin/clean_jobs.py > {0}/menage.log 2>&1".format(self.config.log_dir),
+                                   " {0}/bin/clean_jobs.py > {0}/clean.log 2>&1".format(self.config.log_dir),
                                    comment="dgenies")
-            job.day.every(menage_freq)
-            job.hour.on(menage_hour[0])
-            job.minute.on(menage_hour[1])
+            job.day.every(clean_freq)
+            job.hour.on(clean_time[0])
+            job.minute.on(clean_time[1])
             self.my_cron.write()
         else:
             raise Exception("Crons: base_dir must not be None")
