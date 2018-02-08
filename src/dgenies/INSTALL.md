@@ -94,7 +94,14 @@ Here is an example of configuration file for apache:
         ServerName <url>
 
         WSGIDaemonProcess dgenies user=<user> group=<group> threads=8
-        WSGIScriptAlias / /var/www/dgenies.wsgi
+        WSGIScriptAlias / /var/www/dgenies/dgenies.wsgi
+        
+        <Directory /var/www/dgenies>
+            WSGIProcessGroup dgenies
+            WSGIApplicationGroup %{GLOBAL}
+            Order deny,allow
+            Allow from all
+        </Directory>
     </VirtualHost>
     
 With:  

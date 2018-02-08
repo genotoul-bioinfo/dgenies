@@ -205,7 +205,7 @@ def get_file(file, gzip=False):  # pragma: no cover
 
 @app.route("/install", methods=['GET'])
 def install():
-    with open(os.path.join(app_folder, "INSTALL.md"), "r") as install_instr:
+    with open(os.path.join(app_folder, "INSTALL.md"), "r", encoding='utf-8') as install_instr:
         content = install_instr.read()
     md = Markdown(extensions=[TocExtension(baselevel=1)])
     content = Markup(md.convert(content))
