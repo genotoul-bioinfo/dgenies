@@ -6,23 +6,28 @@ from collections import OrderedDict
 
 class Merger:
 
-    def __init__(self, paf_in, paf_out, query_in, query_out):
+    def __init__(self, paf_in, paf_out, query_in, query_out, debug=False):
         self.paf_in = paf_in
         self.paf_out = paf_out
         self.query_in = query_in
         self.query_out = query_out
+        self.debug = debug
+
+    def _printer(self, message):
+        if self.debug:
+            print(message)
 
     def merge(self):
-        print("Loading query index...")
+        self._printer("Loading query index...")
         contigs, contigs_split, q_name = self.load_query_index(self.query_in)
 
-        print("Merging contigs in PAF file...")
+        self._printer("Merging contigs in PAF file...")
         self.merge_paf(self.paf_in, self.paf_out, contigs, contigs_split)
 
-        print("Writing new query index...")
+        self._printer("Writing new query index...")
         self.write_query_index(self.query_out, contigs, q_name)
 
-        print("DONE!")
+        self._printer("DONE!")
 
     @staticmethod
     def _get_sorted_splits(contigs_split: dict, all_contigs: dict):

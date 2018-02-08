@@ -10,7 +10,6 @@ from collections import OrderedDict
 from Bio import SeqIO
 from jinja2 import Template
 from dgenies.config_reader import AppConfigReader
-from dgenies.database import Job, Gallery
 
 ALLOWED_EXTENSIONS = ['fa', 'fasta', 'fna', 'fa.gz', 'fasta.gz', 'fna.gz']
 
@@ -137,6 +136,7 @@ class Functions:
 
     @staticmethod
     def get_mail_for_job(id_job):
+        from dgenies.database import Job
         with Job.connect():
             j1 = Job.get(Job.id_job == id_job)
             return j1.email
@@ -221,6 +221,7 @@ class Functions:
 
     @staticmethod
     def get_gallery_items():
+        from dgenies.database import Gallery
         items = []
         for item in Gallery.select():
             items.append({

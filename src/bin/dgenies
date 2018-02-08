@@ -6,11 +6,8 @@ import webbrowser
 import threading
 from glob import glob
 import time
-from dgenies.lib.crons import Crons
 from dgenies.config_reader import AppConfigReader
 from dgenies.bin.clean_jobs import parse_data_folders, parse_database, parse_upload_folders
-from dgenies.database import Gallery, Job
-from peewee import DoesNotExist
 
 runned = False
 
@@ -45,6 +42,8 @@ def parse_args():
                        default=False)
     clear.add_argument("-m", "--max-age", help="Max age for job to delete (0 for all)", type=int, required=False,
                        default=0)
+    clear.add_argument("-w", "--web", help="Add this option with -j option, if you use the webserver mode", type=bool,
+                     const=True, nargs="?", required=False, default=False)
 
     # Gallery:
     gallery = subparsers.add_parser("gallery", help="Manage gallery")
@@ -103,11 +102,12 @@ def run(mode="standalone", debug=False, host="127.0.0.1", port=5000, no_crons=Fa
     if debug:
         os.environ['LOGS'] = "True"
     from dgenies import launch
-    app = launch()
+    app = launch(mode=mode, debug=debug)
     app.run(host=host, port=port, debug=debug)
 
 
 def clear_crons():
+    from dgenies.lib.crons import Crons
     crons = Crons(None, True)
     crons.clear()
 
@@ -122,8 +122,7 @@ def clear_logs():
         print("No log dir defined!")
 
 
-def clear_jobs(max_data_age=7):
-
+def clear_jobs(max_data_age=7, web=False):
     upload_folder = config.upload_folder
     app_data = config.app_data
     now = time.time()
@@ -146,15 +145,18 @@ def clear_jobs(max_data_age=7):
     )
     print("")
 
-    print("######################")
-    print("# Parsing Jobs in DB #")
-    print("######################")
-    print("")
-    gallery_jobs = parse_database(
-        app_data=app_data,
-        max_age=max_age
-    )
-    print("")
+    if web:
+        print("######################")
+        print("# Parsing Jobs in DB #")
+        print("######################")
+        print("")
+        gallery_jobs = parse_database(
+            app_data=app_data,
+            max_age=max_age
+        )
+        print("")
+    else:
+        gallery_jobs = []
 
     print("#######################")
     print("# Parsing Data folder #")
@@ -170,6 +172,8 @@ def clear_jobs(max_data_age=7):
 
 
 def add_to_gallery(id_job, name, picture, query, target):
+    from dgenies.database import Gallery, Job
+    from peewee import DoesNotExist
     try:
         job = Job.get(id_job=id_job)
     except DoesNotExist:
@@ -185,6 +189,7 @@ def add_to_gallery(id_job, name, picture, query, target):
 
 
 def del_from_gallery_by_id(id_job):
+    from dgenies.database import Gallery, Job
     items = Gallery.select().join(Job).where(Job.id_job == id_job)
     list_pictures = []
     for item in items:
@@ -194,6 +199,7 @@ def del_from_gallery_by_id(id_job):
 
 
 def del_from_gallery_by_name(name):
+    from dgenies.database import Gallery
     items = Gallery.select().where(Gallery.name == name)
     list_pictures = []
     for item in items:
@@ -215,7 +221,7 @@ if __name__ == "__main__":
             clear_logs()
         if args.jobs:
             print("Cleaning jobs...")
-            clear_jobs(args.max_age)
+            clear_jobs(args.max_age, args.web)
     elif command == "gallery_add":
         add_to_gallery(args.id_job, args.name, args.pict, args.query, args.target)
     elif command == "gallery_del":

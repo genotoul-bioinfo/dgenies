@@ -1,4 +1,4 @@
-from dgenies import app, app_title, app_folder, config_reader, mailer, APP_DATA
+from dgenies import app, app_title, app_folder, config_reader, mailer, APP_DATA, MODE
 
 import os
 import time
@@ -13,10 +13,11 @@ from dgenies.lib.job_manager import JobManager
 from dgenies.lib.functions import Functions, ALLOWED_EXTENSIONS
 from dgenies.lib.upload_file import UploadFile
 from dgenies.lib.fasta import Fasta
-from dgenies.database import Session, Gallery
-from peewee import DoesNotExist
 from markdown import Markdown
 from markdown.extensions.toc import TocExtension
+if MODE == "webserver":
+    from dgenies.database import Session, Gallery
+    from peewee import DoesNotExist
 
 
 @app.context_processor
@@ -28,50 +29,67 @@ def get_launched_results():
 # Main
 @app.route("/", methods=['GET'])
 def main():
-    pict = Gallery.select().order_by("id")
-    if len(pict) > 0:
-        pict = pict[0].picture
+    if MODE == "webserver":
+        pict = Gallery.select().order_by("id")
+        if len(pict) > 0:
+            pict = pict[0].picture
+        else:
+            pict = None
     else:
         pict = None
-    return render_template("index.html", title=app_title, menu="index", pict=pict)
+    return render_template("index.html", title=app_title, menu="index", pict=pict, mode=MODE)
 
 
 @app.route("/run", methods=['GET'])
 def run():
-    with Session.connect():
-        s_id = Session.new()
-        id_job = Functions.random_string(5) + "_" + datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S')
-        if "id_job" in request.args:
-            id_job = request.args["id_job"]
-        email = ""
-        if "email" in request.args:
-            email = request.args["email"]
-        return render_template("run.html", title=app_title, id_job=id_job, email=email,
-                               menu="run", allowed_ext=ALLOWED_EXTENSIONS, s_id=s_id,
-                               max_upload_file_size=config_reader.max_upload_file_size)
+    if MODE == "webserver":
+        with Session.connect():
+            s_id = Session.new()
+    else:
+        upload_folder = Functions.random_string(20)
+        tmp_dir = config_reader.upload_folder
+        upload_folder_path = os.path.join(tmp_dir, upload_folder)
+        while os.path.exists(upload_folder_path):
+            upload_folder = Functions.random_string(20)
+            upload_folder_path = os.path.join(tmp_dir, upload_folder)
+        s_id = upload_folder
+    id_job = Functions.random_string(5) + "_" + datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S')
+    if "id_job" in request.args:
+        id_job = request.args["id_job"]
+    email = ""
+    if "email" in request.args:
+        email = request.args["email"]
+    return render_template("run.html", title=app_title, id_job=id_job, email=email,
+                           menu="run", allowed_ext=ALLOWED_EXTENSIONS, s_id=s_id,
+                           max_upload_file_size=config_reader.max_upload_file_size, mode=MODE)
 
 
 @app.route("/run-test", methods=['GET'])
 def run_test():
-    print(config_reader.allowed_ip_tests)
-    if request.remote_addr not in config_reader.allowed_ip_tests:
-        return abort(404)
-    with Session.connect():
-        return Session.new()
+    if MODE == "webserver":
+        print(config_reader.allowed_ip_tests)
+        if request.remote_addr not in config_reader.allowed_ip_tests:
+            return abort(404)
+        with Session.connect():
+            return Session.new()
+    return abort(500)
 
 
 # Launch analysis
 @app.route("/launch_analysis", methods=['POST'])
 def launch_analysis():
-    try:
-        with Session.connect():
-            session = Session.get(s_id=request.form["s_id"])
-    except DoesNotExist:
-        return jsonify({"success": False, "errors": ["Session has expired. Please refresh the page and try again"]})
-    # Reset session upload:
-    session.allow_upload = False
-    session.position = -1
-    session.save()
+    if MODE == "webserver":
+        try:
+            with Session.connect():
+                session = Session.get(s_id=request.form["s_id"])
+        except DoesNotExist:
+            return jsonify({"success": False, "errors": ["Session has expired. Please refresh the page and try again"]})
+        upload_folder = session.upload_folder
+        # Delete session:
+        session.delete_instance()
+    else:
+        upload_folder = request.form["s_id"]
+
     id_job = request.form["id_job"]
     email = request.form["email"]
     file_query = request.form["query"]
@@ -86,7 +104,7 @@ def launch_analysis():
         errors.append("Id of job not given")
         form_pass = False
 
-    if email == "":
+    if email == "" and MODE == "webserver":
         errors.append("Email not given")
         form_pass = False
     if file_target == "":
@@ -108,7 +126,6 @@ def launch_analysis():
 
         # Save files:
         query = None
-        upload_folder = session.upload_folder
         if file_query != "":
             query_name = os.path.splitext(file_query.replace(".gz", ""))[0] if file_query_type == "local" else None
             query_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder, file_query) \
@@ -121,10 +138,10 @@ def launch_analysis():
 
         # Launch job:
         job = JobManager(id_job, email, query, target, mailer)
-        job.launch()
-
-        # Delete session:
-        session.delete_instance()
+        if MODE == "webserver":
+            job.launch()
+        else:
+            job.launch_standalone()
         return jsonify({"success": True, "redirect": url_for(".status", id_job=id_job)})
     else:
         return jsonify({"success": False, "errors": errors})
@@ -159,13 +176,14 @@ def status(id_job):
                            error=j_status["error"].replace("#ID#", ""),
                            id_job=id_job, menu="results", mem_peak=mem_peak,
                            time_elapsed=time_e,
-                           query_filtered=job.is_query_filtered(), target_filtered=job.is_target_filtered())
+                           query_filtered=job.is_query_filtered(), target_filtered=job.is_target_filtered(), mode=MODE)
 
 
 # Results path
 @app.route("/result/<id_res>", methods=['GET'])
 def result(id_res):
-    my_render = render_template("result.html", title=app_title, id=id_res, menu="result", current_result=id_res)
+    my_render = render_template("result.html", title=app_title, id=id_res, menu="result", current_result=id_res,
+                                mode=MODE)
     response = app.make_response(my_render)
     cookie = request.cookies.get("results")
     cookie = cookie.split("|") if cookie is not None else []
@@ -177,15 +195,20 @@ def result(id_res):
 
 @app.route("/gallery", methods=['GET'])
 def gallery():
-    return render_template("gallery.html", items=Functions.get_gallery_items(), menu="gallery", title=app_title)
+    if MODE == "webserver":
+        return render_template("gallery.html", items=Functions.get_gallery_items(), menu="gallery", title=app_title,
+                               mode=MODE)
+    return abort(404)
 
 
 @app.route("/gallery/<filename>", methods=['GET'])
 def gallery_file(filename):
-    try:
-        return send_file(os.path.join(config_reader.app_data, "gallery", filename))
-    except FileNotFoundError:
-        abort(404)
+    if MODE == "webserver":
+        try:
+            return send_file(os.path.join(config_reader.app_data, "gallery", filename))
+        except FileNotFoundError:
+            abort(404)
+    return abort(404)
 
 
 def get_file(file, gzip=False):  # pragma: no cover
@@ -210,7 +233,7 @@ def install():
     md = Markdown(extensions=[TocExtension(baselevel=1)])
     content = Markup(md.convert(content))
     toc = Markup(md.toc)
-    return render_template("install.html", menu="install", title=app_title, content=content, toc=toc)
+    return render_template("install.html", menu="install", title=app_title, content=content, toc=toc, mode=MODE)
 
 
 @app.route("/paf/<id_res>", methods=['GET'])
@@ -500,6 +523,11 @@ def get_filter_out_target(id_res):
 
 @app.route("/ask-upload", methods=['POST'])
 def ask_upload():
+    if MODE == "standalone":
+        return jsonify({
+            "success": True,
+            "allowed": True
+        })
     try:
         s_id = request.form['s_id']
         with Session.connect():
@@ -515,10 +543,11 @@ def ask_upload():
 
 @app.route("/ping-upload", methods=['POST'])
 def ping_upload():
-    s_id = request.form['s_id']
-    with Session.connect():
-        session = Session.get(s_id=s_id)
-        session.ping()
+    if MODE == "webserver":
+        s_id = request.form['s_id']
+        with Session.connect():
+            session = Session.get(s_id=s_id)
+            session.ping()
     return "OK"
 
 
@@ -526,41 +555,48 @@ def ping_upload():
 def upload():
     try:
         s_id = request.form['s_id']
-        with Session.connect():
-            session = Session.get(s_id=s_id)
-            if session.ask_for_upload(False):
-                folder = session.upload_folder
-                files = request.files[list(request.files.keys())[0]]
-
-                if files:
-                    filename = files.filename
-                    folder_files = os.path.join(app.config["UPLOAD_FOLDER"], folder)
-                    if not os.path.exists(folder_files):
-                        os.makedirs(folder_files)
-                    filename = Functions.get_valid_uploaded_filename(filename, folder_files)
-                    mime_type = files.content_type
-
-                    if not Functions.allowed_file(files.filename):
-                        result = UploadFile(name=filename, type_f=mime_type, size=0, not_allowed_msg="File type not allowed")
-                        shutil.rmtree(folder_files)
-
+        if MODE == "webserver":
+            try:
+                with Session.connect():
+                    session = Session.get(s_id=s_id)
+                    if session.ask_for_upload(False):
+                        folder = session.upload_folder
                     else:
-                        # save file to disk
-                        uploaded_file_path = os.path.join(folder_files, filename)
-                        files.save(uploaded_file_path)
+                        return jsonify({"files": [], "success": "ERR", "message": "Not allowed to upload!"})
+            except DoesNotExist:
+                return jsonify(
+                    {"files": [], "success": "ERR", "message": "Session not initialized. Please refresh the page."})
+        else:
+            folder = s_id
 
-                        # get file size after saving
-                        size = os.path.getsize(uploaded_file_path)
+        files = request.files[list(request.files.keys())[0]]
 
-                        # return json for js call back
-                        result = UploadFile(name=filename, type_f=mime_type, size=size)
+        if files:
+            filename = files.filename
+            folder_files = os.path.join(app.config["UPLOAD_FOLDER"], folder)
+            if not os.path.exists(folder_files):
+                os.makedirs(folder_files)
+            filename = Functions.get_valid_uploaded_filename(filename, folder_files)
+            mime_type = files.content_type
 
-                    return jsonify({"files": [result.get_file()], "success": "OK"})
+            if not Functions.allowed_file(files.filename):
+                result = UploadFile(name=filename, type_f=mime_type, size=0, not_allowed_msg="File type not allowed")
+                shutil.rmtree(folder_files)
 
-                return jsonify({"files": [], "success": "404", "message": "No file provided"})
-            return jsonify({"files": [], "success": "ERR", "message": "Not allowed to upload!"})
-    except DoesNotExist:
-        return jsonify({"files": [], "success": "ERR", "message": "Session not initialized. Please refresh the page."})
+            else:
+                # save file to disk
+                uploaded_file_path = os.path.join(folder_files, filename)
+                files.save(uploaded_file_path)
+
+                # get file size after saving
+                size = os.path.getsize(uploaded_file_path)
+
+                # return json for js call back
+                result = UploadFile(name=filename, type_f=mime_type, size=size)
+
+            return jsonify({"files": [result.get_file()], "success": "OK"})
+
+        return jsonify({"files": [], "success": "404", "message": "No file provided"})
     except:  # Except all possible exceptions to prevent crashes
         return jsonify({"files": [], "success": "ERR", "message": "An unexpected error has occurred on upload. "
                                                                   "Please contact the support."})

@@ -15,6 +15,11 @@
         	<h1 class="page-header">D-Genies <small>Summary</small></h1>
 			<p>Dot plots are widely used to quickly compare sequence sets. They provide a synthetic similarity overview, highlighting repetitions, breaks and inversions. Different tools have been developed to easily generated genomic alignment dot plots, but they are often limited in the input sequence size. D-GENIES is a standalone and WEB application performing large genome alignments using minimap2 software package and generating interactive dot plots. It enables users to sort query sequences along the reference , zoom in the plot and download several image, alignment or sequence files. D-GENIES is an easy to install open source software package (GPL) developed in Python and JavaScript.</p>
 
+        {% if pict is none %}
+        </div>
+        <div class="col-lg-6" style="text-align:justify">
+        {% endif %}
+
 			<h1 class="page-header">D-Genies <small>Availability</small></h1>
 			<p>D-Genies is available under the GNU General
 				Public License (GPL). The package is coming with full documentation and test data. Sources are available <a target="_blank" href="#">here</a>.</p>

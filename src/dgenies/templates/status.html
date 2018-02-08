@@ -54,7 +54,9 @@
         {% elif status == "success" %}
             <p>Your job was completed successfully.<br/>
                 Please <a href="/result/{{ id_job }}">click here</a> to show results.</p>
-            <p>Time elapsed: {{ time_elapsed }}</p>
+            {% if time_elapsed is not none %}
+                <p>Time elapsed: {{ time_elapsed }}</p>
+            {% endif %}
             {% if target_filtered %}
                 <p>Note: target fasta has been filtered because it contains too small contigs.<br/>
                     To see which contigs has been removed from the analysis,

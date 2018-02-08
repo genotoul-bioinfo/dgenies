@@ -9,15 +9,17 @@ dgenies.run.allowed_ext = [];
 dgenies.run.max_upload_file_size = -1
 dgenies.run.files = [undefined, undefined];
 dgenies.run.allow_upload = false;
-dgenies.run.ping_interval = null
+dgenies.run.ping_interval = null;
+dgenies.run.mode = "webserver"
 
-dgenies.run.init = function (s_id, allowed_ext, max_upload_file_size=1073741824) {
+dgenies.run.init = function (s_id, allowed_ext, max_upload_file_size=1073741824, mode="webserver") {
     dgenies.run.s_id = s_id;
     dgenies.run.allowed_ext = allowed_ext;
     dgenies.run.max_upload_file_size = max_upload_file_size
     dgenies.run.restore_form();
     dgenies.run.set_events();
     dgenies.run.init_fileuploads();
+    dgenies.run.mode = mode;
 };
 
 dgenies.run.restore_form = function () {
@@ -255,7 +257,7 @@ dgenies.run.do_submit = function () {
     dgenies.post("/launch_analysis",
         {
             "id_job": $("input#id_job").val(),
-            "email": $("input#email").val(),
+            "email": dgenies.run.mode === "webserver" ? $("input#email").val() : "",
             "query": $("input#query").val(),
             "query_type": $("select.query").find(":selected").text().toLowerCase(),
             "target": $("input#target").val(),
@@ -300,18 +302,20 @@ dgenies.run.valid_form = function () {
     }
 
     // Check mail:
-    let email = $("input#email").val();
-    let mail_re = /^.+@.+\..+$/;
-    if (email.match(mail_re) === null) {
-        $("label.email").addClass("error");
-        if (email === "")
-            dgenies.run.add_error("Email is required!");
-        else
-            dgenies.run.add_error("Email is not correct!");
-        has_errors = true;
+    if (dgenies.run.mode === "webserver") {
+        let email = $("input#email").val();
+        let mail_re = /^.+@.+\..+$/;
+        if (email.match(mail_re) === null) {
+            $("label.email").addClass("error");
+            if (email === "")
+                dgenies.run.add_error("Email is required!");
+            else
+                dgenies.run.add_error("Email is not correct!");
+            has_errors = true;
+        }
     }
 
-    //Check input query:
+    //Check input target:
     if ($("input#target").val().length === 0) {
         $("label.file-target").addClass("error");
         dgenies.run.add_error("Target fasta is required!");

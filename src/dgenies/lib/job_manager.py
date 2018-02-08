@@ -1,3 +1,5 @@
+from dgenies import MODE, DEBUG
+
 import os
 import shutil
 import subprocess
@@ -6,8 +8,6 @@ import time
 import threading
 import re
 from dgenies.config_reader import AppConfigReader
-from dgenies.database import Job, Session
-from peewee import DoesNotExist
 from .fasta import Fasta
 from .functions import Functions
 import requests
@@ -26,7 +26,11 @@ from dgenies.lib.paf import Paf
 import gzip
 import io
 import binascii
-import glob
+from dgenies.database import Job
+
+if MODE == "webserver":
+    from dgenies.database import Session
+    from peewee import DoesNotExist
 
 
 class JobManager:
@@ -180,29 +184,45 @@ class JobManager:
         return "Your job #ID# has failed. You can try again.<br/>If the problem persists, please contact the support."
 
     def __launch_local(self):
+        if MODE == "webserver":
+            cmd = ["/usr/bin/time", "-f", "%e %M"]
+        else:
+            cmd = []
         if self.query is not None:
-            cmd = ["/usr/bin/time", "-f", "%e %M", self.config.minimap2_exec, "-t", self.config.nb_threads,
+            cmd += [self.config.minimap2_exec, "-t", self.config.nb_threads,
                    self.target.get_path(), self.get_query_split()]
         else:
-            cmd = ["/usr/bin/time", "-f", "%e %M", self.config.minimap2_exec, "-t", self.config.nb_threads, "-X",
+            cmd += [self.config.minimap2_exec, "-t", self.config.nb_threads, "-X",
                    self.target.get_path(), self.target.get_path()]
         with open(self.logs, "w") as logs, open(self.paf_raw, "w") as paf_raw:
             p = subprocess.Popen(cmd, stdout=paf_raw, stderr=logs)
         with Job.connect():
-            job = Job.get(Job.id_job == self.id_job)
-            job.id_process = p.pid
-            job.status = "started"
-            job.save()
+            status = "started"
+            if MODE == "webserver":
+                job = Job.get(Job.id_job == self.id_job)
+                job.id_process = p.pid
+                job.status = status
+                job.save()
+            else:
+                job = None
+                self.set_status_standalone(status)
             p.wait()
             if p.returncode == 0:
                 status = self.check_job_success()
-                job.status = status
-                job.save()
+                if MODE == "webserver":
+                    job.status = status
+                    job.save()
+                else:
+                    self.set_status_standalone(status)
                 return status == "success"
-            job.status = "fail"
             self.error = self.search_error()
-            job.error = self.error
-            job.save()
+            status = "fail"
+            if MODE == "webserver":
+                job.status = status
+                job.error = self.error
+                job.save()
+            else:
+                self.set_status_standalone(status, self.error)
         return False
 
     def check_job_status_slurm(self):
@@ -261,12 +281,15 @@ class JobManager:
         return status == "0"
 
     def update_job_status(self, status, id_process=None):
-        with Job.connect():
-            job = Job.get(Job.id_job == self.id_job)
-            job.status = status
-            if id_process is not None:
-                job.id_process = id_process
-            job.save()
+        if MODE == "webserver":
+            with Job.connect():
+                job = Job.get(Job.id_job == self.id_job)
+                job.status = status
+                if id_process is not None:
+                    job.id_process = id_process
+                job.save()
+        else:
+            self.set_status_standalone(status)
 
     def launch_to_cluster(self, step, batch_system_type, command, args, log_out, log_err):
         import drmaa
@@ -365,12 +388,17 @@ class JobManager:
         try:
             dl_path = wget.download(fasta.get_path(), self.output_dir, None)
         except ConnectionError:
-            with Job.connect():
-                job = Job.get(Job.id_job == self.id_job)
-                job.status = "fail"
-                job.error = "<p>Url <b>%s</b> is not valid!</p>" \
-                            "<p>If this is unattended, please contact the support.</p>" % fasta.get_path()
-                job.save()
+            status = "fail"
+            error = "<p>Url <b>%s</b> is not valid!</p>" \
+                    "<p>If this is unattended, please contact the support.</p>" % fasta.get_path()
+            if MODE == "webserver":
+                with Job.connect():
+                    job = Job.get(Job.id_job == self.id_job)
+                    job.status = status
+                    job.error = error
+                    job.save()
+            else:
+                self.set_status_standalone(status, error)
             return False, True, None, None
         filename = os.path.basename(dl_path)
         name = os.path.splitext(filename.replace(".gz", ""))[0]
@@ -386,12 +414,17 @@ class JobManager:
             try:
                 filename = requests.head(url, allow_redirects=True).url.split("/")[-1]
             except ConnectionError:
-                with Job.connect():
-                    job = Job.get(Job.id_job == self.id_job)
-                    job.status = "fail"
-                    job.error = "<p>Url <b>%s</b> is not valid!</p>" \
-                                "<p>If this is unattended, please contact the support.</p>" % fasta.get_path()
-                    job.save()
+                status = "fail"
+                error = "<p>Url <b>%s</b> is not valid!</p>" \
+                        "<p>If this is unattended, please contact the support.</p>" % fasta.get_path()
+                if MODE == "webserver":
+                    with Job.connect():
+                        job = Job.get(Job.id_job == self.id_job)
+                        job.status = status
+                        job.error = error
+                        job.save()
+                else:
+                    self.set_status_standalone(status, error)
                 return False
         elif url.startswith("ftp://"):
             filename = url.split("/")[-1]
@@ -400,20 +433,30 @@ class JobManager:
         if filename is not None:
             allowed = Functions.allowed_file(filename)
             if not allowed:
-                with Job.connect():
-                    job = Job.get(Job.id_job == self.id_job)
-                    job.status = "fail"
-                    job.error = "<p>File <b>%s</b> downloaded from <b>%s</b> is not a Fasta file!</p>" \
-                                "<p>If this is unattended, please contact the support.</p>" % (filename, url)
-                    job.save()
+                status = "fail"
+                error = "<p>File <b>%s</b> downloaded from <b>%s</b> is not a Fasta file!</p>" \
+                        "<p>If this is unattended, please contact the support.</p>" % (filename, url)
+                if MODE == "webserver":
+                    with Job.connect():
+                        job = Job.get(Job.id_job == self.id_job)
+                        job.status = status
+                        job.error = error
+                        job.save()
+                else:
+                    self.set_status_standalone(status, error)
         else:
             allowed = False
-            with Job.connect():
-                job = Job.get(Job.id_job == self.id_job)
-                job.status = "fail"
-                job.error = "<p>Url <b>%s</b> is not a valid URL!</p>" \
-                            "<p>If this is unattended, please contact the support.</p>" % (url)
-                job.save()
+            status = "fail"
+            error = "<p>Url <b>%s</b> is not a valid URL!</p>" \
+                    "<p>If this is unattended, please contact the support.</p>" % url
+            if MODE == "webserver":
+                with Job.connect():
+                    job = Job.get(Job.id_job == self.id_job)
+                    job.status = status
+                    job.error = error
+                    job.save()
+            else:
+                self.set_status_standalone(status, error)
         return allowed
 
     def clear(self):
@@ -421,9 +464,12 @@ class JobManager:
 
     @staticmethod
     def get_pending_local_number():
-        with Job.connect():
-            return len(Job.select().where((Job.batch_type == "local") & (Job.status != "success") &
-                                          (Job.status != "fail") & (Job.status != "no-match")))
+        if MODE == "webserver":
+            with Job.connect():
+                return len(Job.select().where((Job.batch_type == "local") & (Job.status != "success") &
+                                              (Job.status != "fail") & (Job.status != "no-match")))
+        else:
+            return 0
 
     def check_file(self, input_type, should_be_local, max_upload_size_readable):
         """
@@ -439,20 +485,30 @@ class JobManager:
             my_input = getattr(self, input_type)
             if my_input.get_path().endswith(".gz") and not self.is_gz_file(my_input.get_path()):
                 # Check file is correctly gzipped
-                job = Job.get(Job.id_job == self.id_job)
-                job.status = "fail"
-                job.error = input_type + " file is not a correct gzip file"
-                job.save()
+                status = "fail"
+                error = input_type + " file is not a correct gzip file"
+                if MODE == "webserver":
+                    job = Job.get(Job.id_job == self.id_job)
+                    job.status = status
+                    job.error = error
+                    job.save()
+                else:
+                    self.set_status_standalone(status, error)
                 self.clear()
                 return False, True, None
             # Check size:
             file_size = self.get_file_size(my_input.get_path())
             if -1 < (self.config.max_upload_size if (input_type == "query" or self.query is not None)
                      else self.config.max_upload_size_ava) < file_size:
-                job = Job.get(Job.id_job == self.id_job)
-                job.status = "fail"
-                job.error = input_type + " file exceed size limit of %d Mb (uncompressed)" % max_upload_size_readable
-                job.save()
+                status = "fail"
+                error = input_type + " file exceed size limit of %d Mb (uncompressed)" % max_upload_size_readable
+                if MODE == "webserver":
+                    job = Job.get(Job.id_job == self.id_job)
+                    job.status = status
+                    job.error = error
+                    job.save()
+                else:
+                    self.set_status_standalone(status, error)
                 self.clear()
                 return False, True, None
             if self.config.batch_system_type != "local" and file_size >= getattr(self.config, "min_%s_size" % input_type):
@@ -461,24 +517,35 @@ class JobManager:
 
     def download_files_with_pending(self, files_to_download, should_be_local, max_upload_size_readable):
         with Job.connect():
-            job = Job.get(Job.id_job == self.id_job)
-            job.status = "getfiles-waiting"
-            job.save()
-            # Create a session:
-            s_id = Session.new(True)
-            session = Session.get(s_id=s_id)
+            status = "getfiles-waiting"
+            if MODE == "webserver":
+                job = Job.get(Job.id_job == self.id_job)
+                job.status = status
+                job.save()
+                # Create a session:
+                s_id = Session.new(True)
+                session = Session.get(s_id=s_id)
+            else:
+                status = "getfiles"
+                session = None
+                job = None
+                s_id = None
 
             try:
                 correct = True
                 error_set = False
-                allowed = session.ask_for_upload(True)
+                if MODE == "webserver":
+                    allowed = session.ask_for_upload(True)
+                else:
+                    allowed = True
                 while not allowed:
                     time.sleep(15)
                     session = Session.get(s_id=s_id)
                     allowed = session.ask_for_upload(False)
                 if allowed:
-                    job.status = "getfiles"
-                    job.save()
+                    if MODE == "webserver":
+                        job.status = "getfiles"
+                        job.save()
                     for file, input_type in files_to_download:
                         correct, error_set, finale_path, filename = self.__getting_file_from_url(file, input_type)
                         if not correct:
@@ -491,7 +558,7 @@ class JobManager:
                         if not correct:
                             break
 
-                    if correct and job.batch_type != "local" and should_be_local \
+                    if correct and MODE == "webserver" and job.batch_type != "local" and should_be_local \
                             and self.get_pending_local_number() < self.config.max_run_local:
                         job.batch_type = "local"
                         job.save()
@@ -500,7 +567,8 @@ class JobManager:
             except:  # Except all possible exceptions
                 correct = False
                 error_set = False
-            session.delete_instance()
+            if MODE == "webserver":
+                session.delete_instance()
             self._after_start(correct, error_set)
 
     def getting_files(self):
@@ -512,9 +580,14 @@ class JobManager:
             [2] True if no data must be downloaded (will be downloaded with pending if True)
         """
         with Job.connect():
-            job = Job.get(Job.id_job == self.id_job)
-            job.status = "getfiles"
-            job.save()
+            status = "getfiles"
+            if MODE == "webserver":
+                job = Job.get(Job.id_job == self.id_job)
+                job.status = status
+                job.save()
+            else:
+                job = None
+                self.set_status_standalone(status)
             correct = True
             should_be_local = True
             max_upload_size_readable = self.config.max_upload_size / 1024 / 1024  # Set it in Mb
@@ -553,7 +626,7 @@ class JobManager:
                                                      "max_upload_size_readable": max_upload_size_readable})
                     thread.start()  # Start the execution
 
-                elif correct and job.batch_type != "local" and should_be_local \
+                elif correct and MODE == "webserver" and job.batch_type != "local" and should_be_local \
                         and self.get_pending_local_number() < self.config.max_run_local:
                     job.batch_type = "local"
                     job.save()
@@ -599,15 +672,20 @@ class JobManager:
 
     def prepare_data_local(self):
         with open(self.preptime_file, "w") as ptime, Job.connect():
-            job = Job.get(Job.id_job == self.id_job)
-            job.status = "preparing"
-            job.save()
+            status = "preparing"
+            if MODE == "webserver":
+                job = Job.get(Job.id_job == self.id_job)
+                job.status = status
+                job.save()
+            else:
+                job = None
+                self.set_status_standalone(status)
             ptime.write(str(round(time.time())) + "\n")
             error_tail = "Please check your input file and try again."
             if self.query is not None:
                 fasta_in = self.query.get_path()
                 splitter = Splitter(input_f=fasta_in, name_f=self.query.get_name(), output_f=self.get_query_split(),
-                                    query_index=self.query_index_split)
+                                    query_index=self.query_index_split, debug=DEBUG)
                 if splitter.split():
                     filtered_fasta = os.path.join(os.path.dirname(self.get_query_split()), "filtered_" +
                                                   os.path.basename(self.get_query_split()))
@@ -620,9 +698,14 @@ class JobManager:
                                       replace_fa=True)
                     filter_f.filter()
                 else:
-                    job.status = "fail"
-                    job.error = "<br/>".join(["Query fasta file is not valid!", error_tail])
-                    job.save()
+                    status = "fail"
+                    error = "<br/>".join(["Query fasta file is not valid!", error_tail])
+                    if MODE == "webserver":
+                        job.status = status
+                        job.error = error
+                        job.save()
+                    else:
+                        self.set_status_standalone(status, error)
                     if self.config.send_mail_status:
                         self.send_mail_post()
                     return False
@@ -657,23 +740,36 @@ class JobManager:
                         os.remove(uncompressed)
                     except FileNotFoundError:
                         pass
-                job.status = "fail"
-                job.error = "<br/>".join(["Target fasta file is not valid!", error_tail])
-                job.save()
+                status = "fail"
+                error = "<br/>".join(["Target fasta file is not valid!", error_tail])
+                if MODE == "webserver":
+                    job.status = status
+                    job.error = error
+                    job.save()
+                else:
+                    self.set_status_standalone(status, error)
                 if self.config.send_mail_status:
                     self.send_mail_post()
                 return False
             ptime.write(str(round(time.time())) + "\n")
-            job.status = "prepared"
-            job.save()
+            status = "prepared"
+            if MODE == "webserver":
+                job.status = status
+                job.save()
+            else:
+                self.set_status_standalone(status)
+                self.run_job("local")
 
     def prepare_data(self):
-        with Job.connect():
-            job = Job.get(Job.id_job == self.id_job)
-            if job.batch_type == "local":
-                self.prepare_data_local()
-            else:
-                self.prepare_data_cluster(job.batch_type)
+        if MODE == "webserver":
+            with Job.connect():
+                job = Job.get(Job.id_job == self.id_job)
+                if job.batch_type == "local":
+                    self.prepare_data_local()
+                else:
+                    self.prepare_data_cluster(job.batch_type)
+        else:
+            self.prepare_data_local()
 
     def run_job(self, batch_system_type):
         success = False
@@ -683,31 +779,39 @@ class JobManager:
             success = self.__launch_drmaa(batch_system_type)
         if success:
             with Job.connect():
-                job = Job.get(Job.id_job == self.id_job)
-                with open(self.logs) as logs:
-                    measures = logs.readlines()[-1].strip("\n").split(" ")
-                    map_elapsed = round(float(measures[0]))
-                    job.mem_peak = int(measures[1])
-                with open(self.preptime_file) as ptime:
-                    lines = ptime.readlines()
-                    start = int(lines[0].strip("\n"))
-                    end = int(lines[1].strip("\n"))
-                    prep_elapsed = end - start
-                    job.time_elapsed = prep_elapsed + map_elapsed
-                job.status = "merging"
-                job.save()
+                if MODE == "webserver":
+                    job = Job.get(Job.id_job == self.id_job)
+                    with open(self.logs) as logs:
+                        measures = logs.readlines()[-1].strip("\n").split(" ")
+                        map_elapsed = round(float(measures[0]))
+                        job.mem_peak = int(measures[1])
+                    with open(self.preptime_file) as ptime:
+                        lines = ptime.readlines()
+                        start = int(lines[0].strip("\n"))
+                        end = int(lines[1].strip("\n"))
+                        prep_elapsed = end - start
+                        job.time_elapsed = prep_elapsed + map_elapsed
+                else:
+                    job = None
+                status = "merging"
+                if MODE == "webserver":
+                    job.status = "merging"
+                    job.save()
+                else:
+                    self.set_status_standalone(status)
                 if self.query is not None:
                     start = time.time()
                     paf_raw = self.paf_raw + ".split"
                     os.remove(self.get_query_split())
                     merger = Merger(self.paf_raw, paf_raw, self.query_index_split,
-                                    self.idx_q)
+                                    self.idx_q, debug=DEBUG)
                     merger.merge()
                     os.remove(self.paf_raw)
                     os.remove(self.query_index_split)
                     self.paf_raw = paf_raw
                     end = time.time()
-                    job.time_elapsed += end - start
+                    if MODE == "webserver":
+                        job.time_elapsed += end - start
                 else:
                     shutil.copyfile(self.idx_t, self.idx_q)
                     Path(os.path.join(self.output_dir, ".all-vs-all")).touch()
@@ -724,29 +828,48 @@ class JobManager:
                     paf.sort()
                     if not paf.parsed:
                         success = False
-                        job = Job.get(Job.id_job == self.id_job)
-                        job.status = "fail"
-                        job.error = "Error while sorting query. Please contact us to report the bug"
+                        status = "fail"
+                        error = "Error while sorting query. Please contact us to report the bug"
+                        if MODE == "webserver":
+                            job = Job.get(Job.id_job == self.id_job)
+                            job.status = status
+                            job.error = error
+                        else:
+                            self.set_status_standalone(status, error)
                 if success:
-                    job = Job.get(Job.id_job == self.id_job)
-                    job.status = "success"
-                    job.save()
-        if self.config.send_mail_status:
+                    status = "success"
+                    if MODE == "webserver":
+                        job = Job.get(Job.id_job == self.id_job)
+                        job.status = "success"
+                        job.save()
+                    else:
+                        self.set_status_standalone(status)
+        if MODE == "webserver" and self.config.send_mail_status:
             self.send_mail_post()
 
     def _after_start(self, success, error_set):
         with Job.connect():
             if success:
-                job = Job.get(Job.id_job == self.id_job)
-                job.status = "waiting"
-                job.save()
+                status = "waiting"
+                if MODE == "webserver":
+                    job = Job.get(Job.id_job == self.id_job)
+                    job.status = status
+                    job.save()
+                else:
+                    self.set_status_standalone("waiting")
+                    self.prepare_data_in_thread()
             else:
                 if not error_set:
-                    job = Job.get(Job.id_job == self.id_job)
-                    job.status = "fail"
-                    job.error = "<p>Error while getting input files. Please contact the support to report the bug.</p>"
-                    job.save()
-                if self.config.send_mail_status:
+                    status = "fail"
+                    error = "<p>Error while getting input files. Please contact the support to report the bug.</p>"
+                    if MODE == "webserver":
+                        job = Job.get(Job.id_job == self.id_job)
+                        job.status = status
+                        job.error = error
+                        job.save()
+                    else:
+                        self.set_status_standalone(status, error)
+                if MODE == "webserver" and self.config.send_mail_status:
                     self.send_mail()
 
     def start_job(self):
@@ -757,13 +880,24 @@ class JobManager:
 
         except Exception:
             print(traceback.print_exc())
-            with Job.connect():
-                job = Job.get(Job.id_job == self.id_job)
-                job.status = "fail"
-                job.error = "<p>An unexpected error has occurred. Please contact the support to report the bug.</p>"
-                job.save()
-                if self.config.send_mail_status:
-                    self.send_mail()
+            error = "<p>An unexpected error has occurred. Please contact the support to report the bug.</p>"
+            if MODE == "webserver":
+                with Job.connect():
+                    job = Job.get(Job.id_job == self.id_job)
+                    job.status = "fail"
+                    job.error = error
+                    job.save()
+                    if self.config.send_mail_status:
+                        self.send_mail()
+            else:
+                self.set_status_standalone("fail", error)
+
+    def launch_standalone(self):
+        if not os.path.exists(self.output_dir):
+            os.mkdir(self.output_dir)
+        self.set_status_standalone("submitted")
+        thread = threading.Timer(1, self.start_job)
+        thread.start()
 
     def launch(self):
         with Job.connect():
@@ -785,11 +919,31 @@ class JobManager:
                                  date_created=datetime.now(), status="fail")
                 job.save()
 
+    def set_status_standalone(self, status, error=""):
+        status_file = os.path.join(self.output_dir, ".status")
+        with open(status_file, "w") as s_file:
+            s_file.write("|".join([status, error]))
+
+    def get_status_standalone(self, with_error=False):
+        status_file = os.path.join(self.output_dir, ".status")
+        with open(status_file, "r") as s_file:
+            items = s_file.read().strip("\n").split("|")
+            if with_error:
+                return items
+            return items[0]
+
     def status(self):
-        try:
-            with Job.connect():
-                job = Job.get(Job.id_job == self.id_job)
-                return {"status": job.status, "mem_peak": job.mem_peak, "time_elapsed": job.time_elapsed,
-                        "error": job.error}
-        except DoesNotExist:
-            return {"status": "unknown", "error": ""}
+        if MODE == "webserver":
+            try:
+                with Job.connect():
+                    job = Job.get(Job.id_job == self.id_job)
+                    return {"status": job.status, "mem_peak": job.mem_peak, "time_elapsed": job.time_elapsed,
+                            "error": job.error}
+            except DoesNotExist:
+                return {"status": "unknown", "error": ""}
+        else:
+            try:
+                status, error = self.get_status_standalone(True)
+                return {"status": status, "mem_peak": None, "time_elapsed": None, "error": error}
+            except FileNotFoundError:
+                return {"status": "unknown", "error": ""}

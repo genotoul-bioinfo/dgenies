@@ -10,7 +10,6 @@ import argparse
 
 from dgenies.config_reader import AppConfigReader
 from dgenies.lib.functions import Functions
-from dgenies.database import Job, Gallery
 
 config_reader = AppConfigReader()
 
@@ -35,6 +34,7 @@ def parse_upload_folders(upload_folder, now, max_age, fake=False):
 
 
 def parse_database(app_data, max_age, fake=False):
+    from dgenies.database import Job, Gallery
     gallery_jobs = []
     with Job.connect():
         old_jobs = Job.select().where(

@@ -10,7 +10,7 @@ from collections import OrderedDict
 
 class Splitter:
 
-    def __init__(self, input_f, name_f, output_f, size_c=10000000, query_index="query_split.idx"):
+    def __init__(self, input_f, name_f, output_f, size_c=10000000, query_index="query_split.idx", debug=False):
         self.input_f = input_f
         self.name_f = name_f
         self.size_c = size_c
@@ -20,6 +20,7 @@ class Splitter:
         self.out_dir = os.path.dirname(output_f)
         self.index_file = os.path.join(self.out_dir, query_index)
         self.nb_contigs = 0
+        self.debug = debug
 
     def split(self):
         """
@@ -48,7 +49,8 @@ class Splitter:
                             return False
                         chr_name = re.split("\s", line[1:])[0]
                         fasta_str = ""
-                        print("Parsing contig \"%s\"... " % chr_name, end="")
+                        if self.debug:
+                            print("Parsing contig \"%s\"... " % chr_name, end="")
                     elif len(line) > 0:
                         if next_header or re.match(r"^[ATGCKMRYSWBVHDXN.\-]+$", line.upper()) is None:
                             return False
@@ -95,10 +97,11 @@ class Splitter:
                 self.write_contig(name, seq, enc)
                 index_f.write("%s\t%d\n" % (name, len(seq)))
             nb_contigs = len(contigs)
-            if nb_contigs == 1:
-                print("Keeped!")
-            else:
-                print("Splited in %d contigs!" % nb_contigs)
+            if self.debug:
+                if nb_contigs == 1:
+                    print("Keeped!")
+                else:
+                    print("Splited in %d contigs!" % nb_contigs)
 
 
 def parse_args():

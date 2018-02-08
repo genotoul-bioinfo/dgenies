@@ -9,7 +9,7 @@
     <script src="{{ url_for('static', filename='js/jquery.fileupload-validate.js') }}"></script>
     <script src="{{ url_for('static', filename='js/dgenies.run.js') }}" type="text/JavaScript"></script>
 {% endblock %}
-{% block onload %}dgenies.run.init('{{ s_id }}',{{ allowed_ext }}, {{ max_upload_file_size }});{% endblock %}
+{% block onload %}dgenies.run.init('{{ s_id }}',{{ allowed_ext }}, {{ max_upload_file_size }}, '{{ mode }}');{% endblock %}
 {% block content %}
     <form id="submit_minimap" method=post action="#">
         <h2 class="title-launch">Launch map analysis</h2>
@@ -37,6 +37,7 @@
                                     <input type="text" id="id_job" name="id_job" value="{{ id_job }}" autocomplete="Off" required/>
                                 </td>
                             </tr>
+                            {% if mode == "webserver" %}
                             <tr class="email">
                                 <td>
                                     <label for="email" class="email">E-mail*</label>
@@ -45,6 +46,7 @@
                                     <input type="email" name="email" id="email" value="{{ email }}" required/>
                                 </td>
                             </tr>
+                            {% endif %}
                             <tr class="target">
                                 <td>
                                     <label for="file_target" class="file-target">Target fasta**</label>
