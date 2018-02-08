@@ -1,21 +1,5 @@
 #!/usr/bin/env python3
 
-"""Sort PAF file
-
-Short desc: Sort PAF file with size of matches (DESC)
-Details: Sort PAF file with size of matches (DESC)
-
-Usage:
-    sort_paf.py -i PAF -o OUT
-    sort_paf.py -v | --version
-
-Options:
-    -i --input=PAF  Input PAF file
-    -o --output=OUT Output sorted PAF file
-    -h --help   Show this screen
-    -v --version    Show version
-"""
-
 import os
 from math import sqrt
 
@@ -125,13 +109,17 @@ class Sorter:
 
 
 if __name__ == '__main__':
-    from docopt import docopt
+    import argparse
 
-    args = docopt(__doc__)
+    parser = argparse.ArgumentParser(description="Sort PAF file with size of matches (DESC)")
+    parser.add_argument('-i', '--input', type=str, required=True, help="Input PAF file")
+    parser.add_argument('-o', '--output', type=str, required=True, help="Output PAF file")
+
+    args = parser.parse_args()
     if args["--version"]:
         print(__NAME__, __VERSION__)
     else:
-        if not os.path.exists(args["--input"]):
-            raise Exception("Input PAF file %s does not exists" % args["--input"])
-        sorter = Sorter(args["--input"], args["--output"])
+        if not os.path.exists(args.input):
+            raise Exception("Input PAF file %s does not exists" % args.input)
+        sorter = Sorter(args.input, args.output)
         sorter.sort()

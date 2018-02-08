@@ -61,7 +61,7 @@ def parse_database(app_data, max_age, fake=False):
 
 def parse_data_folders(app_data, now, max_age, gallery_jobs, fake=False):
     for file in os.listdir(app_data):
-        if file not in gallery_jobs:
+        if file not in gallery_jobs and file not in ["gallery"]:
             file = os.path.join(app_data, file)
             create_date = os.path.getctime(file)
             age = (now - create_date) / 86400  # Age in days

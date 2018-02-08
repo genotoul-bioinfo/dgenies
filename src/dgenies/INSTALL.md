@@ -43,23 +43,29 @@ install your own from [their repository](https://github.com/lh3/minimap2).
 Some python modules are required (will be automatically installed by the commands above):
 
     flask==0.12.*
-    Flask-Mail==0.9.*
     Jinja2==2.9.*
-    peewee==2.10.2
-    docopt==0.6.*
     numpy
     wget==3.2
     requests==2.18.*
     biopython==1.70
-    python-crontab==2.2.*
     psutil==5.4.*
     tendo==0.2.*
     matplotlib==2.1.*
-    drmaa==0.7.*
     intervaltree==2.1.*
     argparse==1.4
     Markdown==2.6.*
     
+Additional modules for webserver mode:
+
+    Flask-Mail==0.9.*
+    peewee==2.10.2
+    python-crontab==2.2.*
+    
+And if you use a cluster (webserver mode):
+
+    drmaa==0.7.*
+    
+In webserver mode, you must install `mysqlclient` python module (will not be installed automatically) if you use mysql as RDBM.
     
     
 How to start
@@ -81,6 +87,8 @@ Optional arguments:
 `--no-browser` don't start the browser automatically
 
 ### Webserver mode
+
+*Note: this mode is only available for Unix systems and will NOT work on MS Windows.*
 
 #### Recommended method
 
@@ -284,6 +292,8 @@ The `dgenies` command can be used to do some maintenance staff.
     
 Gallery
 -------
+
+Note: gallery is only available in webserver mode.
 
 To add a job to the gallery, copy illustrating picture file into the *gallery* folder inside the data folder (*~/.dgenies/data/gallery* as default, create it if not exists). Then use the *dgenies* command:
 

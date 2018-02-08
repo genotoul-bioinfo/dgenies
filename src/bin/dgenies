@@ -81,6 +81,10 @@ def parse_args():
         return "clear", args
     if args.subparser_name == "gallery":
         return "gallery_" + args.which, args
+    else:
+        parser.print_help()
+        print("\nYou must specify the command to launch")
+        return None, None
 
 
 def start_browser(host, port):
