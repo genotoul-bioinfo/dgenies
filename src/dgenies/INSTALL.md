@@ -8,25 +8,25 @@ Linux
 
 Install in 1 step (as root):
 
-    pip install dgenies
+    pip3 install dgenies
 
 Alternatively, you can install it manually:
 
     git clone https://forgemia.inra.fr/genotoul-bioinfo/dgenies.git
     cd dgenies
-    pip install -r requirements.txt
+    pip3 install -r requirements.txt
     python3 setup.py install
     
 ### Upgrade
 
 #### Standalone mode
 
-    pip install dgenies --upgrade
+    pip3 install dgenies --upgrade
     
 #### Webserver mode
 
     dgenies clear -c
-    pip install dgenies --upgrade
+    pip3 install dgenies --upgrade
     
 Then, you need to restart your webserver.
     
