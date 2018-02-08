@@ -35,6 +35,8 @@ Then, you need to restart your webserver.
 Requirements
 ------------
 
+D-Genies requires python >= 3.5 to run.
+
 We use minimap2 for mapping. A binary of minimap2 is shipped with the program. Alternatively, you can
 install your own from [their repository](https://github.com/lh3/minimap2).
 
