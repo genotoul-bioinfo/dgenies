@@ -196,13 +196,14 @@ class Functions:
         Functions.send_fasta_ready(mailer, job_name, sample_name, compressed)
 
     @staticmethod
-    def get_readable_size(size):
-        units = ["Kb", "Mb", "Gb"]
+    def get_readable_size(size, nb_after_coma=1):
+        print(size)
+        units = ["b", "Kb", "Mb", "Gb"]
         i = 0
         while size >= 1024 and i < 3:
             size /= 1024.0
             i += 1
-        return "%.1f %s" % (size, units[i])
+        return str("%." + str(nb_after_coma) + "f %s") % (size, units[i])
 
     @staticmethod
     def get_readable_time(seconds):

@@ -226,6 +226,34 @@ def get_file(file, gzip=False):  # pragma: no cover
         abort(500)
 
 
+@app.route("/documentation/run", methods=['GET'])
+def documentation_run():
+    with open(os.path.join(app_folder, "doc_run.md" if MODE == "webserver" else "doc_run_standalone.md"), "r",
+              encoding='utf-8') as install_instr:
+        content = install_instr.read()
+    md = Markdown(extensions=[TocExtension(baselevel=1)])
+    max_upload_file_size = config_reader.max_upload_file_size
+    if max_upload_file_size == -1:
+        max_upload_file_size = "no limit"
+    else:
+        max_upload_file_size = Functions.get_readable_size(max_upload_file_size, 0)
+    max_upload_size = config_reader.max_upload_size
+    if max_upload_size == -1:
+        max_upload_size = "no limit"
+    else:
+        max_upload_size = Functions.get_readable_size(max_upload_size, 0)
+    max_upload_size_ava = config_reader.max_upload_size_ava
+    if max_upload_size_ava == -1:
+        max_upload_size_ava = "no limit"
+    else:
+        max_upload_size_ava = Functions.get_readable_size(max_upload_size_ava, 0)
+    content = Markup(md.convert(content)).replace("###size###", max_upload_file_size)\
+                                         .replace("###size_unc###", max_upload_size)\
+                                         .replace("###size_ava###", max_upload_size_ava)
+    toc = Markup(md.toc)
+    return render_template("documentation.html", menu="documentation", title=app_title, content=content, toc=toc, mode=MODE)
+
+
 @app.route("/install", methods=['GET'])
 def install():
     with open(os.path.join(app_folder, "INSTALL.md"), "r", encoding='utf-8') as install_instr:
@@ -233,7 +261,7 @@ def install():
     md = Markdown(extensions=[TocExtension(baselevel=1)])
     content = Markup(md.convert(content))
     toc = Markup(md.toc)
-    return render_template("install.html", menu="install", title=app_title, content=content, toc=toc, mode=MODE)
+    return render_template("documentation.html", menu="install", title=app_title, content=content, toc=toc, mode=MODE)
 
 
 @app.route("/paf/<id_res>", methods=['GET'])
