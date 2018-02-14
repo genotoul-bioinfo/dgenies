@@ -33,8 +33,9 @@ def launch(mode="webserver", debug=False):
 
     # Init Flask:
     if getattr(sys, 'frozen', False):
-        template_folder = os.path.join(sys._MEIPASS, 'templates')
-        app = Flask(__name__, template_folder=template_folder, static_url_path='/static')
+        template_folder = os.path.join(sys.executable, '..', 'templates')
+        static_folder = os.path.join(sys.executable, '..', 'static')
+        app = Flask(__name__, template_folder=template_folder, static_folder=static_folder)
     else:
         app = Flask(__name__, static_url_path='/static')
     app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
