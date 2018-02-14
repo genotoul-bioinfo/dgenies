@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import sys
 from flask import Flask
 from .config_reader import AppConfigReader
 from .lib.crons import Crons
@@ -31,7 +32,11 @@ def launch(mode="webserver", debug=False):
     app_title = "D-GENIES - Dotplot large Genomes in an Interactive, Efficient and Simple way"
 
     # Init Flask:
-    app = Flask(__name__, static_url_path='/static')
+    if getattr(sys, 'frozen', False):
+        template_folder = os.path.join(sys._MEIPASS, 'templates')
+        app = Flask(__name__, template_folder=template_folder, static_url_path='/static')
+    else:
+        app = Flask(__name__, static_url_path='/static')
     app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
     app.config['MAX_CONTENT_LENGTH'] = config_reader.max_upload_file_size
     app.config['SECRET_KEY'] = 'dsqdsq-255sdA-fHfg52-25Asd5'
