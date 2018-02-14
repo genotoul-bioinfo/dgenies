@@ -1,6 +1,7 @@
 import os
 import re
 import inspect
+from pathlib import Path
 from configparser import RawConfigParser, NoOptionError, NoSectionError
 from dgenies.lib.decorators import Singleton
 
@@ -11,9 +12,6 @@ class AppConfigReader:
     Store all configs
     """
 
-    config_file = "/etc/dgenies/application.properties"
-    config_file_local = config_file + ".local"
-
     def __init__(self):
         """
         All "get_*" functions results are stored in the "self.*" corresponding attribute
@@ -21,17 +19,19 @@ class AppConfigReader:
         """
         self.app_dir = os.path.dirname(inspect.getfile(self.__class__))
         config_file = []
-        if os.path.exists(self.config_file):
-            config_file.append(self.config_file)
-        if os.path.exists(self.config_file_local):
-            config_file.append(self.config_file_local)
-        if len(config_file) > 0:
-            self.config_file = config_file
-        else:
+        config_file_search = [os.path.join(os.path.abspath(os.sep), "dgenies", "application.properties"),
+                              "/etc/dgenies/application.properties",
+                              "/etc/dgenies/application.properties.local",
+                              os.path.join(str(Path.home()), ".dgenies", "application.properties")]
+
+        for my_config_file in config_file_search:
+            if os.path.exists(my_config_file):
+                config_file.append(my_config_file)
+        if len(config_file) == 0:
             raise FileNotFoundError("ERROR: application.properties not found. Please copy the example file and "
                                     "check properties are correct for you!")
         self.reader = RawConfigParser()
-        self.reader.read(self.config_file)
+        self.reader.read(config_file)
         for attr in dir(self):
             attr_o = getattr(self, attr)
             if attr.startswith("_get_") and callable(attr_o):
