@@ -8,6 +8,8 @@ from glob import glob
 import time
 from dgenies.config_reader import AppConfigReader
 from dgenies.bin.clean_jobs import parse_data_folders, parse_database, parse_upload_folders
+import requests
+from requests.exceptions import ConnectionError
 
 runned = False
 
@@ -86,23 +88,39 @@ def parse_args():
         return None, None
 
 
-def start_browser(host, port):
-    print("Starting browser...")
-    webbrowser.open("http://{0}:{1}".format(host, port))
+def start_browser(host, port, app):
+    web_url = "http://{0}:{1}".format(host, port)
+    status_code = -1
+    tries = 0
+    while status_code != 200 and tries < 60:
+        try:
+            status_code = requests.get(web_url).status_code
+        except ConnectionError:
+            print("pass")
+            status_code = 500
+        if status_code != 200:
+            time.sleep(1)
+            tries += 1
+    if app.got_first_request:
+        print("Starting browser...")
+        webbrowser.open(web_url)
+    else:
+        print("App has not started. Cancel run of browser")
 
 
 def run(mode="standalone", debug=False, host="127.0.0.1", port=5000, no_crons=False, no_browser=False):
     os.environ['DISABLE_CRONS'] = "True" if no_crons else "False"
-    if not debug and not no_browser:
-        thread = threading.Timer(2, start_browser, kwargs={
-            "host": host,
-            "port": port
-        })
-        thread.start()
     if debug:
         os.environ['LOGS'] = "True"
     from dgenies import launch
     app = launch(mode=mode, debug=debug)
+    if not debug and not no_browser:
+        thread = threading.Timer(1, start_browser, kwargs={
+            "host": host,
+            "port": port,
+            "app": app
+        })
+        thread.start()
     app.run(host=host, port=port, debug=debug)
 
 
