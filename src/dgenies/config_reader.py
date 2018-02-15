@@ -156,7 +156,7 @@ class AppConfigReader:
     def _get_database_type(self):
         try:
             return self.reader.get("database", "type")
-        except NoOptionError:
+        except (NoSectionError, NoOptionError):
             return "sqlite"
 
     def _get_database_url(self):
@@ -170,13 +170,13 @@ class AppConfigReader:
                     except FileNotFoundError:
                         pass
             return url
-        except NoOptionError:
-            return ":memory:"
+        except (NoSectionError, NoOptionError):
+            return self._replace_vars("###USER###/.dgenies/database.sqlite")
 
     def _get_database_port(self):
         try:
             return int(self.reader.get("database", "port"))
-        except (NoOptionError, ValueError):
+        except (NoSectionError, NoOptionError, ValueError):
             db_type = self._get_database_type()
             if db_type == "mysql":
                 return 3306
@@ -190,7 +190,7 @@ class AppConfigReader:
             if db == "":
                 raise ValueError()
             return db
-        except (NoOptionError, ValueError):
+        except (NoSectionError, NoOptionError, ValueError):
             if self._get_database_type() == "sqlite":
                 return ""
             raise Exception("Missing parameter: database db name")
@@ -201,7 +201,7 @@ class AppConfigReader:
             if user == "":
                 raise ValueError()
             return user
-        except (NoOptionError, ValueError):
+        except (NoSectionError, NoOptionError, ValueError):
             if self._get_database_type() == "sqlite":
                 return ""
             raise Exception("Missing parameter: database user")
@@ -212,7 +212,7 @@ class AppConfigReader:
             if passwd == "":
                 raise ValueError()
             return passwd
-        except (NoOptionError, ValueError):
+        except (NoSectionError, NoOptionError, ValueError):
             if self._get_database_type() == "sqlite":
                 return ""
             raise Exception("Missing parameter: database password")
@@ -220,31 +220,31 @@ class AppConfigReader:
     def _get_mail_status_sender(self):
         try:
             return self._replace_vars(self.reader.get("mail", "status"))
-        except NoOptionError:
+        except (NoSectionError, NoOptionError):
             return "status@dgenies"
 
     def _get_mail_reply(self):
         try:
             return self._replace_vars(self.reader.get("mail", "reply"))
-        except NoOptionError:
+        except (NoSectionError, NoOptionError):
             return "status@dgenies"
 
     def _get_mail_org(self):
         try:
             return self._replace_vars(self.reader.get("mail", "org"))
-        except NoOptionError:
+        except (NoSectionError, NoOptionError):
             return None
 
     def _get_send_mail_status(self):
         try:
             return self.reader.get("mail", "send_mail_status").lower() == "true"
-        except NoOptionError:
+        except (NoSectionError, NoOptionError):
             return True
 
     def _get_disable_mail(self):
         try:
             return self.reader.get("mail", "disable").lower() == "true"
-        except NoOptionError:
+        except (NoSectionError, NoOptionError):
             return False
 
     def _get_cron_clean_time(self):
