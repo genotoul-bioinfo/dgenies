@@ -24,6 +24,9 @@ class AppConfigReader:
                               "/etc/dgenies/application.properties.local",
                               os.path.join(str(Path.home()), ".dgenies", "application.properties")]
 
+        if os.name == "nt":
+            config_file.insert(1, "../application.properties")
+
         for my_config_file in config_file_search:
             if os.path.exists(my_config_file):
                 config_file.append(my_config_file)
