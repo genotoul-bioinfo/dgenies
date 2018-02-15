@@ -46,7 +46,8 @@ class AppConfigReader:
 
     def _replace_vars(self, path, config=False):
         new_path = path.replace("###USER###", os.path.expanduser("~"))\
-            .replace("###PROGRAM###", os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+            .replace("###PROGRAM###", os.path.dirname(os.path.dirname(os.path.realpath(__file__))))\
+            .replace("###SYSEXEC###", os.path.dirname(sys.executable))
         if "###CONFIG###" in new_path:
             if config:
                 raise Exception("###CONFIG### tag not allowed for config dir")
