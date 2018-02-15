@@ -45,7 +45,6 @@ Some python modules are required (will be automatically installed by the command
     flask==0.12.*
     Jinja2==2.9.*
     numpy
-    wget==3.2
     requests==2.18.*
     biopython==1.70
     psutil==5.4.*

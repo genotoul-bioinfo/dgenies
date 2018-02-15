@@ -12,7 +12,8 @@ from .fasta import Fasta
 from .functions import Functions
 import requests
 from requests.exceptions import ConnectionError
-import wget
+from urllib.request import urlretrieve
+from urllib.error import URLError
 from jinja2 import Template
 import traceback
 from pathlib import Path
@@ -54,6 +55,7 @@ class JobManager:
         self.idx_t = os.path.join(self.output_dir, "target.idx")
         self.logs = os.path.join(self.output_dir, "logs.txt")
         self.mailer = mailer
+        self._filename_for_url = {}
 
     @staticmethod
     def is_gz_file(filepath):
@@ -374,6 +376,30 @@ class JobManager:
             save_file.write(finale_path)
         return finale_path
 
+    def __get_filename_from_url(self, url):
+        if url not in self._filename_for_url:
+            if url.startswith("ftp://"):
+                self._filename_for_url[url] = url.split("/")[-1]
+            elif url.startswith("http://") or url.startswith("https://"):
+                self._filename_for_url[url] = requests.head(url, allow_redirects=True).url.split("/")[-1]
+            else:
+                return None
+        return self._filename_for_url[url]
+
+    def _download_file(self, url):
+        local_filename = os.path.join(self.output_dir, self.__get_filename_from_url(url))
+        # NOTE the stream=True parameter
+        if url.startswith("ftp://"):
+            urlretrieve(url, local_filename)
+        else:
+            r = requests.get(url, stream=True)
+            with open(local_filename, 'wb') as f:
+                for chunk in r.iter_content(chunk_size=1024):
+                    if chunk:  # filter out keep-alive new chunks
+                        f.write(chunk)
+                        # f.flush() commented by recommendation from J.F.Sebastian
+        return local_filename
+
     def __getting_file_from_url(self, fasta: Fasta, type_f):
         """
         Download file from URL
@@ -386,8 +412,8 @@ class JobManager:
             [3] Name of the downloaded file {str}
         """
         try:
-            dl_path = wget.download(fasta.get_path(), self.output_dir, None)
-        except ConnectionError:
+            dl_path = self._download_file(fasta.get_path())
+        except (ConnectionError, URLError):
             status = "fail"
             error = "<p>Url <b>%s</b> is not valid!</p>" \
                     "<p>If this is unattended, please contact the support.</p>" % fasta.get_path()
@@ -410,26 +436,21 @@ class JobManager:
 
     def __check_url(self, fasta: Fasta):
         url = fasta.get_path()
-        if url.startswith("http://") or url.startswith("https://"):
-            try:
-                filename = requests.head(url, allow_redirects=True).url.split("/")[-1]
-            except ConnectionError:
-                status = "fail"
-                error = "<p>Url <b>%s</b> is not valid!</p>" \
-                        "<p>If this is unattended, please contact the support.</p>" % fasta.get_path()
-                if MODE == "webserver":
-                    with Job.connect():
-                        job = Job.get(Job.id_job == self.id_job)
-                        job.status = status
-                        job.error = error
-                        job.save()
-                else:
-                    self.set_status_standalone(status, error)
-                return False
-        elif url.startswith("ftp://"):
-            filename = url.split("/")[-1]
-        else:
-            filename = None
+        try:
+            filename = self.__get_filename_from_url(url)
+        except (ConnectionError, URLError):
+            status = "fail"
+            error = "<p>Url <b>%s</b> is not valid!</p>" \
+                    "<p>If this is unattended, please contact the support.</p>" % fasta.get_path()
+            if MODE == "webserver":
+                with Job.connect():
+                    job = Job.get(Job.id_job == self.id_job)
+                    job.status = status
+                    job.error = error
+                    job.save()
+            else:
+                self.set_status_standalone(status, error)
+            return False
         if filename is not None:
             allowed = Functions.allowed_file(filename)
             if not allowed:
@@ -565,6 +586,7 @@ class JobManager:
                 else:
                     correct = False
             except:  # Except all possible exceptions
+                traceback.print_exc()
                 correct = False
                 error_set = False
             if MODE == "webserver":
