@@ -3,54 +3,32 @@
     {{ super() }}
         <script src="{{ url_for('static', filename='js/dgenies.status.js') }}" type="text/JavaScript"></script>
 {% endblock %}
-{% block onload %}dgenies.status.init('{{ status }}');{% endblock %}
+{% block onload %}dgenies.status.init('{{ status }}', '{{ mode }}');{% endblock %}
 {% block content %}
     <h2 class="status">Job name: {{ id_job }}</h2>
     <div class="status-body">
         {% if status == "started" %}
             <p>Your job has started.<br/>
-                You will receive an email when it will be finished.<br/>
-                Alternatively, you can refresh this page to update status.</p>
         {% elif status == "starting" %}
             <p>Your job is starting...<br/>
-                You will receive an email when it will be finished.<br/>
-                Alternatively, you can refresh this page to update status.</p>
         {% elif status == "scheduled-cluster" %}
             <p>Your job has been scheduled on the cluster.<br/>
-                You will receive an email when it will be finished.<br/>
-                Alternatively, you can refresh this page to update status.</p>
         {% elif status == "submitted" or status == "waiting" %}
             <p>Your job has been submitted.<br/>
-                You will receive an email when it will be finished.<br/>
-                Alternatively, you can refresh this page to update status.</p>
         {% elif status == "getfiles" %}
             <p>Your job has been submitted. We are retrieving data...<br/>
-                You will receive an email when it will be finished.<br/>
-                Alternatively, you can refresh this page to update status.</p>
         {% elif status == "getfiles-waiting" %}
             <p>Your job has been submitted. We are retrieving data... (waiting for download...)<br/>
-                You will receive an email when it will be finished.<br/>
-                Alternatively, you can refresh this page to update status.</p>
         {% elif status == "merging" %}
             <p>Your map is done. We are preparing files for visualisation...<br/>
-                You will receive an email when it will be finished.<br/>
-                Alternatively, you can refresh this page to update status.</p>
         {% elif status == "preparing" or status == "preparing-cluster" %}
             <p>We are preparing data...<br/>
-                You will receive an email when it will be finished.<br/>
-                Alternatively, you can refresh this page to update status.</p>
         {% elif status == "prepare-scheduled" %}
             <p>We are preparing data... [scheduled]<br/>
-                You will receive an email when it will be finished.<br/>
-                Alternatively, you can refresh this page to update status.</p>
         {% elif status == "prepared"%}
             <p>Your data are ready to be processed. Your job will be scheduled soon...<br/>
-                You will receive an email when it will be finished.<br/>
-                Alternatively, you can refresh this page to update status.</p>
         {% elif status == "scheduled" %}
             <p>Your job has been shedulded. It will start soon...<br/>
-                You will receive an email when it will be finished.<br/>
-                Alternatively, you can refresh this page to update status.</p>
         {% elif status == "success" %}
             <p>Your job was completed successfully.<br/>
                 Please <a href="/result/{{ id_job }}">click here</a> to show results.</p>
@@ -80,6 +58,14 @@
                 {% endif %}</p>
         {% else %}
             <p>This job does not exists!</p>
+        {% endif %}
+        {% if status not in ["success", "no_match", "fail"] %}
+            {% if mode == "webserver" %}
+                You will receive an email when it will be finished.<br/>
+                Alternatively, you can refresh this page to update status.</p>
+            {% else %}
+                This page will refresh automatically.</p>
+            {% endif %}
         {% endif %}
     </div>
     <div class="progress-status">

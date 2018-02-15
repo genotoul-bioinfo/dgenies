@@ -2,9 +2,11 @@ if (!dgenies) {
     throw "dgenies wasn't included!"
 }
 dgenies.status = {};
+dgenies.status.mode = "webserver";
 
 
-dgenies.status.init = function (status) {
+dgenies.status.init = function (status, mode) {
+    dgenies.status.mode = mode;
     if (status !== "success" && status !== "done" && status !== "no-match" && status !== "fail") {
         dgenies.status.autoreload();
     }
@@ -29,6 +31,11 @@ dgenies.status.autoreload = function () {
         }
     }
     setTimeout(function(){
-        window.location.replace(`?refresh=${refresh}&count=${count}`);
+        if (dgenies.status.mode === "webserver") {
+            window.location.replace(`?refresh=${refresh}&count=${count}`);
+        }
+        else {
+            window.location.replace(`?refresh=1&count=1`);
+        }
     }, refresh * 1000)
 };
