@@ -32,12 +32,7 @@ def launch(mode="webserver", debug=False):
     app_title = "D-GENIES - Dotplot large Genomes in an Interactive, Efficient and Simple way"
 
     # Init Flask:
-    if getattr(sys, 'frozen', False):
-        template_folder = os.path.join(sys.executable, '..', 'templates')
-        static_folder = os.path.join(sys.executable, '..', 'static')
-        app = Flask(__name__, template_folder=template_folder, static_folder=static_folder)
-    else:
-        app = Flask(__name__, static_url_path='/static')
+    app = Flask(__name__, static_url_path='/static')
     app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
     app.config['MAX_CONTENT_LENGTH'] = config_reader.max_upload_file_size
     app.config['SECRET_KEY'] = 'dsqdsq-255sdA-fHfg52-25Asd5'
