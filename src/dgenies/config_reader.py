@@ -1,4 +1,5 @@
 import os
+import sys
 import re
 import inspect
 from pathlib import Path
@@ -25,7 +26,7 @@ class AppConfigReader:
                               os.path.join(str(Path.home()), ".dgenies", "application.properties")]
 
         if os.name == "nt":
-            config_file.insert(1, "../application.properties")
+            config_file.insert(1, os.path.join(sys.executable, '..', "application.properties"))
 
         for my_config_file in config_file_search:
             if os.path.exists(my_config_file):
