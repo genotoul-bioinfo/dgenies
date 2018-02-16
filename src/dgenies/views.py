@@ -20,6 +20,14 @@ if MODE == "webserver":
     from peewee import DoesNotExist
 
 
+@app.context_processor
+def global_templates_variables():
+    return {
+        "title": app_title,
+        "mode": MODE
+    }
+
+
 # Main
 @app.route("/", methods=['GET'])
 def main():
@@ -31,7 +39,7 @@ def main():
             pict = None
     else:
         pict = None
-    return render_template("index.html", title=app_title, menu="index", pict=pict, mode=MODE)
+    return render_template("index.html", menu="index", pict=pict)
 
 
 @app.route("/run", methods=['GET'])
@@ -53,9 +61,9 @@ def run():
     email = ""
     if "email" in request.args:
         email = request.args["email"]
-    return render_template("run.html", title=app_title, id_job=id_job, email=email,
+    return render_template("run.html", id_job=id_job, email=email,
                            menu="run", allowed_ext=ALLOWED_EXTENSIONS, s_id=s_id,
-                           max_upload_file_size=config_reader.max_upload_file_size, mode=MODE)
+                           max_upload_file_size=config_reader.max_upload_file_size)
 
 
 @app.route("/run-test", methods=['GET'])
@@ -166,25 +174,24 @@ def status(id_job):
             "mem_peak": mem_peak,
             "time_elapsed": time_e
         })
-    return render_template("status.html", title=app_title, status=j_status["status"],
+    return render_template("status.html", status=j_status["status"],
                            error=j_status["error"].replace("#ID#", ""),
                            id_job=id_job, menu="results", mem_peak=mem_peak,
                            time_elapsed=time_e,
-                           query_filtered=job.is_query_filtered(), target_filtered=job.is_target_filtered(), mode=MODE)
+                           query_filtered=job.is_query_filtered(), target_filtered=job.is_target_filtered())
 
 
 # Results path
 @app.route("/result/<id_res>", methods=['GET'])
 def result(id_res):
-    return render_template("result.html", title=app_title, id=id_res, menu="result", current_result=id_res, mode=MODE,
+    return render_template("result.html", id=id_res, menu="result", current_result=id_res,
                            is_gallery=Functions.is_in_gallery(id_res, MODE))
 
 
 @app.route("/gallery", methods=['GET'])
 def gallery():
     if MODE == "webserver":
-        return render_template("gallery.html", items=Functions.get_gallery_items(), menu="gallery", title=app_title,
-                               mode=MODE)
+        return render_template("gallery.html", items=Functions.get_gallery_items(), menu="gallery")
     return abort(404)
 
 
@@ -238,7 +245,7 @@ def documentation_run():
                                          .replace("###size_unc###", max_upload_size)\
                                          .replace("###size_ava###", max_upload_size_ava)
     toc = Markup(md.toc)
-    return render_template("documentation.html", menu="documentation", title=app_title, content=content, toc=toc, mode=MODE)
+    return render_template("documentation.html", menu="documentation", content=content, toc=toc)
 
 
 @app.route("/install", methods=['GET'])
@@ -248,7 +255,7 @@ def install():
     md = Markdown(extensions=[TocExtension(baselevel=1)])
     content = Markup(md.convert(content))
     toc = Markup(md.toc)
-    return render_template("documentation.html", menu="install", title=app_title, content=content, toc=toc, mode=MODE)
+    return render_template("documentation.html", menu="install", content=content, toc=toc)
 
 
 @app.route("/paf/<id_res>", methods=['GET'])
