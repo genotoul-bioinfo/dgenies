@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+from dgenies import MODE
+
 import os
 import shutil
 from math import sqrt
@@ -762,12 +764,13 @@ class Paf:
             o_fasta = "_._"
             status="fail"
 
-        parts = os.path.basename(o_fasta).rsplit(".", 1)
-        Functions.send_fasta_ready(mailer=self.mailer,
-                                   job_name=self.id_job,
-                                   sample_name=parts[0],
-                                   ext=parts[1],
-                                   compressed=False,
-                                   path="download",
-                                   status=status)
+        if MODE == "webserver":
+            parts = os.path.basename(o_fasta).rsplit(".", 1)
+            Functions.send_fasta_ready(mailer=self.mailer,
+                                       job_name=self.id_job,
+                                       sample_name=parts[0],
+                                       ext=parts[1],
+                                       compressed=False,
+                                       path="download",
+                                       status=status)
         return o_fasta

@@ -34,7 +34,6 @@ dgenies.result.export.export_svg = function () {
         dgenies.result.export.save_file(blob, "svg");
     };
     d3.boxplot.zoom.reset_scale(true, after);
-
 };
 
 dgenies.result.export.export_paf = function () {
@@ -141,7 +140,7 @@ dgenies.result.export.export_no_association_file = function (to) {
         })
 };
 
-dgenies.result.export.export_query_as_reference_fasta = function() {
+dgenies.result.export.export_query_as_reference_fasta_webserver = function() {
     dgenies.post(`/build-query-as-reference/${dgenies.result.id_res}`,
         {},
         function (data, success) {
@@ -149,10 +148,32 @@ dgenies.result.export.export_query_as_reference_fasta = function() {
                 dgenies.notify("You will receive a mail soon with the link to download your Fasta file", "success")
             }
             else {
-                dgenies.notify(`An error has occurred. Please contact the support`, "fatal")
+                dgenies.notify(`An error has occurred. Please contact the support`, "danger")
             }
         });
-}
+};
+
+dgenies.result.export.export_query_as_reference_fasta_standalone = function () {
+    dgenies.show_loading("Building file...", 180);
+    window.setTimeout(() => {
+        dgenies.post(`/build-query-as-reference/${dgenies.result.id_res}`,
+        {},
+        function (data, success) {
+            if (data["success"]) {
+                let export_div = $("div#export-pict");
+                export_div.html("");
+                export_div.append($("<a>").attr("href", `/get-query-as-reference/${dgenies.result.id_res}`)
+                    .attr("download", `as_reference_${d3.boxplot.name_y}.fasta`)
+                    .attr("id", "my-download").text("download"));
+                document.getElementById('my-download').click();
+                dgenies.hide_loading();
+            }
+            else {
+                dgenies.notify(`An error has occurred. Please contact the support`, "danger")
+            }
+        });
+    }, 0);
+};
 
 dgenies.result.export.export = function () {
     let select = $("form#export select");
@@ -180,7 +201,13 @@ dgenies.result.export.export = function () {
                 dgenies.result.export.export_no_association_file("target");
             }
             else if (selection === 8) {
-                dgenies.result.export.export_query_as_reference_fasta();
+                if (dgenies.result.mode === "webserver") {
+                    dgenies.result.export.export_query_as_reference_fasta_webserver();
+                }
+                else {
+                    dgenies.result.export.export_query_as_reference_fasta_standalone();
+                    async = true;
+                }
             }
             else
                 dgenies.notify("Not supported yet!", "danger", 2000);

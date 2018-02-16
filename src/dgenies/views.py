@@ -350,7 +350,7 @@ def build_fasta(id_res):
         if is_sorted and not query_fasta.endswith(".sorted"):
             # Do the sort
             Path(lock_query).touch()
-            if not compressed:  # If compressed, it will took a long time, so not wait
+            if not compressed or MODE == "standalone":  # If compressed, it will took a long time, so not wait
                 Path(lock_query + ".pending").touch()
             thread = threading.Timer(1, Functions.sort_fasta, kwargs={
                 "job_name": id_res,
@@ -361,17 +361,17 @@ def build_fasta(id_res):
                 "mailer": mailer
             })
             thread.start()
-            if not compressed:
+            if not compressed or MODE == "standalone":
                 i = 0
                 time.sleep(5)
-                while os.path.exists(lock_query) and i < 2:
+                while os.path.exists(lock_query) and (i < 2 or MODE == "standalone"):
                     i += 1
                     time.sleep(5)
                 os.remove(lock_query + ".pending")
                 if os.path.exists(lock_query):
                     return jsonify({"success": True, "status": 1, "status_message": "In progress"})
                 return jsonify({"success": True, "status": 2, "status_message": "Done",
-                                "gzip": False})
+                                "gzip": compressed})
             else:
                 return jsonify({"success": True, "status": 1, "status_message": "In progress"})
         elif is_sorted and os.path.exists(lock_query):
@@ -399,16 +399,30 @@ def build_fasta(id_res):
                         "message": "Unable to get fasta file for query. Please contact us to report the bug"})
 
 
-@app.route('/build-query-as-reference/<id_res>', methods=['POST'])
-def get_query_as_reference(id_res):
+def build_query_as_reference(id_res):
     paf_file = os.path.join(APP_DATA, id_res, "map.paf")
     idx1 = os.path.join(APP_DATA, id_res, "query.idx")
     idx2 = os.path.join(APP_DATA, id_res, "target.idx")
     paf = Paf(paf_file, idx1, idx2, False, mailer=mailer, id_job=id_res)
     paf.parse_paf(False, True)
-    thread = threading.Timer(0, paf.build_query_chr_as_reference)
-    thread.start()
+    if MODE == "webserver":
+        thread = threading.Timer(0, paf.build_query_chr_as_reference)
+        thread.start()
+        return True
+    return paf.build_query_chr_as_reference()
+
+
+@app.route('/build-query-as-reference/<id_res>', methods=['POST'])
+def post_query_as_reference(id_res):
+    build_query_as_reference(id_res)
     return jsonify({"success": True})
+
+
+@app.route('/get-query-as-reference/<id_res>', methods=['GET'])
+def get_query_as_reference(id_res):
+    if MODE != "standalone":
+        return abort(404)
+    return send_file(build_query_as_reference(id_res))
 
 
 @app.route('/download/<id_res>/<filename>')
