@@ -14,30 +14,33 @@ dgenies.result.export.save_file = function(blob, format) {
 };
 
 dgenies.result.export.export_png = function() {
-    dgenies.show_loading("Building files...", 180);
-    let export_div = $("div#export-pict");
-    export_div.html("").append($("<canvas>"));
-    canvg(export_div.find("canvas")[0], dgenies.result.export.get_svg());
-    let canvas = export_div.find("canvas")[0];
-    canvas.toBlob(function(blob) {
-        dgenies.result.export.save_file(blob, "png");
-        export_div.html("");
-    }, "image/png");
+    dgenies.show_loading("Building picture...", 210);
+    window.setTimeout(() => {
+        let export_div = $("div#export-pict");
+        export_div.html("").append($("<canvas>"));
+        canvg(export_div.find("canvas")[0], dgenies.result.export.get_svg());
+        let canvas = export_div.find("canvas")[0];
+        canvas.toBlob(function (blob) {
+            dgenies.result.export.save_file(blob, "png");
+            export_div.html("");
+        }, "image/png");
+    }, 0);
 };
 
 dgenies.result.export.export_svg = function () {
-    dgenies.show_loading("Building files...", 180);
-    let transform = d3.boxplot.container.attr("transform");
-    let after = function() {
-        let blob = new Blob([dgenies.result.export.get_svg()], {type: "image/svg+xml"});
-        d3.boxplot.zoom.restore_scale(transform);
-        dgenies.result.export.save_file(blob, "svg");
-    };
-    d3.boxplot.zoom.reset_scale(true, after);
+    dgenies.show_loading("Building picture...", 180);
+    window.setTimeout(() => {
+        let transform = d3.boxplot.container.attr("transform");
+        let after = function () {
+            let blob = new Blob([dgenies.result.export.get_svg()], {type: "image/svg+xml"});
+            d3.boxplot.zoom.restore_scale(transform);
+            dgenies.result.export.save_file(blob, "svg");
+        };
+        d3.boxplot.zoom.reset_scale(true, after);
+    }, 0);
 };
 
 dgenies.result.export.export_paf = function () {
-    dgenies.show_loading("Building files...", 180);
     let export_div = $("div#export-pict");
     export_div.html("");
     export_div.append($("<a>").attr("href", `/paf/${dgenies.result.id_res}`)
@@ -181,10 +184,14 @@ dgenies.result.export.export = function () {
     window.setTimeout(() => {
         if (selection > 0) {
             let async = false;
-            if (selection === 1)
+            if (selection === 1) {
                 dgenies.result.export.export_svg();
-            else if (selection === 2)
+                async = true;
+            }
+            else if (selection === 2) {
                 dgenies.result.export.export_png();
+                async = true;
+            }
             else if (selection === 3)
                 dgenies.result.export.export_paf();
             else if (selection === 4) {

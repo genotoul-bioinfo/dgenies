@@ -73,7 +73,7 @@ d3.boxplot.zoom.init = function() {
 // };
 
 d3.boxplot.zoom.click = function () {
-    if (!d3.event.ctrlKey) {
+    if (!d3.event.ctrlKey && !d3.boxplot.all_disabled) {
         let event = d3.event;
         let rect = $("g.container")[0].getBoundingClientRect();
         let posX = rect.left + window.scrollX,
@@ -236,40 +236,44 @@ d3.boxplot.zoom.restore_scale = function(transform) {
     }
 };
 
-d3.boxplot.zoom.reset_scale = function (temp=false, after=null) {
-    dgenies.show_loading();
-    window.setTimeout(() => {
-        //Reset scale:
-        d3.boxplot.container.attr("transform", "scale(1,1)translate(0,0)");
-        d3.boxplot.zoom_scale_lines = 1;
+d3.boxplot.zoom.reset_scale = function (temp=false, after=null, force=true) {
+    if (!d3.boxplot.all_disabled || force) {
+        dgenies.show_loading();
+        window.setTimeout(() => {
+            //Reset scale:
+            d3.boxplot.container.attr("transform", "scale(1,1)translate(0,0)");
+            d3.boxplot.zoom_scale_lines = 1;
 
-        //Restore lines stroke width:
-        d3.selectAll("path.content-lines").attr("stroke-width", d3.boxplot.content_lines_width);
-        if (d3.boxplot.break_lines_show) {
-            d3.selectAll("line.break-lines").style("visibility", "visible");
-            d3.selectAll("line.break-lines").attr("stroke-width", d3.boxplot.break_lines_width);
-        }
+            //Restore lines stroke width:
+            d3.selectAll("path.content-lines").attr("stroke-width", d3.boxplot.content_lines_width);
+            if (d3.boxplot.break_lines_show) {
+                d3.selectAll("line.break-lines").style("visibility", "visible");
+                d3.selectAll("line.break-lines").attr("stroke-width", d3.boxplot.break_lines_width);
+            }
 
-        //Update left and bottom axis:
-        d3.boxplot.draw_left_axis(d3.boxplot.y_len);
-        d3.boxplot.draw_bottom_axis(d3.boxplot.x_len);
+            //Update left and bottom axis:
+            d3.boxplot.draw_left_axis(d3.boxplot.y_len);
+            d3.boxplot.draw_bottom_axis(d3.boxplot.x_len);
 
-        //Update top and right axis:
-        d3.boxplot.draw_top_axis();
-        d3.boxplot.draw_right_axis();
+            //Update top and right axis:
+            d3.boxplot.draw_top_axis();
+            d3.boxplot.draw_right_axis();
 
-        if (!temp)
-            d3.boxplot.zone_selected = false;
+            if (!temp)
+                d3.boxplot.zone_selected = false;
 
-        dgenies.hide_loading();
+            dgenies.hide_loading();
 
-        //Re-enable zoom:
-        d3.boxplot.zoom_enabled = true;
+            //Re-enable zoom:
+            d3.boxplot.zoom_enabled = true;
 
-        if (after !== null) {
-            after();
-        }
-    }, 0);
+            if (after !== null) {
+                after();
+            }
+        }, 0);
+        return true
+    }
+    return false
     //
     // //Restore axis:
     // d3.boxplot.draw_left_axis(d3.boxplot.y_len);

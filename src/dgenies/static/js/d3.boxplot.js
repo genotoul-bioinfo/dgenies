@@ -15,6 +15,7 @@ d3.boxplot.y_len = null;
 d3.boxplot.x_zones = null;
 d3.boxplot.y_zones = null;
 d3.boxplot.zoom_enabled = true;
+d3.boxplot.all_disabled = false;
 d3.boxplot.min_idy = 0;
 d3.boxplot.max_idy = 0;
 d3.boxplot.zone_selected = false;
@@ -722,15 +723,17 @@ d3.boxplot.__draw_idy_lines = function (idy, lines, x_len, y_len) {
 };
 
 d3.boxplot.switch_color_theme = function () {
-    let current_theme = d3.boxplot.color_idy_theme;
-    let idx = d3.boxplot.color_idy_themes.indexOf(current_theme)
-    if (idx < d3.boxplot.color_idy_themes.length -1) {
-        idx ++;
+    if (!d3.boxplot.all_disabled) {
+        let current_theme = d3.boxplot.color_idy_theme;
+        let idx = d3.boxplot.color_idy_themes.indexOf(current_theme)
+        if (idx < d3.boxplot.color_idy_themes.length - 1) {
+            idx++;
+        }
+        else {
+            idx = 0;
+        }
+        d3.boxplot.change_color_theme(d3.boxplot.color_idy_themes[idx]);
     }
-    else {
-        idx = 0;
-    }
-    d3.boxplot.change_color_theme(d3.boxplot.color_idy_themes[idx]);
 };
 
 d3.boxplot.change_color_theme = function (theme) {
@@ -888,14 +891,16 @@ d3.boxplot.draw = function (x_contigs, x_order, y_contigs, y_order) {
         d3.boxplot.draw_lines();
 
         $("#restore-all").click(function () {
-            d3.boxplot.zoom.reset_scale();
-            $(this).hide();
+            if (d3.boxplot.zoom.reset_scale(false, null, false)) {
+                $(this).hide();
+            }
         });
 
         $(document).on("keyup", function(e) {
             if (e.keyCode === 27) {
-                d3.boxplot.zoom.reset_scale();
-                $("#restore-all").hide();
+                if(d3.boxplot.zoom.reset_scale(false, null, false)) {
+                    $("#restore-all").hide();
+                }
             }
         });
 
