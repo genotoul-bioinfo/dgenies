@@ -1,12 +1,24 @@
 dgenies = {};
 dgenies.loading = "#loading";
 dgenies.noise = true;
+dgenies.mode = "webserver";
 
-dgenies.init = function() {
+dgenies.init = function(all_jobs, mode) {
+    dgenies.mode = mode;
     let cookies = $.cookie("results");
-    cookies = (cookies !== undefined && cookies.length > 0) ? cookies.split("|") : [];
+    if (mode === "webserver") {
+        cookies = (cookies !== undefined && cookies.length > 0) ? cookies.split("|") : [];
+    }
+    else {
+        cookies = all_jobs;
+        dgenies.save_cookies(cookies);
+    }
     dgenies.update_results(cookies);
 };
+
+dgenies.save_cookies = function(cookies) {
+    $.cookie("results", cookies.join("|"), {path: '/'});
+}
 
 dgenies.update_results = function(results) {
     let job_list_item = $("ul.nav li.result ul");

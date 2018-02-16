@@ -11,7 +11,7 @@
 {% endblock %}
 {% block onload %}
     {{ super() }}
-    dgenies.run.init('{{ s_id }}',{{ allowed_ext }}, {{ max_upload_file_size }}, '{{ mode }}');
+    dgenies.run.init('{{ s_id }}',{{ allowed_ext }}, {{ max_upload_file_size }});
 {% endblock %}
 {% block content %}
     <form id="submit_minimap" method=post action="#">

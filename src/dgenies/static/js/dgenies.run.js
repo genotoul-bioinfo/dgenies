@@ -10,16 +10,14 @@ dgenies.run.max_upload_file_size = -1
 dgenies.run.files = [undefined, undefined];
 dgenies.run.allow_upload = false;
 dgenies.run.ping_interval = null;
-dgenies.run.mode = "webserver"
 
-dgenies.run.init = function (s_id, allowed_ext, max_upload_file_size=1073741824, mode="webserver") {
+dgenies.run.init = function (s_id, allowed_ext, max_upload_file_size=1073741824) {
     dgenies.run.s_id = s_id;
     dgenies.run.allowed_ext = allowed_ext;
     dgenies.run.max_upload_file_size = max_upload_file_size
     dgenies.run.restore_form();
     dgenies.run.set_events();
     dgenies.run.init_fileuploads();
-    dgenies.run.mode = mode;
 };
 
 dgenies.run.restore_form = function () {
@@ -257,7 +255,7 @@ dgenies.run.do_submit = function () {
     dgenies.post("/launch_analysis",
         {
             "id_job": $("input#id_job").val(),
-            "email": dgenies.run.mode === "webserver" ? $("input#email").val() : "",
+            "email": dgenies.mode === "webserver" ? $("input#email").val() : "",
             "query": $("input#query").val(),
             "query_type": $("select.query").find(":selected").text().toLowerCase(),
             "target": $("input#target").val(),
@@ -302,7 +300,7 @@ dgenies.run.valid_form = function () {
     }
 
     // Check mail:
-    if (dgenies.run.mode === "webserver") {
+    if (dgenies.mode === "webserver") {
         let email = $("input#email").val();
         let mail_re = /^.+@.+\..+$/;
         if (email.match(mail_re) === null) {

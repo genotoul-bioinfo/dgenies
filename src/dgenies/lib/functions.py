@@ -237,7 +237,7 @@ class Functions:
         return items
 
     @staticmethod
-    def is_in_gallery(id_job, mode):
+    def is_in_gallery(id_job, mode="webserver"):
         if mode == "webserver":
             from dgenies.database import Gallery, Job
             from peewee import DoesNotExist
@@ -246,3 +246,12 @@ class Functions:
             except DoesNotExist:
                 return False
         return False
+
+    @staticmethod
+    def get_list_all_jobs(mode="webserver"):
+        if mode == "webserver":
+            return []  # Don't give the list in webserver as it's multi-user
+        all_jobs = os.listdir(Functions.config.app_data)
+        if "gallery" in all_jobs:
+            all_jobs.remove("gallery")
+        return sorted(all_jobs, key=lambda x: x.lower())

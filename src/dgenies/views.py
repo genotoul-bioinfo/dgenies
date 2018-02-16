@@ -24,7 +24,8 @@ if MODE == "webserver":
 def global_templates_variables():
     return {
         "title": app_title,
-        "mode": MODE
+        "mode": MODE,
+        "all_jobs": Functions.get_list_all_jobs(MODE)
     }
 
 

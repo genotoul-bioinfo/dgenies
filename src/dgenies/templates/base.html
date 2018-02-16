@@ -20,7 +20,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" type="text/css">
     <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
 </head>
-<body role="document" onload="{% block onload %}dgenies.init();{% endblock %}">
+<body role="document" onload="{% block onload %}dgenies.init({{ all_jobs}}, '{{ mode }}');{% endblock %}">
 {% block body %}
     <div id="main-wrapper">
         <!-- Fixed navbar -->
