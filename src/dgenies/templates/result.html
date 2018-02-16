@@ -16,7 +16,10 @@
     <script src="{{ url_for('static', filename='js/BootstrapMenu.min.js') }}" type="text/JavaScript"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/chosen.min.css') }}" type="text/css">
 {% endblock %}
-{% block onload %}dgenies.result.init('{{ id }}');{% endblock %}
+{% block onload %}
+    {{ super() }}
+    dgenies.result.init('{{ id }}');
+{% endblock %}
 {% block content %}
 {{ super() }}
 
@@ -71,6 +74,9 @@
                 <p><input type="button" id="sort-contigs" value="Sort contigs"/></p>
                 <p><input type="button" id="hide-noise" value="Hide noise"/></p>
                 <p><input type="button" id="summary" value="Summary"/></p>
+                {% if not is_gallery %}
+                    <p class="bottom"><input type="button" id="delete-job" value="Delete job"/></p>
+                {% endif %}
             </form>
         </div>
     </div>

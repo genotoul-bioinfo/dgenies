@@ -235,3 +235,14 @@ class Functions:
                 "time_elapsed": Functions.get_readable_time(item.job.time_elapsed)
             })
         return items
+
+    @staticmethod
+    def is_in_gallery(id_job, mode):
+        if mode == "webserver":
+            from dgenies.database import Gallery, Job
+            from peewee import DoesNotExist
+            try:
+                return len(Gallery.select().where(Gallery.job == Job.get(id_job=id_job))) > 0
+            except DoesNotExist:
+                return False
+        return False

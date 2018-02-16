@@ -686,3 +686,24 @@ h2.status {
 h2.status,div.status-body {
     margin-left: 55px;
 }
+
+div#sidebar {
+    position: relative;
+}
+
+div#sidebar p.bottom {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 100px;
+}
+
+div#sidebar p.bottom input#delete-job {
+    background: #ffbba8 !important;
+}
+
+ul.nav ul.dropdown-menu {
+    max-height: 300px;
+    overflow-y: auto;
+
+}

@@ -30,7 +30,7 @@ import binascii
 from dgenies.database import Job
 
 if MODE == "webserver":
-    from dgenies.database import Session
+    from dgenies.database import Session, Gallery
     from peewee import DoesNotExist
 
 
@@ -969,3 +969,19 @@ class JobManager:
                 return {"status": status, "mem_peak": None, "time_elapsed": None, "error": error}
             except FileNotFoundError:
                 return {"status": "unknown", "error": ""}
+
+    def delete(self):
+        if not os.path.exists(self.output_dir) or not os.path.isdir(self.output_dir):
+            return False, "Job does not exists"
+        if MODE == "webserver":
+            try:
+                job = Job.get(id_job=self.id_job)
+            except DoesNotExist:
+                pass
+            else:
+                is_gallery = Gallery.select().where(Gallery.job == job)
+                if is_gallery:
+                    return False, "Delete a job that is in gallery is forbidden"
+                job.delete_instance()
+        shutil.rmtree(self.output_dir)
+        return True, ""

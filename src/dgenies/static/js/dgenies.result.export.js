@@ -115,7 +115,7 @@ dgenies.result.export.ask_export_fasta = function () {
                 $( this ).dialog( "close" );
             }
         }
-    })
+    });
 };
 
 dgenies.result.export.export_association_table = function () {

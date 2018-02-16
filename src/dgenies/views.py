@@ -20,12 +20,6 @@ if MODE == "webserver":
     from peewee import DoesNotExist
 
 
-@app.context_processor
-def get_launched_results():
-    cookie = request.cookies.get("results")
-    return {"results": cookie.split("|") if cookie is not None else set()}
-
-
 # Main
 @app.route("/", methods=['GET'])
 def main():
@@ -182,15 +176,8 @@ def status(id_job):
 # Results path
 @app.route("/result/<id_res>", methods=['GET'])
 def result(id_res):
-    my_render = render_template("result.html", title=app_title, id=id_res, menu="result", current_result=id_res,
-                                mode=MODE)
-    response = app.make_response(my_render)
-    cookie = request.cookies.get("results")
-    cookie = cookie.split("|") if cookie is not None else []
-    if id_res not in cookie:
-        cookie.insert(0, id_res)
-    response.set_cookie(key="results", value="|".join(cookie), path="/")
-    return response
+    return render_template("result.html", title=app_title, id=id_res, menu="result", current_result=id_res, mode=MODE,
+                           is_gallery=Functions.is_in_gallery(id_res, MODE))
 
 
 @app.route("/gallery", methods=['GET'])
@@ -222,7 +209,7 @@ def get_file(file, gzip=False):  # pragma: no cover
     except FileNotFoundError:
         abort(404)
     except IOError as exc:
-        print(exc)
+        print(exc.__traceback__)
         abort(500)
 
 
@@ -664,3 +651,13 @@ def send_mail(id_res):
         return "OK"
     else:
         abort(403)
+
+
+@app.route("/delete/<id_res>", methods=['POST'])
+def delete_job(id_res):
+    job = JobManager(id_job=id_res)
+    success, error = job.delete()
+    return jsonify({
+        "success": success,
+        "error": error
+    })

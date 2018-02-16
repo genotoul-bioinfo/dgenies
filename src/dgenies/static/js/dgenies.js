@@ -2,6 +2,30 @@ dgenies = {};
 dgenies.loading = "#loading";
 dgenies.noise = true;
 
+dgenies.init = function() {
+    let cookies = $.cookie("results");
+    cookies = (cookies !== undefined && cookies.length > 0) ? cookies.split("|") : [];
+    dgenies.update_results(cookies);
+};
+
+dgenies.update_results = function(results) {
+    let job_list_item = $("ul.nav li.result ul");
+    job_list_item.html("");
+    if (results.length > 0) {
+        for (let i=0; i<results.length; i++) {
+            let result = results[i];
+            job_list_item.append($("<li>").append($("<a>")
+            .attr("href", `/result/${result}`)
+            .text(result)))
+        }
+    }
+    else {
+        job_list_item.append($("<li>").append($("<a>")
+            .attr("href", "/run")
+            .text("Please run a job!")))
+    }
+};
+
 dgenies.notify = function (text, type="warning", delay=5000) {
     $.notify({
         message: text

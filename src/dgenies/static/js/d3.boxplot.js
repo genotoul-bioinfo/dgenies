@@ -86,6 +86,7 @@ d3.boxplot.init = function (id_res=null, from_file=false) {
                 }
                 else {
                     $("#supdraw").html($("<p>").html("This job does not exist!").css("margin-top", "15px"));
+                    dgenies.result.remove_job_from_cookie(dgenies.result.id_res);
                 }
             }
         )

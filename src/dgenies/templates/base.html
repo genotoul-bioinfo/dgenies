@@ -9,6 +9,7 @@
         <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}" type="text/JavaScript"></script>
         <script src="{{ url_for('static', filename='js/bootstrap-notify.min.js') }}" type="text/JavaScript"></script>
         <script src="{{ url_for('static', filename='js/jquery-ui.min.js') }}" type="text/JavaScript"></script>
+        <script src="{{ url_for('static', filename='js/jquery.cookie-1.4.1.min.js') }}" type="text/JavaScript"></script>
         <script src="{{ url_for('static', filename='js/dgenies.js') }}" type="text/JavaScript"></script>
         <script src="{{ url_for('static', filename='js/dgenies.prototypes.js') }}" type="text/JavaScript"></script>
     {% endblock %}
@@ -19,7 +20,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" type="text/css">
     <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
 </head>
-<body role="document" onload="{% block onload %}{% endblock %}">
+<body role="document" onload="{% block onload %}dgenies.init();{% endblock %}">
 {% block body %}
     <div id="main-wrapper">
         <!-- Fixed navbar -->
@@ -39,24 +40,10 @@
                     <ul class="nav navbar-nav">
                         <li class="{% if(menu == 'index') %}active{% endif %}"><a href="/">About</a></li>
                         <li class="{% if(menu == 'run') %}active{% endif %}"><a href="/run">Run</a></li>
-                        <li class="dropdown {% if(menu == 'result') %}active{% endif %}">
+                        <li class="dropdown result {% if(menu == 'result') %}active{% endif %}">
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown">Results<span
                                     class="caret"></span></a>
                             <ul class="dropdown-menu" role="menu">
-                                {% block results %}
-                                    {% set has_job = False %}
-                                    {% if current_result and current_result not in results %}
-                                        {% set has_job = True %}
-                                        <li><a href="/result/{{ current_result }}">{{ current_result }}</a></li>
-                                    {% endif %}
-                                    {% if results | length > 0 %}
-                                        {% for result in results %}
-                                            <li><a href="/result/{{ result }}">{{ result }}</a></li>
-                                        {% endfor %}
-                                    {% elif not has_job %}
-                                        <li><a href="/run">Please run a job!</a></li>
-                                    {% endif %}
-                                {% endblock %}
                             </ul>
                         </li>
                         {% if mode == "webserver" %}
