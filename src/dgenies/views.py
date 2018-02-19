@@ -107,9 +107,13 @@ def launch_analysis():
         errors.append("Id of job not given")
         form_pass = False
 
-    if email == "" and MODE == "webserver":
-        errors.append("Email not given")
-        form_pass = False
+    if MODE == "webserver":
+        if email == "":
+            errors.append("Email not given")
+            form_pass = False
+        elif not re.match(r"^[\w\-]+@[\w\-]{2,}\.[a-z]{2,4}", email):
+            errors.append("Email is invalid")
+            form_pass = False
     if file_target == "":
         errors.append("No target fasta selected")
         form_pass = False
@@ -133,20 +137,27 @@ def launch_analysis():
             query_name = os.path.splitext(file_query.replace(".gz", ""))[0] if file_query_type == "local" else None
             query_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder, file_query) \
                 if file_query_type == "local" else file_query
+            if file_query_type == "local" and not os.path.exists(query_path):
+                errors.append("Query file not correct!")
+                form_pass = False
             query = Fasta(name=query_name, path=query_path, type_f=file_query_type)
         target_name = os.path.splitext(file_target.replace(".gz", ""))[0] if file_target_type == "local" else None
         target_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder, file_target) \
             if file_target_type == "local" else file_target
+        if file_target_type == "local" and not os.path.exists(target_path):
+            errors.append("Target file not correct!")
+            form_pass = False
         target = Fasta(name=target_name, path=target_path, type_f=file_target_type)
 
-        # Launch job:
-        job = JobManager(id_job, email, query, target, mailer)
-        if MODE == "webserver":
-            job.launch()
-        else:
-            job.launch_standalone()
-        return jsonify({"success": True, "redirect": url_for(".status", id_job=id_job)})
-    else:
+        if form_pass:
+            # Launch job:
+            job = JobManager(id_job, email, query, target, mailer)
+            if MODE == "webserver":
+                job.launch()
+            else:
+                job.launch_standalone()
+            return jsonify({"success": True, "redirect": url_for(".status", id_job=id_job)})
+    if not form_pass:
         return jsonify({"success": False, "errors": errors})
 
 
