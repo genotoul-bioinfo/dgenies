@@ -260,6 +260,17 @@ def documentation_run():
     return render_template("documentation.html", menu="documentation", content=content, toc=toc)
 
 
+@app.route("/documentation/result", methods=['GET'])
+def documentation_result():
+    with open(os.path.join(app_folder, "user_manual.md"), "r",
+              encoding='utf-8') as install_instr:
+        content = install_instr.read()
+    md = Markdown(extensions=[TocExtension(baselevel=1)])
+    content = Markup(md.convert(content))
+    toc = Markup(md.toc)
+    return render_template("documentation.html", menu="documentation", content=content, toc=toc)
+
+
 @app.route("/install", methods=['GET'])
 def install():
     with open(os.path.join(app_folder, "INSTALL.md"), "r", encoding='utf-8') as install_instr:
