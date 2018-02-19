@@ -269,6 +269,10 @@ def install():
     toc = Markup(md.toc)
     return render_template("documentation.html", menu="install", content=content, toc=toc)
 
+@app.route("/contact", methods=['GET'])
+def contact():
+    return render_template("contact.html", menu="contact")
+
 
 @app.route("/paf/<id_res>", methods=['GET'])
 def download_paf(id_res):

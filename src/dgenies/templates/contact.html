@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block scripts %}
+    {{ super() }}
+    <style>
+        em {
+            color: red;
+            font-weight: bold;
+        }
+        #body-container {
+            background: url("{{ url_for('static', filename='images/contact.svg') }}") no-repeat 0 25px;
+            background-size: 300px 300px;
+            height: 350px !important;
+        }
+        h1 {
+            margin-bottom: 50px !important;
+        }
+    </style>
+{% endblock %}
+{% block content %}
+
+    <h1>Contact us</h1>
+
+    <p>Please send a mail to <a href="mailto:support.bioinfo.genotoul@inra.fr?subject=[dgenies] Support">support.bioinfo.genotoul@inra.fr</a>.</p>
+    <p><em>Important:</em> please keep <strong>[dgenies]</strong> tag at the beginning of the subject of the mail. Otherwise, the response delay will be increased.</p>
+
+{% endblock %}
