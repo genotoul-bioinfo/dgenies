@@ -27,6 +27,7 @@ class AppConfigReader:
 
         if os.name == "nt":
             config_file.insert(1, os.path.join(sys.executable, '..', "application.properties"))
+            config_file.insert(1, os.path.join(sys.executable, '..', "application.properties.local"))
 
         for my_config_file in config_file_search:
             if os.path.exists(my_config_file):

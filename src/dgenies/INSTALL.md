@@ -32,8 +32,7 @@ Then, you need to restart your webserver.
     
     
     
-Requirements
-------------
+### Requirements
 
 D-Genies requires python >= 3.5 to run.
 
@@ -65,6 +64,18 @@ And if you use a cluster (webserver mode):
     drmaa==0.7.*
     
 In webserver mode, you must install `mysqlclient` python module (will not be installed automatically) if you use mysql as RDBM.
+
+
+Windows
+-------
+
+We provide an installer to install D-Genies. You can download it [here](#). 
+
+All requirements are present inside the package, so you don't have to do anything else.
+
+### System requirements
+
+You need Windows 7 or newer, 64 bits architecture.
     
     
 How to start
@@ -76,7 +87,7 @@ simultaneously or if you run it on a server, you must run it in webserver mode.
 
 ### Standalone mode
 
-Start with the command below:
+Unix: start with the command below:
 
     dgenies run
     
@@ -84,6 +95,8 @@ Optional arguments:
 
 `-p <port>` run in a specified port (default: 5000)  
 `--no-browser` don't start the browser automatically
+
+Windows: just click on the launcher in the desktop or into the install folder.
 
 ### Webserver mode
 
@@ -159,7 +172,7 @@ Configuration
 
 Changing the default configuration is not required for standalone mode, but you can want to custom some parts of the program.
 
-Configuration is stored in the `/etc/dgenies/application.properties` file (linux). The file is divided in 8 parts described below.
+Configuration is stored in the `/etc/dgenies/application.properties` file (linux) or in the `application.properties` file of the install folder (windows). The file is divided in 8 parts described below.
 
 To change this file, please copy it into `application.properties.local` (at the same location) to avoid erase of the file on upgrades.
 
