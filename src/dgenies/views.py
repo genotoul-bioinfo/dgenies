@@ -111,7 +111,7 @@ def launch_analysis():
         if email == "":
             errors.append("Email not given")
             form_pass = False
-        elif not re.match(r"^[\w\-]+@[\w\-]{2,}\.[a-z]{2,4}", email):
+        elif not re.match(r"^[\w.\-]+@[\w\-.]{2,}\.[a-z]{2,4}$", email):
             errors.append("Email is invalid")
             form_pass = False
     if file_target == "":
