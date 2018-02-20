@@ -542,6 +542,7 @@ class Paf:
         """
         index = self.idx_q if to == "query" else self.idx_t
         name, contigs_list, contigs, reversed, abs_start, c_len = Index.load(index)
+        contigs_list = set(contigs_list)
         with open(self.paf, "r") as paf:
             for line in paf:
                 c_name = line.strip("\n").split("\t")[0 if to == "query" else 5]
