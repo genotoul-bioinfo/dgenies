@@ -2,9 +2,10 @@ if (!dgenies || !dgenies.result) {
     throw "dgenies.result wasn't included!"
 }
 dgenies.result.summary = {};
+dgenies.result.summary.percents = {};
 
 dgenies.result.summary.show = function(percents) {
-    console.log(percents);
+    dgenies.result.summary.percents = percents;
     let svgcontainer = d3.select("#draw-stats").html("").append("svg:svg")
         .attr("width", "500px")
         .attr("height", "220px");
@@ -14,25 +15,7 @@ dgenies.result.summary.show = function(percents) {
     let percent_value = 0;
     for (let i in percents_order) {
         let percent = percents_order[i];
-        let label="";
-        switch (percent) {
-            case "-1":
-                label = "No match";
-                break;
-            case "0":
-                label = "< 25 %";
-                break;
-            case "1":
-                label = "< 50 %";
-                break;
-            case "2":
-                label = "< 75 %";
-                break;
-            case "3":
-                label = "> 75 %";
-                break;
-        }
-        console.log(percent);
+        let label=dgenies.result.summary._get_label(percent);
         x += percent_value;
         percent_value = percent in percents ? percents[percent] : 0;
         container.append("rect")
@@ -75,8 +58,11 @@ dgenies.result.summary.show = function(percents) {
 
     $("#modal-stats").dialog({
         title: "Summary of identity",
-        width: "550px",
+        width: "560px",
         buttons: [{
+            text: "Export TSV",
+            click: dgenies.result.summary.export_tsv
+        },{
             text: "Export PNG",
             click: dgenies.result.summary.export_png
         },{
@@ -86,9 +72,26 @@ dgenies.result.summary.show = function(percents) {
             text: "Close",
             click: function() {
                 $(this).dialog("close");
-            }
-        }]
+            },
+            default: true
+        }],
+        open: function() { $(this).parents().find(".ui-dialog-buttonpane button")[3].focus() }
     })
+};
+
+dgenies.result.summary._get_label = function (percent_class) {
+    switch (percent_class) {
+            case "-1":
+                return "No match";
+            case "0":
+                return "< 25 %";
+            case "1":
+                return "< 50 %";
+            case "2":
+                return "< 75 %";
+            case "3":
+                return "> 75 %";
+        }
 };
 
 dgenies.result.summary.get_svg = function () {
@@ -97,6 +100,14 @@ dgenies.result.summary.get_svg = function () {
 
 dgenies.result.summary.save_file = function (blob, format) {
     saveAs(blob, `summary_${d3.boxplot.name_y}_to_${d3.boxplot.name_x}.${format}`);
+};
+
+dgenies.result.summary.export_tsv = function () {
+    let content = "category\tpercent\n";
+    for (let percent in dgenies.result.summary.percents) {
+        content += `${dgenies.result.summary._get_label(percent)}\t${dgenies.result.summary.percents[percent]}\n`;
+    }
+    dgenies.result.summary.save_file(new Blob([content], {type: "plain/text"}), "tsv");
 };
 
 dgenies.result.summary.export_svg = function () {
