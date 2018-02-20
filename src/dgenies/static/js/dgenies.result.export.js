@@ -208,7 +208,7 @@ dgenies.result.export.export = function () {
                 dgenies.result.export.export_no_association_file("target");
             }
             else if (selection === 8) {
-                if (dgenies.result.mode === "webserver") {
+                if (dgenies.mode === "webserver") {
                     dgenies.result.export.export_query_as_reference_fasta_webserver();
                 }
                 else {
