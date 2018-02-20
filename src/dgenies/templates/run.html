@@ -11,7 +11,7 @@
 {% endblock %}
 {% block onload %}
     {{ super() }}
-    dgenies.run.init('{{ s_id }}',{{ allowed_ext }}, {{ max_upload_file_size }});
+    dgenies.run.init('{{ s_id }}',{{ allowed_ext }}, {{ max_upload_file_size }}, '{{ target }}', '{{ query }}');
 {% endblock %}
 {% block content %}
     <form id="submit_minimap" method=post action="#">
@@ -107,6 +107,9 @@
             <p class="afterworlff">* We will send you results by mail.</p>
             <p class="afterworlff">** Can be gzipped.</p>
             <button type="button" id="submit">Submit</button>
+            {% if example %}
+            <button type="button" id="example">Load example</button>
+            {% endif %}
         </div>
         <div id="uploading-loading" style="display:none;">Uploading files...</div>
         <div class="hidden-input-files">

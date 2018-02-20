@@ -403,3 +403,15 @@ class AppConfigReader:
         except (NoOptionError, NoSectionError):
             pass
         return allowed_ip
+
+    def _get_example_query(self):
+        try:
+            return self.reader.get("example", "query")
+        except (NoOptionError, NoSectionError):
+            return ""
+
+    def _get_example_target(self):
+        try:
+            return self.reader.get("example", "target")
+        except (NoOptionError, NoSectionError):
+            return ""

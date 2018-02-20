@@ -10,11 +10,15 @@ dgenies.run.max_upload_file_size = -1
 dgenies.run.files = [undefined, undefined];
 dgenies.run.allow_upload = false;
 dgenies.run.ping_interval = null;
+dgenies.run.target_example = "";
+dgenies.run.query_example = "";
 
-dgenies.run.init = function (s_id, allowed_ext, max_upload_file_size=1073741824) {
+dgenies.run.init = function (s_id, allowed_ext, max_upload_file_size=1073741824, target_example="", query_example="") {
     dgenies.run.s_id = s_id;
     dgenies.run.allowed_ext = allowed_ext;
-    dgenies.run.max_upload_file_size = max_upload_file_size
+    dgenies.run.max_upload_file_size = max_upload_file_size;
+    dgenies.run.target_example = target_example;
+    dgenies.run.query_example = query_example;
     dgenies.run.restore_form();
     dgenies.run.set_events();
     dgenies.run.init_fileuploads();
@@ -154,6 +158,15 @@ dgenies.run.get_file_size_str = function(size) {
     return Math.round(size / 1073741824) + " Go";
 };
 
+dgenies.run.fill_examples = function () {
+    $("select.target").val("1").trigger("change");
+    $("input#target").val("example://" + dgenies.run.target_example);
+    if (dgenies.run.query_example !== "") {
+        $("select.query").val("1").trigger("change");
+        $("input#query").val("example://" + dgenies.run.query_example);
+    }
+};
+
 dgenies.run.set_events = function() {
     let max_file_size_txt = dgenies.run.get_file_size_str(dgenies.run.max_upload_file_size);
     $("input.file-query").change(function () {
@@ -203,6 +216,9 @@ dgenies.run.set_events = function() {
     });
     $("select.target").change(function() {
         dgenies.run.change_fasta_type("target", $("select.target").find(":selected").text().toLowerCase())
+    });
+    $("button#example").click(function() {
+        dgenies.run.fill_examples();
     });
 };
 
@@ -381,7 +397,8 @@ dgenies.run.ping_upload = function () {
 };
 
 dgenies.run.check_url = function (url) {
-    return url.startsWith("http://") || url.startsWith("https://") || url.startsWith("ftp://");
+    return url.startsWith("http://") || url.startsWith("https://") || url.startsWith("ftp://") ||
+        url.startsWith("example://");
 };
 
 dgenies.run.start_uploads = function() {
@@ -427,6 +444,7 @@ dgenies.run.start_uploads = function() {
 
 dgenies.run.show_global_loading = function () {
     $("button#submit").hide();
+    $("button#example").hide();
     $("div#uploading-loading").show();
 };
 

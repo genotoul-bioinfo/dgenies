@@ -371,7 +371,10 @@ class JobManager:
 
     def __getting_local_file(self, fasta: Fasta, type_f):
         finale_path = os.path.join(self.output_dir, type_f + "_" + os.path.basename(fasta.get_path()))
-        shutil.move(fasta.get_path(), finale_path)
+        if fasta.is_example():
+            shutil.copy(fasta.get_path(), finale_path)
+        else:
+            shutil.move(fasta.get_path(), finale_path)
         with open(os.path.join(self.output_dir, "." + type_f), "w") as save_file:
             save_file.write(finale_path)
         return finale_path

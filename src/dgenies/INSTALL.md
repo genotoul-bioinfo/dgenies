@@ -172,7 +172,7 @@ Configuration
 
 Changing the default configuration is not required for standalone mode, but you can want to custom some parts of the program.
 
-Configuration is stored in the `/etc/dgenies/application.properties` file (linux) or in the `application.properties` file of the install folder (windows). The file is divided in 8 parts described below.
+Configuration is stored in the `/etc/dgenies/application.properties` file (linux) or in the `application.properties` file of the install folder (windows). The file is divided in 9 parts described below.
 
 To change this file, please copy it into `application.properties.local` (at the same location) to avoid erase of the file on upgrades.
 
@@ -280,6 +280,14 @@ Several parameters for jobs:
 * `run_local`: max number of concurrent jobs launched locally.
 * `data_prepare`: max number of data prepare jobs launched locally.
 * `max_concurrent_dl`: max number of concurrent upload of files allowed.
+
+### Example
+
+Here, you can fill example data. At least target is required to enable example data.
+
+Fill for target and query the absolute local path of the file. This path will not be shown to the client. Only the file name will be shown.
+
+If at least target is filled, a button "Load example" will be shown in the run form. Click on it will load example data in the form.
 
 
 

@@ -1,20 +1,24 @@
 class Fasta:
-    def __init__(self, name, path, type_f):
-        self.__name = name
-        self.__path = path
-        self.__type = type_f
+    def __init__(self, name, path, type_f, example=False):
+        self._name = name
+        self._path = path
+        self._type = type_f
+        self._example = example
 
     def set_path(self, path):
-        self.__path = path
+        self._path = path
 
     def get_path(self):
-        return self.__path
+        return self._path
 
     def set_name(self, name):
-        self.__name = name
+        self._name = name
 
     def get_name(self):
-        return self.__name
+        return self._name
 
     def get_type(self):
-        return self.__type
+        return self._type
+
+    def is_example(self):
+        return self._example

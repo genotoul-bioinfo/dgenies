@@ -64,7 +64,10 @@ def run():
         email = request.args["email"]
     return render_template("run.html", id_job=id_job, email=email,
                            menu="run", allowed_ext=ALLOWED_EXTENSIONS, s_id=s_id,
-                           max_upload_file_size=config_reader.max_upload_file_size)
+                           max_upload_file_size=config_reader.max_upload_file_size,
+                           example=config_reader.example_target != "",
+                           target=os.path.basename(config_reader.example_target),
+                           query=os.path.basename(config_reader.example_query))
 
 
 @app.route("/run-test", methods=['GET'])
@@ -134,20 +137,34 @@ def launch_analysis():
         # Save files:
         query = None
         if file_query != "":
-            query_name = os.path.splitext(file_query.replace(".gz", ""))[0] if file_query_type == "local" else None
-            query_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder, file_query) \
-                if file_query_type == "local" else file_query
-            if file_query_type == "local" and not os.path.exists(query_path):
-                errors.append("Query file not correct!")
+            example = False
+            if file_query.startswith("example://"):
+                example = True
+                query_path = config_reader.example_query
+                query_name = os.path.basename(query_path)
+                file_query_type = "local"
+            else:
+                query_name = os.path.splitext(file_query.replace(".gz", ""))[0] if file_query_type == "local" else None
+                query_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder, file_query) \
+                    if file_query_type == "local" else file_query
+                if file_query_type == "local" and not os.path.exists(query_path):
+                    errors.append("Query file not correct!")
+                    form_pass = False
+            query = Fasta(name=query_name, path=query_path, type_f=file_query_type, example=example)
+        example = False
+        if file_target.startswith("example://"):
+            example = True
+            target_path = config_reader.example_target
+            target_name = os.path.basename(target_path)
+            file_target_type = "local"
+        else:
+            target_name = os.path.splitext(file_target.replace(".gz", ""))[0] if file_target_type == "local" else None
+            target_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder, file_target) \
+                if file_target_type == "local" else file_target
+            if file_target_type == "local" and not os.path.exists(target_path):
+                errors.append("Target file not correct!")
                 form_pass = False
-            query = Fasta(name=query_name, path=query_path, type_f=file_query_type)
-        target_name = os.path.splitext(file_target.replace(".gz", ""))[0] if file_target_type == "local" else None
-        target_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder, file_target) \
-            if file_target_type == "local" else file_target
-        if file_target_type == "local" and not os.path.exists(target_path):
-            errors.append("Target file not correct!")
-            form_pass = False
-        target = Fasta(name=target_name, path=target_path, type_f=file_target_type)
+        target = Fasta(name=target_name, path=target_path, type_f=file_target_type, example=example)
 
         if form_pass:
             # Launch job:
