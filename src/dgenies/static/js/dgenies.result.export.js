@@ -59,7 +59,7 @@ dgenies.result.export.dl_fasta = function (gzip=false) {
 };
 
 dgenies.result.export.export_fasta = function(compress=false) {
-    dgenies.show_loading("Building files...", 180);
+    dgenies.show_loading("Building file...", 180);
     dgenies.post("/get-fasta-query/" + dgenies.result.id_res,
         {
             gzip: compress
@@ -129,18 +129,22 @@ dgenies.result.export.export_association_table = function () {
 };
 
 dgenies.result.export.export_no_association_file = function (to) {
-    let on = to === "query" ? "target" : "query";
-    dgenies.post("/no-assoc/" + dgenies.result.id_res,
-        {"to": to},
-        function (data, success) {
-            if (!data["empty"]) {
-                let blob = new Blob([data["file_content"]], {type: "text/plain"});
-                saveAs(blob, `no_${to}_matches_${d3.boxplot.name_y}_to_${d3.boxplot.name_x}.txt`);
-            }
-            else {
-                dgenies.notify(`No contigs in ${to} have None match with any ${on}!`, "success")
-            }
-        })
+    window.setTimeout(() => {
+        dgenies.show_loading("Building file...", 180);
+        let on = to === "query" ? "target" : "query";
+        dgenies.post("/no-assoc/" + dgenies.result.id_res,
+            {"to": to},
+            function (data, success) {
+            dgenies.hide_loading();
+                if (!data["empty"]) {
+                    let blob = new Blob([data["file_content"]], {type: "text/plain"});
+                    saveAs(blob, `no_${to}_matches_${d3.boxplot.name_y}_to_${d3.boxplot.name_x}.txt`);
+                }
+                else {
+                    dgenies.notify(`No contigs in ${to} have None match with any ${on}!`, "success")
+                }
+            })
+    }, 0);
 };
 
 dgenies.result.export.export_query_as_reference_fasta_webserver = function() {
@@ -203,9 +207,11 @@ dgenies.result.export.export = function () {
             }
             else if (selection === 6) {
                 dgenies.result.export.export_no_association_file("query");
+                async = true;
             }
             else if (selection === 7) {
                 dgenies.result.export.export_no_association_file("target");
+                async = true;
             }
             else if (selection === 8) {
                 if (dgenies.mode === "webserver") {
