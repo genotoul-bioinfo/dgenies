@@ -1,4 +1,4 @@
-from dgenies import app, app_title, app_folder, config_reader, mailer, APP_DATA, MODE
+from dgenies import app, app_title, app_folder, config_reader, mailer, APP_DATA, MODE, DEBUG
 
 import os
 import time
@@ -25,7 +25,8 @@ def global_templates_variables():
     return {
         "title": app_title,
         "mode": MODE,
-        "all_jobs": Functions.get_list_all_jobs(MODE)
+        "all_jobs": Functions.get_list_all_jobs(MODE),
+        "debug": DEBUG
     }
 
 

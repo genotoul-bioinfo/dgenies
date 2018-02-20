@@ -1,13 +1,18 @@
 {% extends 'base.html' %}
 {% block scripts %}
     {{ super() }}
-    <!-- The basic File Upload plugin -->
-    <script src="{{ url_for('static', filename='js/jquery.fileupload.js') }}"></script>
-    <!-- The File Upload processing plugin -->
-    <script src="{{ url_for('static', filename='js/jquery.fileupload-process.js') }}"></script>
-    <!-- The File Upload validation plugin -->
-    <script src="{{ url_for('static', filename='js/jquery.fileupload-validate.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/dgenies.run.js') }}" type="text/JavaScript"></script>
+    {% if debug %}
+        <!-- The basic File Upload plugin -->
+        <script src="{{ url_for('static', filename='js/jquery.fileupload.js') }}"></script>
+        <!-- The File Upload processing plugin -->
+        <script src="{{ url_for('static', filename='js/jquery.fileupload-process.js') }}"></script>
+        <!-- The File Upload validation plugin -->
+        <script src="{{ url_for('static', filename='js/jquery.fileupload-validate.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/dgenies.run.js') }}" type="text/JavaScript"></script>
+    {% else %}
+        <script src="{{ url_for('static', filename='js/jquery.fileupload.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/dgenies.run.min.js') }}" type="text/JavaScript"></script>
+    {% endif %}
 {% endblock %}
 {% block onload %}
     {{ super() }}

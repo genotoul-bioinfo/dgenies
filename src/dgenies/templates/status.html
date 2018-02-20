@@ -1,7 +1,11 @@
 {% extends 'base.html' %}
 {% block scripts %}
     {{ super() }}
+    {% if debug %}
         <script src="{{ url_for('static', filename='js/dgenies.status.js') }}" type="text/JavaScript"></script>
+    {% else %}
+        <script src="{{ url_for('static', filename='js/dgenies.status.min.js') }}" type="text/JavaScript"></script>
+    {% endif %}
 {% endblock %}
 {% block onload %}
     {{ super() }}
