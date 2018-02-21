@@ -86,36 +86,41 @@ dgenies.result.export.export_fasta = function(compress=false) {
 };
 
 dgenies.result.export.ask_export_fasta = function () {
-    let dialog = $("<div>")
-        .attr("id", "dialog-confirm")
-        .attr("title", "Gzip?");
-    let icon = $("<span>")
-        .attr("class", "ui-icon ui-icon-help")
-        .css("float", "left")
-        .css("margin", "12px 12px 20px 0");
-    let body = $("<p>");
-    body.append(icon);
-    body.append("Compression is recommanded on slow connections. Download Gzip file?");
-    dialog.append(body);
-    dialog.dialog({
-        resizable: false,
-        height: "auto",
-        width: 500,
-        modal: true,
-        buttons: {
-            "Use default": function() {
-                $( this ).dialog( "close" );
-                dgenies.result.export.export_fasta(false);
-            },
-            "Use Gzip": function () {
-                $( this ).dialog( "close" );
-                dgenies.result.export.export_fasta(true);
-            },
-            Cancel: function () {
-                $( this ).dialog( "close" );
+    if (dgenies.mode === "webserver") {
+        let dialog = $("<div>")
+            .attr("id", "dialog-confirm")
+            .attr("title", "Gzip?");
+        let icon = $("<span>")
+            .attr("class", "ui-icon ui-icon-help")
+            .css("float", "left")
+            .css("margin", "12px 12px 20px 0");
+        let body = $("<p>");
+        body.append(icon);
+        body.append("Compression is recommanded on slow connections. Download Gzip file?");
+        dialog.append(body);
+        dialog.dialog({
+            resizable: false,
+            height: "auto",
+            width: 500,
+            modal: true,
+            buttons: {
+                "Use default": function () {
+                    $(this).dialog("close");
+                    dgenies.result.export.export_fasta(false);
+                },
+                "Use Gzip": function () {
+                    $(this).dialog("close");
+                    dgenies.result.export.export_fasta(true);
+                },
+                Cancel: function () {
+                    $(this).dialog("close");
+                }
             }
-        }
-    });
+        });
+    }
+    else {
+        dgenies.result.export.export_fasta(false);
+    }
 };
 
 dgenies.result.export.export_association_table = function () {

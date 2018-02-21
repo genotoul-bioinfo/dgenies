@@ -391,21 +391,33 @@ def build_fasta(id_res):
             Path(lock_query).touch()
             if not compressed or MODE == "standalone":  # If compressed, it will took a long time, so not wait
                 Path(lock_query + ".pending").touch()
-            thread = threading.Timer(1, Functions.sort_fasta, kwargs={
-                "job_name": id_res,
-                "fasta_file": query_fasta,
-                "index_file": os.path.join(res_dir, "query.idx.sorted"),
-                "lock_file": lock_query,
-                "compress": compressed,
-                "mailer": mailer
-            })
-            thread.start()
+            index_file = os.path.join(res_dir, "query.idx.sorted")
+            if MODE == "webserver":
+                thread = threading.Timer(1, Functions.sort_fasta, kwargs={
+                    "job_name": id_res,
+                    "fasta_file": query_fasta,
+                    "index_file": index_file,
+                    "lock_file": lock_query,
+                    "compress": compressed,
+                    "mailer": mailer,
+                    "mode": MODE
+                })
+                thread.start()
+            else:
+                Functions.sort_fasta(job_name=id_res,
+                                     fasta_file=query_fasta,
+                                     index_file=index_file,
+                                     lock_file=lock_query,
+                                     compress=compressed,
+                                     mailer=None,
+                                     mode=MODE)
             if not compressed or MODE == "standalone":
-                i = 0
-                time.sleep(5)
-                while os.path.exists(lock_query) and (i < 2 or MODE == "standalone"):
-                    i += 1
+                if MODE == "webserver":
+                    i = 0
                     time.sleep(5)
+                    while os.path.exists(lock_query) and (i < 2 or MODE == "standalone"):
+                        i += 1
+                        time.sleep(5)
                 os.remove(lock_query + ".pending")
                 if os.path.exists(lock_query):
                     return jsonify({"success": True, "status": 1, "status_message": "In progress"})

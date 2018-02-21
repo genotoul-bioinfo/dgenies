@@ -161,7 +161,7 @@ class Functions:
 
 
     @staticmethod
-    def sort_fasta(job_name, fasta_file, index_file, lock_file, compress=False, mailer=None):
+    def sort_fasta(job_name, fasta_file, index_file, lock_file, compress=False, mailer=None, mode="webserver"):
         index, sample_name = Functions.read_index(index_file)
         is_compressed = fasta_file.endswith(".gz")
         if is_compressed:
@@ -185,7 +185,7 @@ class Functions:
         if compress:
             Functions.compress(fasta_file_o)
         os.remove(lock_file)
-        if mailer is not None and not os.path.exists(lock_file + ".pending"):
+        if mode == "webserver" and mailer is not None and not os.path.exists(lock_file + ".pending"):
             Functions.send_fasta_ready(mailer, job_name, sample_name, compress)
 
     @staticmethod
