@@ -47,15 +47,16 @@ def parse_database(app_data, max_age, fake=False):
             is_gallery = len(Gallery.select().join(Job).where(Job.id_job == id_job)) > 0
             if is_gallery:
                 gallery_jobs.append(id_job)
-            print("Removing job %s..." % id_job)
-            data_dir = os.path.join(app_data, id_job)
-            if os.path.exists(data_dir) and os.path.isdir(data_dir):
-                if not fake:
-                    shutil.rmtree(data_dir)
             else:
-                print("Job %s has no data folder!" % id_job)
-            if not fake:
-                job.delete_instance()
+                print("Removing job %s..." % id_job)
+                data_dir = os.path.join(app_data, id_job)
+                if os.path.exists(data_dir) and os.path.isdir(data_dir):
+                    if not fake:
+                        shutil.rmtree(data_dir)
+                else:
+                    print("Job %s has no data folder!" % id_job)
+                if not fake:
+                    job.delete_instance()
     return gallery_jobs
 
 
