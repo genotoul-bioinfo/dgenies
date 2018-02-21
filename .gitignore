@@ -8,3 +8,4 @@ logs/*
 dgenies/.local_scheduler_pid
 dgenies.egg-info
 application.properties.local
+dist
