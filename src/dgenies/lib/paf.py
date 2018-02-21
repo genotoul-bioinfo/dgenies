@@ -758,6 +758,7 @@ class Paf:
                             seq = query_f[contig]
                             seq.id += "_unaligned"
                             SeqIO.write(seq, out, "fasta")
+                query_f.close()
                 if uncompressed:
                     os.remove(query_fasta)
             status = "success"

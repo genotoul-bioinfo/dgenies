@@ -166,8 +166,8 @@ class Functions:
         is_compressed = fasta_file.endswith(".gz")
         if is_compressed:
             fasta_file = Functions.uncompress(fasta_file)
-        seq = SeqIO.index(fasta_file, "fasta")
         fasta_file_o = fasta_file + ".sorted"
+        seq = SeqIO.index(fasta_file, "fasta")
         with open(fasta_file_o, "w") as fasta_out:
             for name, props in index.items():
                 sequence = seq[name]
@@ -180,6 +180,7 @@ class Functions:
                     sequence.name = s_name
                     sequence.description = s_description
                 SeqIO.write(sequence, fasta_out, "fasta")
+        seq.close()
         if is_compressed:
             os.remove(fasta_file)
         if compress:
