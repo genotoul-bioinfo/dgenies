@@ -72,6 +72,10 @@
             </div>
         </div>
 
+        <div id="main-error">
+
+        </div>
+
         <div class="container theme-showcase" id="body-container" role="main">
 
             {% block content %}
@@ -88,5 +92,18 @@
         </div> <!-- /container -->
     </div>
 {% endblock %}
+
+<script type="text/javascript">
+            var supportsTemplateLiterals = false;
+            try {
+                eval("`foo`");
+                supportsTemplateLiterals = true;
+            }
+            catch (e) {
+            }
+            if (!supportsTemplateLiterals) {
+                $("#main-error").html("<span class='big'>Your browser is not supported!</span><br/>Please use a compatible browser like <a href=\"https://www.mozilla.org/firefox\">Firefox</a> or <a href=\"https://www.google.com/chrome/\">Google Chrome / Chromium</a>").show();
+            }
+        </script>
 </body>
 </html>

@@ -4,6 +4,25 @@ body {
     padding-top: 50px;
 }
 
+#main-error {
+    display: none;
+    width: 100%;
+    min-height: 60px;
+    background: #ff351a;
+    color: white;
+    font-size: 14pt;
+    font-weight: bold;
+    text-align: center;
+}
+
+#main-error a {
+    color: #fff75a;
+}
+
+#main-error span.big {
+    font-size: 20pt;
+}
+
 #body {
     max-width: 850px;
 }
