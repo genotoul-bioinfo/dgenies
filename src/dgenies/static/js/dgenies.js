@@ -58,7 +58,7 @@ dgenies.notify = function (text, type="warning", delay=5000) {
 };
 
 dgenies.show_loading = function (message="Loading...", width=118) {
-    $("input,select").prop("disabled", true);
+    $("input,form#export select").prop("disabled", true);
     d3.boxplot.all_disabled = true;
     $(dgenies.loading).find(".mylabel").html(message);
     $(dgenies.loading).find(".label").width(width);
@@ -72,7 +72,7 @@ dgenies.show_loading = function (message="Loading...", width=118) {
 };
 
 dgenies.hide_loading = function () {
-    $("input,select").prop("disabled", false);
+    $("input,form#export select").prop("disabled", false);
     d3.boxplot.all_disabled = false;
     $(dgenies.loading).hide();
     dgenies.reset_loading_message();
