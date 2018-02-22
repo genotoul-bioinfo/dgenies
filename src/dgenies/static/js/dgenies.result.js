@@ -13,12 +13,9 @@ dgenies.result.init = function(id_res) {
 };
 
 dgenies.result.add_to_list = function () {
-    console.log("pass", dgenies.result.id_res);
     let cookies = $.cookie("results");
     cookies = cookies !== undefined ? cookies.split("|") : [];
-    console.log(cookies);
     if (cookies.indexOf(dgenies.result.id_res) === -1) {
-        console.log("oui");
         cookies.splice(0, 0, dgenies.result.id_res);
         dgenies.save_cookies(cookies);
         dgenies.update_results(cookies);
