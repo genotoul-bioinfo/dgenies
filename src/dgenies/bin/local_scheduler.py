@@ -167,7 +167,7 @@ def parse_uploads_asks():
         nb_active_dl = len(sessions)
         _printer("Active_dl:", nb_active_dl)
         for session in sessions:
-            if not session.keep_active and (now - session.last_ping).total_seconds() > 30:
+            if not session.keep_active and (now - session.last_ping).total_seconds() > 50:
                 _printer("Delete 1 active session:", session.s_id)
                 session.delete_instance()  # We consider the user has left
                 nb_active_dl -= 1
