@@ -42,6 +42,10 @@ def launch(mode="webserver", debug=False):
         from .lib.mailer import Mailer
         mailer = Mailer(app)
 
+    # Create data dir if not exists
+    if not os.path.exists(config_reader.app_data):
+        os.makedirs(config_reader.app_data)
+
     if config_reader.debug and config_reader.log_dir != "stdout" and not os.path.exists(config_reader.log_dir):
         os.makedirs(config_reader.log_dir)
 
