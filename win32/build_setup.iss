@@ -5,7 +5,7 @@
 ; NOTE: The value of AppId uniquely identifies this application.
 ; Do not use the same AppId value in installers for other applications.
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
-#define AppVer="1.0"
+#define AppVer="1.0.1"
 AppId={{4B4F7755-28D0-4157-89AA-9752C38E3508}
 AppName=D-Genies
 AppVersion={#AppVer}
