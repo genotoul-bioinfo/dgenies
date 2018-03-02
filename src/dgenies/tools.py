@@ -128,5 +128,4 @@ class Tools:
             tools = {}
             for name, props in tools_dict.items():
                 tools[name] = Tool(name=name, **props)
-            print(tools)
             self.tools.update(tools)
