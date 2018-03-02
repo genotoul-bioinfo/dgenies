@@ -102,27 +102,31 @@ class Tools:
         self.load_yaml()
 
     def load_yaml(self):
-        config_file = []
+        yaml_file = None
         config_file_search = [os.path.join(os.path.abspath(os.sep), "dgenies", "tools.yaml"),
                               "/etc/dgenies/tools.yaml",
                               "/etc/dgenies/tools.yaml.local",
                               os.path.join(str(Path.home()), ".dgenies", "tools.yaml.local")]
 
         if os.name == "nt":
-            config_file.insert(1, os.path.join(sys.executable, '..', "tools.yaml"))
-            config_file.insert(1, os.path.join(sys.executable, '..', "tools.yaml.local"))
+            config_file_search.insert(1, os.path.join(sys.executable, '..', "tools.yaml"))
+            config_file_search.insert(1, os.path.join(sys.executable, '..', "tools.yaml.local"))
 
-        for my_config_file in config_file_search:
+        app_dir = os.path.dirname(inspect.getfile(self.__class__))
+        config_file_search.append(os.path.join(app_dir, "tools-dev.yaml"))
+        config_file_search.append(os.path.join(app_dir, "tools-dev.yaml.local"))
+
+        for my_config_file in reversed(config_file_search):
             if os.path.exists(my_config_file):
-                config_file.append(my_config_file)
-        if len(config_file) == 0:
+                yaml_file = my_config_file
+                break
+        if yaml_file is None:
             raise FileNotFoundError("ERROR: tools.yaml not found.")
 
-        for yaml_file in config_file:
-            with open(yaml_file, "r") as yml_f:
-                tools_dict = yaml.load(yml_f)
-                tools = {}
-                for name, props in tools_dict.items():
-                    tools[name] = Tool(name=name, **props)
-                print(tools)
-                self.tools.update(tools)
+        with open(yaml_file, "r") as yml_f:
+            tools_dict = yaml.load(yml_f)
+            tools = {}
+            for name, props in tools_dict.items():
+                tools[name] = Tool(name=name, **props)
+            print(tools)
+            self.tools.update(tools)
