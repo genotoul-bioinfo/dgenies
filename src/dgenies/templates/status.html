@@ -66,7 +66,7 @@
         {% else %}
             <p>This job does not exists!</p>
         {% endif %}
-        {% if status not in ["success", "no_match", "fail"] %}
+        {% if status not in ["success", "no-match", "fail"] %}
             {% if mode == "webserver" %}
                 You will receive an email when it will be finished.<br/>
                 Alternatively, you can refresh this page to update status.</p>

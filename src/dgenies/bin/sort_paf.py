@@ -90,14 +90,11 @@ class Sorter:
                     pct_to_keep = 2000000 / num_lines
                     limit = int(nb_lines * pct_to_keep)
                     paf_lines = paf_lines[:limit]
-                    print(len(paf_lines))
                     min_len = paf_lines[-1][-1]
-                    print(min_len)
                     print("Sorting done!")
             elif len_line >= min_len:
                 print("Processing line %d..." % nb_lines)
                 paf_lines.append(parts)
-                print(len(paf_lines))
         paf_lines.sort(key=lambda x: -x[-1])
 
         return paf_lines
