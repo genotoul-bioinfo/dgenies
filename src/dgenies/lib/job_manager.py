@@ -388,9 +388,9 @@ class JobManager:
         if ">" in args:
             out_file = self.paf_raw
             args = args[:args.index(">")]
-        args.replace("{target}", self.target.get_path()) \
-            .replace("{threads}", str(self.tool.threads_cluster)) \
-            .replace("{out}", self.paf_raw)
+        args = args.replace("{target}", self.target.get_path()) \
+                   .replace("{threads}", str(self.tool.threads_cluster)) \
+                   .replace("{out}", self.paf_raw)
 
         args = args.split(" ")
 
