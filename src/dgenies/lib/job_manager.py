@@ -8,6 +8,8 @@ import time
 import threading
 import re
 from dgenies.config_reader import AppConfigReader
+from dgenies.tools import Tools
+import dgenies.lib.parsers
 from .fasta import Fasta
 from .functions import Functions
 import requests
@@ -36,7 +38,8 @@ if MODE == "webserver":
 
 class JobManager:
 
-    def __init__(self, id_job: str, email: str=None, query: Fasta=None, target: Fasta=None, mailer=None):
+    def __init__(self, id_job: str, email: str=None, query: Fasta=None, target: Fasta=None, mailer=None,
+                 tool="minimap2"):
         self.id_job = id_job
         self.email = email
         self.query = query
@@ -45,6 +48,8 @@ class JobManager:
         self.id_process = "-1"
         # Get configs:
         self.config = AppConfigReader()
+        self.tools = Tools().tools
+        self.tool = self.tools[tool]
         # Outputs:
         self.output_dir = os.path.join(self.config.app_data, id_job)
         self.preptime_file = os.path.join(self.output_dir, "prep_times")
@@ -70,6 +75,8 @@ class JobManager:
         return file_size
 
     def get_query_split(self):
+        if not self.tool.split_before:
+            return self.query.get_path()
         query_split = os.path.join(self.output_dir, "split_" + os.path.basename(self.query.get_path()))
         if query_split.endswith(".gz"):
             return query_split[:-3]
@@ -191,13 +198,25 @@ class JobManager:
         else:
             cmd = []
         if self.query is not None:
-            cmd += [self.config.minimap2_exec, "-t", self.config.nb_threads,
-                   self.target.get_path(), self.get_query_split()]
+            command_line = self.tool.command_line.replace("{query}", self.query.get_path())
         else:
-            cmd += [self.config.minimap2_exec, "-t", self.config.nb_threads, "-X",
-                   self.target.get_path(), self.target.get_path()]
-        with open(self.logs, "w") as logs, open(self.paf_raw, "w") as paf_raw:
-            p = subprocess.Popen(cmd, stdout=paf_raw, stderr=logs)
+            command_line = self.tool.all_vs_all
+        out_file = None
+        if ">" in command_line:
+            out_file = self.paf_raw
+            command_line = command_line[:command_line.index(">")]
+        command_line = command_line.replace("{exe}", self.tool.exec) \
+                                   .replace("{target}", self.target.get_path()) \
+                                   .replace("{threads}", str(self.tool.threads)) \
+                                   .replace("{out}", self.paf_raw)
+
+        cmd += command_line.split(" ")
+        if out_file is None:
+            with open(self.logs, "w") as logs:
+                p = subprocess.Popen(cmd, stdout=logs, stderr=logs)
+        else:
+            with open(self.logs, "w") as logs, open(out_file, "w") as out:
+                p = subprocess.Popen(cmd, stdout=out, stderr=logs)
         with Job.connect():
             status = "started"
             if MODE == "webserver":
@@ -301,7 +320,7 @@ class JobManager:
         jt = s.createJobTemplate()
         jt.remoteCommand = command
         jt.args = args
-        jt.jobName = "_".join([step, self.id_job])
+        jt.jobName = "_".join([step[:2], self.id_job])
         if log_out == log_err:
             jt.joinFiles = True
             jt.outputPath = ":" + log_out
@@ -310,6 +329,16 @@ class JobManager:
             jt.outputPath = ":" + log_out
             jt.errorPath = ":" + log_err
 
+        memory = self.config.cluster_memory
+        if self.query is None:
+            memory = self.config.cluster_memory_ava
+            if memory > 32:
+                name, order, contigs, reversed_c, abs_start, c_len = Index.load(self.idx_t, False)
+                if c_len <= 500000000:
+                    memory = 32
+        if memory > self.tool.max_memory:
+            memory = self.tool.max_memory
+
         native_specs = self.config.drmaa_native_specs
         if batch_system_type == "slurm":
             if native_specs == "###DEFAULT###":
@@ -317,15 +346,8 @@ class JobManager:
             if step == "prepare":
                 jt.nativeSpecification = native_specs.format(8000, 1, "02:00:00")
             elif step == "start":
-                memory = self.config.cluster_memory
-                if self.query is None:
-                    memory = self.config.cluster_memory_ava
-                    if memory > 32:
-                        name, order, contigs, reversed_c, abs_start, c_len = Index.load(self.idx_t, False)
-                        if c_len <= 500000000:
-                            memory = 32
-                jt.nativeSpecification = native_specs.format(memory // self.config.cluster_threads * 1000,
-                                                             self.config.cluster_threads, "02:00:00")
+                jt.nativeSpecification = native_specs.format(memory // self.tool.threads_cluster * 1000,
+                                                             self.tool.threads_cluster, "02:00:00")
         elif batch_system_type == "sge":
             if native_specs == "###DEFAULT###":
                 native_specs = "-l mem={0},h_vmem={0} -pe parallel_smp {1}"
@@ -333,7 +355,7 @@ class JobManager:
                 jt.nativeSpecification = native_specs.format(8000, 1)
             elif step == "start":
                 jt.nativeSpecification = native_specs.format(
-                    self.config.cluster_memory // self.config.cluster_threads * 1000, self.config.cluster_threads)
+                    memory // self.tool.threads_cluster * 1000, self.tool.threads_cluster)
         jt.workingDirectory = self.output_dir
         jobid = s.runJob(jt)
         self.id_process = jobid
@@ -359,14 +381,24 @@ class JobManager:
 
     def __launch_drmaa(self, batch_system_type):
         if self.query is not None:
-            args = ["-t", self.config.nb_threads, self.target.get_path(), self.get_query_split()]
+            args = re.sub("{exe}\s?", "", self.tool.command_line).replace("{query}", self.get_query_split())
         else:
-            args = ["-t", self.config.nb_threads, "-X", self.target.get_path(), self.target.get_path()]
+            args = re.sub("{exe}\s?", "", self.tool.all_vs_all)
+        out_file = self.logs
+        if ">" in args:
+            out_file = self.paf_raw
+            args = args[:args.index(">")]
+        args.replace("{target}", self.target.get_path()) \
+            .replace("{threads}", str(self.tool.threads_cluster)) \
+            .replace("{out}", self.paf_raw)
+
+        args = args.split(" ")
+
         return self.launch_to_cluster(step="start",
                                       batch_system_type=batch_system_type,
-                                      command=self.config.minimap2_cluster_exec,
+                                      command=self.tool.exec,
                                       args=args,
-                                      log_out=self.paf_raw,
+                                      log_out=out_file,
                                       log_err=self.logs)
 
     def __getting_local_file(self, fasta: Fasta, type_f):
@@ -688,6 +720,8 @@ class JobManager:
             args += ["-q", self.query.get_path(),
                      "-u", self.get_query_split(),
                      "-n", self.query.get_name()]
+            if self.tool.split_before:
+                args.append("--split")
         return self.launch_to_cluster(step="prepare",
                                       batch_system_type=batch_system_type,
                                       command=self.config.cluster_python_exec,
@@ -709,15 +743,30 @@ class JobManager:
             error_tail = "Please check your input file and try again."
             if self.query is not None:
                 fasta_in = self.query.get_path()
-                splitter = Splitter(input_f=fasta_in, name_f=self.query.get_name(), output_f=self.get_query_split(),
-                                    query_index=self.query_index_split, debug=DEBUG)
-                if splitter.split():
+                if self.tool.split_before:
+                    split = True
+                    splitter = Splitter(input_f=fasta_in, name_f=self.query.get_name(), output_f=self.get_query_split(),
+                                        query_index=self.query_index_split, debug=DEBUG)
+                    success = splitter.split()
+                    nb_contigs = splitter.nb_contigs
+                    in_fasta = self.get_query_split()
+                else:
+                    split = False
+                    uncompressed = None
+                    if self.query.get_path().endswith(".gz"):
+                        uncompressed = self.query.get_path()[:-3]
+                    success, nb_contigs = index_file(self.query.get_path(), self.query.get_name(), self.idx_q,
+                                                     uncompressed)
+                    in_fasta = self.query.get_path()
+                    if uncompressed is not None:
+                        in_fasta = uncompressed
+                if success:
                     filtered_fasta = os.path.join(os.path.dirname(self.get_query_split()), "filtered_" +
                                                   os.path.basename(self.get_query_split()))
-                    filter_f = Filter(fasta=self.get_query_split(),
-                                      index_file=self.query_index_split,
+                    filter_f = Filter(fasta=in_fasta,
+                                      index_file=self.query_index_split if split else self.idx_q,
                                       type_f="query",
-                                      min_filtered=round(splitter.nb_contigs / 4),
+                                      min_filtered=round(nb_contigs / 4),
                                       split=True,
                                       out_fasta=filtered_fasta,
                                       replace_fa=True)
@@ -824,7 +873,7 @@ class JobManager:
                     job.save()
                 else:
                     self.set_status_standalone(status)
-                if self.query is not None:
+                if self.tool.split_before and self.query is not None:
                     start = time.time()
                     paf_raw = self.paf_raw + ".split"
                     os.remove(self.get_query_split())
@@ -837,9 +886,14 @@ class JobManager:
                     end = time.time()
                     if MODE == "webserver":
                         job.time_elapsed += end - start
-                else:
+                elif self.query is None:
                     shutil.copyfile(self.idx_t, self.idx_q)
                     Path(os.path.join(self.output_dir, ".all-vs-all")).touch()
+                if self.tool.parser is not None:
+                    paf_raw = self.paf_raw + ".parsed"
+                    dgenies.lib.parsers.__dict__.get(self.tool.parser)(self.paf_raw, paf_raw)
+                    os.remove(self.paf_raw)
+                    self.paf_raw = paf_raw
                 sorter = Sorter(self.paf_raw, self.paf)
                 sorter.sort()
                 os.remove(self.paf_raw)
@@ -933,7 +987,7 @@ class JobManager:
                     j11.delete_instance()
             if self.target is not None:
                 job = Job.create(id_job=self.id_job, email=self.email, batch_type=self.config.batch_system_type,
-                                 date_created=datetime.now())
+                                 date_created=datetime.now(), tool=self.tool.name)
                 job.save()
                 if not os.path.exists(self.output_dir):
                     os.mkdir(self.output_dir)
@@ -941,7 +995,7 @@ class JobManager:
                 thread.start()
             else:
                 job = Job.create(id_job=self.id_job, email=self.email, batch_type=self.config.batch_system_type,
-                                 date_created=datetime.now(), status="fail")
+                                 date_created=datetime.now(), tool=self.tool.name, status="fail")
                 job.save()
 
     def set_status_standalone(self, status, error=""):
