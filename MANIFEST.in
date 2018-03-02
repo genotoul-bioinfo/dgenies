@@ -13,7 +13,7 @@ recursive-include src *.ttf
 recursive-include src *.woff
 recursive-include src *.woff2
 recursive-include src *.md
-include src/dgenies/bin/minimap2
+include src/dgenies/bin/*
 include requirements.txt
 include LICENSE.txt
 include README.md
