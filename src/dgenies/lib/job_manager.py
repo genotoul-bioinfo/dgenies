@@ -872,6 +872,22 @@ class JobManager:
         if MODE == "webserver" and self.config.send_mail_status:
             self.send_mail_post()
 
+    def _save_analytics_data(self):
+        from dgenies.database import Analytics
+        with Job.connect():
+            job = Job.get(Job.id_job == self.id_job)
+            target_size = os.path.getsize(self.target.get_path())
+            query_size = None
+            if self.query is not None:
+                query_size = os.path.getsize(self.query.get_path())
+            log = Analytics.create(
+                date_created=datetime.now(),
+                target_size=target_size,
+                query_size=query_size,
+                mail_client=job.email,
+                batch_type=job.batch_type)
+            log.save()
+
     def _after_start(self, success, error_set):
         with Job.connect():
             if success:
@@ -880,6 +896,8 @@ class JobManager:
                     job = Job.get(Job.id_job == self.id_job)
                     job.status = status
                     job.save()
+                    if self.config.analytics_enabled:
+                        self._save_analytics_data()
                 else:
                     self.set_status_standalone("waiting")
                     self.prepare_data_in_thread()

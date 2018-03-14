@@ -124,7 +124,17 @@ if MODE == "webserver":
             self.save()
 
 
+    if config.analytics_enabled:
 
+        class Analytics(BaseModel):
+            data_created = DateTimeField()
+            target_length = IntegerField()
+            query_length = IntegerField(null=True)
+            mail_client = CharField()
+            batch_type = CharField(max_length=20)
+
+        if not Analytics.table_exists():
+            Analytics.create_table()
 
     if not Job.table_exists():
         Job.create_table()
