@@ -421,14 +421,3 @@ class AppConfigReader:
             return self.reader.get("analytics", "enable_logging_runs").lower() == "true"
         except (NoOptionError, NoSectionError):
             return False
-
-    def _get_analytics_log_file(self):
-        try:
-            log_file = self._replace_vars(self.reader.get("analytics", "logging_file"))
-            if (log_file == "" or not os.path.exists(os.path.dirname(log_file))) and self._get_analytics_enabled():
-                raise ValueError("Analytics log file not set or has not existing parent folder")
-            return log_file
-        except (NoOptionError, NoSectionError):
-            if self._get_analytics_enabled():
-                raise ValueError("Analytics log file not set")
-            return None
