@@ -127,9 +127,9 @@ if MODE == "webserver":
     if config.analytics_enabled:
 
         class Analytics(BaseModel):
-            data_created = DateTimeField()
-            target_length = IntegerField()
-            query_length = IntegerField(null=True)
+            date_created = DateTimeField()
+            target_size = IntegerField()
+            query_size = IntegerField(null=True)
             mail_client = CharField()
             batch_type = CharField(max_length=20)
 
