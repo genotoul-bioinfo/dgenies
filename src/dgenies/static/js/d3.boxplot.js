@@ -262,8 +262,6 @@ d3.boxplot.draw_left_axis = function (y_max, y_min = 0) {
         .attr("preserveAspectRatio", "none");
 
     let container_left = svg_left.append("g")
-        .attr("width", axis_length)
-        .attr("height", 20)
         .attr("transform", "translate(0," + axis_length + ")rotate(-90)");
 
     let y_size = y_max - y_min;
@@ -491,8 +489,6 @@ d3.boxplot.draw_right_axis = function (y_zones=d3.boxplot.y_zones) {
         .attr("preserveAspectRatio", "none");
 
     let container_right = svg_right.append("g")
-        .attr("width", axis_length)
-        .attr("height", 20)
         .attr("transform", "translate(20)rotate(90)");
 
     container_right.append("text")
