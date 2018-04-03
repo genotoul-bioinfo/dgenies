@@ -7,12 +7,13 @@ dgenies.run = {};
 dgenies.run.s_id = null;
 dgenies.run.allowed_ext = [];
 dgenies.run.max_upload_file_size = -1
-dgenies.run.files = [undefined, undefined];
+dgenies.run.files = [undefined, undefined, undefined, undefined, undefined];
 dgenies.run.allow_upload = false;
 dgenies.run.ping_interval = null;
 dgenies.run.target_example = "";
 dgenies.run.query_example = "";
 dgenies.run.tool_has_ava = {};
+dgenies.run.enabled = true;
 
 dgenies.run.init = function (s_id, allowed_ext, max_upload_file_size=1073741824, target_example="", query_example="",
                              tool_has_ava={}) {
@@ -30,6 +31,8 @@ dgenies.run.init = function (s_id, allowed_ext, max_upload_file_size=1073741824,
 dgenies.run.restore_form = function () {
     dgenies.run.change_fasta_type("query", $("select.query").find(":selected").text().toLowerCase(), true);
     dgenies.run.change_fasta_type("target", $("select.target").find(":selected").text().toLowerCase(), true);
+    dgenies.run.change_fasta_type("queryidx", $("select.query").find(":selected").text().toLowerCase(), true);
+    dgenies.run.change_fasta_type("targetidx", $("select.target").find(":selected").text().toLowerCase(), true);
 };
 
 dgenies.run.upload_next = function () {
@@ -55,6 +58,10 @@ dgenies.run.allowed_file = function (filename) {
     return filename.indexOf('.') !== -1 &&
         (dgenies.run.allowed_ext.indexOf(filename.rsplit('.', 1)[1].toLowerCase()) !== -1 ||
             dgenies.run.allowed_ext.indexOf(filename.rsplit('.', 2).splice(1).join(".").toLowerCase()) !== -1);
+};
+
+dgenies.run._init_fileupload = function(fasta) {
+    //TODO: factorise init_file_uploads
 };
 
 dgenies.run.init_fileuploads = function () {
@@ -220,9 +227,28 @@ dgenies.run.set_events = function() {
     $("select.target").change(function() {
         dgenies.run.change_fasta_type("target", $("select.target").find(":selected").text().toLowerCase())
     });
+    $("select.queryidx").change(function() {
+        dgenies.run.change_fasta_type("queryidx", $("select.queryidx").find(":selected").text().toLowerCase())
+    });
+    $("select.targetidx").change(function() {
+        dgenies.run.change_fasta_type("targetidx", $("select.targetidx").find(":selected").text().toLowerCase())
+    });
+    $("select.alignfile").change(function() {
+        dgenies.run.change_fasta_type("alignfile", $("select.alignfile").find(":selected").text().toLowerCase())
+    });
     $("button#example").click(function() {
         dgenies.run.fill_examples();
     });
+    $("#tabs .tab").click(function() {
+        dgenies.run.show_tab($(this).attr("id"));
+    })
+};
+
+dgenies.run.show_tab = function(tab) {
+    $(`#tabs #${tab}`).addClass("active");
+    $(`#tabs .tab:not(#${tab})`).removeClass("active");
+    $(`.tabx:not(${tab})`).hide();
+    $(`.tabx.${tab}`).show();
 };
 
 dgenies.run.change_fasta_type = function (fasta, type, keep_url=false) {
@@ -251,6 +277,7 @@ dgenies.run.set_filename = function (name, fasta) {
 };
 
 dgenies.run.disable_form = function () {
+    dgenies.run.enabled = false;
     $("input, select, button").prop("disabled", true);
 };
 
@@ -267,6 +294,7 @@ dgenies.run.enable_form = function () {
     dgenies.run.hide_success("target");
     dgenies.run.files = [undefined, undefined];
     dgenies.run.restore_form();
+    dgenies.run.enabled = true;
 };
 
 dgenies.run.do_submit = function () {
@@ -333,19 +361,43 @@ dgenies.run.valid_form = function () {
         }
     }
 
-    //Check input target:
-    if ($("input#target").val().length === 0) {
-        $("label.file-target").addClass("error");
-        dgenies.run.add_error("Target fasta is required!");
-        has_errors = true;
+    let tab = $("#tabs .tab.active").attr("id");
+
+    /* TAB 1 */
+    if (tab === "tab1") {
+        //Check input target:
+        if ($("input#target").val().length === 0) {
+            $("label.file-target").addClass("error");
+            dgenies.run.add_error("Target fasta is required!");
+            has_errors = true;
+        }
+
+        //Check input query:
+        let tool = $("input[name=tool]:checked").val();
+        if (!dgenies.run.tool_has_ava[tool] && $("input#query").val().length === 0) {
+            $("label.file-query").addClass("error");
+            dgenies.run.add_error("Query fasta is required!");
+            has_errors = true;
+        }
     }
 
-    //Check input query:
-    let tool = $("input[name=tool]:checked").val();
-    if (!dgenies.run.tool_has_ava[tool] && $("input#query").val().length === 0) {
-        $("label.file-query").addClass("error");
-        dgenies.run.add_error("Query fasta is required!");
-        has_errors = true;
+    /* TAB 2 */
+    else {
+        if ($("input#targetidx").val().length === 0) {
+            $("label.file-targetidx").addClass("error");
+            dgenies.run.add_error("Target file is required!");
+            has_errors = true;
+        }
+        if ($("input#queryidx").val().length === 0) {
+            $("label.file-queryidx").addClass("error");
+            dgenies.run.add_error("Query file is required!");
+            has_errors = true;
+        }
+        if ($("input#alignfile").val().length === 0) {
+            $("label.file-align").addClass("error");
+            dgenies.run.add_error("Alignment file is required!");
+            has_errors = true;
+        }
     }
 
     // Returns
@@ -413,7 +465,19 @@ dgenies.run.check_url = function (url) {
         url.startsWith("example://");
 };
 
+dgenies.run.reset_other_tab = function(tab) {
+    if (tab === "tab1") {
+        $("input#alignfile").val("");
+        dgenies.run.files[2] = undefined;
+        $("input#targetidx").val("");
+        dgenies.run.files[3] = undefined;
+        $("input#queryidx").val("");
+        dgenies.run.files[4] = undefined;
+    }
+};
+
 dgenies.run.start_uploads = function() {
+    let tab = $("#tabs .tab.active").attr("id");
     let query_type = parseInt($("select.query").val());
     let has_uploads = false;
     let query_val = $("input#query").val();

@@ -325,6 +325,42 @@ footer hr {
     margin-top: 0;
 }
 
+h4.header-form {
+    text-align: center;
+}
+
+#tabs {
+    border-bottom: 2px solid black;
+    margin-bottom: 10px;
+    margin-top: 15px;
+}
+
+#tabs .tab {
+    display: inline-block;
+    background-color: #c8c8c8;
+    padding: 5px 25px 5px 25px;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    cursor: pointer;
+}
+
+#tabs .tab.active {
+    background-color: #eeeeee;
+    font-weight: bold;
+}
+
+#tabs .tab:hover {
+    background-color: #f7f7f7;
+}
+
+div.buttons {
+    margin-top: 20px;
+}
+
+div.footnotes {
+    margin-top: 25px;
+}
+
 /* Notify.js */
 .notifyjs-corner {
     top: 50px !important;
@@ -546,6 +582,10 @@ div.progress, input.show-file {
 
 div.in-label {
     width: 300px;
+}
+
+div.in-label.grp2 {
+    width: 365px;
 }
 
 div.submit-form table input[type=text], div.submit-form table input[type=email] {
