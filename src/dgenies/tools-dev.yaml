@@ -9,13 +9,3 @@ minimap2:
   help: "Better for low similar fasta files"
   order: 0
 
-mashmap:
-  exec: default
-  command_line: "{exe} -t {threads} -r {target} -q {query} -o {out}"
-  all_vs_all: !!null
-  max_memory: 20
-  threads: 8
-  parser: mashmap2paf
-  split_before: False
-  help: "Faster for high similar fasta files"
-  order: 1
