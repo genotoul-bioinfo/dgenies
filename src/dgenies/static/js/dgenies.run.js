@@ -12,13 +12,16 @@ dgenies.run.allow_upload = false;
 dgenies.run.ping_interval = null;
 dgenies.run.target_example = "";
 dgenies.run.query_example = "";
+dgenies.run.tool_has_ava = {};
 
-dgenies.run.init = function (s_id, allowed_ext, max_upload_file_size=1073741824, target_example="", query_example="") {
+dgenies.run.init = function (s_id, allowed_ext, max_upload_file_size=1073741824, target_example="", query_example="",
+                             tool_has_ava={}) {
     dgenies.run.s_id = s_id;
     dgenies.run.allowed_ext = allowed_ext;
     dgenies.run.max_upload_file_size = max_upload_file_size;
     dgenies.run.target_example = target_example;
     dgenies.run.query_example = query_example;
+    dgenies.run.tool_has_ava = tool_has_ava;
     dgenies.run.restore_form();
     dgenies.run.set_events();
     dgenies.run.init_fileuploads();
@@ -276,7 +279,8 @@ dgenies.run.do_submit = function () {
             "query_type": $("select.query").find(":selected").text().toLowerCase(),
             "target": $("input#target").val(),
             "target_type": $("select.target").find(":selected").text().toLowerCase(),
-            "s_id": dgenies.run.s_id
+            "s_id": dgenies.run.s_id,
+            "tool": $("input[name=tool]:checked").val()
         },
         function (data, status) {
             if (data["success"]) {
@@ -333,6 +337,14 @@ dgenies.run.valid_form = function () {
     if ($("input#target").val().length === 0) {
         $("label.file-target").addClass("error");
         dgenies.run.add_error("Target fasta is required!");
+        has_errors = true;
+    }
+
+    //Check input query:
+    let tool = $("input[name=tool]:checked").val();
+    if (!dgenies.run.tool_has_ava[tool] && $("input#query").val().length === 0) {
+        $("label.file-query").addClass("error");
+        dgenies.run.add_error("Query fasta is required!");
         has_errors = true;
     }
 

@@ -32,9 +32,12 @@ class AppConfigReader:
         for my_config_file in config_file_search:
             if os.path.exists(my_config_file):
                 config_file.append(my_config_file)
+
+        config_file.append(os.path.join(self.app_dir, "application-dev.properties"))
+        config_file.append(os.path.join(self.app_dir, "application-dev.properties.local"))
+
         if len(config_file) == 0:
-            raise FileNotFoundError("ERROR: application.properties not found. Please copy the example file and "
-                                    "check properties are correct for you!")
+            raise FileNotFoundError("ERROR: application.properties not found.")
         self.reader = RawConfigParser()
         self.reader.read(config_file)
         for attr in dir(self):
@@ -79,12 +82,6 @@ class AppConfigReader:
             return self.reader.get("global", "batch_system_type")
         except NoOptionError:
             return "local"
-
-    def _get_nb_threads(self):
-        try:
-            return self.reader.get("global", "threads_local")
-        except NoOptionError:
-            return "4"
 
     def _get_web_url(self):
         try:
@@ -139,20 +136,6 @@ class AppConfigReader:
             return max_size
         except NoOptionError:
             return 1024 * 1024 * 1024
-
-    def _get_minimap2_exec(self):
-        try:
-            entry = self.reader.get("softwares", "minimap2")
-            return entry if entry != "###DEFAULT###" else os.path.join(self.app_dir, "bin", "minimap2")
-        except NoOptionError:
-            return os.path.join(self.app_dir, "bin", "minimap2")
-
-    def _get_minimap2_cluster_exec(self):
-        try:
-            entry = self.reader.get("softwares", "minimap2_cluster")
-            return entry if entry != "###DEFAULT###" else "minimap2"
-        except NoOptionError:
-            return self._get_minimap2_exec()
 
     def _get_database_type(self):
         try:
@@ -356,8 +339,6 @@ class AppConfigReader:
     def _get_cluster_memory(self):
         try:
             memory = int(self.reader.get("cluster", "memory"))
-            if memory % self._get_cluster_threads() != 0:
-                raise ValueError("ERROR in config: cluster memory must be divisible by the number of cluster threads!")
             return memory
         except (NoOptionError, NoSectionError):
             return 32
@@ -365,17 +346,9 @@ class AppConfigReader:
     def _get_cluster_memory_ava(self):
         try:
             memory = int(self.reader.get("cluster", "memory_ava"))
-            if memory % self._get_cluster_threads() != 0:
-                raise ValueError("ERROR in config: cluster memory must be divisible by the number of cluster threads!")
             return memory
         except (NoOptionError, NoSectionError):
             return self._get_cluster_memory()
-
-    def _get_cluster_threads(self):
-        try:
-            return int(self.reader.get("cluster", "threads"))
-        except (NoOptionError, NoSectionError):
-            return 4
 
     def _get_debug(self):
         try:

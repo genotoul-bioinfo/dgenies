@@ -16,7 +16,8 @@
 {% endblock %}
 {% block onload %}
     {{ super() }}
-    dgenies.run.init('{{ s_id }}',{{ allowed_ext }}, {{ max_upload_file_size }}, '{{ target }}', '{{ query }}');
+    dgenies.run.init('{{ s_id }}',{{ allowed_ext }}, {{ max_upload_file_size }}, '{{ target }}', '{{ query }}',
+    {{ tools_ava }});
 {% endblock %}
 {% block content %}
     <form id="submit_minimap" method=post action="#">
@@ -105,6 +106,26 @@
                                     <div class="file-size query"></div>
                                 </td>
                             </tr>
+                            {% if tools | length > 1 %}
+                                <tr>
+                                    <td>
+                                        <label class="tools">Aligner</label>
+                                    </td>
+                                    <td>
+                                    {% for tool in tools_names %}
+                                        <label style="vertical-align: bottom; line-height: 35px;" class="radio-inline">
+                                            <input type="radio" id="tool-{{ tool }}" name="tool" value="{{ tool }}"
+                                        {% if loop.index0 == 0 %}checked{% endif %} style="vertical-align: top;"/>
+                                        {{ tool | capitalize }}
+                                            <span class="glyphicon glyphicon-question-sign" style="color: #2aabd2"
+                                                  title="{{ tools[tool].help }}"></span></label>
+                                    {% endfor %}
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <input type="radio" name="tool" id="tool" value="{{ tools[0] }}" style="display: none;"
+                                       checked/>
+                            {% endif %}
                         </tbody>
                     </table>
                 </div>

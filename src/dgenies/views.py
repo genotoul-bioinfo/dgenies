@@ -13,6 +13,7 @@ from dgenies.lib.job_manager import JobManager
 from dgenies.lib.functions import Functions, ALLOWED_EXTENSIONS
 from dgenies.lib.upload_file import UploadFile
 from dgenies.lib.fasta import Fasta
+from dgenies.tools import Tools
 from markdown import Markdown
 from markdown.extensions.toc import TocExtension
 if MODE == "webserver":
@@ -46,6 +47,11 @@ def main():
 
 @app.route("/run", methods=['GET'])
 def run():
+    tools = Tools().tools
+    tools_names = sorted(list(tools.keys()), key=lambda x: (tools[x].order, tools[x].name))
+    tools_ava = {}
+    for tool_name, tool in tools.items():
+        tools_ava[tool_name] = 1 if tool.all_vs_all is not None else 0
     if MODE == "webserver":
         with Session.connect():
             s_id = Session.new()
@@ -68,7 +74,8 @@ def run():
                            max_upload_file_size=config_reader.max_upload_file_size,
                            example=config_reader.example_target != "",
                            target=os.path.basename(config_reader.example_target),
-                           query=os.path.basename(config_reader.example_query))
+                           query=os.path.basename(config_reader.example_query), tools_names=tools_names, tools=tools,
+                           tools_ava=tools_ava)
 
 
 @app.route("/run-test", methods=['GET'])
@@ -103,10 +110,15 @@ def launch_analysis():
     file_query_type = request.form["query_type"]
     file_target = request.form["target"]
     file_target_type = request.form["target_type"]
+    tool = request.form["tool"]
 
     # Check form:
     form_pass = True
     errors = []
+
+    if tool not in Tools().tools:
+        errors.append("Tool unavailable: %s" % tool)
+
     if id_job == "":
         errors.append("Id of job not given")
         form_pass = False
@@ -169,7 +181,7 @@ def launch_analysis():
 
         if form_pass:
             # Launch job:
-            job = JobManager(id_job, email, query, target, mailer)
+            job = JobManager(id_job, email, query, target, mailer, tool)
             if MODE == "webserver":
                 job.launch()
             else:
