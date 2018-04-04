@@ -139,8 +139,14 @@
                                     </td>
                                 </tr>
                             {% else %}
-                                <input type="radio" name="tool" id="tool" value="{{ tools[0] }}" style="display: none;"
-                                       checked/>
+                                <tr class="tabx tab1">
+                                <td colspan="2">
+                                    {% for tool in tools_names %}
+                                        <input type="radio" name="tool" id="tool" value="{{ tool }}" style="display: none;"
+                                         checked/>
+                                    {% endfor %}
+                                </td>
+                                </tr>
                             {% endif %}
 
                             {# Tab 2 #}
@@ -253,6 +259,9 @@
         <div class="hidden-input-files">
             <input type="file" name="file-query" class="file-query" data-url="/upload" title=""/>
             <input type="file" name="file-target" class="file-target" data-url="/upload"/>
+            <input type="file" name="file-alignfile" class="file-alignfile" data-url="/upload"/>
+            <input type="file" name="file-targetidx" class="file-targetidx" data-url="/upload"/>
+            <input type="file" name="file-queryidx" class="file-queryidx" data-url="/upload"/>
         </div>
     </form>
 {% endblock %}

@@ -11,7 +11,9 @@ from Bio import SeqIO
 from jinja2 import Template
 from dgenies.config_reader import AppConfigReader
 
-ALLOWED_EXTENSIONS = ['fa', 'fasta', 'fna', 'fa.gz', 'fasta.gz', 'fna.gz']
+ALLOWED_EXTENSIONS = {"fasta": ['fa', 'fasta', 'fna', 'fa.gz', 'fasta.gz', 'fna.gz'],
+                      "idx": ['idx'],
+                      "map": ['paf', 'maf']}
 
 
 class Functions:
@@ -19,10 +21,13 @@ class Functions:
     config = AppConfigReader()
 
     @staticmethod
-    def allowed_file(filename):
-        return '.' in filename and \
-               (filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS or ".".join(filename.rsplit('.', 2)[1:]).lower()
-                in ALLOWED_EXTENSIONS)
+    def allowed_file(filename, file_formats=("fasta",)):
+        for file_format in file_formats:
+            if '.' in filename and \
+                   (filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS[file_format]
+                    or ".".join(filename.rsplit('.', 2)[1:]).lower() in ALLOWED_EXTENSIONS[file_format]):
+                return True
+        return False
 
     @staticmethod
     def random_string(s_len):

@@ -6,6 +6,7 @@ import datetime
 import shutil
 import re
 import threading
+import traceback
 from flask import render_template, request, url_for, jsonify, Response, abort, send_file, Markup
 from pathlib import Path
 from dgenies.lib.paf import Paf
@@ -684,7 +685,7 @@ def upload():
             filename = Functions.get_valid_uploaded_filename(filename, folder_files)
             mime_type = files.content_type
 
-            if not Functions.allowed_file(files.filename):
+            if not Functions.allowed_file(files.filename, request.form['formats'].split(",")):
                 result = UploadFile(name=filename, type_f=mime_type, size=0, not_allowed_msg="File type not allowed")
                 shutil.rmtree(folder_files)
 
@@ -703,6 +704,7 @@ def upload():
 
         return jsonify({"files": [], "success": "404", "message": "No file provided"})
     except:  # Except all possible exceptions to prevent crashes
+        traceback.print_exc()
         return jsonify({"files": [], "success": "ERR", "message": "An unexpected error has occurred on upload. "
                                                                   "Please contact the support."})
 
