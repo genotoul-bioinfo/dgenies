@@ -378,11 +378,6 @@ dgenies.run.valid_form = function () {
             dgenies.run.add_error("Target file is required!");
             has_errors = true;
         }
-        if ($("input#queryidx").val().length === 0) {
-            $("label.file-queryidx").addClass("error");
-            dgenies.run.add_error("Query file is required!");
-            has_errors = true;
-        }
         if ($("input#alignfile").val().length === 0) {
             $("label.file-align").addClass("error");
             dgenies.run.add_error("Alignment file is required!");
