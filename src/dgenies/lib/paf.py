@@ -113,6 +113,12 @@ class Paf:
                     keep_lines[cls].append(line)
         return keep_lines
 
+    def keyerror_message(self, exception: KeyError, type_f):
+        message = "Invalid contig for %s: %s" % (type_f, exception.args[0])
+        if os.path.exists(os.path.join(self.data_dir, ".align")):
+            message += ". May be you invert query and target files?"
+        return message
+
     def parse_paf(self, merge_index=True, noise=True):
         min_idy = 10000000000
         max_idy = -10000000000
@@ -158,10 +164,18 @@ class Paf:
                     min_idy = min(min_idy, idy)
                     max_idy = max(max_idy, idy)
                     # x1, x2, y1, y2, idy
-                    y1 = int(parts[2]) + q_abs_start[v1]
-                    y2 = int(parts[3]) + q_abs_start[v1]
-                    x1 = int(parts[7 if strand == 1 else 8]) + t_abs_start[v6]
-                    x2 = int(parts[8 if strand == 1 else 7]) + t_abs_start[v6]
+                    try:
+                        y1 = int(parts[2]) + q_abs_start[v1]
+                        y2 = int(parts[3]) + q_abs_start[v1]
+                    except KeyError as e:
+                        self.error = self.keyerror_message(e, "query")
+                        return False
+                    try:
+                        x1 = int(parts[7 if strand == 1 else 8]) + t_abs_start[v6]
+                        x2 = int(parts[8 if strand == 1 else 7]) + t_abs_start[v6]
+                    except KeyError as e:
+                        self.error = self.keyerror_message(e, "target")
+                        return False
                     len_m = sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2))
                     lines_lens.append(len_m)
                     if idy < self.limit_idy[0]:

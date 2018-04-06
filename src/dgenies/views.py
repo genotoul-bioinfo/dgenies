@@ -111,14 +111,21 @@ def launch_analysis():
     file_query_type = request.form["query_type"]
     file_target = request.form["target"]
     file_target_type = request.form["target_type"]
-    tool = request.form["tool"]
+    tool = request.form["tool"] if "tool" in request.form else None
+    alignfile = request.form["alignfile"] if "alignfile" in request.form else None
+    alignfile_type = request.form["alignfile_type"] if "alignfile_type" in request.form else None
 
     # Check form:
     form_pass = True
     errors = []
 
-    if tool not in Tools().tools:
+    if alignfile is not None and alignfile_type is None:
+        errors.append("Server error: no alignfile_type in form. Please contact the support")
+        form_pass = False
+
+    if tool is not None and tool not in Tools().tools:
         errors.append("Tool unavailable: %s" % tool)
+        form_pass = False
 
     if id_job == "":
         errors.append("Id of job not given")
@@ -180,9 +187,26 @@ def launch_analysis():
                 form_pass = False
         target = Fasta(name=target_name, path=target_path, type_f=file_target_type, example=example)
 
+        align = None
+        if alignfile is not None:
+            Path(os.path.join(folder_files, ".align")).touch()
+            alignfile_name = os.path.splitext(alignfile)[0] if alignfile_type == "local" else None
+            alignfile_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder, alignfile) \
+                if alignfile_type == "local" else alignfile
+            if alignfile_type == "local" and not os.path.exists(alignfile_path):
+                errors.append("Alignment file not correct!")
+                form_pass = False
+            align = Fasta(name=alignfile_name, path=alignfile_path, type_f=alignfile_type)
+
         if form_pass:
             # Launch job:
-            job = JobManager(id_job, email, query, target, mailer, tool)
+            job = JobManager(id_job=id_job,
+                             email=email,
+                             query=query,
+                             target=target,
+                             align=align,
+                             mailer=mailer,
+                             tool=tool)
             if MODE == "webserver":
                 job.launch()
             else:
@@ -220,15 +244,17 @@ def status(id_job):
     return render_template("status.html", status=j_status["status"],
                            error=j_status["error"].replace("#ID#", ""),
                            id_job=id_job, menu="results", mem_peak=mem_peak,
-                           time_elapsed=time_e,
+                           time_elapsed=time_e, do_align=job.do_align(),
                            query_filtered=job.is_query_filtered(), target_filtered=job.is_target_filtered())
 
 
 # Results path
 @app.route("/result/<id_res>", methods=['GET'])
 def result(id_res):
+    res_dir = os.path.join(APP_DATA, id_res)
     return render_template("result.html", id=id_res, menu="result", current_result=id_res,
-                           is_gallery=Functions.is_in_gallery(id_res, MODE))
+                           is_gallery=Functions.is_in_gallery(id_res, MODE),
+                           fasta_file=Functions.query_fasta_file_exists(res_dir))
 
 
 @app.route("/gallery", methods=['GET'])

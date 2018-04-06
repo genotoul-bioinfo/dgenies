@@ -9,7 +9,8 @@ import threading
 import re
 from dgenies.config_reader import AppConfigReader
 from dgenies.tools import Tools
-import dgenies.lib.parsers
+import dgenies.lib.validators as validators
+import dgenies.lib.parsers as parsers
 from .fasta import Fasta
 from .functions import Functions
 import requests
@@ -39,17 +40,20 @@ if MODE == "webserver":
 class JobManager:
 
     def __init__(self, id_job: str, email: str=None, query: Fasta=None, target: Fasta=None, mailer=None,
-                 tool="minimap2"):
+                 tool="minimap2", align: Fasta=None):
         self.id_job = id_job
         self.email = email
         self.query = query
         self.target = target
+        self.align = align
+        if align is not None:
+            self.aln_format = os.path.splitext(align.get_path())[1][1:]
         self.error = ""
         self.id_process = "-1"
         # Get configs:
         self.config = AppConfigReader()
         self.tools = Tools().tools
-        self.tool = self.tools[tool]
+        self.tool = self.tools[tool] if tool is not None else None
         # Outputs:
         self.output_dir = os.path.join(self.config.app_data, id_job)
         self.preptime_file = os.path.join(self.output_dir, "prep_times")
@@ -61,6 +65,12 @@ class JobManager:
         self.logs = os.path.join(self.output_dir, "logs.txt")
         self.mailer = mailer
         self._filename_for_url = {}
+
+    def do_align(self):
+        """
+        :return: True if the job is launched with an alignment file
+        """
+        return not os.path.exists(os.path.join(self.output_dir, ".align"))
 
     @staticmethod
     def is_gz_file(filepath):
@@ -527,6 +537,15 @@ class JobManager:
         else:
             return 0
 
+    def set_job_status(self, status, error=""):
+        if MODE == "webserver":
+            job = Job.get(Job.id_job == self.id_job)
+            job.status = status
+            job.error = error
+            job.save()
+        else:
+            self.set_status_standalone(status, error)
+
     def check_file(self, input_type, should_be_local, max_upload_size_readable):
         """
 
@@ -541,34 +560,31 @@ class JobManager:
             my_input = getattr(self, input_type)
             if my_input.get_path().endswith(".gz") and not self.is_gz_file(my_input.get_path()):
                 # Check file is correctly gzipped
-                status = "fail"
-                error = input_type + " file is not a correct gzip file"
-                if MODE == "webserver":
-                    job = Job.get(Job.id_job == self.id_job)
-                    job.status = status
-                    job.error = error
-                    job.save()
-                else:
-                    self.set_status_standalone(status, error)
+                self.set_job_status("fail", input_type + " file is not a correct gzip file")
                 self.clear()
                 return False, True, None
             # Check size:
             file_size = self.get_file_size(my_input.get_path())
             if -1 < (self.config.max_upload_size if (input_type == "query" or self.query is not None)
                      else self.config.max_upload_size_ava) < file_size:
-                status = "fail"
-                error = input_type + " file exceed size limit of %d Mb (uncompressed)" % max_upload_size_readable
-                if MODE == "webserver":
-                    job = Job.get(Job.id_job == self.id_job)
-                    job.status = status
-                    job.error = error
-                    job.save()
-                else:
-                    self.set_status_standalone(status, error)
+                self.set_job_status("fail",
+                                    input_type +
+                                    " file exceed size limit of %d Mb (uncompressed)" % max_upload_size_readable)
                 self.clear()
                 return False, True, None
-            if self.config.batch_system_type != "local" and file_size >= getattr(self.config, "min_%s_size" % input_type):
-                should_be_local = False
+
+            if input_type == "align":
+                if not hasattr(validators, self.aln_format):
+                    self.set_job_status("fail", "Alignment file format not supported")
+                    return False, True, None
+                if not getattr(validators, self.aln_format)(self.align.get_path()):
+                    self.set_job_status("fail", "Alignment file is invalid. Please check your file.")
+                    return False, True, None
+            else:
+                if self.config.batch_system_type != "local" and file_size >= getattr(self.config,
+                                                                                     "min_%s_size" % input_type):
+                    should_be_local = False
+
         return True, False, should_be_local
 
     def download_files_with_pending(self, files_to_download, should_be_local, max_upload_size_readable):
@@ -660,18 +676,24 @@ class JobManager:
                     files_to_download.append([self.query, "query"])
                 else:
                     return False, True, True
-            if correct:
-                if self.target is not None:
-                    if self.target.get_type() == "local":
-                        self.target.set_path(self.__getting_local_file(self.target, "target"))
-                        correct, error_set, should_be_local = self.check_file("target", should_be_local,
-                                                                              max_upload_size_readable)
-                        if not correct:
-                            return False, error_set, True
-                    elif self.__check_url(self.target):
-                        files_to_download.append([self.target, "target"])
-                    else:
-                        return False, True, True
+            if correct and self.target is not None:
+                if self.target.get_type() == "local":
+                    self.target.set_path(self.__getting_local_file(self.target, "target"))
+                    correct, error_set, should_be_local = self.check_file("target", should_be_local,
+                                                                          max_upload_size_readable)
+                    if not correct:
+                        return False, error_set, True
+                elif self.__check_url(self.target):
+                    files_to_download.append([self.target, "target"])
+                else:
+                    return False, True, True
+            if correct and self.align is not None:
+                if self.align.get_type() == "local":
+                    final_path = os.path.join(self.output_dir, "in_" + os.path.basename(self.align.get_path()))
+                    shutil.move(self.align.get_path(), final_path)
+                    self.align.set_path(final_path)
+                    correct, error_set, should_be_local = self.check_file("align", should_be_local,
+                                                                          max_upload_size_readable)
 
             all_downloaded = True
             if correct :
@@ -731,14 +753,7 @@ class JobManager:
 
     def prepare_data_local(self):
         with open(self.preptime_file, "w") as ptime, Job.connect():
-            status = "preparing"
-            if MODE == "webserver":
-                job = Job.get(Job.id_job == self.id_job)
-                job.status = status
-                job.save()
-            else:
-                job = None
-                self.set_status_standalone(status)
+            self.set_job_status("preparing")
             ptime.write(str(round(time.time())) + "\n")
             error_tail = "Please check your input file and try again."
             if self.query is not None:
@@ -772,14 +787,7 @@ class JobManager:
                                       replace_fa=True)
                     filter_f.filter()
                 else:
-                    status = "fail"
-                    error = "<br/>".join(["Query fasta file is not valid!", error_tail])
-                    if MODE == "webserver":
-                        job.status = status
-                        job.error = error
-                        job.save()
-                    else:
-                        self.set_status_standalone(status, error)
+                    self.set_job_status("fail", "<br/>".join(["Query fasta file is not valid!", error_tail]))
                     if self.config.send_mail_status:
                         self.send_mail_post()
                     return False
@@ -814,36 +822,87 @@ class JobManager:
                         os.remove(uncompressed)
                     except FileNotFoundError:
                         pass
-                status = "fail"
-                error = "<br/>".join(["Target fasta file is not valid!", error_tail])
-                if MODE == "webserver":
-                    job.status = status
-                    job.error = error
-                    job.save()
-                else:
-                    self.set_status_standalone(status, error)
+                self.set_job_status("fail", "<br/>".join(["Target fasta file is not valid!", error_tail]))
                 if self.config.send_mail_status:
                     self.send_mail_post()
                 return False
             ptime.write(str(round(time.time())) + "\n")
-            status = "prepared"
-            if MODE == "webserver":
-                job.status = status
-                job.save()
+            self.set_job_status("prepared")
+            self.run_job("local")
+
+    def prepare_dotplot_local(self):
+        """
+        Prepare data if alignment already done: just index the fasta (if index not given), then parse the alignment
+        file and sort it.
+        """
+        self.set_job_status("preparing")
+        # Prepare target index:
+        target_format = os.path.splitext(self.target.get_path())[1][1:]
+        if target_format == "idx":
+            shutil.move(self.target.get_path(), self.idx_t)
+            os.remove(os.path.join(self.output_dir, ".target"))
+        else:
+            index_file(self.target.get_path(), self.target.get_name(), self.idx_t)
+
+        # Prepare query index:
+        if self.query is not None:
+            query_format = os.path.splitext(self.query.get_path())[1][1:]
+            if query_format == "idx":
+                shutil.move(self.query.get_path(), self.idx_q)
+                os.remove(os.path.join(self.output_dir, ".query"))
             else:
-                self.set_status_standalone(status)
-                self.run_job("local")
+                index_file(self.query.get_path(), self.query.get_name(), self.idx_q)
+        else:
+            shutil.copy(self.idx_t, self.idx_q)
+
+        # Parse alignment file:
+        if hasattr(parsers, self.aln_format):
+            getattr(parsers, self.aln_format)(self.align.get_path(), self.paf_raw)
+            os.remove(self.align.get_path())
+        elif self.aln_format == "paf":
+            shutil.move(self.align.get_path(), self.paf_raw)
+        else:
+            self.set_job_status("fail", "No parser found for format %s. Please contact the support." % self.aln_format)
+            return False
+
+        self.set_job_status("started")
+
+        # Sort paf lines:
+        sorter = Sorter(self.paf_raw, self.paf)
+        sorter.sort()
+        os.remove(self.paf_raw)
+        if self.target is not None and os.path.exists(self.target.get_path()):
+            os.remove(self.target.get_path())
+
+        self.align.set_path(self.paf)
+
+        self.set_job_status("success")
+
+        if MODE == "webserver" and self.config.send_mail_status:
+            self.send_mail_post()
 
     def prepare_data(self):
-        if MODE == "webserver":
-            with Job.connect():
-                job = Job.get(Job.id_job == self.id_job)
-                if job.batch_type == "local":
-                    self.prepare_data_local()
-                else:
-                    self.prepare_data_cluster(job.batch_type)
+        if self.align is None:
+            if MODE == "webserver":
+                with Job.connect():
+                    job = Job.get(Job.id_job == self.id_job)
+                    if job.batch_type == "local":
+                        self.prepare_data_local()
+                    else:
+                        self.prepare_data_cluster(job.batch_type)
+            else:
+                self.prepare_data_local()
         else:
-            self.prepare_data_local()
+            if MODE == "webserver":
+                with Job.connect():
+                    job = Job.get(Job.id_job == self.id_job)
+                    if job.batch_type == "local":
+                        self.prepare_dotplot_local()
+                    else:
+                        print("NOT IMPLEMENTED!")
+                        # self.prepare_data_cluster(job.batch_type)
+            else:
+                self.prepare_dotplot_local()
 
     def run_job(self, batch_system_type):
         success = False
@@ -891,7 +950,7 @@ class JobManager:
                     Path(os.path.join(self.output_dir, ".all-vs-all")).touch()
                 if self.tool.parser is not None:
                     paf_raw = self.paf_raw + ".parsed"
-                    dgenies.lib.parsers.__dict__.get(self.tool.parser)(self.paf_raw, paf_raw)
+                    getattr(parsers, self.tool.parser)(self.paf_raw, paf_raw)
                     os.remove(self.paf_raw)
                     self.paf_raw = paf_raw
                 sorter = Sorter(self.paf_raw, self.paf)
