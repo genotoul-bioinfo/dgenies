@@ -830,31 +830,7 @@ class JobManager:
             self.set_job_status("prepared")
             self.run_job("local")
 
-    def prepare_dotplot_local(self):
-        """
-        Prepare data if alignment already done: just index the fasta (if index not given), then parse the alignment
-        file and sort it.
-        """
-        self.set_job_status("preparing")
-        # Prepare target index:
-        target_format = os.path.splitext(self.target.get_path())[1][1:]
-        if target_format == "idx":
-            shutil.move(self.target.get_path(), self.idx_t)
-            os.remove(os.path.join(self.output_dir, ".target"))
-        else:
-            index_file(self.target.get_path(), self.target.get_name(), self.idx_t)
-
-        # Prepare query index:
-        if self.query is not None:
-            query_format = os.path.splitext(self.query.get_path())[1][1:]
-            if query_format == "idx":
-                shutil.move(self.query.get_path(), self.idx_q)
-                os.remove(os.path.join(self.output_dir, ".query"))
-            else:
-                index_file(self.query.get_path(), self.query.get_name(), self.idx_q)
-        else:
-            shutil.copy(self.idx_t, self.idx_q)
-
+    def _end_of_prepare_dotplot(self):
         # Parse alignment file:
         if hasattr(parsers, self.aln_format):
             getattr(parsers, self.aln_format)(self.align.get_path(), self.paf_raw)
@@ -881,6 +857,78 @@ class JobManager:
         if MODE == "webserver" and self.config.send_mail_status:
             self.send_mail_post()
 
+    def prepare_dotplot_cluster(self, batch_system_type):
+        """
+        Prepare data if alignment already done: just index the fasta (if index not given), then parse the alignment
+        :param batch_system_type: type of cluster
+        """
+
+        args = [self.config.cluster_prepare_script,
+                "-p", self.preptime_file, "--index-only"]
+
+        has_index = False
+
+        target_format = os.path.splitext(self.target.get_path())[1][1:]
+        if target_format == "idx":
+            shutil.move(self.target.get_path(), self.idx_t)
+            os.remove(os.path.join(self.output_dir, ".target"))
+        else:
+            has_index = True
+            args += ["-t", self.target.get_path(),
+                     "-m", self.target.get_name()]
+        if self.query is not None:
+            query_format = os.path.splitext(self.query.get_path())[1][1:]
+            if query_format == "idx":
+                shutil.move(self.query.get_path(), self.idx_q)
+                os.remove(os.path.join(self.output_dir, ".query"))
+            else:
+                has_index = True
+                args += ["-q", self.query.get_path(),
+                         "-n", self.query.get_name()]
+
+        success = True
+        if has_index:
+            success = self.launch_to_cluster(step="prepare",
+                                             batch_system_type=batch_system_type,
+                                             command=self.config.cluster_python_exec,
+                                             args=args,
+                                             log_out=self.logs,
+                                             log_err=self.logs)
+
+        if success:
+            if self.query is None:
+                shutil.copy(self.idx_t, self.idx_q)
+            self._end_of_prepare_dotplot()
+        elif MODE == "webserver" and self.config.send_mail_status:
+            self.send_mail_post()
+
+    def prepare_dotplot_local(self):
+        """
+        Prepare data if alignment already done: just index the fasta (if index not given), then parse the alignment
+        file and sort it.
+        """
+        self.set_job_status("preparing")
+        # Prepare target index:
+        target_format = os.path.splitext(self.target.get_path())[1][1:]
+        if target_format == "idx":
+            shutil.move(self.target.get_path(), self.idx_t)
+            os.remove(os.path.join(self.output_dir, ".target"))
+        else:
+            index_file(self.target.get_path(), self.target.get_name(), self.idx_t)
+
+        # Prepare query index:
+        if self.query is not None:
+            query_format = os.path.splitext(self.query.get_path())[1][1:]
+            if query_format == "idx":
+                shutil.move(self.query.get_path(), self.idx_q)
+                os.remove(os.path.join(self.output_dir, ".query"))
+            else:
+                index_file(self.query.get_path(), self.query.get_name(), self.idx_q)
+        else:
+            shutil.copy(self.idx_t, self.idx_q)
+
+        self._end_of_prepare_dotplot()
+
     def prepare_data(self):
         if self.align is None:
             if MODE == "webserver":
@@ -899,8 +947,7 @@ class JobManager:
                     if job.batch_type == "local":
                         self.prepare_dotplot_local()
                     else:
-                        print("NOT IMPLEMENTED!")
-                        # self.prepare_data_cluster(job.batch_type)
+                        self.prepare_dotplot_cluster(job.batch_type)
             else:
                 self.prepare_dotplot_local()
 
