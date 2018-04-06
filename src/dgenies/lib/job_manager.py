@@ -1119,7 +1119,7 @@ class JobManager:
                     j11.delete_instance()
             if self.target is not None:
                 job = Job.create(id_job=self.id_job, email=self.email, batch_type=self.config.batch_system_type,
-                                 date_created=datetime.now(), tool=self.tool.name)
+                                 date_created=datetime.now(), tool=self.tool.name if self.tool is not None else None)
                 job.save()
                 if not os.path.exists(self.output_dir):
                     os.mkdir(self.output_dir)
@@ -1127,7 +1127,8 @@ class JobManager:
                 thread.start()
             else:
                 job = Job.create(id_job=self.id_job, email=self.email, batch_type=self.config.batch_system_type,
-                                 date_created=datetime.now(), tool=self.tool.name, status="fail")
+                                 date_created=datetime.now(), tool=self.tool.name if self.tool is not None else None,
+                                 status="fail")
                 job.save()
 
     def set_status_standalone(self, status, error=""):
