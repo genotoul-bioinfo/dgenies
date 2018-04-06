@@ -112,6 +112,16 @@ class JobManager:
                     path=file_path,
                     type_f="local"
                 )
+        align_file = os.path.join(res_dir, ".align")
+        if os.path.exists(align_file):
+            with open(align_file) as a_f:
+                file_path = a_f.readline()
+                self.align = Fasta(
+                    name="map",
+                    path=file_path,
+                    type_f="local"
+                )
+                self.aln_format = os.path.splitext(file_path)[1][1:]
 
     def check_job_success(self):
         if os.path.exists(self.paf_raw):
@@ -689,9 +699,7 @@ class JobManager:
                     return False, True, True
             if correct and self.align is not None:
                 if self.align.get_type() == "local":
-                    final_path = os.path.join(self.output_dir, "in_" + os.path.basename(self.align.get_path()))
-                    shutil.move(self.align.get_path(), final_path)
-                    self.align.set_path(final_path)
+                    self.align.set_path(self.__getting_local_file(self.align, "align"))
                     correct, error_set, should_be_local = self.check_file("align", should_be_local,
                                                                           max_upload_size_readable)
 
