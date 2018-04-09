@@ -356,22 +356,25 @@ class JobManager:
             jt.outputPath = ":" + log_out
             jt.errorPath = ":" + log_err
 
-        memory = self.config.cluster_memory
-        if self.query is None:
-            memory = self.config.cluster_memory_ava
-            if memory > 32:
-                name, order, contigs, reversed_c, abs_start, c_len = Index.load(self.idx_t, False)
-                if c_len <= 500000000:
-                    memory = 32
-        if memory > self.tool.max_memory:
-            memory = self.tool.max_memory
+        if step == "start":
+            memory = self.config.cluster_memory
+            if self.query is None:
+                memory = self.config.cluster_memory_ava
+                if memory > 32:
+                    name, order, contigs, reversed_c, abs_start, c_len = Index.load(self.idx_t, False)
+                    if c_len <= 500000000:
+                        memory = 32
+            if memory > self.tool.max_memory:
+                memory = self.tool.max_memory
+        else:
+            memory = 8000
 
         native_specs = self.config.drmaa_native_specs
         if batch_system_type == "slurm":
             if native_specs == "###DEFAULT###":
                 native_specs = "--mem-per-cpu={0} --ntasks={1} --time={2}"
             if step == "prepare":
-                jt.nativeSpecification = native_specs.format(8000, 1, "02:00:00")
+                jt.nativeSpecification = native_specs.format(memory, 1, "02:00:00")
             elif step == "start":
                 jt.nativeSpecification = native_specs.format(memory // self.tool.threads_cluster * 1000,
                                                              self.tool.threads_cluster, "02:00:00")
