@@ -121,7 +121,7 @@ def run(mode="standalone", debug=False, host="127.0.0.1", port=5000, no_crons=Fa
             "app": app
         })
         thread.start()
-    app.run(host=host, port=port, debug=debug)
+    app.run(host=host, port=port, debug=debug, threaded=True)
 
 
 def clear_crons():

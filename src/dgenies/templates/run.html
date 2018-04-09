@@ -20,6 +20,12 @@
     {{ tools_ava }});
 {% endblock %}
 {% block content %}
+    {% set fnote = 1 %}
+    <style>
+        .tab2 {
+            display: none;
+        }
+    </style>
     <form id="submit_minimap" method=post action="#">
         <h2 class="title-launch">Launch map analysis</h2>
         <div class="errors-submit">
@@ -49,16 +55,26 @@
                             {% if mode == "webserver" %}
                             <tr class="email">
                                 <td>
-                                    <label for="email" class="email">E-mail*</label>
+                                    <label for="email" class="email">E-mail <sup><a href="#fn{{ fnote }}" id="ref{{ fnote }}">{{ fnote }}</a></sup>{% set fnote = fnote + 1 %}</label>
                                 </td>
                                 <td>
                                     <input type="email" name="email" id="email" value="{{ email }}" required/>
                                 </td>
                             </tr>
                             {% endif %}
-                            <tr class="target">
+                            <tr>
+                                <td colspan="2">
+                                    <div id="tabs">
+                                        <div class="tab active" id="tab1">New alignment</div>
+                                        <div class="tab" id="tab2">Plot alignment</div>
+                                    </div>
+                                </td>
+                            </tr>
+
+                            {# Tab 1 #}
+                            <tr class="target tabx tab1">
                                 <td>
-                                    <label for="file_target" class="file-target">Target fasta**</label>
+                                    <label for="file_target" class="file-target">Target fasta <sup><a href="#fn{{ fnote }}" id="ref{{ fnote }}">{{ fnote }}</a></sup></label>
                                 </td>
                                 <td class="input-group">
                                     <select class="select-type-input target">
@@ -81,9 +97,9 @@
                                     <div class="file-size target"></div>
                                 </td>
                             </tr>
-                            <tr class="query">
+                            <tr class="query tabx tab1">
                                 <td>
-                                    <label for="file_query" class="file-query">Query fasta**</label>
+                                    <label for="file_query" class="file-query">Query fasta <sup><a href="#fn{{ fnote }}" id="ref{{ fnote }}">{{ fnote }}</a></sup></label>
                                 </td>
                                 <td class="input-group">
                                     <select class="select-type-input query">
@@ -107,7 +123,7 @@
                                 </td>
                             </tr>
                             {% if tools | length > 1 %}
-                                <tr>
+                                <tr class="tabx tab1">
                                     <td>
                                         <label class="tools">Aligner</label>
                                     </td>
@@ -123,24 +139,129 @@
                                     </td>
                                 </tr>
                             {% else %}
-                                <input type="radio" name="tool" id="tool" value="{{ tools[0] }}" style="display: none;"
-                                       checked/>
+                                <tr class="tabx tab1">
+                                <td colspan="2">
+                                    {% for tool in tools_names %}
+                                        <input type="radio" name="tool" id="tool" value="{{ tool }}" style="display: none;"
+                                         checked/>
+                                    {% endfor %}
+                                </td>
+                                </tr>
                             {% endif %}
+
+                            {# Tab 2 #}
+                            <tr class="alignfile tabx tab2">
+                                <td>
+                                    <label for="file_align" class="file-align">Alignment file <sup><a href="#fn{{ fnote }}" id="ref{{ fnote }}">{{ fnote }}</a></sup>{% set fnote = fnote + 1 %}</label>
+                                </td>
+                                <td class="input-group">
+                                    <select class="select-type-input alignfile">
+                                        <option value="0">Local</option>
+                                        <option value="1">Url</option>
+                                    </select>
+
+                                    <div class="alignfile-label in-label">
+                                        <div id="progress-alignfile" class="progress">
+                                            <div class="bar" style="width: 0%;"></div>
+                                        </div>
+                                        <input id="alignfile" name="alignfile" class="form-control show-file" type="text" value="" readonly/>
+                                    </div>
+
+                                    <button class="btn btn-file" type="button" id="button-alignfile" title="Select a file">
+                                        <span class="glyphicon glyphicon-folder-open"></span>&nbsp
+                                    </button>
+                                    <div class="loading-file alignfile" style="display: none"></div>
+                                    <div class="upload-success alignfile" style="display: none"></div>
+                                    <div class="file-size alignfile"></div>
+                                </td>
+                            </tr>
+                            <tr class="targetidx tabx tab2">
+                                <td>
+                                    <label for="file_targetidx" class="file-targetidx">Target file<sup><a href="#fn{{ fnote }}" id="ref{{ fnote }}">{{ fnote }}</a></sup></label>
+                                </td>
+                                <td class="input-group">
+                                    <select class="select-type-input targetidx">
+                                        <option value="0">Local</option>
+                                        <option value="1">Url</option>
+                                    </select>
+
+                                    <div class="targetidx-label in-label">
+                                        <div id="progress-targetidx" class="progress">
+                                            <div class="bar" style="width: 0%;"></div>
+                                        </div>
+                                        <input id="targetidx" name="targetidx" class="form-control show-file" type="text" value="" readonly/>
+                                    </div>
+
+                                    <button class="btn btn-file" type="button" id="button-targetidx" title="Select a file">
+                                        <span class="glyphicon glyphicon-folder-open"></span>&nbsp
+                                    </button>
+                                    <div class="loading-file targetidx" style="display: none"></div>
+                                    <div class="upload-success targetidx" style="display: none"></div>
+                                    <div class="file-size targetidx"></div>
+                                </td>
+                            </tr>
+                            <tr class="queryidx tabx tab2">
+                                <td>
+                                    <label for="file_queryidx" class="file-queryidx">Query file<sup><a href="#fn{{ fnote }}" id="ref{{ fnote }}">{{ fnote }}</a></sup>{% set fnote = fnote + 1 %}</label>
+                                </td>
+                                <td class="input-group">
+                                    <select class="select-type-input queryidx">
+                                        <option value="0">Local</option>
+                                        <option value="1">Url</option>
+                                    </select>
+
+                                    <div class="queryidx-label in-label">
+                                        <div id="progress-queryidx" class="progress">
+                                            <div class="bar" style="width: 0%;"></div>
+                                        </div>
+                                        <input id="queryidx" name="queryidx" class="form-control show-file" type="text" value="" readonly/>
+                                    </div>
+
+                                    <button class="btn btn-file" type="button" id="button-queryidx" title="Select a file">
+                                        <span class="glyphicon glyphicon-folder-open"></span>&nbsp
+                                    </button>
+                                    <div class="loading-file queryidx" style="display: none"></div>
+                                    <div class="upload-success queryidx" style="display: none"></div>
+                                    <div class="file-size queryidx"></div>
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
             </fieldset>
-            <p class="afterworlff">* We will send you results by mail.</p>
-            <p class="afterworlff">** Can be gzipped.</p>
-            <button type="button" id="submit">Submit</button>
-            {% if example %}
-            <button type="button" id="example">Load example</button>
-            {% endif %}
+            <div class="buttons">
+                <button type="button" id="submit">Submit</button>
+                {% if example %}
+                <button type="button" id="example">Load example</button>
+                {% endif %}
+            </div>
+            <div class="footnotes">
+                {% set fnote = 1 %}
+                {% if mode == "webserver" %}
+                    <p class="afterworlff"><sup id="fn{{ fnote }}"><a href="#fn{{ fnote }}" id="ref{{ fnote }}">{{ fnote }}</a></sup> We will send you results by mail.</p>
+                    {% set fnote = fnote + 1 %}
+                {% endif %}
+                <div class="tabx tab1">
+                    {% set fnote_tab = fnote %}
+                    <p class="afterworlff"><sup id="fn{{ fnote_tab }}"><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup> Can be gzipped.</p>
+                    {% set fnote_tab = fnote_tab + 1 %}
+                </div>
+                <div class="tabx tab2">
+                    {% set fnote_tab = fnote %}
+                    <p class="afterworlff"><sup id="fn{{ fnote_tab }}"><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup> In PAF or MAF format.</p>
+                    {% set fnote_tab = fnote_tab + 1 %}
+                    <p class="afterworlff"><sup id="fn{{ fnote_tab }}"><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup> Fasta file or index built by <a href="#">our tool</a>.</p>
+                    {% set fnote_tab = fnote_tab + 1 %}
+                </div>
+            </div>
         </div>
         <div id="uploading-loading" style="display:none;">Uploading files...</div>
         <div class="hidden-input-files">
             <input type="file" name="file-query" class="file-query" data-url="/upload" title=""/>
             <input type="file" name="file-target" class="file-target" data-url="/upload"/>
+            <input type="file" name="file-alignfile" class="file-alignfile" data-url="/upload"/>
+            <input type="file" name="file-targetidx" class="file-targetidx" data-url="/upload"/>
+            <input type="file" name="file-queryidx" class="file-queryidx" data-url="/upload"/>
         </div>
     </form>
 {% endblock %}

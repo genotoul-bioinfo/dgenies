@@ -3,7 +3,7 @@ class Fasta:
         self._name = name
         self._path = path
         self._type = type_f
-        self._example = example
+        self._example = example is not False
 
     def set_path(self, path):
         self._path = path

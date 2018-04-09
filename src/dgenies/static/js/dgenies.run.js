@@ -7,12 +7,13 @@ dgenies.run = {};
 dgenies.run.s_id = null;
 dgenies.run.allowed_ext = [];
 dgenies.run.max_upload_file_size = -1
-dgenies.run.files = [undefined, undefined];
+dgenies.run.files = [undefined, undefined, undefined, undefined, undefined];
 dgenies.run.allow_upload = false;
 dgenies.run.ping_interval = null;
 dgenies.run.target_example = "";
 dgenies.run.query_example = "";
 dgenies.run.tool_has_ava = {};
+dgenies.run.enabled = true;
 
 dgenies.run.init = function (s_id, allowed_ext, max_upload_file_size=1073741824, target_example="", query_example="",
                              tool_has_ava={}) {
@@ -28,8 +29,11 @@ dgenies.run.init = function (s_id, allowed_ext, max_upload_file_size=1073741824,
 };
 
 dgenies.run.restore_form = function () {
-    dgenies.run.change_fasta_type("query", $("select.query").find(":selected").text().toLowerCase(), true);
-    dgenies.run.change_fasta_type("target", $("select.target").find(":selected").text().toLowerCase(), true);
+    let ftypes = ["query", "target", "alignfile", "queryidx", "targetidx"];
+    for (let f in ftypes) {
+        let ftype = ftypes[f];
+        dgenies.run.change_fasta_type(ftype, $(`select.${ftype}`).find(":selected").text().toLowerCase(), true);
+    }
 };
 
 dgenies.run.upload_next = function () {
@@ -51,101 +55,76 @@ dgenies.run.__upload_server_error = function(fasta, data) {
     dgenies.run.enable_form();
 };
 
-dgenies.run.allowed_file = function (filename) {
+dgenies.run.allowed_file = function (filename, formats) {
+    let allowed_ext = [];
+    for (let f in formats) {
+        let format = formats[f];
+        allowed_ext += dgenies.run.allowed_ext[format];
+    }
     return filename.indexOf('.') !== -1 &&
-        (dgenies.run.allowed_ext.indexOf(filename.rsplit('.', 1)[1].toLowerCase()) !== -1 ||
-            dgenies.run.allowed_ext.indexOf(filename.rsplit('.', 2).splice(1).join(".").toLowerCase()) !== -1);
+        (allowed_ext.indexOf(filename.rsplit('.', 1)[1].toLowerCase()) !== -1 ||
+         allowed_ext.indexOf(filename.rsplit('.', 2).splice(1).join(".").toLowerCase()) !== -1);
 };
 
-dgenies.run.init_fileuploads = function () {
-    $('input.file-query').fileupload({
+dgenies.run._init_fileupload = function(ftype, formats, position) {
+    $(`input.file-${ftype}`).fileupload({
         dataType: 'json',
         formData: {
-            "s_id": dgenies.run.s_id
+            "s_id": dgenies.run.s_id,
+            "formats": formats
         },
         add: function (e, data) {
             let filename = data.files[0].name;
-            if (dgenies.run.allowed_file(filename))
-                dgenies.run.files[0] = data;
+            if (dgenies.run.allowed_file(filename, formats))
+                dgenies.run.files[position] = data;
             else {
-                $("input.file-query").trigger("change"); // The value is null after fired
+                $(`input.file-${ftype}`).trigger("change"); // The value is null after fired
                 dgenies.notify(`File <b>${filename}</b> is not supported!`, "danger", 3000)
             }
         },
         progressall: function (e, data) {
             var progress = parseInt(data.loaded / data.total * 100, 10);
-            $('#progress-query').find('.bar').css(
+            $(`#progress-${ftype}`).find('.bar').css(
                 'width',
                 progress + '%'
             );
         },
         success: function (data, success) {
             if (data["success"] !== "OK") {
-                dgenies.run.__upload_server_error("query", data);
+                dgenies.run.__upload_server_error(ftype, data);
             }
             else if ("error" in data["files"][0]) {
                 dgenies.run.add_error("Query file: " + data["files"][0]["error"], "error");
                 dgenies.run.enable_form();
             }
             else {
-                $("input#query").val(data["files"][0]["name"]);
-                dgenies.run.hide_loading("query");
-                dgenies.run.show_success("query");
+                $(`input#ftype`).val(data["files"][0]["name"]);
+                dgenies.run.hide_loading(ftype);
+                dgenies.run.show_success(ftype);
                 dgenies.run.upload_next();
             }
         },
         error: function (data, success) {
-            dgenies.run.__upload_server_error("query", data);
+            dgenies.run.__upload_server_error(ftype, data);
         }
     });
-    $('input.file-target').fileupload({
-        dataType: 'json',
-        formData: {
-            "s_id": dgenies.run.s_id
-        },
-        add: function (e, data) {
-            let filename = data.files[0].name
-            if (dgenies.run.allowed_file(filename))
-                dgenies.run.files[1] = data;
-            else {
-                $("input.file-target").trigger("change"); // The value is null after fired
-                dgenies.notify(`File <b>${filename}</b> is not supported!`, "danger", 3000)
-            }
-        },
-        progressall: function (e, data) {
-            var progress = parseInt(data.loaded / data.total * 100, 10);
-            $('#progress-target').find('.bar').css(
-                'width',
-                progress + '%'
-            );
-        },
-        success: function (data, success) {
-            if (data["success"] !== "OK") {
-                dgenies.run.__upload_server_error("target", data);
-            }
-            else if ("error" in data["files"][0]) {
-                dgenies.run.add_error("Target file: " + data["files"][0]["error"], "error");
-                dgenies.run.enable_form();
-            }
-            else {
-                $("input#target").val(data["files"][0]["name"]);
-                dgenies.run.hide_loading("target");
-                dgenies.run.show_success("target");
-                dgenies.run.upload_next();
-            }
-        },
-        error: function (data, success) {
-            dgenies.run.__upload_server_error("target", data);
-        }
-    });
+};
 
-    //Trigger events on hidden file inputs:
-    $("button#button-query").click(function() {
-        $("input.file-query").trigger("click");
-    })
-    $("button#button-target").click(function() {
-        $("input.file-target").trigger("click");
-    })
+dgenies.run.init_fileuploads = function () {
+    let ftypes = {"query": {"formats": ["fasta",], "position": 0},
+                  "target": {"formats": ["fasta",], "position": 1},
+                  "queryidx": {"formats": ["fasta", "idx"], "position": 2},
+                  "targetidx": {"formats": ["fasta", "idx"], "position": 3},
+                  "alignfile": {"formats": ["map"], "position": 4},};
+    for (let ftype in ftypes) {
+        let formats = ftypes[ftype]["formats"];
+        let position = ftypes[ftype]["position"];
+        dgenies.run._init_fileupload(ftype, formats, position);
+        //Trigger events on hidden file inputs:
+        $(`button#button-${ftype}`).click(function() {
+            $(`input.file-${ftype}`).trigger("click");
+        });
+    }
 };
 
 dgenies.run.get_file_size_str = function(size) {
@@ -162,6 +141,7 @@ dgenies.run.get_file_size_str = function(size) {
 };
 
 dgenies.run.fill_examples = function () {
+    dgenies.run.show_tab("tab1");
     $("select.target").val("1").trigger("change");
     $("input#target").val("example://" + dgenies.run.target_example);
     if (dgenies.run.query_example !== "") {
@@ -170,59 +150,58 @@ dgenies.run.fill_examples = function () {
     }
 };
 
-dgenies.run.set_events = function() {
+dgenies.run._set_file_event = function(ftype) {
     let max_file_size_txt = dgenies.run.get_file_size_str(dgenies.run.max_upload_file_size);
-    $("input.file-query").change(function () {
-        let file_size_query = $("div.file-size.query");
+    $(`input.file-${ftype}`).change(function () {
+        let file_size = $(`div.file-size.${ftype}`);
         if (this.files.length > 0)
             if (this.files[0].size <= dgenies.run.max_upload_file_size) {
-                file_size_query.html(dgenies.run.get_file_size_str(this.files[0].size));
-                dgenies.run.set_filename(this.files[0].name, "query");
+                file_size.html(dgenies.run.get_file_size_str(this.files[0].size));
+                dgenies.run.set_filename(this.files[0].name, ftype);
             }
             else {
                 $(this).val("");
-                dgenies.run.set_filename("", "query");
+                dgenies.run.set_filename("", ftype);
                 dgenies.notify(`File exceed the size limit (${max_file_size_txt})`, "danger", 2000);
-                file_size_query.html("");
+                file_size.html("");
             }
         else {
-            dgenies.run.set_filename("", "query");
-            file_size_query.html("");
+            dgenies.run.set_filename("", ftype);
+            file_size.html("");
         }
     });
+};
 
-    $("input.file-target").change(function () {
-        let file_size_target = $("div.file-size.target");
-        if (this.files.length > 0) {
-            if (this.files[0].size <= dgenies.run.max_upload_file_size) {
-                file_size_target.html(dgenies.run.get_file_size_str(this.files[0].size));
-                dgenies.run.set_filename(this.files[0].name, "target");
-            }
-            else {
-                $(this).val("");
-                dgenies.run.set_filename("", "target");
-                dgenies.notify(`File exceed the size limit (${max_file_size_txt})`, "danger", 2000);
-                file_size_target.html("");
-            }
-        }
-        else {
-            dgenies.run.set_filename("", "target");
-            file_size_target.html("");
-        }
+dgenies.run._set_file_select_event = function(ftype) {
+    $(`select.${ftype}`).change(function() {
+        dgenies.run.change_fasta_type(ftype, $(`select.${ftype}`).find(":selected").text().toLowerCase())
     });
+};
+
+dgenies.run.show_tab = function(tab) {
+    $(`#tabs #${tab}`).addClass("active");
+    $(`#tabs .tab:not(#${tab})`).removeClass("active");
+    $(`.tabx:not(${tab})`).hide();
+    $(`.tabx.${tab}`).show();
+};
+
+dgenies.run.set_events = function() {
+    let ftypes = ["query", "target", "alignfile", "queryidx", "targetidx"];
+    for (let f in ftypes) {
+        let ftype = ftypes[f];
+        dgenies.run._set_file_event(ftype);
+        dgenies.run._set_file_select_event(ftype);
+    }
 
     $("button#submit").click(function () {
         dgenies.run.submit();
     });
-    $("select.query").change(function() {
-        dgenies.run.change_fasta_type("query", $("select.query").find(":selected").text().toLowerCase())
-    });
-    $("select.target").change(function() {
-        dgenies.run.change_fasta_type("target", $("select.target").find(":selected").text().toLowerCase())
-    });
     $("button#example").click(function() {
         dgenies.run.fill_examples();
     });
+    $("#tabs .tab").click(function() {
+        dgenies.run.show_tab($(this).attr("id"));
+    })
 };
 
 dgenies.run.change_fasta_type = function (fasta, type, keep_url=false) {
@@ -251,6 +230,7 @@ dgenies.run.set_filename = function (name, fasta) {
 };
 
 dgenies.run.disable_form = function () {
+    dgenies.run.enabled = false;
     $("input, select, button").prop("disabled", true);
 };
 
@@ -261,27 +241,65 @@ dgenies.run.enable_form = function () {
     $("input, select, button").prop("disabled", false);
     $("div#uploading-loading").hide();
     $("button#submit").show();
-    dgenies.run.hide_loading("query");
-    dgenies.run.hide_loading("target");
-    dgenies.run.hide_success("query");
-    dgenies.run.hide_success("target");
-    dgenies.run.files = [undefined, undefined];
+    let ftypes = ["query", "target", "alignfile", "targetidx", "queryidx"];
+    for (let f in ftypes) {
+        let ftype = ftypes[f];
+        dgenies.run.hide_loading(ftype);
+        dgenies.run.hide_success(ftype);
+    }
+    dgenies.run.files = [undefined, undefined, undefined, undefined, undefined];
     dgenies.run.restore_form();
+    dgenies.run.enabled = true;
+};
+
+dgenies.run.reset_file_form = function(tab) {
+    let ftypes = [];
+    let i = 0;
+    if (tab === "tab2") {
+        ftypes = ["alignfile", "queryidx", "targetidx"];
+        i = 2;
+    }
+    else {
+        ftypes = ["query", "target"];
+        i = 0;
+    }
+    for (let f in ftypes) {
+        let ftype = ftypes[f];
+        dgenies.run.change_fasta_type(ftype, $(`select.${ftype}`).find(":selected").text().toLowerCase(), true);
+        dgenies.run.files[i] = undefined;
+        i++;
+    }
 };
 
 dgenies.run.do_submit = function () {
-    $("div#uploading-loading").html("Submitting form...");
-    dgenies.post("/launch_analysis",
-        {
-            "id_job": $("input#id_job").val(),
-            "email": dgenies.mode === "webserver" ? $("input#email").val() : "",
+    let data = {
+        "id_job": $("input#id_job").val(),
+        "email": dgenies.mode === "webserver" ? $("input#email").val() : "",
+        "s_id": dgenies.run.s_id
+    };
+    let tab = $("#tabs .tab.active").attr("id");
+    if (tab === "tab1") {
+        data = Object.assign({}, data, {
             "query": $("input#query").val(),
             "query_type": $("select.query").find(":selected").text().toLowerCase(),
             "target": $("input#target").val(),
             "target_type": $("select.target").find(":selected").text().toLowerCase(),
-            "s_id": dgenies.run.s_id,
             "tool": $("input[name=tool]:checked").val()
-        },
+        });
+    }
+    else {
+        data = Object.assign({}, data, {
+            "alignfile": $("input#alignfile").val(),
+            "alignfile_type": $("select.alignfile").find(":selected").text().toLowerCase(),
+            "query": $("input#queryidx").val(),
+            "query_type": $("select.queryidx").find(":selected").text().toLowerCase(),
+            "target": $("input#targetidx").val(),
+            "target_type": $("select.targetidx").find(":selected").text().toLowerCase(),
+        });
+    }
+    $("div#uploading-loading").html("Submitting form...");
+    dgenies.post("/launch_analysis",
+        data,
         function (data, status) {
             if (data["success"]) {
                 window.location = data["redirect"];
@@ -333,19 +351,38 @@ dgenies.run.valid_form = function () {
         }
     }
 
-    //Check input target:
-    if ($("input#target").val().length === 0) {
-        $("label.file-target").addClass("error");
-        dgenies.run.add_error("Target fasta is required!");
-        has_errors = true;
+    let tab = $("#tabs .tab.active").attr("id");
+
+    /* TAB 1 */
+    if (tab === "tab1") {
+        //Check input target:
+        if ($("input#target").val().length === 0) {
+            $("label.file-target").addClass("error");
+            dgenies.run.add_error("Target fasta is required!");
+            has_errors = true;
+        }
+
+        //Check input query:
+        let tool = $("input[name=tool]:checked").val();
+        if (!dgenies.run.tool_has_ava[tool] && $("input#query").val().length === 0) {
+            $("label.file-query").addClass("error");
+            dgenies.run.add_error("Query fasta is required!");
+            has_errors = true;
+        }
     }
 
-    //Check input query:
-    let tool = $("input[name=tool]:checked").val();
-    if (!dgenies.run.tool_has_ava[tool] && $("input#query").val().length === 0) {
-        $("label.file-query").addClass("error");
-        dgenies.run.add_error("Query fasta is required!");
-        has_errors = true;
+    /* TAB 2 */
+    else {
+        if ($("input#targetidx").val().length === 0) {
+            $("label.file-targetidx").addClass("error");
+            dgenies.run.add_error("Target file is required!");
+            has_errors = true;
+        }
+        if ($("input#alignfile").val().length === 0) {
+            $("label.file-align").addClass("error");
+            dgenies.run.add_error("Alignment file is required!");
+            has_errors = true;
+        }
     }
 
     // Returns
@@ -413,37 +450,53 @@ dgenies.run.check_url = function (url) {
         url.startsWith("example://");
 };
 
-dgenies.run.start_uploads = function() {
-    let query_type = parseInt($("select.query").val());
+dgenies.run.reset_other_tab = function(tab) {
+    if (tab === "tab1") {
+        $("input#alignfile").val("");
+        dgenies.run.files[2] = undefined;
+        $("input#targetidx").val("");
+        dgenies.run.files[3] = undefined;
+        $("input#queryidx").val("");
+        dgenies.run.files[4] = undefined;
+    }
+};
+
+dgenies.run._start_upload = function(ftype, fname) {
     let has_uploads = false;
-    let query_val = $("input#query").val();
-    if (query_type === 0 && query_val.length > 0) {
-        $("button#button-query").hide();
-        dgenies.run.show_loading("query");
+    let fasta_type = parseInt($(`select.${ftype}`).val());
+    let fasta_val = $(`input#${ftype}`).val();
+    if (fasta_type === 0 && fasta_val.length > 0) {
+        $(`button#button-${ftype}`).hide();
+        dgenies.run.show_loading(ftype);
         has_uploads = true;
     }
     else {
         dgenies.run.files[0] = undefined;
-        if (query_val !== "" && !dgenies.run.check_url(query_val)) {
-            dgenies.run.add_error("Query file: invalid URL", "error");
+        if (fasta_val !== "" && !dgenies.run.check_url(fasta_val)) {
+            dgenies.run.add_error(`${fname} file: invalid URL`, "error");
             dgenies.run.enable_form();
             return false;
         }
     }
-    let target_type = parseInt($("select.target").val());
-    let target_val = $("input#target").val();
-    if (target_type === 0 && target_val.length > 0) {
-        $("button#button-target").hide();
-        dgenies.run.show_loading("target");
-        has_uploads = true;
+    return has_uploads;
+};
+
+dgenies.run.start_uploads = function() {
+    let has_uploads = false;
+    let tab = $("#tabs .tab.active").attr("id");
+    let inputs = [];
+    if (tab === "tab1") {
+        dgenies.run.reset_file_form("tab2");
+        inputs = [["query", "Query"], ["target", "Target"]];
     }
     else {
-        dgenies.run.files[1] = undefined;
-        if (target_val !== "" && !dgenies.run.check_url(target_val)) {
-            dgenies.run.add_error("Target file: invalid URL", "error");
-            dgenies.run.enable_form();
-            return false;
-        }
+        dgenies.run.reset_file_form("tab1");
+        inputs = [["queryidx", "Query"], ["targetidx", "Target"], ["alignfile", "Alignment"]]
+    }
+    for (let i in inputs) {
+        let input = inputs[i];
+        let test_has_uploads = dgenies.run._start_upload(input[0], input[1]);
+        has_uploads = has_uploads || test_has_uploads;
     }
     if (has_uploads) {
         $("div#uploading-loading").html("Asking for upload...");

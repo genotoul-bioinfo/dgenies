@@ -6,12 +6,17 @@ import shutil
 import sys
 import re
 import traceback
+from inspect import getmembers, isfunction
 from collections import OrderedDict
 from Bio import SeqIO
 from jinja2 import Template
 from dgenies.config_reader import AppConfigReader
+import dgenies.lib.validators as validators
 
-ALLOWED_EXTENSIONS = ['fa', 'fasta', 'fna', 'fa.gz', 'fasta.gz', 'fna.gz']
+ALLOWED_EXTENSIONS = {"fasta": ['fa', 'fasta', 'fna', 'fa.gz', 'fasta.gz', 'fna.gz'],
+                      "idx": ['idx'],
+                      "map": [o[0] for o in getmembers(validators) if isfunction(o[1]) and not o[0].startswith("_")]}
+# map: all functions of validators which does not starts with an underscore.
 
 
 class Functions:
@@ -19,10 +24,13 @@ class Functions:
     config = AppConfigReader()
 
     @staticmethod
-    def allowed_file(filename):
-        return '.' in filename and \
-               (filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS or ".".join(filename.rsplit('.', 2)[1:]).lower()
-                in ALLOWED_EXTENSIONS)
+    def allowed_file(filename, file_formats=("fasta",)):
+        for file_format in file_formats:
+            if '.' in filename and \
+                   (filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS[file_format]
+                    or ".".join(filename.rsplit('.', 2)[1:]).lower() in ALLOWED_EXTENSIONS[file_format]):
+                return True
+        return False
 
     @staticmethod
     def random_string(s_len):
@@ -256,3 +264,8 @@ class Functions:
         if "gallery" in all_jobs:
             all_jobs.remove("gallery")
         return sorted(all_jobs, key=lambda x: x.lower())
+
+    @staticmethod
+    def query_fasta_file_exists(res_dir):
+        fasta_file = os.path.join(res_dir, ".query")
+        return os.path.exists(fasta_file) and os.path.isfile(fasta_file)
