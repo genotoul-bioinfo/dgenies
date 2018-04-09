@@ -14,7 +14,7 @@
 {% block content %}
     <h2 class="status">Job name: {{ id_job }}</h2>
     <div class="status-body">
-        {% if status == "started" %}
+        {% if status == "started" or status == "succeed" %}
             <p>Your job has started.<br/>
         {% elif status == "starting" %}
             <p>Your job is starting...<br/>

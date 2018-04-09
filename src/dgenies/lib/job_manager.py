@@ -126,7 +126,7 @@ class JobManager:
     def check_job_success(self):
         if os.path.exists(self.paf_raw):
             if os.path.getsize(self.paf_raw) > 0:
-                return "success"
+                return "succeed"
             else:
                 return "no-match"
         return "fail"
@@ -262,7 +262,7 @@ class JobManager:
                     job.save()
                 else:
                     self.set_status_standalone(status)
-                return status == "success"
+                return status == "succeed"
             self.error = self.search_error()
             status = "fail"
             if MODE == "webserver":
@@ -404,7 +404,7 @@ class JobManager:
             # db.commit()
             self.update_job_status(status)
             s.deleteJobTemplate(jt)
-            return status == "success" or status == "prepared"
+            return status == "succeed" or status == "prepared"
         self.update_job_status("fail")
         s.deleteJobTemplate(jt)
         return False
@@ -846,7 +846,8 @@ class JobManager:
                 return False
             ptime.write(str(round(time.time())) + "\n")
             self.set_job_status("prepared")
-            self.run_job("local")
+            if MODE != "webserver":
+                self.run_job("local")
 
     def _end_of_prepare_dotplot(self):
         # Parse alignment file:
@@ -970,83 +971,88 @@ class JobManager:
                 self.prepare_dotplot_local()
 
     def run_job(self, batch_system_type):
-        success = False
-        if batch_system_type == "local":
-            success = self.__launch_local()
-        elif batch_system_type in ["slurm", "sge"]:
-            success = self.__launch_drmaa(batch_system_type)
-        if success:
-            with Job.connect():
-                if MODE == "webserver":
-                    job = Job.get(Job.id_job == self.id_job)
-                    with open(self.logs) as logs:
-                        measures = logs.readlines()[-1].strip("\n").split(" ")
-                        map_elapsed = round(float(measures[0]))
-                        job.mem_peak = int(measures[1])
-                    with open(self.preptime_file) as ptime:
-                        lines = ptime.readlines()
-                        start = int(lines[0].strip("\n"))
-                        end = int(lines[1].strip("\n"))
-                        prep_elapsed = end - start
-                        job.time_elapsed = prep_elapsed + map_elapsed
-                else:
-                    job = None
-                status = "merging"
-                if MODE == "webserver":
-                    job.status = "merging"
-                    job.save()
-                else:
-                    self.set_status_standalone(status)
-                if self.tool.split_before and self.query is not None:
-                    start = time.time()
-                    paf_raw = self.paf_raw + ".split"
-                    os.remove(self.get_query_split())
-                    merger = Merger(self.paf_raw, paf_raw, self.query_index_split,
-                                    self.idx_q, debug=DEBUG)
-                    merger.merge()
-                    os.remove(self.paf_raw)
-                    os.remove(self.query_index_split)
-                    self.paf_raw = paf_raw
-                    end = time.time()
-                    if MODE == "webserver":
-                        job.time_elapsed += end - start
-                elif self.query is None:
-                    shutil.copyfile(self.idx_t, self.idx_q)
-                    Path(os.path.join(self.output_dir, ".all-vs-all")).touch()
-                if self.tool.parser is not None:
-                    paf_raw = self.paf_raw + ".parsed"
-                    getattr(parsers, self.tool.parser)(self.paf_raw, paf_raw)
-                    os.remove(self.paf_raw)
-                    self.paf_raw = paf_raw
-                sorter = Sorter(self.paf_raw, self.paf)
-                sorter.sort()
-                os.remove(self.paf_raw)
-                if self.target is not None and os.path.exists(self.target.get_path()):
-                    os.remove(self.target.get_path())
-                if os.path.isfile(os.path.join(self.output_dir, ".do-sort")):
-                    paf = Paf(paf=self.paf,
-                              idx_q=self.idx_q,
-                              idx_t=self.idx_t,
-                              auto_parse=False)
-                    paf.sort()
-                    if not paf.parsed:
-                        success = False
-                        status = "fail"
-                        error = "Error while sorting query. Please contact us to report the bug"
-                        if MODE == "webserver":
-                            job = Job.get(Job.id_job == self.id_job)
-                            job.status = status
-                            job.error = error
-                        else:
-                            self.set_status_standalone(status, error)
-                if success:
-                    status = "success"
+        try:
+            success = False
+            if batch_system_type == "local":
+                success = self.__launch_local()
+            elif batch_system_type in ["slurm", "sge"]:
+                success = self.__launch_drmaa(batch_system_type)
+            if success:
+                with Job.connect():
                     if MODE == "webserver":
                         job = Job.get(Job.id_job == self.id_job)
-                        job.status = "success"
+                        with open(self.logs) as logs:
+                            measures = logs.readlines()[-1].strip("\n").split(" ")
+                            map_elapsed = round(float(measures[0]))
+                            job.mem_peak = int(measures[1])
+                        with open(self.preptime_file) as ptime:
+                            lines = ptime.readlines()
+                            start = int(lines[0].strip("\n"))
+                            end = int(lines[1].strip("\n"))
+                            prep_elapsed = end - start
+                            job.time_elapsed = prep_elapsed + map_elapsed
+                    else:
+                        job = None
+                    status = "merging"
+                    if MODE == "webserver":
+                        job.status = "merging"
                         job.save()
                     else:
                         self.set_status_standalone(status)
+                    if self.tool.split_before and self.query is not None:
+                        start = time.time()
+                        paf_raw = self.paf_raw + ".split"
+                        os.remove(self.get_query_split())
+                        merger = Merger(self.paf_raw, paf_raw, self.query_index_split,
+                                        self.idx_q, debug=DEBUG)
+                        merger.merge()
+                        os.remove(self.paf_raw)
+                        os.remove(self.query_index_split)
+                        self.paf_raw = paf_raw
+                        end = time.time()
+                        if MODE == "webserver":
+                            job.time_elapsed += end - start
+                    elif self.query is None:
+                        shutil.copyfile(self.idx_t, self.idx_q)
+                        Path(os.path.join(self.output_dir, ".all-vs-all")).touch()
+                    if self.tool.parser is not None:
+                        paf_raw = self.paf_raw + ".parsed"
+                        getattr(parsers, self.tool.parser)(self.paf_raw, paf_raw)
+                        os.remove(self.paf_raw)
+                        self.paf_raw = paf_raw
+                    sorter = Sorter(self.paf_raw, self.paf)
+                    sorter.sort()
+                    os.remove(self.paf_raw)
+                    if self.target is not None and os.path.exists(self.target.get_path()):
+                        os.remove(self.target.get_path())
+                    if os.path.isfile(os.path.join(self.output_dir, ".do-sort")):
+                        paf = Paf(paf=self.paf,
+                                  idx_q=self.idx_q,
+                                  idx_t=self.idx_t,
+                                  auto_parse=False)
+                        paf.sort()
+                        if not paf.parsed:
+                            success = False
+                            status = "fail"
+                            error = "Error while sorting query. Please contact us to report the bug"
+                            if MODE == "webserver":
+                                job = Job.get(Job.id_job == self.id_job)
+                                job.status = status
+                                job.error = error
+                            else:
+                                self.set_status_standalone(status, error)
+                    if success:
+                        status = "success"
+                        if MODE == "webserver":
+                            job = Job.get(Job.id_job == self.id_job)
+                            job.status = "success"
+                            job.save()
+                        else:
+                            self.set_status_standalone(status)
+        except Exception as e:
+            traceback.print_exc()
+            self.set_job_status("fail", "Your job has failed for an unexpected reason. Please contact the support if"
+                                        "the problem persists.")
         if MODE == "webserver" and self.config.send_mail_status:
             self.send_mail_post()
 

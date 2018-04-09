@@ -692,6 +692,10 @@ h2.status {
     width: 80.4%;
 }
 
+.progress-status-bar.succeed {
+    width: 75.0%;
+}
+
 .progress-status-bar.success, .progress-status-bar.fail, .progress-status-bar.no-match {
     width: 100%;
 }

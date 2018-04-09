@@ -111,9 +111,9 @@ def parse_started_jobs():
     with Job.connect():
         jobs_started = []  # Only local jobs
         cluster_jobs_started = []  # Only cluster jobs
-        jobs = Job.select().where((Job.status == "started") | (Job.status == "starting") | (Job.status == "merging") |
-                                  (Job.status == "scheduled-cluster") | (Job.status == "prepare-scheduled") |
-                                  (Job.status == "prepare-cluster"))
+        jobs = Job.select().where((Job.status == "started") | (Job.status == "starting") | (Job.status == "succeed") |
+                                  (Job.status == "merging") | (Job.status == "scheduled-cluster") |
+                                  (Job.status == "prepare-scheduled") | (Job.status == "prepare-cluster"))
         for job in jobs:
             pid = job.id_process
             if job.batch_type == "local":
