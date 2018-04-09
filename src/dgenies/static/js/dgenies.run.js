@@ -116,15 +116,15 @@ dgenies.run.init_fileuploads = function () {
                   "queryidx": {"formats": ["fasta", "idx"], "position": 2},
                   "targetidx": {"formats": ["fasta", "idx"], "position": 3},
                   "alignfile": {"formats": ["map"], "position": 4},};
-    for (let ftype in ftypes) {
-        let formats = ftypes[ftype]["formats"];
-        let position = ftypes[ftype]["position"];
+    $.each(ftypes, function(ftype, data) {
+        let formats = data["formats"];
+        let position = data["position"];
         dgenies.run._init_fileupload(ftype, formats, position);
         //Trigger events on hidden file inputs:
         $(`button#button-${ftype}`).click(function() {
             $(`input.file-${ftype}`).trigger("click");
         });
-    }
+    });
 };
 
 dgenies.run.get_file_size_str = function(size) {
@@ -187,11 +187,10 @@ dgenies.run.show_tab = function(tab) {
 
 dgenies.run.set_events = function() {
     let ftypes = ["query", "target", "alignfile", "queryidx", "targetidx"];
-    for (let f in ftypes) {
-        let ftype = ftypes[f];
+    $.each(ftypes, function (i, ftype) {
         dgenies.run._set_file_event(ftype);
         dgenies.run._set_file_select_event(ftype);
-    }
+    });
 
     $("button#submit").click(function () {
         dgenies.run.submit();

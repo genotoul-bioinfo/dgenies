@@ -210,32 +210,6 @@ d3.boxplot.select_zone = function (x=null, y=null, x_zone=null, y_zone=null, for
             let scale_x = d3.boxplot.scale / x_len_zone;
             let scale_y = d3.boxplot.scale / y_len_zone;
 
-            //
-            // let lines_s = [];
-            //
-            // let my_x_zone = [d3.boxplot.x_zones[x_zone][0] / d3.boxplot.scale * d3.boxplot.x_len, d3.boxplot.x_zones[x_zone][1] / d3.boxplot.scale * d3.boxplot.x_len];
-            // let my_y_zone = [d3.boxplot.y_zones[y_zone][0] / d3.boxplot.scale * d3.boxplot.y_len, d3.boxplot.y_zones[y_zone][1] / d3.boxplot.scale * d3.boxplot.y_len];
-            //
-            // for (let l in d3.boxplot.lines) {
-            //     let line = d3.boxplot.lines[l].slice(0);
-            //     if (((line[0] >= my_x_zone[0] && line[0] < my_x_zone[1]) || (line[1] >= my_x_zone[0] && line[1] < my_x_zone[1]))
-            //         && ((line[2] >= my_y_zone[0] && line[2] < my_y_zone[1]) ||
-            //             (line[3] >= my_y_zone[0] && line[3] < my_y_zone[1]))) {
-            //         //console.log(line);
-            //         line[0] -= my_x_zone[0];
-            //         line[1] -= my_x_zone[0];
-            //         line[2] -= my_y_zone[0];
-            //         line[3] -= my_y_zone[0];
-            //         if (line[1] < 0)
-            //             console.log("WARN!!!", line[0]);
-            //         //console.log(line);
-            //         lines_s.push(line);
-            //     }
-            // }
-            //
-            // d3.selectAll("line.content-lines").remove();
-            // d3.boxplot.draw_lines(lines_s, my_x_zone[1] - my_x_zone[0], my_y_zone[1] - my_y_zone[0]);
-
             //Zoom in:
             d3.boxplot.container
                .attr("transform", "scale(" + scale_x + "," + scale_y + ")" +

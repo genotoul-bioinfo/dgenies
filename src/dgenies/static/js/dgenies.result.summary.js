@@ -13,8 +13,7 @@ dgenies.result.summary.show = function(percents) {
     let percents_order = ["-1", "0", "1", "2", "3"];
     let x = 0;
     let percent_value = 0;
-    for (let i in percents_order) {
-        let percent = percents_order[i];
+    $.each(percents_order, function(o, percent) {
         let label=dgenies.result.summary._get_label(percent);
         x += percent_value;
         percent_value = percent in percents ? percents[percent] : 0;
@@ -45,7 +44,7 @@ dgenies.result.summary.show = function(percents) {
             .attr("font-family", "sans-serif")
             .attr("font-size", "12pt")
             .text(percent_value.toFixed(2) + " %");
-    }
+    });
 
     container.append("rect")
         .attr("x", 0)
