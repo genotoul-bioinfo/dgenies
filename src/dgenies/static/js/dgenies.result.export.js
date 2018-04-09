@@ -136,6 +136,19 @@ dgenies.result.export.export_association_table = function () {
     document.getElementById('my-download').click();
 };
 
+dgenies.result.export.export_backup_file = function() {
+    dgenies.show_loading("Building file...", 180);
+    window.setTimeout(() => {
+        let export_div = $("div#export-pict");
+        export_div.html("");
+        export_div.append($("<a>").attr("href", `/backup/${dgenies.result.id_res}`)
+            .attr("download", dgenies.result.id_res + ".tar").attr("id", "my-download")
+            .text("download"));
+        dgenies.hide_loading();
+        document.getElementById('my-download').click();
+    });
+};
+
 dgenies.result.export.export_no_association_file = function (to) {
     window.setTimeout(() => {
         dgenies.show_loading("Building file...", 180);
@@ -229,6 +242,10 @@ dgenies.result.export.export = function () {
                     dgenies.result.export.export_query_as_reference_fasta_standalone();
                     async = true;
                 }
+            }
+            else if (selection === 9) {
+                dgenies.result.export.export_backup_file();
+                async = true;
             }
             else
                 dgenies.notify("Not supported yet!", "danger", 2000);

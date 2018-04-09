@@ -21,6 +21,7 @@ from jinja2 import Template
 import traceback
 from pathlib import Path
 from urllib import request, parse
+import tarfile
 from dgenies.bin.split_fa import Splitter
 from dgenies.bin.index import index_file, Index
 from dgenies.bin.filter_contigs import Filter
@@ -40,7 +41,7 @@ if MODE == "webserver":
 class JobManager:
 
     def __init__(self, id_job: str, email: str=None, query: Fasta=None, target: Fasta=None, mailer=None,
-                 tool="minimap2", align: Fasta=None):
+                 tool="minimap2", align: Fasta=None, backup: Fasta=None):
         self.id_job = id_job
         self.email = email
         self.query = query
@@ -48,6 +49,7 @@ class JobManager:
         self.align = align
         if align is not None:
             self.aln_format = os.path.splitext(align.get_path())[1][1:]
+        self.backup = backup
         self.error = ""
         self.id_process = "-1"
         # Get configs:
@@ -716,6 +718,15 @@ class JobManager:
                     files_to_download.append([self.align, "align"])
                 else:
                     return False, True, True
+            if correct and self.backup is not None:
+                if self.backup.get_type() == "local":
+                    self.backup.set_path(self.__getting_local_file(self.backup, "backup"))
+                    correct, error_set, should_be_local = self.check_file("backup", should_be_local,
+                                                                          max_upload_size_readable)
+                elif self.__check_url(self.backup):
+                    files_to_download.append([self.backup, "backup"])
+                else:
+                    return False, True, True
 
             all_downloaded = True
             if correct :
@@ -870,7 +881,8 @@ class JobManager:
         sorter = Sorter(self.paf_raw, self.paf)
         sorter.sort()
         os.remove(self.paf_raw)
-        if self.target is not None and os.path.exists(self.target.get_path()):
+        if self.target is not None and os.path.exists(self.target.get_path()) and not \
+                self.target.get_path().endswith(".idx"):
             os.remove(self.target.get_path())
 
         self.align.set_path(self.paf)
@@ -1076,9 +1088,48 @@ class JobManager:
                 batch_type=job.batch_type)
             log.save()
 
+    def unpack_backup(self):
+        try:
+            with tarfile.open(self.backup.get_path(), "r") as tar:
+                names = tar.getnames()
+                if len(names) != 3:
+                    return False
+                for name in ["map.paf", "query.idx", "target.idx"]:
+                    if name not in names:
+                        return False
+                tar.extractall(self.output_dir)
+                shutil.move(self.paf, self.paf_raw)
+                if not validators.paf(self.paf_raw):
+                    return False
+                self.align = Fasta(name="map", path=self.paf_raw, type_f="local")
+                self.aln_format = "paf"
+                with open(os.path.join(self.output_dir, ".align"), "w") as aln:
+                    aln.write(self.paf_raw)
+                target_path = os.path.join(self.output_dir, "target.idx")
+                self.target = Fasta(name="target", path=target_path, type_f="local")
+                with open(os.path.join(self.output_dir, ".target"), "w") as trgt:
+                    trgt.write(target_path)
+                query_path = os.path.join(self.output_dir, "query.idx")
+                self.query = Fasta(name="query", path=query_path, type_f="local")
+                with open(os.path.join(self.output_dir, ".query"), "w") as qr:
+                    qr.write(query_path)
+                os.remove(self.backup.get_path())
+            return True
+        except:
+            traceback.print_exc()
+            return False
+
     def _after_start(self, success, error_set):
         with Job.connect():
             if success:
+                if self.backup is not None:
+                    success = self.unpack_backup()
+                    if not success:
+                        self.set_job_status("fail", "Backup file is not valid. If it is unattended, please contact the "
+                                                    "support.")
+                        if MODE == "webserver" and self.config.send_mail_status:
+                            self.send_mail()
+                        return False
                 status = "waiting"
                 if MODE == "webserver":
                     job = Job.get(Job.id_job == self.id_job)

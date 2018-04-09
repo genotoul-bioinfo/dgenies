@@ -17,6 +17,7 @@ from dgenies.lib.fasta import Fasta
 from dgenies.tools import Tools
 from markdown import Markdown
 from markdown.extensions.toc import TocExtension
+import tarfile
 if MODE == "webserver":
     from dgenies.database import Session, Gallery
     from peewee import DoesNotExist
@@ -114,6 +115,8 @@ def launch_analysis():
     tool = request.form["tool"] if "tool" in request.form else None
     alignfile = request.form["alignfile"] if "alignfile" in request.form else None
     alignfile_type = request.form["alignfile_type"] if "alignfile_type" in request.form else None
+    backup = request.form["backup"] if "backup" in request.form else None
+    backup_type = request.form["backup_type"] if "backup_type" in request.form else None
 
     # Check form:
     form_pass = True
@@ -122,6 +125,20 @@ def launch_analysis():
     if alignfile is not None and alignfile_type is None:
         errors.append("Server error: no alignfile_type in form. Please contact the support")
         form_pass = False
+
+    if backup is not None and backup_type is None:
+        errors.append("Server error: no backup_type in form. Please contact the support")
+        form_pass = False
+
+    if backup is not None:
+        alignfile = ""
+        file_query = ""
+        file_target = ""
+
+    else:
+        if file_target == "":
+            errors.append("No target fasta selected")
+            form_pass = False
 
     if tool is not None and tool not in Tools().tools:
         errors.append("Tool unavailable: %s" % tool)
@@ -138,9 +155,6 @@ def launch_analysis():
         elif not re.match(r"^[\w.\-]+@[\w\-.]{2,}\.[a-z]{2,4}$", email):
             errors.append("Email is invalid")
             form_pass = False
-    if file_target == "":
-        errors.append("No target fasta selected")
-        form_pass = False
 
     # Form pass
     if form_pass:
@@ -173,23 +187,27 @@ def launch_analysis():
                     form_pass = False
             query = Fasta(name=query_name, path=query_path, type_f=file_query_type, example=example)
         example = False
-        if file_target.startswith("example://"):
-            example = True
-            target_path = config_reader.example_target
-            target_name = os.path.basename(target_path)
-            file_target_type = "local"
-        else:
-            target_name = os.path.splitext(file_target.replace(".gz", ""))[0] if file_target_type == "local" else None
-            target_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder, file_target) \
-                if file_target_type == "local" else file_target
-            if file_target_type == "local" and not os.path.exists(target_path):
-                errors.append("Target file not correct!")
-                form_pass = False
-        target = Fasta(name=target_name, path=target_path, type_f=file_target_type, example=example)
+        target = None
+        if file_target != "":
+            if file_target.startswith("example://"):
+                example = True
+                target_path = config_reader.example_target
+                target_name = os.path.basename(target_path)
+                file_target_type = "local"
+            else:
+                target_name = os.path.splitext(file_target.replace(".gz", ""))[0] if file_target_type == "local" else None
+                target_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder, file_target) \
+                    if file_target_type == "local" else file_target
+                if file_target_type == "local" and not os.path.exists(target_path):
+                    errors.append("Target file not correct!")
+                    form_pass = False
+            target = Fasta(name=target_name, path=target_path, type_f=file_target_type, example=example)
+
+        if alignfile is not None and alignfile != "" and backup is not None:
+            Path(os.path.join(folder_files, ".align")).touch()
 
         align = None
-        if alignfile is not None:
-            Path(os.path.join(folder_files, ".align")).touch()
+        if alignfile is not None and alignfile != "":
             alignfile_name = os.path.splitext(alignfile)[0] if alignfile_type == "local" else None
             alignfile_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder, alignfile) \
                 if alignfile_type == "local" else alignfile
@@ -198,6 +216,16 @@ def launch_analysis():
                 form_pass = False
             align = Fasta(name=alignfile_name, path=alignfile_path, type_f=alignfile_type)
 
+        bckp = None
+        if backup is not None:
+            backup_name = os.path.splitext(backup)[0] if backup_type == "local" else None
+            backup_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder, backup) \
+                if backup_type == "local" else backup
+            if backup_type == "local" and not os.path.exists(backup_path):
+                errors.append("Backup file not correct!")
+                form_pass = False
+            bckp = Fasta(name=backup_name, path=backup_path, type_f=backup_type)
+
         if form_pass:
             # Launch job:
             job = JobManager(id_job=id_job,
@@ -205,6 +233,7 @@ def launch_analysis():
                              query=query,
                              target=target,
                              align=align,
+                             backup=bckp,
                              mailer=mailer,
                              tool=tool)
             if MODE == "webserver":
@@ -636,6 +665,16 @@ def summary(id_res):
         "percents": percents,
         "status": s_status
     })
+
+
+@app.route('/backup/<id_res>')
+def get_backup_file(id_res):
+    res_dir = os.path.join(APP_DATA, id_res)
+    tar = os.path.join(res_dir, "%s.tar" % id_res)
+    with tarfile.open(tar, "w") as tarf:
+        for file in ("map.paf", "target.idx", "query.idx"):
+            tarf.add(os.path.join(res_dir, file), arcname=file)
+    return send_file(tar)
 
 
 def get_filter_out(id_res, type_f):
