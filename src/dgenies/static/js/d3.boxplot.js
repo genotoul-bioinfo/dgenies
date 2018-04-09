@@ -32,7 +32,7 @@ d3.boxplot.scale = 1000;
 d3.boxplot.content_lines_width = d3.boxplot.scale / 400;
 d3.boxplot.break_lines_width = d3.boxplot.scale / 1500;
 d3.boxplot.color_idy_theme = "default";
-d3.boxplot.color_idy_themes = ["default", "colorblind", "black&white"]
+d3.boxplot.color_idy_themes = ["default", "colorblind", "black&white", "r_default", "r_colorblind", "allblack"];
 d3.boxplot.color_idy = {
     "default": {
         "3": "#094b09",
@@ -53,6 +53,27 @@ d3.boxplot.color_idy = {
         "2": "#626262",
         "1": "#9c9c9c",
         "0": "#DDDCDC",
+        "-1": "#fff"
+    },
+    "r_default": {
+        "3": "#7fff65",
+        "2": "#238d31",
+        "1": "#78410d",
+        "0": "#3b080a",
+        "-1": "#fff"
+    },
+    "r_colorblind": {
+        "3": "#8c8c8c",
+        "2": "#006DDB",
+        "1": "#783c00",
+        "0": "#312515",
+        "-1": "#fff"
+    },
+    "allblack": {
+        "3": "#000",
+        "2": "#000",
+        "1": "#000",
+        "0": "#000",
         "-1": "#fff"
     }
 };
