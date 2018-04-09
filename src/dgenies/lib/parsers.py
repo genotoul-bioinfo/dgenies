@@ -27,16 +27,28 @@ def maf(in_maf, out_paf):
                         matches += 1
                 tannots = seqs[0].annotations
                 qannots = seqs[1].annotations
+                tlen = tannots["srcSize"]
+                tstart = tannots["start"]
+                tend = tstart + tannots["size"]
+                if tannots["strand"] == -1:
+                    tstart = tlen - tstart
+                    tend = tlen - tend
+                qlen = qannots["srcSize"]
+                qstart = qannots["start"]
+                qend = qannots["start"] + qannots["size"]
+                if qannots["strand"] == -1:
+                    qstart = qlen - qstart
+                    qend = qlen - qend
                 paf.write("{qname}\t{qlen}\t{qstart}\t{qend}\t{strand}\t{tname}\t{tlen}\t{tstart}\t{tend}\t{matches}\t"
                           "{block_len}\t255\n".format(
                             tname=seqs[0].id,
-                            tlen=tannots["srcSize"],
-                            tstart=tannots["start"],
-                            tend=tannots["start"] + tannots["size"],
+                            tlen=tlen,
+                            tstart=tstart,
+                            tend=tend,
                             qname=seqs[1].id,
-                            qlen=qannots["srcSize"],
-                            qstart=qannots["start"],
-                            qend=qannots["start"] + qannots["size"],
+                            qlen=qlen,
+                            qstart=qstart,
+                            qend=qend,
                             strand="+" if tannots["strand"] == qannots["strand"] else "-",
                             matches=matches,
                             block_len=tannots["size"]
