@@ -137,7 +137,7 @@ class JobManager:
     def is_target_filtered(self):
         return os.path.exists(os.path.join(self.output_dir, ".filter-target"))
 
-    def get_mail_content(self, status):
+    def get_mail_content(self, status, target_name, query_name=None):
         message = "D-Genies\n\n"
         if status == "success":
             message += "Your job %s was completed successfully!\n\n" % self.id_job
@@ -152,10 +152,10 @@ class JobManager:
                 message += "Your job %s has failed. You can try again. " \
                            "If the problem persists, please contact the support.\n\n" % self.id_job
         message += "Sequences compared in this analysis:\n"
-        if self.query is not None:
-            message += "Target: %s\nQuery: %s\n\n" % (self.target.get_name(), self.query.get_name())
+        if query_name is not None:
+            message += "Target: %s\nQuery: %s\n\n" % (target_name, query_name)
         else:
-            message += "Target: %s\n\n" % self.target.get_name()
+            message += "Target: %s\n\n" % target_name
         if status == "success":
             if self.is_target_filtered():
                 message += str("Note: target fasta has been filtered because it contains too small contigs."
@@ -169,13 +169,13 @@ class JobManager:
         message += "The team"
         return message
 
-    def get_mail_content_html(self, status):
+    def get_mail_content_html(self, status, target_name, query_name=None):
         with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "mail_templates", "job_notification.html"))\
                 as t_file:
             template = Template(t_file.read())
             return template.render(job_name=self.id_job, status=status, url_base=self.config.web_url,
-                                   query_name=self.query.get_name() if self.query is not None else "",
-                                   target_name=self.target.get_name(),
+                                   query_name=query_name if query_name is not None else "",
+                                   target_name=target_name,
                                    error=self.error,
                                    target_filtered=self.is_target_filtered(), query_filtered=self.is_query_filtered())
 
@@ -193,6 +193,13 @@ class JobManager:
                 self.email = job.email
             status = job.status
             self.error = job.error
+
+            with open(self.idx_t, "r") as idxt:
+                target_name = idxt.readline().rstrip()
+            with open(self.idx_q, "r") as idxq:
+                query_name = idxq.readline().rstrip()
+                if query_name == target_name:
+                    query_name = None
 
             # Send:
             self.mailer.send_mail(recipients=[self.email],
