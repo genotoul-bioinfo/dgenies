@@ -204,8 +204,8 @@ class JobManager:
             # Send:
             self.mailer.send_mail(recipients=[self.email],
                                   subject=self.get_mail_subject(status),
-                                  message=self.get_mail_content(status),
-                                  message_html=self.get_mail_content_html(status))
+                                  message=self.get_mail_content(status, target_name, query_name),
+                                  message_html=self.get_mail_content_html(status, target_name, query_name))
 
     def search_error(self):
         logs = os.path.join(self.output_dir, "logs.txt")
