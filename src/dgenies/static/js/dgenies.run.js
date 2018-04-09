@@ -458,6 +458,12 @@ dgenies.run.reset_other_tab = function(tab) {
         $("input#queryidx").val("");
         dgenies.run.files[4] = undefined;
     }
+    else {
+        $("input#target").val("");
+        dgenies.run.files[0] = undefined;
+        $("input#query").val("");
+        dgenies.run.files[1] = undefined;
+    }
 };
 
 dgenies.run._start_upload = function(ftype, fname) {
