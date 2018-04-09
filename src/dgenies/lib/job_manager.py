@@ -712,6 +712,10 @@ class JobManager:
                     self.align.set_path(self.__getting_local_file(self.align, "align"))
                     correct, error_set, should_be_local = self.check_file("align", should_be_local,
                                                                           max_upload_size_readable)
+                elif self.__check_url(self.align):
+                    files_to_download.append([self.align, "align"])
+                else:
+                    return False, True, True
 
             all_downloaded = True
             if correct :
