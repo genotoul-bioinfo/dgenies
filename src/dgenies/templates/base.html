@@ -57,12 +57,13 @@
                         {% if mode == "webserver" %}
                             <li class="{% if(menu == 'gallery') %}active{% endif %}"><a href="/gallery">Gallery</a></li>
                         {% endif %}
-                        <li class="dropdown">
+                        <li class="dropdown documentation {% if(menu == 'documentation') %}active{% endif %}">
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown">Documentation<span
                                     class="caret"></span></a>
                             <ul class="dropdown-menu" role="menu">
                                 <li><a href="/documentation/run">Launch a job</a></li>
                                 <li><a href="/documentation/result">Results</a></li>
+                                <li><a href="/documentation/formats">File formats</a></li>
                             </ul>
                         </li>
                         <li class="{% if(menu == 'install') %}active{% endif %}"><a href="/install">Install</a></li>
