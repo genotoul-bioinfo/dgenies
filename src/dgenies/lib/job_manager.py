@@ -1188,7 +1188,7 @@ class JobManager:
                 print("Old job found without result dir existing: delete it from BDD!")
                 for j11 in j1:
                     j11.delete_instance()
-            if self.target is not None:
+            if self.target is not None or self.backup is not None:
                 job = Job.create(id_job=self.id_job, email=self.email, batch_type=self.config.batch_system_type,
                                  date_created=datetime.now(), tool=self.tool.name if self.tool is not None else None)
                 job.save()
