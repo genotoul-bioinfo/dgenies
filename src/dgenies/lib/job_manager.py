@@ -101,7 +101,8 @@ class JobManager:
             with open(query_file) as q_f:
                 file_path = q_f.readline()
                 self.query = Fasta(
-                    name=os.path.splitext(os.path.basename(file_path.replace(".gz", "")).split("_", 1)[1])[0],
+                    name="target" if file_path.endswith(".idx") else
+                         os.path.splitext(os.path.basename(file_path.replace(".gz", "")).split("_", 1)[1])[0],
                     path=file_path,
                     type_f="local"
                 )
@@ -110,7 +111,8 @@ class JobManager:
             with open(target_file) as t_f:
                 file_path = t_f.readline()
                 self.target = Fasta(
-                    name=os.path.splitext(os.path.basename(file_path.replace(".gz", "")).split("_", 1)[1])[0],
+                    name="query" if file_path.endswith(".idx") else
+                         os.path.splitext(os.path.basename(file_path.replace(".gz", "")).split("_", 1)[1])[0],
                     path=file_path,
                     type_f="local"
                 )
