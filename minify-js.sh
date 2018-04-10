@@ -7,7 +7,7 @@ if [ ! $(which babel.js) ] ; then
     ERROR: babel is not installed!
 
     Install it through npm:
-    npm install --save-dev babel-cli
+    npm install --prefix ~ --save-dev babel-cli
 
     Then, add it to the PATH:
     export PATH=\$PATH:~/node_modules/babel-cli/bin

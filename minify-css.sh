@@ -5,7 +5,7 @@ if [ ! $(which index.js) ] ; then
     ERROR: minifier is not installed!
 
     Install it through npm:
-    npm install minifier
+    npm install --prefix ~ minifier
 
     Then, add it to the PATH:
     export PATH=\$PATH:~/node_modules/minifier
