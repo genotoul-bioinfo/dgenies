@@ -126,16 +126,16 @@ def launch_analysis():
         errors.append("Server error: no alignfile_type in form. Please contact the support")
         form_pass = False
 
-    if backup is not None and backup_type is None:
+    if backup is not None and backup != "" and (backup_type is None or backup_type == ""):
         errors.append("Server error: no backup_type in form. Please contact the support")
         form_pass = False
 
-    if backup is not None:
+    if backup is not None and backup != "":
         alignfile = ""
         file_query = ""
         file_target = ""
-
     else:
+        backup = None
         if file_target == "":
             errors.append("No target fasta selected")
             form_pass = False
