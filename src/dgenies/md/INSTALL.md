@@ -1,6 +1,6 @@
 Install your own instance
 =========================
-    
+
 Linux
 -----
 
@@ -16,22 +16,22 @@ Alternatively, you can install it manually:
     cd dgenies
     pip3 install -r requirements.txt
     python3 setup.py install
-    
+
 ### Upgrade
 
 #### Standalone mode
 
     pip3 install dgenies --upgrade
-    
+
 #### Webserver mode
 
     dgenies clear -c
     pip3 install dgenies --upgrade
-    
+
 Then, you need to restart your webserver.
-    
-    
-    
+
+
+
 ### Requirements
 
 D-Genies requires python >= 3.5 to run.
@@ -52,32 +52,32 @@ Some python modules are required (will be automatically installed by the command
     intervaltree==2.1.*
     argparse==1.4
     Markdown==2.6.*
-    
+
 Additional modules for webserver mode:
 
     Flask-Mail==0.9.*
     peewee==2.10.2
     python-crontab==2.2.*
-    
+
 And if you use a cluster (webserver mode):
 
     drmaa==0.7.*
-    
+
 In webserver mode, you must install `mysqlclient` python module (will not be installed automatically) if you use mysql as RDBM.
 
 
 Windows
 -------
 
-We provide an installer to install D-Genies. You can download it [here](https://github.com/genotoul-bioinfo/dgenies/releases/download/v1.0.1/dgenies-1.0.1_setup.exe). 
+We provide an installer to install D-Genies. You can download it [here](https://github.com/genotoul-bioinfo/dgenies/releases/download/v1.0.1/dgenies-1.0.1_setup.exe).
 
 All requirements are present inside the package, so you don't have to do anything else.
 
 ### System requirements
 
 You need Windows 7 or newer, 64 bits architecture.
-    
-    
+
+
 How to start
 -------------
 
@@ -90,10 +90,10 @@ simultaneously or if you run it on a server, you must run it in webserver mode.
 Unix: start with the command below:
 
     dgenies run
-    
+
 Optional arguments:
 
-`-p <port>` run in a specified port (default: 5000)  
+`-p <port>` run in a specified port (default: 5000)
 `--no-browser` don't start the browser automatically
 
 Windows: just click on the launcher in the desktop or into the install folder.
@@ -104,7 +104,7 @@ Windows: just click on the launcher in the desktop or into the install folder.
 
 #### Recommended method
 
-Flask webserver (which is used in standalone mode) is not recommended in production servers.  
+Flask webserver (which is used in standalone mode) is not recommended in production servers.
 So, we recommend using the WSGY module of Apache (or µWSGI + nginx, not documented here).
 
 Once dgenies is installed, you just need to use the `/var/www/dgenies.wsgi` file into your apache
@@ -117,7 +117,7 @@ Here is an example of configuration file for apache:
 
         WSGIDaemonProcess dgenies user=<user> group=<group> threads=8
         WSGIScriptAlias / /var/www/dgenies/dgenies.wsgi
-        
+
         <Directory /var/www/dgenies>
             WSGIProcessGroup dgenies
             WSGIApplicationGroup %{GLOBAL}
@@ -125,10 +125,10 @@ Here is an example of configuration file for apache:
             Allow from all
         </Directory>
     </VirtualHost>
-    
-With:  
-`<url>`: the URL of your instance  
-`<user>`: the user who launch the server  
+
+With:
+`<url>`: the URL of your instance
+`<user>`: the user who launch the server
 `<group>`: the group who launch the server
 
 #### Debug method
@@ -136,13 +136,13 @@ With:
 For debug or for development only, you can launch dgenies through flask in webserver mode:
 
     dgenies run -m webserver
-    
+
 Optional parameters:
 
-`-d` run in debug mode  
-`-o <IP>` specify the host into run the application (default: 127.0.0.1, set 0.0.0.0 for distant access)  
-`-p <port>` run in a specified port (default: 5000)  
-`--no-crons` don't run the crons automatically  
+`-d` run in debug mode
+`-o <IP>` specify the host into run the application (default: 127.0.0.1, set 0.0.0.0 for distant access)
+`-p <port>` run in a specified port (default: 5000)
+`--no-crons` don't run the crons automatically
 `--no-browser` don't start the browser automatically (always true if *-d* option is given)
 
 
@@ -160,9 +160,9 @@ Also, scripts for preparing data must be moved in a location accessible by all n
 
 To get these scripts, follow the commands below:
 
-    curl https://forgemia.inra.fr/genotoul-bioinfo/dgenies/raw/master/get_cluster_scripts.py > get_cluster_scripts.py
+    curl https://raw.githubusercontent.com/genotoul-bioinfo/dgenies/v{{version}}/get_cluster_scripts.py > get_cluster_scripts.py
     python get_cluster_scripts.py -d <dir>
-    
+
 With `<dir>`: the folder into save the scripts (must be accessible by cluster nodes).
 
 
@@ -178,7 +178,7 @@ To change this file, please copy it into `application.properties.local` (at the 
 
 ### Global
 
-Main parameters are stored into this section: 
+Main parameters are stored into this section:
 
 * `config_dir`: where configuration file will be stored.
 * `upload_folder`: where uploaded files will be stored.
@@ -299,17 +299,17 @@ The `dgenies` command can be used to do some maintenance staff.
 **Clear all jobs:**
 
     dgenies clear -j [--max-age <age>]
-    
+
 `--max-age` (opt): set the max age of jobs to delete (default: 0, for all)
-    
+
 **Clear all log:**
 
     dgenies clear -l
-    
+
 **Clear crons (webserver mode):**
 
     dgenies clear -c
-    
+
 Gallery
 -------
 
@@ -318,22 +318,22 @@ Note: gallery is only available in webserver mode.
 To add a job to the gallery, copy illustrating picture file into the *gallery* folder inside the data folder (*~/.dgenies/data/gallery* as default, create it if not exists). Then use the *dgenies* command:
 
     dgenies gallery add -i <id_job> -n <name> -q <query_name> -t <target_name> -p <pict_filename>
-    
-With:  
-`id_job`: the name of the job  
-`name`: name of the job to show in the gallery  
-`query_name`: name of the query  
-`target_name`: name of the target  
+
+With:
+`id_job`: the name of the job
+`name`: name of the job to show in the gallery
+`query_name`: name of the query
+`target_name`: name of the target
 `pict_filename`: filename added in the gallery folder (without path)
 
 You can also delete an item from the gallery:
 
     dgenies gallery del -i <id_job>
-    
+
 or:
 
     dgenies gallery del -n <name>
-    
+
 With `id_job` and `name` as described above. You can add the `--remove-pict` option to remove the picture file from the gallery folder.
 
 Note: first item of the gallery will be shown on home page.

@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
 import os
-import sys
 from flask import Flask
 from .config_reader import AppConfigReader
 from .lib.crons import Crons
+
+VERSION = "1.0.1"
 
 app = None
 app_title = None

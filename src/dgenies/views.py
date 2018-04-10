@@ -1,4 +1,4 @@
-from dgenies import app, app_title, app_folder, config_reader, mailer, APP_DATA, MODE, DEBUG
+from dgenies import app, app_title, app_folder, config_reader, mailer, APP_DATA, MODE, DEBUG, VERSION
 
 import os
 import time
@@ -18,6 +18,7 @@ from dgenies.tools import Tools
 from markdown import Markdown
 from markdown.extensions.toc import TocExtension
 import tarfile
+from jinja2 import Environment
 if MODE == "webserver":
     from dgenies.database import Session, Gallery
     from peewee import DoesNotExist
@@ -77,7 +78,7 @@ def run():
                            example=config_reader.example_target != "",
                            target=os.path.basename(config_reader.example_target),
                            query=os.path.basename(config_reader.example_query), tools_names=tools_names, tools=tools,
-                           tools_ava=tools_ava)
+                           tools_ava=tools_ava, version=VERSION)
 
 
 @app.route("/run-test", methods=['GET'])
@@ -320,7 +321,7 @@ def get_file(file, gzip=False):  # pragma: no cover
 
 @app.route("/documentation/run", methods=['GET'])
 def documentation_run():
-    with open(os.path.join(app_folder, "doc_run.md" if MODE == "webserver" else "doc_run_standalone.md"), "r",
+    with open(os.path.join(app_folder, "md", "doc_run.md" if MODE == "webserver" else "doc_run_standalone.md"), "r",
               encoding='utf-8') as install_instr:
         content = install_instr.read()
     md = Markdown(extensions=[TocExtension(baselevel=1)])
@@ -348,7 +349,7 @@ def documentation_run():
 
 @app.route("/documentation/result", methods=['GET'])
 def documentation_result():
-    with open(os.path.join(app_folder, "user_manual.md"), "r",
+    with open(os.path.join(app_folder, "md", "user_manual.md"), "r",
               encoding='utf-8') as install_instr:
         content = install_instr.read()
     md = Markdown(extensions=[TocExtension(baselevel=1)])
@@ -359,8 +360,11 @@ def documentation_result():
 
 @app.route("/install", methods=['GET'])
 def install():
-    with open(os.path.join(app_folder, "INSTALL.md"), "r", encoding='utf-8') as install_instr:
+    with open(os.path.join(app_folder, "md", "INSTALL.md"), "r", encoding='utf-8') as install_instr:
         content = install_instr.read()
+    env = Environment()
+    template = env.from_string(content)
+    content = template.render(version=VERSION)
     md = Markdown(extensions=[TocExtension(baselevel=1)])
     content = Markup(md.convert(content))
     toc = Markup(md.toc)
