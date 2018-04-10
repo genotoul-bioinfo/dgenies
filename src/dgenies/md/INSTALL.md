@@ -1,6 +1,10 @@
 Install your own instance
 =========================
 
+{% if version != "" %}
+Latest available version: **{{version}}**
+{% endif %}
+
 Linux
 -----
 

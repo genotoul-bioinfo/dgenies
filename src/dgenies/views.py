@@ -7,6 +7,8 @@ import shutil
 import re
 import threading
 import traceback
+import requests
+import json
 from flask import render_template, request, url_for, jsonify, Response, abort, send_file, Markup
 from pathlib import Path
 from dgenies.lib.paf import Paf
@@ -383,11 +385,19 @@ def documentation_dotplot():
 
 @app.route("/install", methods=['GET'])
 def install():
+    latest = ""
+    call = requests.get("https://api.github.com/repos/genotoul-bioinfo/dgenies/releases/latest")
+    if call.ok:
+        latest = json.loads(call.content.decode("utf-8"))
+        if "tag_name" in latest:
+            latest = latest["tag_name"][1:]
+    print(latest)
+
     with open(os.path.join(app_folder, "md", "INSTALL.md"), "r", encoding='utf-8') as install_instr:
         content = install_instr.read()
     env = Environment()
     template = env.from_string(content)
-    content = template.render(version=VERSION)
+    content = template.render(version=latest)
     md = Markdown(extensions=[TocExtension(baselevel=1)])
     content = Markup(md.convert(content))
     toc = Markup(md.toc)
