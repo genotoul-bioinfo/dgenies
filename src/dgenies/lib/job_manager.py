@@ -602,7 +602,7 @@ class JobManager:
                 if not getattr(validators, self.aln_format)(self.align.get_path()):
                     self.set_job_status("fail", "Alignment file is invalid. Please check your file.")
                     return False, True, None
-            else:
+            elif input_type != "backup":
                 if self.config.batch_system_type != "local" and file_size >= getattr(self.config,
                                                                                      "min_%s_size" % input_type):
                     should_be_local = False
