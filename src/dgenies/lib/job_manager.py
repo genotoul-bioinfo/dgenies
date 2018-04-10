@@ -503,7 +503,7 @@ class JobManager:
             save_file.write(finale_path)
         return True, False, finale_path, name
 
-    def __check_url(self, fasta: Fasta):
+    def __check_url(self, fasta: Fasta, formats: tuple):
         url = fasta.get_path()
         try:
             filename = self.__get_filename_from_url(url)
@@ -521,7 +521,7 @@ class JobManager:
                 self.set_status_standalone(status, error)
             return False
         if filename is not None:
-            allowed = Functions.allowed_file(filename)
+            allowed = Functions.allowed_file(filename, formats)
             if not allowed:
                 status = "fail"
                 error = "<p>File <b>%s</b> downloaded from <b>%s</b> is not a Fasta file!</p>" \
@@ -696,7 +696,7 @@ class JobManager:
                                                                           max_upload_size_readable)
                     if not correct:
                         return False, error_set, True
-                elif self.__check_url(self.query):
+                elif self.__check_url(self.query, ("fasta",) if self.align is None else ("fasta", "idx")):
                     files_to_download.append([self.query, "query"])
                 else:
                     return False, True, True
@@ -707,7 +707,7 @@ class JobManager:
                                                                           max_upload_size_readable)
                     if not correct:
                         return False, error_set, True
-                elif self.__check_url(self.target):
+                elif self.__check_url(self.target, ("fasta",) if self.align is None else ("fasta", "idx")):
                     files_to_download.append([self.target, "target"])
                 else:
                     return False, True, True
@@ -716,7 +716,7 @@ class JobManager:
                     self.align.set_path(self.__getting_local_file(self.align, "align"))
                     correct, error_set, should_be_local = self.check_file("align", should_be_local,
                                                                           max_upload_size_readable)
-                elif self.__check_url(self.align):
+                elif self.__check_url(self.align, ("map",)):
                     files_to_download.append([self.align, "align"])
                 else:
                     return False, True, True
@@ -725,7 +725,7 @@ class JobManager:
                     self.backup.set_path(self.__getting_local_file(self.backup, "backup"))
                     correct, error_set, should_be_local = self.check_file("backup", should_be_local,
                                                                           max_upload_size_readable)
-                elif self.__check_url(self.backup):
+                elif self.__check_url(self.backup, ("backup",)):
                     files_to_download.append([self.backup, "backup"])
                 else:
                     return False, True, True
