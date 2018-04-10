@@ -155,11 +155,12 @@ class JobManager:
             else:
                 message += "Your job %s has failed. You can try again. " \
                            "If the problem persists, please contact the support.\n\n" % self.id_job
-        message += "Sequences compared in this analysis:\n"
-        if query_name is not None:
-            message += "Target: %s\nQuery: %s\n\n" % (target_name, query_name)
-        else:
-            message += "Target: %s\n\n" % target_name
+        if target_name is not None:
+            message += "Sequences compared in this analysis:\n"
+            if query_name is not None:
+                message += "Target: %s\nQuery: %s\n\n" % (target_name, query_name)
+            else:
+                message += "Target: %s\n\n" % target_name
         if status == "success":
             if self.is_target_filtered():
                 message += str("Note: target fasta has been filtered because it contains too small contigs."
@@ -179,7 +180,7 @@ class JobManager:
             template = Template(t_file.read())
             return template.render(job_name=self.id_job, status=status, url_base=self.config.web_url,
                                    query_name=query_name if query_name is not None else "",
-                                   target_name=target_name,
+                                   target_name=target_name if target_name is not None else "",
                                    error=self.error,
                                    target_filtered=self.is_target_filtered(), query_filtered=self.is_query_filtered())
 
@@ -198,12 +199,16 @@ class JobManager:
             status = job.status
             self.error = job.error
 
-            with open(self.idx_t, "r") as idxt:
-                target_name = idxt.readline().rstrip()
-            with open(self.idx_q, "r") as idxq:
-                query_name = idxq.readline().rstrip()
-                if query_name == target_name:
-                    query_name = None
+            target_name = None
+            if os.path.exists(self.idx_t):
+                with open(self.idx_t, "r") as idxt:
+                    target_name = idxt.readline().rstrip()
+            query_name = None
+            if os.path.exists(self.idx_q):
+                with open(self.idx_q, "r") as idxq:
+                    query_name = idxq.readline().rstrip()
+                    if query_name == target_name:
+                        query_name = None
 
             # Send:
             self.mailer.send_mail(recipients=[self.email],
