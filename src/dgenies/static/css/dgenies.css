@@ -416,6 +416,13 @@ form#export {
     right: 0;
 }
 
+.orsep {
+    font-size: 15pt;
+    margin-top: 8px;
+    margin-bottom: 8px;
+    text-align: center;
+}
+
 /* Tooltip*/
 
 span.tip {

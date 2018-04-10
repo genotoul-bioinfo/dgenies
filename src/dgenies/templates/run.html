@@ -225,6 +225,36 @@
                                     <div class="file-size queryidx"></div>
                                 </td>
                             </tr>
+                            <tr class="tabx tab2">
+                                <td colspan="2">
+                                    <h3 class="orsep">- or -</h3>
+                                </td>
+                            </tr>
+                            <tr class="backup tabx tab2">
+                                <td>
+                                    <label for="file_backup" class="file-backup">Backup file<sup><a href="#fn{{ fnote }}" id="ref{{ fnote }}">{{ fnote }}</a></sup>{% set fnote = fnote + 1 %}</label>
+                                </td>
+                                <td class="input-group">
+                                    <select class="select-type-input backup">
+                                        <option value="0">Local</option>
+                                        <option value="1">Url</option>
+                                    </select>
+
+                                    <div class="backup-label in-label">
+                                        <div id="progress-backup" class="progress">
+                                            <div class="bar" style="width: 0%;"></div>
+                                        </div>
+                                        <input id="backup" name="backup" class="form-control show-file" type="text" value="" readonly/>
+                                    </div>
+
+                                    <button class="btn btn-file" type="button" id="button-backup" title="Select a file">
+                                        <span class="glyphicon glyphicon-folder-open"></span>&nbsp
+                                    </button>
+                                    <div class="loading-file backup" style="display: none"></div>
+                                    <div class="upload-success backup" style="display: none"></div>
+                                    <div class="file-size backup"></div>
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -252,6 +282,8 @@
                     {% set fnote_tab = fnote_tab + 1 %}
                     <p class="afterworlff"><sup id="fn{{ fnote_tab }}"><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup> Fasta file or index built by <a href="https://raw.githubusercontent.com/genotoul-bioinfo/dgenies/v{{version}}/src/dgenies/bin/index.py" download="index.py">our tool</a>.</p>
                     {% set fnote_tab = fnote_tab + 1 %}
+                    <p class="afterworlff"><sup id="fn{{ fnote_tab }}"><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup> From a previous run.</p>
+                    {% set fnote_tab = fnote_tab + 1 %}
                 </div>
             </div>
         </div>
@@ -262,6 +294,7 @@
             <input type="file" name="file-alignfile" class="file-alignfile" data-url="/upload"/>
             <input type="file" name="file-targetidx" class="file-targetidx" data-url="/upload"/>
             <input type="file" name="file-queryidx" class="file-queryidx" data-url="/upload"/>
+            <input type="file" name="file-backup" class="file-backup" data-url="/upload"/>
         </div>
     </form>
 {% endblock %}

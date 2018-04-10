@@ -43,11 +43,13 @@
     {% endif %}
 {% endif %}
 
-<p>Sequences compared in this analysis:</p>
-<p><em>Target:</em> {{ target_name }}<br/>
-{% if query_name != "" %}
-    <em>Query:</em> {{ query_name }}
-</p>
+{% if target_name != "" %}
+    <p>Sequences compared in this analysis:</p>
+    <p><em>Target:</em> {{ target_name }}
+    {% if query_name != "" %}
+        <br/><em>Query:</em> {{ query_name }}
+    {% endif %}
+    </p>
 {% endif %}
 
 {% if status == "success" %}
