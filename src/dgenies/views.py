@@ -361,10 +361,21 @@ def documentation_result():
 
 @app.route("/documentation/formats", methods=['GET'])
 def documentation_formats():
-    with open(os.path.join(app_folder, "md", "formats.md"), "r",
+    with open(os.path.join(app_folder, "md", "doc_formats.md"), "r",
               encoding='utf-8') as install_instr:
         content = install_instr.read()
     md = Markdown(extensions=[TocExtension(baselevel=1), TableExtension()])
+    content = Markup(md.convert(content))
+    toc = Markup(md.toc)
+    return render_template("documentation.html", menu="documentation", content=content, toc=toc)
+
+
+@app.route("/documentation/dotplot", methods=['GET'])
+def documentation_dotplot():
+    with open(os.path.join(app_folder, "md", "doc_dotplot.md"), "r",
+              encoding='utf-8') as install_instr:
+        content = install_instr.read()
+    md = Markdown(extensions=[TocExtension(baselevel=1)])
     content = Markup(md.convert(content))
     toc = Markup(md.toc)
     return render_template("documentation.html", menu="documentation", content=content, toc=toc)

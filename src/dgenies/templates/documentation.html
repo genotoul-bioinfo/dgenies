@@ -28,10 +28,17 @@
             color: #ffffff;
             font-weight: bold;
         }
+        {% if toc %}
         #body {
             width: calc(100% - 300px);
             margin-left: 295px !important;
         }
+        {% else %}
+        #body {
+            width: calc(100% - 300px);
+            margin-left: 145px !important;
+        }
+        {% endif %}
     </style>
 
     <script type="text/javascript">
@@ -42,11 +49,13 @@
 {% endblock %}
 {% block content %}
 
-    <div id="plan-back">
-        <div id="plan">
-            {{ toc }}
+    {% if toc %}
+        <div id="plan-back">
+            <div id="plan">
+                {{ toc }}
+            </div>
         </div>
-    </div>
+    {% endif %}
 
     <div id="body">
         {{ content }}
