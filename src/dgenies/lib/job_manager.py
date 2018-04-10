@@ -529,8 +529,25 @@ class JobManager:
             allowed = Functions.allowed_file(filename, formats)
             if not allowed:
                 status = "fail"
-                error = "<p>File <b>%s</b> downloaded from <b>%s</b> is not a Fasta file!</p>" \
-                        "<p>If this is unattended, please contact the support.</p>" % (filename, url)
+                format_txt = ""
+                if len(formats) == 1:
+                    if formats[0] == "fasta":
+                        format_txt = "a Fasta file"
+                    elif formats[0] == "idx":
+                        format_txt = "an index file"
+                    elif formats[0] == "map":
+                        format_txt = "an alignment file"
+                    elif formats[0] == "backup":
+                        format_txt = "a backup file"
+                    else:
+                        format_txt = "a valid file"
+                else:
+                    if "fasta" in formats and "idx" in formats:
+                        format_txt = "a Fasta file or an index file"
+                    else:
+                        format_txt = "a valid file"
+                error = "<p>File <b>%s</b> downloaded from <b>%s</b> is not %s!</p>" \
+                        "<p>If this is unattended, please contact the support.</p>" % (filename, url, format_txt)
                 if MODE == "webserver":
                     with Job.connect():
                         job = Job.get(Job.id_job == self.id_job)
