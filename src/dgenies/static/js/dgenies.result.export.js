@@ -30,16 +30,12 @@ dgenies.result.export.export_png = function() {
 dgenies.result.export.export_svg = function () {
     dgenies.show_loading("Building picture...", 180);
     window.setTimeout(() => {
-        let transform = d3.boxplot.container.attr("transform");
-        let after = function () {
-            let svg = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" " +
-                      "\"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">";
-            svg += dgenies.result.export.get_svg("1000px");
-            let blob = new Blob([svg], {type: "image/svg+xml"});
-            d3.boxplot.zoom.restore_scale(transform);
-            dgenies.result.export.save_file(blob, "svg");
-        };
-        d3.boxplot.zoom.reset_scale(true, after);
+        let svg = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" " +
+                  "\"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">";
+        svg += dgenies.result.export.get_svg("1000px");
+        let blob = new Blob([svg], {type: "image/svg+xml"});
+        //d3.boxplot.zoom.restore_scale(transform);
+        dgenies.result.export.save_file(blob, "svg");
     }, 0);
 };
 
