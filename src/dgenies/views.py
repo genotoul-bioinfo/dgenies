@@ -386,17 +386,22 @@ def documentation_dotplot():
 @app.route("/install", methods=['GET'])
 def install():
     latest = ""
+    win32 = ""
     call = requests.get("https://api.github.com/repos/genotoul-bioinfo/dgenies/releases/latest")
     if call.ok:
-        latest = json.loads(call.content.decode("utf-8"))
-        if "tag_name" in latest:
-            latest = latest["tag_name"][1:]
+        release = json.loads(call.content.decode("utf-8"))
+        if "tag_name" in release:
+            latest = release["tag_name"][1:]
+            for asset in release["assets"]:
+                if asset["name"].endswith(".exe"):
+                    win32 = asset["browser_download_url"]
+                    break
 
     with open(os.path.join(app_folder, "md", "INSTALL.md"), "r", encoding='utf-8') as install_instr:
         content = install_instr.read()
     env = Environment()
     template = env.from_string(content)
-    content = template.render(version=latest)
+    content = template.render(version=latest, win32=win32)
     md = Markdown(extensions=[TocExtension(baselevel=1)])
     content = Markup(md.convert(content))
     toc = Markup(md.toc)

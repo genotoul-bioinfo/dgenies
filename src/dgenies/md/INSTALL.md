@@ -73,7 +73,8 @@ In webserver mode, you must install `mysqlclient` python module (will not be ins
 Windows
 -------
 
-We provide an installer to install D-Genies. You can download it [here](https://github.com/genotoul-bioinfo/dgenies/releases/download/v1.0.1/dgenies-1.0.1_setup.exe).
+We provide an installer to install D-Genies. You can download it 
+[here]({%if win32 %}{{win32}}{% else %}#{% endif %}).
 
 All requirements are present inside the package, so you don't have to do anything else.
 
