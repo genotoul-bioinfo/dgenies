@@ -74,7 +74,7 @@ Windows
 -------
 
 We provide an installer to install D-Genies. You can download it 
-[here]({%if win32 %}{{win32}}{% else %}#{% endif %}).
+[here]({%if win32 %}{{win32}}{% else %}https://github.com/genotoul-bioinfo/dgenies/releases{% endif %}).
 
 All requirements are present inside the package, so you don't have to do anything else.
 
