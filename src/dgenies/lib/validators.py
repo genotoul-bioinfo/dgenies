@@ -57,3 +57,28 @@ def maf(in_file):
         return False
     else:
         return True
+
+
+def idx(in_file):
+    try:
+        with open(in_file, "r") as inf:
+            first_line = inf.readline()
+            if "\t" in first_line:
+                return False
+            must_be_last = False
+            for line in inf:
+                if must_be_last:
+                    return False
+                line = line.rstrip()
+                if line == "":
+                    must_be_last = True
+                else:
+                    cols = line.split("\t")
+                    if len(cols) != 2:
+                        return False
+                    if not cols[1].isdigit():
+                        return False
+    except:
+        return False
+    else:
+        return True

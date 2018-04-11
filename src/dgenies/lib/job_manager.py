@@ -627,6 +627,12 @@ class JobManager:
                     self.set_job_status("fail", "Alignment file is invalid. Please check your file.")
                     return False, True, None
             elif input_type != "backup":
+                if my_input.get_path().endswith(".idx"):
+                    if not validators.idx(my_input.get_path()):
+                        self.set_job_status("fail",
+                                            "%s index file is invalid. Please check your file." %
+                                            input_type.capitalize())
+                        return False, True, None
                 if self.config.batch_system_type != "local" and file_size >= getattr(self.config,
                                                                                      "min_%s_size" % input_type):
                     should_be_local = False
@@ -1125,15 +1131,17 @@ class JobManager:
                 shutil.move(self.paf, self.paf_raw)
                 if not validators.paf(self.paf_raw):
                     return False
+                target_path = os.path.join(self.output_dir, "target.idx")
+                query_path = os.path.join(self.output_dir, "query.idx")
+                if not validators.idx(target_path) or not validators.idx(query_path):
+                    return False
                 self.align = Fasta(name="map", path=self.paf_raw, type_f="local")
                 self.aln_format = "paf"
                 with open(os.path.join(self.output_dir, ".align"), "w") as aln:
                     aln.write(self.paf_raw)
-                target_path = os.path.join(self.output_dir, "target.idx")
                 self.target = Fasta(name="target", path=target_path, type_f="local")
                 with open(os.path.join(self.output_dir, ".target"), "w") as trgt:
                     trgt.write(target_path)
-                query_path = os.path.join(self.output_dir, "query.idx")
                 self.query = Fasta(name="query", path=query_path, type_f="local")
                 with open(os.path.join(self.output_dir, ".query"), "w") as qr:
                     qr.write(query_path)
@@ -1185,7 +1193,7 @@ class JobManager:
                 self._after_start(success, error_set)
 
         except Exception:
-            print(traceback.print_exc())
+            traceback.print_exc()
             error = "<p>An unexpected error has occurred. Please contact the support to report the bug.</p>"
             if MODE == "webserver":
                 with Job.connect():

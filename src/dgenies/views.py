@@ -391,7 +391,6 @@ def install():
         latest = json.loads(call.content.decode("utf-8"))
         if "tag_name" in latest:
             latest = latest["tag_name"][1:]
-    print(latest)
 
     with open(os.path.join(app_folder, "md", "INSTALL.md"), "r", encoding='utf-8') as install_instr:
         content = install_instr.read()
