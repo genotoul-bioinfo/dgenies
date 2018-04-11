@@ -1,1 +1,1 @@
-src/dgenies/INSTALL.md
+src/dgenies/md/INSTALL.md
