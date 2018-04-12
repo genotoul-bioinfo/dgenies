@@ -106,6 +106,7 @@ class Tools:
         config_file_search = [os.path.join(os.path.abspath(os.sep), "dgenies", "tools.yaml"),
                               "/etc/dgenies/tools.yaml",
                               "/etc/dgenies/tools.yaml.local",
+                              os.path.join(str(Path.home()), ".dgenies", "tools.yaml"),
                               os.path.join(str(Path.home()), ".dgenies", "tools.yaml.local")]
 
         if os.name == "nt":

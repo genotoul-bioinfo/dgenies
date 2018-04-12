@@ -10,9 +10,15 @@ Linux
 
 ### Install
 
-Install in 1 step (as root):
+Install in 1 step:
+
+As root:
 
     pip3 install dgenies
+
+Or as simple user:
+
+    pip3 install dgenies --user
 
 Alternatively, you can install it manually:
 
@@ -26,6 +32,8 @@ Alternatively, you can install it manually:
 #### Standalone mode
 
     pip3 install dgenies --upgrade
+    
+Add `--user` flag if you have not root access.
 
 #### Webserver mode
 
@@ -177,7 +185,14 @@ Configuration
 
 Changing the default configuration is not required for standalone mode, but you can want to custom some parts of the program.
 
-Configuration is stored in the `/etc/dgenies/application.properties` file (linux) or in the `application.properties` file of the install folder (windows). The file is divided in 9 parts described below.
+Configuration file location:
+* Linux:
+    * `/etc/dgenies/application.properties` if installed with root access
+    * `~/.dgenies/application.properties` else
+* Windows:
+    * `application.properties` file of the install folder
+
+The file is divided in 9 parts described below.
 
 To change this file, please copy it into `application.properties.local` (at the same location) to avoid erase of the file on upgrades.
 
@@ -197,16 +212,6 @@ Main parameters are stored into this section:
 For webserver mode only (ignored in standalone mode):
 
 * `batch_system_type`: local for run all jobs locally, sge or slurm to use a cluster scheduler.
-
-### Softwares
-
-Paths to the external software should be set here:
-
-* `minimap2`: path to minimap2 software (keep as it to use built-in)
-
-And if you use a cluster:
-
-* `minimap2_cluster`: path to minimap2 on the cluster
 
 ### Debug
 
@@ -293,6 +298,10 @@ Here, you can fill example data. At least target is required to enable example d
 Fill for target and query the absolute local path of the file. This path will not be shown to the client. Only the file name will be shown.
 
 If at least target is filled, a button "Load example" will be shown in the run form. Click on it will load example data in the form.
+
+### Analytics
+
+Set `enable_logging_runs` to True will enable storage of analytics data. It stores for each job creation date, user mail, size of query and target, and batch type.
 
 
 
