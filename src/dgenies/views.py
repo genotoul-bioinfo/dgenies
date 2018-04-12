@@ -28,6 +28,24 @@ if MODE == "webserver":
     from peewee import DoesNotExist
 
 
+def get_latest_version():
+    latest = ""
+    win32 = ""
+    try:
+        call = requests.get("https://api.github.com/repos/genotoul-bioinfo/dgenies/releases/latest")
+        if call.ok:
+            release = json.loads(call.content.decode("utf-8"))
+            if "tag_name" in release:
+                latest = release["tag_name"][1:]
+                for asset in release["assets"]:
+                    if asset["name"].endswith(".exe"):
+                        win32 = asset["browser_download_url"]
+                        break
+    except ConnectionError:
+        pass
+    return latest, win32
+
+
 @app.context_processor
 def global_templates_variables():
     return {
@@ -325,9 +343,12 @@ def get_file(file, gzip=False):  # pragma: no cover
 
 @app.route("/documentation/run", methods=['GET'])
 def documentation_run():
-    with open(os.path.join(app_folder, "md", "doc_run.md" if MODE == "webserver" else "doc_run_standalone.md"), "r",
-              encoding='utf-8') as install_instr:
+    version = get_latest_version()[0]
+    with open(os.path.join(app_folder, "md", "doc_run.md"), "r",  encoding='utf-8') as install_instr:
         content = install_instr.read()
+    env = Environment()
+    template = env.from_string(content)
+    content = template.render(mode=MODE, version=version)
     md = Markdown(extensions=[TocExtension(baselevel=1)])
     max_upload_file_size = config_reader.max_upload_file_size
     if max_upload_file_size == -1:
@@ -386,20 +407,7 @@ def documentation_dotplot():
 
 @app.route("/install", methods=['GET'])
 def install():
-    latest = ""
-    win32 = ""
-    try:
-        call = requests.get("https://api.github.com/repos/genotoul-bioinfo/dgenies/releases/latest")
-        if call.ok:
-            release = json.loads(call.content.decode("utf-8"))
-            if "tag_name" in release:
-                latest = release["tag_name"][1:]
-                for asset in release["assets"]:
-                    if asset["name"].endswith(".exe"):
-                        win32 = asset["browser_download_url"]
-                        break
-    except ConnectionError:
-        pass
+    latest, win32 = get_latest_version()
 
     with open(os.path.join(app_folder, "md", "INSTALL.md"), "r", encoding='utf-8') as install_instr:
         content = install_instr.read()
