@@ -8,6 +8,7 @@ import re
 import threading
 import traceback
 import requests
+from requests.exceptions import ConnectionError
 import json
 from flask import render_template, request, url_for, jsonify, Response, abort, send_file, Markup
 from pathlib import Path
@@ -387,15 +388,18 @@ def documentation_dotplot():
 def install():
     latest = ""
     win32 = ""
-    call = requests.get("https://api.github.com/repos/genotoul-bioinfo/dgenies/releases/latest")
-    if call.ok:
-        release = json.loads(call.content.decode("utf-8"))
-        if "tag_name" in release:
-            latest = release["tag_name"][1:]
-            for asset in release["assets"]:
-                if asset["name"].endswith(".exe"):
-                    win32 = asset["browser_download_url"]
-                    break
+    try:
+        call = requests.get("https://api.github.com/repos/genotoul-bioinfo/dgenies/releases/latest")
+        if call.ok:
+            release = json.loads(call.content.decode("utf-8"))
+            if "tag_name" in release:
+                latest = release["tag_name"][1:]
+                for asset in release["assets"]:
+                    if asset["name"].endswith(".exe"):
+                        win32 = asset["browser_download_url"]
+                        break
+    except ConnectionError:
+        pass
 
     with open(os.path.join(app_folder, "md", "INSTALL.md"), "r", encoding='utf-8') as install_instr:
         content = install_instr.read()
