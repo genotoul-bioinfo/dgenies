@@ -17,6 +17,7 @@ from dgenies.lib.job_manager import JobManager
 from dgenies.lib.functions import Functions, ALLOWED_EXTENSIONS
 from dgenies.lib.upload_file import UploadFile
 from dgenies.lib.fasta import Fasta
+from dgenies.lib.latest import Latest
 from dgenies.tools import Tools
 from markdown import Markdown
 from markdown.extensions.toc import TocExtension
@@ -26,24 +27,6 @@ from jinja2 import Environment
 if MODE == "webserver":
     from dgenies.database import Session, Gallery
     from peewee import DoesNotExist
-
-
-def get_latest_version():
-    latest = ""
-    win32 = ""
-    try:
-        call = requests.get("https://api.github.com/repos/genotoul-bioinfo/dgenies/releases/latest")
-        if call.ok:
-            release = json.loads(call.content.decode("utf-8"))
-            if "tag_name" in release:
-                latest = release["tag_name"][1:]
-                for asset in release["assets"]:
-                    if asset["name"].endswith(".exe"):
-                        win32 = asset["browser_download_url"]
-                        break
-    except ConnectionError:
-        pass
-    return latest, win32
 
 
 @app.context_processor
@@ -343,7 +326,8 @@ def get_file(file, gzip=False):  # pragma: no cover
 
 @app.route("/documentation/run", methods=['GET'])
 def documentation_run():
-    version = get_latest_version()[0]
+    latest = Latest()
+    version = latest.latest
     with open(os.path.join(app_folder, "md", "doc_run.md"), "r",  encoding='utf-8') as install_instr:
         content = install_instr.read()
     env = Environment()
@@ -407,13 +391,13 @@ def documentation_dotplot():
 
 @app.route("/install", methods=['GET'])
 def install():
-    latest, win32 = get_latest_version()
+    latest = Latest()
 
     with open(os.path.join(app_folder, "md", "INSTALL.md"), "r", encoding='utf-8') as install_instr:
         content = install_instr.read()
     env = Environment()
     template = env.from_string(content)
-    content = template.render(version=latest, win32=win32)
+    content = template.render(version=latest.latest, win32=latest.win32)
     md = Markdown(extensions=[TocExtension(baselevel=1)])
     content = Markup(md.convert(content))
     toc = Markup(md.toc)
