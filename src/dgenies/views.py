@@ -7,9 +7,6 @@ import shutil
 import re
 import threading
 import traceback
-import requests
-from requests.exceptions import ConnectionError
-import json
 from flask import render_template, request, url_for, jsonify, Response, abort, send_file, Markup
 from pathlib import Path
 from dgenies.lib.paf import Paf
