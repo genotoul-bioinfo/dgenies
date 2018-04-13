@@ -185,11 +185,11 @@ Configuration
 
 Changing the default configuration is not required for standalone mode, but you can want to custom some parts of the program.
 
-Configuration file location:
-* Linux:
-    * `/etc/dgenies/application.properties` if installed with root access
-    * `~/.dgenies/application.properties` else
-* Windows:
+Configuration file location:  
+* Linux:  
+    * `/etc/dgenies/application.properties` if installed with root access  
+    * `~/.dgenies/application.properties` else  
+* Windows:  
     * `application.properties` file of the install folder
 
 The file is divided in 9 parts described below.
@@ -304,6 +304,89 @@ If at least target is filled, a button "Load example" will be shown in the run f
 Set `enable_logging_runs` to True will enable storage of analytics data. It stores for each job creation date, user mail, size of query and target, and batch type.
 
 
+Add or change alignment tools
+-----------------
+
+D-Genies uses minimap2 as default aligner, but you can add other tools, or replace it by another tool. You can also change the path to the minimap2 executable.
+
+Tools definition YAML file:  
+* Linux:  
+    * `/etc/dgenies/tools.yaml` if installed with root access  
+    * `~/.dgenies/tools.yaml` else  
+* Windows:  
+    * `tools.yaml` file of the install folder
+    
+To change this file, please copy it into `tools.yaml.local` (at the same location) to avoid erase of the file on upgrades.
+
+For each tool, you can or must define several properties described bellow.
+
+### Executable path
+
+Required.
+
+Define in `exec` property the path of the tool exectable. If it differs for cluster execution, set it on `exec_cluster` property for it.
+
+### Command line skeleton
+
+Required.
+
+You must define the command line skeleton to define how to launch the program, in `command_line` property. The skeleton must include some tags:
+  
+* `{exe}`: will be replaced by the executable path
+* `{target}`: will be replaced by the target fasta file
+* `{query}`: will be replaced by the query fasta file
+* `{out}`: will be replaced by the output file
+
+If the tool can be multithreaded, add the `{threads}` tag which will be replaced by the number of threads to use.
+
+If your program is able to launch in all-vs-all mode (target versus itself), define the same skeleton in the `all_vs_all` property. All tag described before must be used except the `{query}` tag.
+
+### Threads
+
+Required.
+
+Defines how much threads to use with this tool. Set it in `threads` property for local executions, and `threads_cluster` for cluster execution (if different from the local one).
+
+### Max memory
+
+Optional.
+
+If the tool requires less memory than defined in the configuration file, you can add the `max_memory` property. The unit is Gb.
+
+### Parser
+
+Optional.
+
+If the tool does not output in PAF format, you must define a function in the `src/dgenies/lib/parsers.py` file of the D-Genies repository. This function get the input file as first parameter and transform it into a valid PAF file (output file, second parameter). You must reference the name of this function in the `parser` property.
+
+### Split before
+
+Optional. Default: False
+
+For some tools (like minimap2), splitting the query on 10kb block improves performances (blocks are merged after mapping). To enable it for the added tool, set property `split_before` to True.
+
+### Help
+
+Optional.
+
+Define a message to show aside the tool name in the run form. Set it in `help` property.
+
+### Order
+
+Optional. Default: random.
+
+Define in which order we show tools in the run form. Set it in `order` property.
+
+
+Add new formats
+---------------
+
+In `Plot alignment` mode in run form ([see here](/documentation/run#plot-alignment-mode)), we propose by default only PAF and MAF formats. It's easy to add support for new formats.
+
+Just define 2 functions:
+
+* First one in the `src/dgenies/lib/validators.py` file of the D-Genies repository. It takes only one argument: the input file. It checks the file format is correct and returns True in this case, else it returns False. Name of this function must be the same as the expected input file extension.  
+* Second one in the `src/dgenies/lib/parsers.py` file of the D-Genies repository. It takes two arguments: the input and the output file. It convert the file into a valid PAF file. Name of this function must be same as the previous one.
 
 Maintenance
 -----------

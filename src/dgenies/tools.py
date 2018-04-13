@@ -10,8 +10,8 @@ from dgenies.lib import parsers
 
 class Tool:
 
-    def __init__(self, name, exec, command_line, all_vs_all, max_memory, threads=1, exec_cluster=None, threads_cluster=None,
-                 parser=None, split_before=False, help=None, order=None):
+    def __init__(self, name, exec, command_line, all_vs_all, max_memory, threads=1, exec_cluster=None,
+                 threads_cluster=None, parser=None, split_before=False, help=None, order=None):
         """
         Create a new tool
         :param command_line: command line to launch the tool
