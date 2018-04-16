@@ -428,6 +428,9 @@ def get_graph():
     paf = Paf(paf, idx1, idx2)
 
     if paf.parsed:
+        valid = os.path.join(APP_DATA, id_f, ".valid")
+        if not os.path.exists(valid):
+            Path(valid).touch()
         res = paf.get_d3js_data()
         res["success"] = True
         return jsonify(res)

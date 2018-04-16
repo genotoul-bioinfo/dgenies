@@ -258,10 +258,24 @@ class Functions:
         return False
 
     @staticmethod
+    def _get_jobs_list():
+        all_jobs = os.listdir(Functions.config.app_data)
+        print(all_jobs)
+        valid_jobs = []
+        for job in all_jobs:
+            job_path = os.path.join(Functions.config.app_data, job)
+            if os.path.isfile(os.path.join(job_path, "map.paf")) and \
+                    os.path.isfile(os.path.join(job_path, "target.idx")) and \
+                    os.path.isfile(os.path.join(job_path, "query.idx")) and \
+                    os.path.isfile(os.path.join(job_path, ".valid")):
+                valid_jobs.append(job)
+        return valid_jobs
+
+    @staticmethod
     def get_list_all_jobs(mode="webserver"):
         if mode == "webserver":
             return []  # Don't give the list in webserver as it's multi-user
-        all_jobs = os.listdir(Functions.config.app_data)
+        all_jobs = Functions._get_jobs_list()
         if "gallery" in all_jobs:
             all_jobs.remove("gallery")
         return sorted(all_jobs, key=lambda x: x.lower())
