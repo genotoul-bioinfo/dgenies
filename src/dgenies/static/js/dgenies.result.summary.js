@@ -13,7 +13,7 @@ dgenies.result.summary.show = function(percents) {
     let percents_order = ["-1", "0", "1", "2", "3"];
     let x = 0;
     let percent_value = 0;
-    $.each(percents_order, function(o, percent) {
+    $.each(percents_order, function(i, percent) {
         let label=dgenies.result.summary._get_label(percent);
         x += percent_value;
         percent_value = percent in percents ? percents[percent] : 0;
