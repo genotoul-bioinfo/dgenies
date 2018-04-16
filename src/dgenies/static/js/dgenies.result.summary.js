@@ -94,7 +94,7 @@ dgenies.result.summary._get_label = function (percent_class) {
 };
 
 dgenies.result.summary.get_svg = function () {
-    return $("#draw-stats").html();
+    return `<svg version='1.1' xmlns='http://www.w3.org/2000/svg' width='500px' height='220px'>${$("#draw-stats").find(">svg").html()}</svg>`;
 };
 
 dgenies.result.summary.save_file = function (blob, format) {
@@ -110,7 +110,10 @@ dgenies.result.summary.export_tsv = function () {
 };
 
 dgenies.result.summary.export_svg = function () {
-    let blob = new Blob([dgenies.result.summary.get_svg()], {type: "image/svg+xml"});
+    let svg = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" " +
+                  "\"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">";
+    svg += dgenies.result.summary.get_svg()
+    let blob = new Blob([svg], {type: "image/svg+xml"});
     dgenies.result.summary.save_file(blob, "svg");
 };
 
