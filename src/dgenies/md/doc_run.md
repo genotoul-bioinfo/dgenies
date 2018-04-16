@@ -15,7 +15,7 @@ Launch a new mapping between two fasta files and dot plot it.
 
 #### ({{puce}}) Main menu
 
-You just need to click on the *run* tab of the main menu, and follow the fields. All results will be stored in the result menu.
+You just need to click on the main menu *run* tab, and fill the fields. All results will be stored in the result menu.
 
 {% set puce=puce+1 %}
 
@@ -23,7 +23,7 @@ You just need to click on the *run* tab of the main menu, and follow the fields.
 
 Required field
 
-An unique job name is set automatically. You could change it. Note that is a job already exists with this name, it will be automatically renamed.
+A unique job name is set automatically. You can change it. Note that if a job already exists with the same name, it will be automatically renamed.
 
 {% set puce=puce+1 %}
 
@@ -33,7 +33,7 @@ An unique job name is set automatically. You could change it. Note that is a job
 
 Required field
 
-Please fill your email. When the mail will be finished, you will receive a mail to inform you that your job is done. Also, some features in the result page will send you a mail to this address.
+Please enter your email. When the job is finished, you will receive a mai. Some features of the result page will also send you a mail to this address (see [manual](/documentation/result)).
 
 {% set puce=puce+1 %}
 
@@ -43,9 +43,9 @@ Please fill your email. When the mail will be finished, you will receive a mail 
 
 Required field
 
-With the selector at the left, you can choose giving a local file or an URL. For a local file, select it by clicking on the button at the right.
+With the selector at the left, you can choose to select a local file or enter an URL. For a local file, click on the button at the right to select it.
 
-File must be in fasta format. We recommend using gzipped files to preserve bandwidth and faster job submission.
+Files must be in fasta format. We recommend using gzipped files to preserve bandwidth and speed job submission.
 
 Allowed extensions: fa, fasta, fna, fa.gz, fasta.gz, fna.gz
 
@@ -89,7 +89,7 @@ An alignment file in PAF or MAF format.
 
 Allowed extensions: paf, maf
 
-With the selector at the left, you can choose giving a local file or an URL. For a local file, select it by clicking on the button at the right.
+With the selector at the left, you can choose to select a local file or enter an URL. For a local file, click on the button at the right to select it.
 
 {% set puce=puce+1 %}
 
@@ -97,7 +97,7 @@ With the selector at the left, you can choose giving a local file or an URL. For
 
 Required field (except if backup file is filled, see bellow)
 
-Could be the fasta file for the target or the corresponding index file.
+Can be a fasta file or the corresponding index file.
 
 To improve bandwidth and computation time, we recommend to use the index file. This file format is described [here](/documentation/formats#index-file). You can use [our tool](https://raw.githubusercontent.com/genotoul-bioinfo/dgenies/v{{version}}/src/dgenies/bin/index.py) to build it.
 
@@ -105,7 +105,7 @@ Allowed extensions:
 Fasta: fa, fasta, fna, fa.gz, fasta.gz, fna.gz  
 Index: idx
 
-With the selector at the left, you can choose giving a local file or an URL. For a local file, select it by clicking on the button at the right.
+With the selector at the left, you can choose to select a local file or enter an URL. For a local file, click on the button at the right to select it.
 
 {% set puce=puce+1 %}
 
@@ -113,7 +113,7 @@ With the selector at the left, you can choose giving a local file or an URL. For
 
 Optional field
 
-Could be the fasta file for the query or the corresponding index file.
+Can be the fasta file or the corresponding index file.
 
 Works like the target file.
 
@@ -123,6 +123,6 @@ Works like the target file.
 
 Optional field
 
-If you download backup from a previous job, you can add it here to restore the job. In this case, don't fill previous fields, only this one is required.
+If you downloaded the backup file from a previous job, you can enter it here to restore the dot plot. In this case, don't fill previous fields, only this one is required.
 
-With the selector at the left, you can choose giving a local file or an URL. For a local file, select it by clicking on the button at the right.
+With the selector at the left, you can choose to select a local file or enter an URL. For a local file, click on the button at the right to select it.

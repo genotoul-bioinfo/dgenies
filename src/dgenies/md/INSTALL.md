@@ -22,7 +22,7 @@ Or as simple user:
 
 Alternatively, you can install it manually:
 
-    git clone https://forgemia.inra.fr/genotoul-bioinfo/dgenies.git
+    git clone https://github.com/genotoul-bioinfo/dgenies
     cd dgenies
     pip3 install -r requirements.txt
     python3 setup.py install
@@ -304,10 +304,27 @@ If at least target is filled, a button "Load example" will be shown in the run f
 Set `enable_logging_runs` to True will enable storage of analytics data. It stores for each job creation date, user mail, size of query and target, and batch type.
 
 
-Add or change alignment tools
------------------
+Customize your installation
+---------------------------
 
-D-Genies uses minimap2 as default aligner, but you can add other tools, or replace it by another tool. You can also change the path to the minimap2 executable.
+You can make easily make some changes to the application, described below. To do so, you must first clone the D-Genies repository (except if changes can be done in the current installation, see below):
+
+    git clone https://github.com/genotoul-bioinfo/dgenies
+    
+The created folder is named the `D-Genies repository` in the text below.
+
+Then, you make changes described below. When done, you can easily install the cusomized version with this command:
+
+    pip install .
+    
+Add the `--upgrade` flag if you already have D-Genies installed.
+
+
+### Add or change alignment tools
+
+D-Genies uses minimap2 as default aligner, but you can add other tools, or replace minimap2 by another tool. You can also change minimap2 executable path.
+
+If your tool needs a parser (see below), you must customize the installation (see above). For other changes, you can make them on your current installation.
 
 Tools definition YAML file:  
 * Linux:  
@@ -316,21 +333,23 @@ Tools definition YAML file:
 * Windows:  
     * `tools.yaml` file of the install folder
     
-To change this file, please copy it into `tools.yaml.local` (at the same location) to avoid erase of the file on upgrades.
+To change this file, please copy it into `tools.yaml.local` (at the same location) to avoid to erase the file on upgrades.
+
+Note: you can also edit the `tools.yaml` file of the D-Genies repository, which will be installed then (if you customize the installation). Edit it without renaming it.
 
 For each tool, you can or must define several properties described bellow.
 
-### Executable path
+#### Executable path
 
 Required.
 
-Define in `exec` property the path of the tool exectable. If it differs for cluster execution, set it on `exec_cluster` property for it.
+Always set tool binary path in the `exec` property. If it differs for cluster execution, set it in the `exec_cluster` property.
 
-### Command line skeleton
+#### Command line skeleton
 
 Required.
 
-You must define the command line skeleton to define how to launch the program, in `command_line` property. The skeleton must include some tags:
+The command line skeleton defines how to launch the program, in the `command_line` property. The skeleton must include the following tags:
   
 * `{exe}`: will be replaced by the executable path
 * `{target}`: will be replaced by the target fasta file
@@ -339,54 +358,53 @@ You must define the command line skeleton to define how to launch the program, i
 
 If the tool can be multithreaded, add the `{threads}` tag which will be replaced by the number of threads to use.
 
-If your program is able to launch in all-vs-all mode (target versus itself), define the same skeleton in the `all_vs_all` property. All tag described before must be used except the `{query}` tag.
+If your program is able to use all-vs-all mode (target versus itself), define the same skeleton in the `all_vs_all` property. All tag described hereover must be set except the `{query}` tag.
 
-### Threads
+#### Threads
 
 Required.
 
-Defines how much threads to use with this tool. Set it in `threads` property for local executions, and `threads_cluster` for cluster execution (if different from the local one).
+Defines how much threads to use for this tool. Set it in the `threads` property for local executions, and the `threads_cluster` property for cluster execution (if different from the local one).
 
-### Max memory
+#### Max memory
 
 Optional.
 
 If the tool requires less memory than defined in the configuration file, you can add the `max_memory` property. The unit is Gb.
 
-### Parser
+#### Parser
 
 Optional.
 
-If the tool does not output in PAF format, you must define a function in the `src/dgenies/lib/parsers.py` file of the D-Genies repository. This function get the input file as first parameter and transform it into a valid PAF file (output file, second parameter). You must reference the name of this function in the `parser` property.
+If the tool does not output PAF format, you must define a function in the `src/dgenies/lib/parsers.py` file of the D-Genies repository. This function get the input file as first parameter and outputs a valid PAF file (output file, second parameter). You must reference the function name in the `parser` property.
 
-### Split before
+#### Split before
 
 Optional. Default: False
 
-For some tools (like minimap2), splitting the query on 10kb block improves performances (blocks are merged after mapping). To enable it for the added tool, set property `split_before` to True.
+For some tools (like minimap2), splitting the query on 10 Mb blocks improves performances (blocks are merged after mapping). To enable this for the tool, set the `split_before` property to True.
 
-### Help
+#### Help
 
 Optional.
 
-Define a message to show aside the tool name in the run form. Set it in `help` property.
+Define a message to show aside the tool name in the run form. Set it in the `help` property.
 
-### Order
+#### Order
 
 Optional. Default: random.
 
-Define in which order we show tools in the run form. Set it in `order` property.
+Define in which order we show tools in the run form. Set it in the `order` property.
 
 
-Add new formats
----------------
+### Add new formats
 
-In `Plot alignment` mode in run form ([see here](/documentation/run#plot-alignment-mode)), we propose by default only PAF and MAF formats. It's easy to add support for new formats.
+In `Plot alignment` mode in run form ([see here](/documentation/run#plot-alignment-mode)), we propose by default only PAF and MAF formats. It's easy to add new formats.
 
 Just define 2 functions:
 
-* First one in the `src/dgenies/lib/validators.py` file of the D-Genies repository. It takes only one argument: the input file. It checks the file format is correct and returns True in this case, else it returns False. Name of this function must be the same as the expected input file extension.  
-* Second one in the `src/dgenies/lib/parsers.py` file of the D-Genies repository. It takes two arguments: the input and the output file. It convert the file into a valid PAF file. Name of this function must be same as the previous one.
+* Add the first one in the `src/dgenies/lib/validators.py` file of the D-Genies repository. It takes only one argument: the input file. It checks if the file format is correct and returns True in this case, else it returns False. The function name must be the same as the expected input file extension.  
+* Add the second one in the `src/dgenies/lib/parsers.py` file of the D-Genies repository. It takes two arguments: the input and the output file. It convert the input file into a valid PAF file. The function name must be same as the previous one.
 
 Maintenance
 -----------
