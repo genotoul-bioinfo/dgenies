@@ -1,0 +1,11 @@
+minimap2:
+  exec: ###SYSEXEC###/../minimap2/minimap2.exe
+  command_line: "{exe} -t {threads} {target} {query} > {out}"
+  all_vs_all: "{exe} -t {threads} -X {target} {target} > {out}"
+  max_memory: 40
+  threads: 8
+  parser: !!null
+  split_before: True
+  help: "Better for low similar fasta files"
+  order: 0
+

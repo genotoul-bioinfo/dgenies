@@ -31,11 +31,11 @@ class Tool:
         if exec == "default":
             self.exec = os.path.join(os.path.dirname(inspect.getfile(self.__class__)), "bin", self.name)
         else:
-            self.exec = exec
+            self.exec = exec.replace("###SYSEXEC###", os.path.dirname(sys.executable))
         if exec_cluster is None or exec_cluster == "default":
-            self.exec_cluster = exec
+            self.exec_cluster = exec.replace("###SYSEXEC###", os.path.dirname(sys.executable))
         else:
-            self.exec_cluster = exec_cluster
+            self.exec_cluster = exec_cluster.replace("###SYSEXEC###", os.path.dirname(sys.executable))
 
         # Command line:
         if "{exe}" in command_line and "{target}" in command_line and "{query}" in command_line and "{out}" \
