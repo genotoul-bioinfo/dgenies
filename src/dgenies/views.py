@@ -347,7 +347,7 @@ def documentation_run():
     content = template.render(mode=MODE, version=version, size=max_upload_file_size, size_unc=max_upload_size,
                               size_ava=max_upload_size_ava)
     md = Markdown(extensions=[TocExtension(baselevel=1)])
-    content = Functions.replace_headers(str(Markup(md.convert(content))))
+    content = Markup(md.convert(content))
     toc = Markup(md.toc)
     return render_template("documentation.html", menu="documentation", content=content, toc=toc)
 
@@ -358,7 +358,7 @@ def documentation_result():
               encoding='utf-8') as install_instr:
         content = install_instr.read()
     md = Markdown(extensions=[TocExtension(baselevel=1)])
-    content = Functions.replace_headers(str(Markup(md.convert(content))))
+    content = Markup(md.convert(content))
     toc = Markup(md.toc)
     return render_template("documentation.html", menu="documentation", content=content, toc=toc)
 
@@ -369,7 +369,7 @@ def documentation_formats():
               encoding='utf-8') as install_instr:
         content = install_instr.read()
     md = Markdown(extensions=[TocExtension(baselevel=1), TableExtension()])
-    content = Functions.replace_headers(str(Markup(md.convert(content))))
+    content = Markup(md.convert(content))
     toc = Markup(md.toc)
     return render_template("documentation.html", menu="documentation", content=content, toc=toc)
 
@@ -380,7 +380,7 @@ def documentation_dotplot():
               encoding='utf-8') as install_instr:
         content = install_instr.read()
     md = Markdown(extensions=[TocExtension(baselevel=1)])
-    content = Functions.replace_headers(str(Markup(md.convert(content))))
+    content = Markup(md.convert(content))
     toc = Markup(md.toc)
     return render_template("documentation.html", menu="documentation", content=content, toc=toc)
 
@@ -395,7 +395,7 @@ def install():
     template = env.from_string(content)
     content = template.render(version=latest.latest, win32=latest.win32)
     md = Markdown(extensions=[TocExtension(baselevel=1)])
-    content = Functions.replace_headers(str(Markup(md.convert(content))))
+    content = Markup(md.convert(content))
     toc = Markup(md.toc)
     return render_template("documentation.html", menu="install", content=content, toc=toc)
 

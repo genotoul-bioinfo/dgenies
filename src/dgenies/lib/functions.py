@@ -283,12 +283,3 @@ class Functions:
     def query_fasta_file_exists(res_dir):
         fasta_file = os.path.join(res_dir, ".query")
         return os.path.exists(fasta_file) and os.path.isfile(fasta_file)
-
-    @staticmethod
-    def replace_headers(text):
-        headers = re.findall("<h\d id=\"[^\"]+\">", text)
-        for header in headers:
-            id_header = re.search("id=\"([^\"]+)\"", header).group(1)
-            text = text.replace(header, "<span class=\"anchor\" id=\"%s\"></span>%s" %
-                                (id_header, re.sub(r"id=\"[^\"]+\"", "class=\"section\"", header)))
-        return text

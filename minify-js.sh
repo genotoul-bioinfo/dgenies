@@ -22,3 +22,4 @@ babel.js -o dgenies.result.min.js --compact --minified dgenies.result.js dgenies
 babel.js -o jquery.fileupload.min.js --compact --minified jquery.fileupload.js jquery.fileupload-process.js jquery.fileupload-validate.js
 babel.js -o dgenies.run.min.js --compact --minified dgenies.run.js
 babel.js -o dgenies.status.min.js --compact --minified dgenies.status.js
+babel.js -o dgenies.documentation.min.js --compact --minified dgenies.documentation.js

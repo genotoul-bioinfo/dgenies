@@ -1,6 +1,11 @@
 {% extends 'base.html' %}
 {% block scripts %}
     {{ super() }}
+    {% if debug %}
+        <script src="{{ url_for('static', filename='js/dgenies.documentation.js') }}" type="text/JavaScript"></script>
+    {% else %}
+        <script src="{{ url_for('static', filename='js/dgenies.documentation.min.js') }}" type="text/JavaScript"></script>
+    {% endif %}
     <style>
         #plan-back, #body {
             display: inline-block;
@@ -45,12 +50,10 @@
         }
         {% endif %}
     </style>
-
-    <script type="text/javascript">
-        $(document).ready(function() {
-            $("table").addClass("table table-striped");
-        });
-    </script>
+{% endblock %}
+{% block onload %}
+    {{ super() }}
+    dgenies.documentation.init();
 {% endblock %}
 {% block content %}
 
