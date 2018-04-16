@@ -33,7 +33,7 @@ class Tool:
         else:
             self.exec = exec.replace("###SYSEXEC###", os.path.dirname(sys.executable))
         if exec_cluster is None or exec_cluster == "default":
-            self.exec_cluster = exec.replace("###SYSEXEC###", os.path.dirname(sys.executable))
+            self.exec_cluster = exec
         else:
             self.exec_cluster = exec_cluster.replace("###SYSEXEC###", os.path.dirname(sys.executable))
 
