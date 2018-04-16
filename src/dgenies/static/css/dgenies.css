@@ -4,6 +4,13 @@ body {
     padding-top: 50px;
 }
 
+.anchor{
+  display: block;
+  height: 50px; /*same height as header*/
+  margin-top: -50px; /*same height as header*/
+  visibility: hidden;
+}
+
 #main-error {
     display: none;
     width: 100%;

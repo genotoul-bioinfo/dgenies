@@ -325,12 +325,6 @@ def get_file(file, gzip=False):  # pragma: no cover
 def documentation_run():
     latest = Latest()
     version = latest.latest
-    with open(os.path.join(app_folder, "md", "doc_run.md"), "r",  encoding='utf-8') as install_instr:
-        content = install_instr.read()
-    env = Environment()
-    template = env.from_string(content)
-    content = template.render(mode=MODE, version=version)
-    md = Markdown(extensions=[TocExtension(baselevel=1)])
     max_upload_file_size = config_reader.max_upload_file_size
     if max_upload_file_size == -1:
         max_upload_file_size = "no limit"
@@ -346,9 +340,14 @@ def documentation_run():
         max_upload_size_ava = "no limit"
     else:
         max_upload_size_ava = Functions.get_readable_size(max_upload_size_ava, 0)
-    content = Markup(md.convert(content)).replace("###size###", max_upload_file_size)\
-                                         .replace("###size_unc###", max_upload_size)\
-                                         .replace("###size_ava###", max_upload_size_ava)
+    with open(os.path.join(app_folder, "md", "doc_run.md"), "r",  encoding='utf-8') as install_instr:
+        content = install_instr.read()
+    env = Environment()
+    template = env.from_string(content)
+    content = template.render(mode=MODE, version=version, size=max_upload_file_size, size_unc=max_upload_size,
+                              size_ava=max_upload_size_ava)
+    md = Markdown(extensions=[TocExtension(baselevel=1)])
+    content = Functions.replace_headers(str(Markup(md.convert(content))))
     toc = Markup(md.toc)
     return render_template("documentation.html", menu="documentation", content=content, toc=toc)
 
@@ -359,7 +358,7 @@ def documentation_result():
               encoding='utf-8') as install_instr:
         content = install_instr.read()
     md = Markdown(extensions=[TocExtension(baselevel=1)])
-    content = Markup(md.convert(content))
+    content = Functions.replace_headers(str(Markup(md.convert(content))))
     toc = Markup(md.toc)
     return render_template("documentation.html", menu="documentation", content=content, toc=toc)
 
@@ -370,7 +369,7 @@ def documentation_formats():
               encoding='utf-8') as install_instr:
         content = install_instr.read()
     md = Markdown(extensions=[TocExtension(baselevel=1), TableExtension()])
-    content = Markup(md.convert(content))
+    content = Functions.replace_headers(str(Markup(md.convert(content))))
     toc = Markup(md.toc)
     return render_template("documentation.html", menu="documentation", content=content, toc=toc)
 
@@ -381,7 +380,7 @@ def documentation_dotplot():
               encoding='utf-8') as install_instr:
         content = install_instr.read()
     md = Markdown(extensions=[TocExtension(baselevel=1)])
-    content = Markup(md.convert(content))
+    content = Functions.replace_headers(str(Markup(md.convert(content))))
     toc = Markup(md.toc)
     return render_template("documentation.html", menu="documentation", content=content, toc=toc)
 
@@ -396,7 +395,7 @@ def install():
     template = env.from_string(content)
     content = template.render(version=latest.latest, win32=latest.win32)
     md = Markdown(extensions=[TocExtension(baselevel=1)])
-    content = Markup(md.convert(content))
+    content = Functions.replace_headers(str(Markup(md.convert(content))))
     toc = Markup(md.toc)
     return render_template("documentation.html", menu="install", content=content, toc=toc)
 

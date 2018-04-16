@@ -49,7 +49,7 @@ Files must be in fasta format. We recommend using gzipped files to preserve band
 
 Allowed extensions: fa, fasta, fna, fa.gz, fasta.gz, fna.gz
 
-Max file size: ###size### (###size_unc### once uncompressed, ###size_ava### in all-vs-all mode)
+Max file size: {{size}} ({{size_unc}} once uncompressed, {{size_ava}} in all-vs-all mode)
 
 {% set puce=puce+1 %}
 
@@ -59,7 +59,7 @@ Optional field
 
 Works like the target fasta. If not given, target file will be mapped to itself, in all-vs-all mode.
 
-Max file size: ###size### (###size_unc### once uncompressed)
+Max file size: {{size}} ({{size_unc}} once uncompressed)
 
 {% set puce=puce+1 %}
 
