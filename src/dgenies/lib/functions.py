@@ -260,7 +260,6 @@ class Functions:
     @staticmethod
     def _get_jobs_list():
         all_jobs = os.listdir(Functions.config.app_data)
-        print(all_jobs)
         valid_jobs = []
         for job in all_jobs:
             job_path = os.path.join(Functions.config.app_data, job)
