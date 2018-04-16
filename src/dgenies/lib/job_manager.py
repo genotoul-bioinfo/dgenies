@@ -1145,7 +1145,7 @@ class JobManager:
                 self.query = Fasta(name="query", path=query_path, type_f="local")
                 with open(os.path.join(self.output_dir, ".query"), "w") as qr:
                     qr.write(query_path)
-                os.remove(self.backup.get_path())
+            os.remove(self.backup.get_path())
             return True
         except:
             traceback.print_exc()
