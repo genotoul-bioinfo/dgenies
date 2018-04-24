@@ -348,6 +348,17 @@ class JobManager:
         else:
             self.set_status_standalone(status)
 
+    @staticmethod
+    def find_error_in_log(log_file):
+        error = ""
+        with open(log_file, "r") as log:
+            lines = log.readlines()
+            if lines[-1].startswith("###ERR### "):
+                error = lines[-1][10:].rstrip()
+            elif lines[-2].startswith("###ERR### "):
+                error = lines[-2][10:].rstrip()
+        return error
+
     def launch_to_cluster(self, step, batch_system_type, command, args, log_out, log_err):
         import drmaa
         from dgenies.lib.drmaasession import DrmaaSession
@@ -414,7 +425,9 @@ class JobManager:
             self.update_job_status(status)
             s.deleteJobTemplate(jt)
             return status == "succeed" or status == "prepared"
-        self.update_job_status("fail")
+        error = self.find_error_in_log(log_err)
+        self.set_job_status("fail", error)
+
         s.deleteJobTemplate(jt)
         return False
 
@@ -825,7 +838,7 @@ class JobManager:
                     split = True
                     splitter = Splitter(input_f=fasta_in, name_f=self.query.get_name(), output_f=self.get_query_split(),
                                         query_index=self.query_index_split, debug=DEBUG)
-                    success = splitter.split()
+                    success, error = splitter.split()
                     nb_contigs = splitter.nb_contigs
                     in_fasta = self.get_query_split()
                 else:
@@ -833,8 +846,8 @@ class JobManager:
                     uncompressed = None
                     if self.query.get_path().endswith(".gz"):
                         uncompressed = self.query.get_path()[:-3]
-                    success, nb_contigs = index_file(self.query.get_path(), self.query.get_name(), self.idx_q,
-                                                     uncompressed)
+                    success, nb_contigs, error = index_file(self.query.get_path(), self.query.get_name(), self.idx_q,
+                                                            uncompressed)
                     in_fasta = self.query.get_path()
                     if uncompressed is not None:
                         in_fasta = uncompressed
@@ -850,14 +863,14 @@ class JobManager:
                                       replace_fa=True)
                     filter_f.filter()
                 else:
-                    self.set_job_status("fail", "<br/>".join(["Query fasta file is not valid!", error_tail]))
+                    self.set_job_status("fail", "<br/>".join(["Query fasta file is not valid:", error, error_tail]))
                     if self.config.send_mail_status:
                         self.send_mail_post()
                     return False
             uncompressed = None
             if self.target.get_path().endswith(".gz"):
                 uncompressed = self.target.get_path()[:-3]
-            success, nb_contigs = index_file(self.target.get_path(), self.target.get_name(), self.idx_t, uncompressed)
+            success, nb_contigs, error = index_file(self.target.get_path(), self.target.get_name(), self.idx_t, uncompressed)
             if success:
                 in_fasta = self.target.get_path()
                 if uncompressed is not None:
@@ -885,7 +898,7 @@ class JobManager:
                         os.remove(uncompressed)
                     except FileNotFoundError:
                         pass
-                self.set_job_status("fail", "<br/>".join(["Target fasta file is not valid!", error_tail]))
+                self.set_job_status("fail", "<br/>".join(["Target fasta file is not valid:", error, error_tail]))
                 if self.config.send_mail_status:
                     self.send_mail_post()
                 return False

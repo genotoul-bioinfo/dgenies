@@ -67,7 +67,9 @@ def index_file(fasta_path, fasta_name, out, write_fa=None):
         with (io.TextIOWrapper(in_file) if compressed else in_file) as fasta:
             contig = None
             len_c = 0
+            nb_line = 0
             for line in fasta:
+                nb_line += 1
                 if write_f is not None:
                     write_f.write(line)
                 line = line.strip("\n")
@@ -79,12 +81,14 @@ def index_file(fasta_path, fasta_name, out, write_fa=None):
                             nb_contigs += 1
                             out_file.write("%s\t%d\n" % (contig, len_c))
                         else:
-                            return False
+                            return False, 0, "Error: contig is empty: %s" % contig
                     contig = re.split("\s", line[1:])[0]
                     len_c = 0
                 elif len(line) > 0:
                     if next_header or re.match(r"^[ATGCKMRYSWBVHDXN.\-]+$", line.upper()) is None:
-                        return False
+                        if next_header:
+                            return False, 0, "Error: new header line expected at line %d" % nb_line
+                        return False, 0, "Error: invalid sequence at line %d" % nb_line
                     len_c += len(line)
                 elif len(line) == 0:
                     next_header = True
@@ -96,7 +100,7 @@ def index_file(fasta_path, fasta_name, out, write_fa=None):
     if write_f is not None:
         write_f.close()
 
-    return has_header, nb_contigs
+    return has_header, nb_contigs, ""
 
 
 if __name__ == '__main__':
@@ -108,7 +112,8 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--output', type=str, required=True, help="Output index file")
     args = parser.parse_args()
 
-    if index_file(args.input, args.name, args.output):
+    success, message = index_file(args.input, args.name, args.output)
+    if success:
         print("Success!")
     else:
-        print("Error while building index")
+        print(message)

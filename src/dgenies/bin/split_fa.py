@@ -37,7 +37,9 @@ class Splitter:
                 index_f.write(self.name_f + "\n")
                 chr_name = None
                 fasta_str = ""
+                nb_line = 0
                 for line in fasta:
+                    nb_line += 1
                     line = line.strip("\n")
                     if re.match(r"^>.+", line) is not None:
                         has_header = True
@@ -46,20 +48,22 @@ class Splitter:
                             self.nb_contigs += 1
                             self.flush_contig(fasta_str, chr_name, self.size_c, enc, index_f)
                         elif chr_name is not None:
-                            return False
+                            return False, "Error: contig is empty: %s" % chr_name
                         chr_name = re.split("\s", line[1:])[0]
                         fasta_str = ""
                         if self.debug:
                             print("Parsing contig \"%s\"... " % chr_name, end="")
                     elif len(line) > 0:
                         if next_header or re.match(r"^[ATGCKMRYSWBVHDXN.\-]+$", line.upper()) is None:
-                            return False
+                            if next_header:
+                                return False, "Error: new header line expected at line %d" % nb_line
+                            return False, "Error: invalid sequence at line %d" % nb_line
                         fasta_str += line
                     elif len(line) == 0:
                         next_header = True
                 self.nb_contigs += 1
                 self.flush_contig(fasta_str, chr_name, self.size_c, enc, index_f)
-        return has_header
+        return has_header, ""
 
     @staticmethod
     def write_contig(name, fasta, o_file):

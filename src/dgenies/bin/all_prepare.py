@@ -3,6 +3,7 @@
 import argparse
 import time
 import os
+import sys
 from split_fa import Splitter
 from filter_contigs import Filter
 from index import index_file
@@ -20,7 +21,7 @@ def index_fasta(name, filepath, out_dir, type_f, dofilter = True):
     if filepath.endswith(".gz") and dofilter:
         uncompressed = filepath[:-3]
     index = os.path.join(out_dir, type_f + ".idx")
-    success, nb_contigs = index_file(filepath, name, index, uncompressed)
+    success, nb_contigs, error = index_file(filepath, name, index, uncompressed)
     if success:
         is_filtered = False
         if dofilter:
@@ -45,6 +46,7 @@ def index_fasta(name, filepath, out_dir, type_f, dofilter = True):
                 os.remove(uncompressed)
 
     else:
+        print("###ERR## Error while indexing %s file: %s" % (type_f, error), file=sys.stderr)
         if uncompressed is not None:
             try:
                 os.remove(uncompressed)
@@ -82,7 +84,8 @@ with open(args.preptime_file, "w") as ptime:
             index_split = os.path.join(out_dir, "query_split.idx")
             splitter = Splitter(input_f=fasta_in, name_f=args.query_name, output_f=args.query_split,
                                 query_index=index_split)
-            if splitter.split():
+            success, error = splitter.split()
+            if success:
                 filtered_fasta = os.path.join(os.path.dirname(args.query_split), "filtered_" +
                                               os.path.basename(args.query_split))
                 filter_f = Filter(fasta=args.query_split,
@@ -94,6 +97,7 @@ with open(args.preptime_file, "w") as ptime:
                                   replace_fa=True)
                 filter_f.filter()
             else:
+                print("###ERR## Error while loading query file: %s" % error, file=sys.stderr)
                 exit(1)
         else:
             print("Indexing query...")
