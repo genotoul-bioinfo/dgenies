@@ -352,11 +352,10 @@ class JobManager:
     def find_error_in_log(log_file):
         error = ""
         with open(log_file, "r") as log:
-            lines = log.readlines()
-            if lines[-1].startswith("###ERR### "):
-                error = lines[-1][10:].rstrip()
-            elif lines[-2].startswith("###ERR### "):
-                error = lines[-2][10:].rstrip()
+            for line in log:
+                if line.startswith("###ERR### "):
+                    error = line[10:].rstrip()
+                    break
         return error
 
     def launch_to_cluster(self, step, batch_system_type, command, args, log_out, log_err):
