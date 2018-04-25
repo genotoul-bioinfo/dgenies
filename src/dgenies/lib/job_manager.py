@@ -819,12 +819,15 @@ class JobManager:
                      "-n", self.query.get_name()]
             if self.tool.split_before:
                 args.append("--split")
-        return self.launch_to_cluster(step="prepare",
-                                      batch_system_type=batch_system_type,
-                                      command=self.config.cluster_python_exec,
-                                      args=args,
-                                      log_out=self.logs,
-                                      log_err=self.logs)
+        success = self.launch_to_cluster(step="prepare",
+                                         batch_system_type=batch_system_type,
+                                         command=self.config.cluster_python_exec,
+                                         args=args,
+                                         log_out=self.logs,
+                                         log_err=self.logs)
+        if not success and MODE == "webserver" and self.config.send_mail_status:
+            self.send_mail_post()
+        return success
 
     def prepare_data_local(self):
         with open(self.preptime_file, "w") as ptime, Job.connect():
