@@ -425,6 +425,8 @@ class JobManager:
             s.deleteJobTemplate(jt)
             return status == "succeed" or status == "prepared"
         error = self.find_error_in_log(log_err)
+        if step == "prepare":
+            error += "<br/>Please check your input file and try again."
         self.set_job_status("fail", error)
 
         s.deleteJobTemplate(jt)

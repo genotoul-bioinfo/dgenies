@@ -46,7 +46,7 @@ def index_fasta(name, filepath, out_dir, type_f, dofilter = True):
                 os.remove(uncompressed)
 
     else:
-        print("###ERR### Error while indexing %s file: %s" % (type_f, error), file=sys.stderr)
+        print("###ERR### %s fasta  file is not valid:<br/> %s" % (type_f[0].upper() + type_f[1:], error), file=sys.stderr)
         if uncompressed is not None:
             try:
                 os.remove(uncompressed)
@@ -97,7 +97,7 @@ with open(args.preptime_file, "w") as ptime:
                                   replace_fa=True)
                 filter_f.filter()
             else:
-                print("###ERR### Error while loading query file: %s" % error, file=sys.stderr)
+                print("###ERR### Query fasta file is not valid:<br/> %s" % error, file=sys.stderr)
                 exit(1)
         else:
             print("Indexing query...")
