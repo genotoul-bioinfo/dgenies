@@ -40,7 +40,7 @@ else:
         package_dir={'dgenies': 'src/dgenies'},
         include_package_data=True,
         zip_safe=False,
-        install_requires=reqs,
+        install_requires=install_reqs,
         data_files=[('.dgenies', ['application.properties'])],
         scripts=['src/bin/dgenies'],
     )
