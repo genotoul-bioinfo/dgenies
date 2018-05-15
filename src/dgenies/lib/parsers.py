@@ -39,6 +39,7 @@ def maf(in_maf, out_paf):
                 if qannots["strand"] == -1:
                     qstart = qlen - qstart
                     qend = qlen - qend
+                strand = "+" if tannots["strand"] == qannots["strand"] else "-"
                 paf.write("{qname}\t{qlen}\t{qstart}\t{qend}\t{strand}\t{tname}\t{tlen}\t{tstart}\t{tend}\t{matches}\t"
                           "{block_len}\t255\n".format(
                             tname=seqs[0].id,
@@ -47,9 +48,9 @@ def maf(in_maf, out_paf):
                             tend=tend,
                             qname=seqs[1].id,
                             qlen=qlen,
-                            qstart=qstart,
-                            qend=qend,
-                            strand="+" if tannots["strand"] == qannots["strand"] else "-",
+                            qstart=qstart if strand == "+" else qend,
+                            qend=qend if strand == "+" else qstart,
+                            strand=strand,
                             matches=matches,
                             block_len=tannots["size"]
                           ))
