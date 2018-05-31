@@ -717,7 +717,7 @@ d3.boxplot.__draw_idy_lines = function (idy, lines, x_len, y_len) {
 d3.boxplot.switch_color_theme = function () {
     if (!d3.boxplot.all_disabled) {
         let current_theme = d3.boxplot.color_idy_theme;
-        let idx = d3.boxplot.color_idy_themes.indexOf(current_theme)
+        let idx = d3.boxplot.color_idy_themes.indexOf(current_theme);
         if (idx < d3.boxplot.color_idy_themes.length - 1) {
             idx++;
         }
