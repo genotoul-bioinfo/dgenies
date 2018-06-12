@@ -1,15 +1,19 @@
 {% extends 'base.html' %}
 {% block content %}
     <!-- Jumbotron -->
-      <div class="jumbotron" style="margin-top:10px; padding-top: 20px;text-align:justify">
+      <div class="jumbotron" style="margin-top:10px; padding-top: 20px;text-align:justify; padding-bottom: 105px; position: relative;">
         <h1>D-Genies</h1>
-          <p class="description lead">D-GENIES &#150; for <strong>D</strong>otplot large <strong>Gen</strong>omes in an <strong>I</strong>nteractive, <strong>E</strong>fficient and <strong>S</strong>imple way &#150; is an online tool
+          <p class="description lead">D-GENIES &#150; for <strong>D</strong>ot plot large <strong>Gen</strong>omes in an <strong>I</strong>nteractive, <strong>E</strong>fficient and <strong>S</strong>imple way &#150; is an online tool
         designed to compare two genomes. It supports large genome and you can interact with the dot plot to improve the visualisation.</p>
         <p class="description">We use minimap version 2 to align the two genomes. Then, the PAF file is parsed and plotted into
         an interactive plot written with d3.js library.</p>
           <p class="description">D-Genies also allows to display dot plots from other aligners by uploading their
               <a href="/documentation/formats">PAF</a> or <a href="/documentation/formats#maf-multiple-alignment-file">MAF</a> alignment
         file.</p>
+        <div style="position:absolute;width:90%;padding:10px 5px 0 5px;background-color:white;border:1px solid lightgrey;border-radius:5px; margin-top: 15px;">
+			<span class="label label-primary" style="position:absolute;top:-10px;left:-10px">How to cite</span>
+            <span style="font-weight: bold; font-size: 0.9em;">Cabanettes F, Klopp C. (2018) D-GENIES: dot plot large genomes in an interactive, efficient and simple way. PeerJ 6:e4958 <a href="https://doi.org/10.7717/peerj.4958">https://doi.org/10.7717/peerj.4958</a></span>
+        </div>
       </div>
 
       <div class="row">

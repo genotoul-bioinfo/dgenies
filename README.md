@@ -10,6 +10,11 @@ You can use the demo instance [here](http://dgenies.toulouse.inra.fr).
 
 Or you can install your own instance. The install documentation is available [here](http://dgenies.toulouse.inra.fr/install).
 
+How to cite?
+------------
+
+Cabanettes F, Klopp C. (2018) D-GENIES: dot plot large genomes in an interactive, efficient and simple way. PeerJ 6:e4958 https://doi.org/10.7717/peerj.4958
+
 Credits
 -------
 
