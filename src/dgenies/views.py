@@ -485,6 +485,12 @@ def free_noise(id_res):
 
 @app.route('/get-fasta-query/<id_res>', methods=['POST'])
 def build_fasta(id_res):
+    """
+    Generate the fasta file of query
+    
+    :param id_res: job id
+    :type id_res: str
+    """
     res_dir = os.path.join(APP_DATA, id_res)
     lock_query = os.path.join(res_dir, ".query-fasta-build")
     is_sorted = os.path.exists(os.path.join(res_dir, ".sorted"))
@@ -556,6 +562,12 @@ def build_fasta(id_res):
 
 
 def build_query_as_reference(id_res):
+    """
+    Build fasta of query with contigs order like reference
+
+    :param id_res: job id
+    :type id_res: str
+    """
     paf_file = os.path.join(APP_DATA, id_res, "map.paf")
     idx1 = os.path.join(APP_DATA, id_res, "query.idx")
     idx2 = os.path.join(APP_DATA, id_res, "target.idx")
@@ -570,12 +582,24 @@ def build_query_as_reference(id_res):
 
 @app.route('/build-query-as-reference/<id_res>', methods=['POST'])
 def post_query_as_reference(id_res):
+    """
+    Launch build fasta of query with contigs order like reference
+
+    :param id_res: job id
+    :type id_res: str
+    """
     build_query_as_reference(id_res)
     return jsonify({"success": True})
 
 
 @app.route('/get-query-as-reference/<id_res>', methods=['GET'])
 def get_query_as_reference(id_res):
+    """
+    Get fasta of query with contigs order like reference
+
+    :param id_res: job id
+    :type id_res: str
+    """
     if MODE != "standalone":
         return abort(404)
     return send_file(build_query_as_reference(id_res))
@@ -583,6 +607,14 @@ def get_query_as_reference(id_res):
 
 @app.route('/download/<id_res>/<filename>')
 def download_file(id_res, filename):
+    """
+    Download a file from a job
+
+    :param id_res: job id
+    :type id_res: str
+    :param filename: file name
+    :type filename: str
+    """
     file_dl = os.path.join(APP_DATA, id_res, filename)
     if os.path.isfile(file_dl):
         return send_file(file_dl)
@@ -592,6 +624,14 @@ def download_file(id_res, filename):
 @app.route('/fasta-query/<id_res>', defaults={'filename': ""}, methods=['GET'])
 @app.route('/fasta-query/<id_res>/<filename>', methods=['GET'])  # Use fake URL in mail to set download file name
 def dl_fasta(id_res, filename):
+    """
+    Download fasta file
+
+    :param id_res: job id
+    :type id_res: str
+    :param filename: file name (not used, but can be in the URL to define download filename to the browser)
+    :type filename: str
+    """
     res_dir = os.path.join(APP_DATA, id_res)
     lock_query = os.path.join(res_dir, ".query-fasta-build")
     is_sorted = os.path.exists(os.path.join(res_dir, ".sorted"))
@@ -608,6 +648,12 @@ def dl_fasta(id_res, filename):
 
 @app.route('/qt-assoc/<id_res>', methods=['GET'])
 def qt_assoc(id_res):
+    """
+    Query - Target association TSV file
+
+    :param id_res:
+    :return:
+    """
     res_dir = os.path.join(APP_DATA, id_res)
     if os.path.exists(res_dir) and os.path.isdir(res_dir):
         paf_file = os.path.join(APP_DATA, id_res, "map.paf")

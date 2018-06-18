@@ -1,0 +1,896 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>dgenies.lib package &mdash; D-Genies 1.1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="D-Genies 1.1 documentation" href="index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> D-Genies
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <!-- Local TOC -->
+                <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">dgenies.lib package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-dgenies.lib.crons">dgenies.lib.crons module</a></li>
+<li><a class="reference internal" href="#module-dgenies.lib.decorators">dgenies.lib.decorators module</a></li>
+<li><a class="reference internal" href="#dgenies-lib-drmaasession-module">dgenies.lib.drmaasession module</a></li>
+<li><a class="reference internal" href="#module-dgenies.lib.fasta">dgenies.lib.fasta module</a></li>
+<li><a class="reference internal" href="#module-dgenies.lib.functions">dgenies.lib.functions module</a></li>
+<li><a class="reference internal" href="#module-dgenies.lib.job_manager">dgenies.lib.job_manager module</a></li>
+<li><a class="reference internal" href="#module-dgenies.lib.latest">dgenies.lib.latest module</a></li>
+<li><a class="reference internal" href="#module-dgenies.lib.mailer">dgenies.lib.mailer module</a></li>
+<li><a class="reference internal" href="#module-dgenies.lib.paf">dgenies.lib.paf module</a></li>
+<li><a class="reference internal" href="#module-dgenies.lib.parsers">dgenies.lib.parsers module</a></li>
+<li><a class="reference internal" href="#module-dgenies.lib.upload_file">dgenies.lib.upload_file module</a></li>
+<li><a class="reference internal" href="#module-dgenies.lib.validators">dgenies.lib.validators module</a></li>
+<li><a class="reference internal" href="#module-dgenies.lib">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">D-Genies</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>dgenies.lib package</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/dgenies.lib.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="dgenies-lib-package">
+<h1>dgenies.lib package<a class="headerlink" href="#dgenies-lib-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-dgenies.lib.crons">
+<span id="dgenies-lib-crons-module"></span><h2>dgenies.lib.crons module<a class="headerlink" href="#module-dgenies.lib.crons" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="dgenies.lib.crons.Crons">
+<em class="property">class </em><code class="descclassname">dgenies.lib.crons.</code><code class="descname">Crons</code><span class="sig-paren">(</span><em>base_dir</em>, <em>debug</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/crons.html#Crons"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.crons.Crons" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="method">
+<dt id="dgenies.lib.crons.Crons.clear">
+<code class="descname">clear</code><span class="sig-paren">(</span><em>kill_scheduler=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/crons.html#Crons.clear"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.crons.Crons.clear" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.crons.Crons.init_clean_cron">
+<code class="descname">init_clean_cron</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/crons.html#Crons.init_clean_cron"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.crons.Crons.init_clean_cron" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clean cron is launched at 1h00am each day</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.crons.Crons.init_launch_local_cron">
+<code class="descname">init_launch_local_cron</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/crons.html#Crons.init_launch_local_cron"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.crons.Crons.init_launch_local_cron" title="Permalink to this definition">¶</a></dt>
+<dd><p>Try to launch local scheduler (if not already launched)
+:return:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.crons.Crons.start_all">
+<code class="descname">start_all</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/crons.html#Crons.start_all"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.crons.Crons.start_all" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-dgenies.lib.decorators">
+<span id="dgenies-lib-decorators-module"></span><h2>dgenies.lib.decorators module<a class="headerlink" href="#module-dgenies.lib.decorators" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="dgenies.lib.decorators.Singleton">
+<em class="property">class </em><code class="descclassname">dgenies.lib.decorators.</code><code class="descname">Singleton</code><span class="sig-paren">(</span><em>klass</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/decorators.html#Singleton"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.decorators.Singleton" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+</dd></dl>
+
+</div>
+<div class="section" id="dgenies-lib-drmaasession-module">
+<h2>dgenies.lib.drmaasession module<a class="headerlink" href="#dgenies-lib-drmaasession-module" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-dgenies.lib.fasta">
+<span id="dgenies-lib-fasta-module"></span><h2>dgenies.lib.fasta module<a class="headerlink" href="#module-dgenies.lib.fasta" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="dgenies.lib.fasta.Fasta">
+<em class="property">class </em><code class="descclassname">dgenies.lib.fasta.</code><code class="descname">Fasta</code><span class="sig-paren">(</span><em>name</em>, <em>path</em>, <em>type_f</em>, <em>example=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/fasta.html#Fasta"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.fasta.Fasta" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="method">
+<dt id="dgenies.lib.fasta.Fasta.get_name">
+<code class="descname">get_name</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/fasta.html#Fasta.get_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.fasta.Fasta.get_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.fasta.Fasta.get_path">
+<code class="descname">get_path</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/fasta.html#Fasta.get_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.fasta.Fasta.get_path" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.fasta.Fasta.get_type">
+<code class="descname">get_type</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/fasta.html#Fasta.get_type"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.fasta.Fasta.get_type" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.fasta.Fasta.is_example">
+<code class="descname">is_example</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/fasta.html#Fasta.is_example"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.fasta.Fasta.is_example" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.fasta.Fasta.set_name">
+<code class="descname">set_name</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/fasta.html#Fasta.set_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.fasta.Fasta.set_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.fasta.Fasta.set_path">
+<code class="descname">set_path</code><span class="sig-paren">(</span><em>path</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/fasta.html#Fasta.set_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.fasta.Fasta.set_path" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-dgenies.lib.functions">
+<span id="dgenies-lib-functions-module"></span><h2>dgenies.lib.functions module<a class="headerlink" href="#module-dgenies.lib.functions" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="dgenies.lib.functions.Functions">
+<em class="property">class </em><code class="descclassname">dgenies.lib.functions.</code><code class="descname">Functions</code><a class="reference internal" href="_modules/dgenies/lib/functions.html#Functions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.functions.Functions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="staticmethod">
+<dt id="dgenies.lib.functions.Functions.allowed_file">
+<em class="property">static </em><code class="descname">allowed_file</code><span class="sig-paren">(</span><em>filename</em>, <em>file_formats=('fasta'</em>, <em>)</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/functions.html#Functions.allowed_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.functions.Functions.allowed_file" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="staticmethod">
+<dt id="dgenies.lib.functions.Functions.compress">
+<em class="property">static </em><code class="descname">compress</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/functions.html#Functions.compress"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.functions.Functions.compress" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="staticmethod">
+<dt id="dgenies.lib.functions.Functions.compress_and_send_mail">
+<em class="property">static </em><code class="descname">compress_and_send_mail</code><span class="sig-paren">(</span><em>job_name</em>, <em>fasta_file</em>, <em>index_file</em>, <em>lock_file</em>, <em>compressed</em>, <em>mailer</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/functions.html#Functions.compress_and_send_mail"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.functions.Functions.compress_and_send_mail" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="dgenies.lib.functions.Functions.config">
+<code class="descname">config</code><em class="property"> = &lt;dgenies.config_reader.AppConfigReader object&gt;</em><a class="headerlink" href="#dgenies.lib.functions.Functions.config" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="staticmethod">
+<dt id="dgenies.lib.functions.Functions.get_fasta_file">
+<em class="property">static </em><code class="descname">get_fasta_file</code><span class="sig-paren">(</span><em>res_dir</em>, <em>type_f</em>, <em>is_sorted</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/functions.html#Functions.get_fasta_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.functions.Functions.get_fasta_file" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="staticmethod">
+<dt id="dgenies.lib.functions.Functions.get_gallery_items">
+<em class="property">static </em><code class="descname">get_gallery_items</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/functions.html#Functions.get_gallery_items"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.functions.Functions.get_gallery_items" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="staticmethod">
+<dt id="dgenies.lib.functions.Functions.get_list_all_jobs">
+<em class="property">static </em><code class="descname">get_list_all_jobs</code><span class="sig-paren">(</span><em>mode='webserver'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/functions.html#Functions.get_list_all_jobs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.functions.Functions.get_list_all_jobs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="staticmethod">
+<dt id="dgenies.lib.functions.Functions.get_mail_for_job">
+<em class="property">static </em><code class="descname">get_mail_for_job</code><span class="sig-paren">(</span><em>id_job</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/functions.html#Functions.get_mail_for_job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.functions.Functions.get_mail_for_job" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="staticmethod">
+<dt id="dgenies.lib.functions.Functions.get_readable_size">
+<em class="property">static </em><code class="descname">get_readable_size</code><span class="sig-paren">(</span><em>size</em>, <em>nb_after_coma=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/functions.html#Functions.get_readable_size"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.functions.Functions.get_readable_size" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="staticmethod">
+<dt id="dgenies.lib.functions.Functions.get_readable_time">
+<em class="property">static </em><code class="descname">get_readable_time</code><span class="sig-paren">(</span><em>seconds</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/functions.html#Functions.get_readable_time"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.functions.Functions.get_readable_time" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="staticmethod">
+<dt id="dgenies.lib.functions.Functions.get_valid_uploaded_filename">
+<em class="property">static </em><code class="descname">get_valid_uploaded_filename</code><span class="sig-paren">(</span><em>filename</em>, <em>folder</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/functions.html#Functions.get_valid_uploaded_filename"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.functions.Functions.get_valid_uploaded_filename" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="staticmethod">
+<dt id="dgenies.lib.functions.Functions.is_in_gallery">
+<em class="property">static </em><code class="descname">is_in_gallery</code><span class="sig-paren">(</span><em>id_job</em>, <em>mode='webserver'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/functions.html#Functions.is_in_gallery"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.functions.Functions.is_in_gallery" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="staticmethod">
+<dt id="dgenies.lib.functions.Functions.query_fasta_file_exists">
+<em class="property">static </em><code class="descname">query_fasta_file_exists</code><span class="sig-paren">(</span><em>res_dir</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/functions.html#Functions.query_fasta_file_exists"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.functions.Functions.query_fasta_file_exists" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="staticmethod">
+<dt id="dgenies.lib.functions.Functions.random_string">
+<em class="property">static </em><code class="descname">random_string</code><span class="sig-paren">(</span><em>s_len</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/functions.html#Functions.random_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.functions.Functions.random_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate a random string
+:param s_len: length of the string to generate
+:return: the random string</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="dgenies.lib.functions.Functions.read_index">
+<em class="property">static </em><code class="descname">read_index</code><span class="sig-paren">(</span><em>index_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/functions.html#Functions.read_index"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.functions.Functions.read_index" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="staticmethod">
+<dt id="dgenies.lib.functions.Functions.send_fasta_ready">
+<em class="property">static </em><code class="descname">send_fasta_ready</code><span class="sig-paren">(</span><em>mailer</em>, <em>job_name</em>, <em>sample_name</em>, <em>compressed=False</em>, <em>path='fasta-query'</em>, <em>status='success'</em>, <em>ext='fasta'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/functions.html#Functions.send_fasta_ready"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.functions.Functions.send_fasta_ready" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="staticmethod">
+<dt id="dgenies.lib.functions.Functions.sort_fasta">
+<em class="property">static </em><code class="descname">sort_fasta</code><span class="sig-paren">(</span><em>job_name</em>, <em>fasta_file</em>, <em>index_file</em>, <em>lock_file</em>, <em>compress=False</em>, <em>mailer=None</em>, <em>mode='webserver'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/functions.html#Functions.sort_fasta"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.functions.Functions.sort_fasta" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="staticmethod">
+<dt id="dgenies.lib.functions.Functions.uncompress">
+<em class="property">static </em><code class="descname">uncompress</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/functions.html#Functions.uncompress"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.functions.Functions.uncompress" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-dgenies.lib.job_manager">
+<span id="dgenies-lib-job-manager-module"></span><h2>dgenies.lib.job_manager module<a class="headerlink" href="#module-dgenies.lib.job_manager" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="dgenies.lib.job_manager.JobManager">
+<em class="property">class </em><code class="descclassname">dgenies.lib.job_manager.</code><code class="descname">JobManager</code><span class="sig-paren">(</span><em>id_job: str</em>, <em>email: str = None</em>, <em>query: dgenies.lib.fasta.Fasta = None</em>, <em>target: dgenies.lib.fasta.Fasta = None</em>, <em>mailer=None</em>, <em>tool='minimap2'</em>, <em>align: dgenies.lib.fasta.Fasta = None</em>, <em>backup: dgenies.lib.fasta.Fasta = None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/job_manager.html#JobManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.job_manager.JobManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="method">
+<dt id="dgenies.lib.job_manager.JobManager.check_file">
+<code class="descname">check_file</code><span class="sig-paren">(</span><em>input_type</em>, <em>should_be_local</em>, <em>max_upload_size_readable</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/job_manager.html#JobManager.check_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.job_manager.JobManager.check_file" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>input_type</strong> – query or target</li>
+<li><strong>should_be_local</strong> – True if job should be treated locally</li>
+<li><strong>max_upload_size_readable</strong> – max upload size human readable</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(True if correct, True if error set [for fail], True if should be local)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.job_manager.JobManager.check_job_status_sge">
+<code class="descname">check_job_status_sge</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/job_manager.html#JobManager.check_job_status_sge"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.job_manager.JobManager.check_job_status_sge" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check status of a SGE job run
+:return: True if the job jas successfully ended</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.job_manager.JobManager.check_job_status_slurm">
+<code class="descname">check_job_status_slurm</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/job_manager.html#JobManager.check_job_status_slurm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.job_manager.JobManager.check_job_status_slurm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check status of a SLURM job run
+:return: True if the job has successfully ended</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.job_manager.JobManager.check_job_success">
+<code class="descname">check_job_success</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/job_manager.html#JobManager.check_job_success"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.job_manager.JobManager.check_job_success" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.job_manager.JobManager.clear">
+<code class="descname">clear</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/job_manager.html#JobManager.clear"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.job_manager.JobManager.clear" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.job_manager.JobManager.delete">
+<code class="descname">delete</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/job_manager.html#JobManager.delete"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.job_manager.JobManager.delete" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.job_manager.JobManager.do_align">
+<code class="descname">do_align</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/job_manager.html#JobManager.do_align"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.job_manager.JobManager.do_align" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">True if the job is launched with an alignment file</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.job_manager.JobManager.download_files_with_pending">
+<code class="descname">download_files_with_pending</code><span class="sig-paren">(</span><em>files_to_download</em>, <em>should_be_local</em>, <em>max_upload_size_readable</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/job_manager.html#JobManager.download_files_with_pending"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.job_manager.JobManager.download_files_with_pending" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="staticmethod">
+<dt id="dgenies.lib.job_manager.JobManager.find_error_in_log">
+<em class="property">static </em><code class="descname">find_error_in_log</code><span class="sig-paren">(</span><em>log_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/job_manager.html#JobManager.find_error_in_log"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.job_manager.JobManager.find_error_in_log" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.job_manager.JobManager.get_file_size">
+<code class="descname">get_file_size</code><span class="sig-paren">(</span><em>filepath: str</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/job_manager.html#JobManager.get_file_size"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.job_manager.JobManager.get_file_size" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.job_manager.JobManager.get_mail_content">
+<code class="descname">get_mail_content</code><span class="sig-paren">(</span><em>status</em>, <em>target_name</em>, <em>query_name=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/job_manager.html#JobManager.get_mail_content"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.job_manager.JobManager.get_mail_content" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.job_manager.JobManager.get_mail_content_html">
+<code class="descname">get_mail_content_html</code><span class="sig-paren">(</span><em>status</em>, <em>target_name</em>, <em>query_name=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/job_manager.html#JobManager.get_mail_content_html"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.job_manager.JobManager.get_mail_content_html" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.job_manager.JobManager.get_mail_subject">
+<code class="descname">get_mail_subject</code><span class="sig-paren">(</span><em>status</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/job_manager.html#JobManager.get_mail_subject"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.job_manager.JobManager.get_mail_subject" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="staticmethod">
+<dt id="dgenies.lib.job_manager.JobManager.get_pending_local_number">
+<em class="property">static </em><code class="descname">get_pending_local_number</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/job_manager.html#JobManager.get_pending_local_number"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.job_manager.JobManager.get_pending_local_number" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.job_manager.JobManager.get_query_split">
+<code class="descname">get_query_split</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/job_manager.html#JobManager.get_query_split"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.job_manager.JobManager.get_query_split" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.job_manager.JobManager.get_status_standalone">
+<code class="descname">get_status_standalone</code><span class="sig-paren">(</span><em>with_error=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/job_manager.html#JobManager.get_status_standalone"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.job_manager.JobManager.get_status_standalone" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.job_manager.JobManager.getting_files">
+<code class="descname">getting_files</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/job_manager.html#JobManager.getting_files"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.job_manager.JobManager.getting_files" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get files for the job
+:return: Tuple:</p>
+<blockquote>
+<div>[0] True if getting files succeed, False else
+[1] If error happenned, True if error already saved for the job, False else (error will be saved later)
+[2] True if no data must be downloaded (will be downloaded with pending if True)</div></blockquote>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="dgenies.lib.job_manager.JobManager.is_gz_file">
+<em class="property">static </em><code class="descname">is_gz_file</code><span class="sig-paren">(</span><em>filepath</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/job_manager.html#JobManager.is_gz_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.job_manager.JobManager.is_gz_file" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.job_manager.JobManager.is_query_filtered">
+<code class="descname">is_query_filtered</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/job_manager.html#JobManager.is_query_filtered"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.job_manager.JobManager.is_query_filtered" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.job_manager.JobManager.is_target_filtered">
+<code class="descname">is_target_filtered</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/job_manager.html#JobManager.is_target_filtered"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.job_manager.JobManager.is_target_filtered" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.job_manager.JobManager.launch">
+<code class="descname">launch</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/job_manager.html#JobManager.launch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.job_manager.JobManager.launch" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.job_manager.JobManager.launch_standalone">
+<code class="descname">launch_standalone</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/job_manager.html#JobManager.launch_standalone"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.job_manager.JobManager.launch_standalone" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.job_manager.JobManager.launch_to_cluster">
+<code class="descname">launch_to_cluster</code><span class="sig-paren">(</span><em>step</em>, <em>batch_system_type</em>, <em>command</em>, <em>args</em>, <em>log_out</em>, <em>log_err</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/job_manager.html#JobManager.launch_to_cluster"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.job_manager.JobManager.launch_to_cluster" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.job_manager.JobManager.prepare_data">
+<code class="descname">prepare_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/job_manager.html#JobManager.prepare_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.job_manager.JobManager.prepare_data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.job_manager.JobManager.prepare_data_cluster">
+<code class="descname">prepare_data_cluster</code><span class="sig-paren">(</span><em>batch_system_type</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/job_manager.html#JobManager.prepare_data_cluster"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.job_manager.JobManager.prepare_data_cluster" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.job_manager.JobManager.prepare_data_in_thread">
+<code class="descname">prepare_data_in_thread</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/job_manager.html#JobManager.prepare_data_in_thread"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.job_manager.JobManager.prepare_data_in_thread" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.job_manager.JobManager.prepare_data_local">
+<code class="descname">prepare_data_local</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/job_manager.html#JobManager.prepare_data_local"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.job_manager.JobManager.prepare_data_local" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.job_manager.JobManager.prepare_dotplot_cluster">
+<code class="descname">prepare_dotplot_cluster</code><span class="sig-paren">(</span><em>batch_system_type</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/job_manager.html#JobManager.prepare_dotplot_cluster"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.job_manager.JobManager.prepare_dotplot_cluster" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prepare data if alignment already done: just index the fasta (if index not given), then parse the alignment
+:param batch_system_type: type of cluster</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.job_manager.JobManager.prepare_dotplot_local">
+<code class="descname">prepare_dotplot_local</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/job_manager.html#JobManager.prepare_dotplot_local"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.job_manager.JobManager.prepare_dotplot_local" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prepare data if alignment already done: just index the fasta (if index not given), then parse the alignment
+file and sort it.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.job_manager.JobManager.run_job">
+<code class="descname">run_job</code><span class="sig-paren">(</span><em>batch_system_type</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/job_manager.html#JobManager.run_job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.job_manager.JobManager.run_job" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.job_manager.JobManager.run_job_in_thread">
+<code class="descname">run_job_in_thread</code><span class="sig-paren">(</span><em>batch_system_type='local'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/job_manager.html#JobManager.run_job_in_thread"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.job_manager.JobManager.run_job_in_thread" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.job_manager.JobManager.search_error">
+<code class="descname">search_error</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/job_manager.html#JobManager.search_error"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.job_manager.JobManager.search_error" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.job_manager.JobManager.send_mail">
+<code class="descname">send_mail</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/job_manager.html#JobManager.send_mail"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.job_manager.JobManager.send_mail" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.job_manager.JobManager.send_mail_post">
+<code class="descname">send_mail_post</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/job_manager.html#JobManager.send_mail_post"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.job_manager.JobManager.send_mail_post" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send mail using POST url (we have no access to mailer)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.job_manager.JobManager.set_inputs_from_res_dir">
+<code class="descname">set_inputs_from_res_dir</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/job_manager.html#JobManager.set_inputs_from_res_dir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.job_manager.JobManager.set_inputs_from_res_dir" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.job_manager.JobManager.set_job_status">
+<code class="descname">set_job_status</code><span class="sig-paren">(</span><em>status</em>, <em>error=''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/job_manager.html#JobManager.set_job_status"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.job_manager.JobManager.set_job_status" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.job_manager.JobManager.set_status_standalone">
+<code class="descname">set_status_standalone</code><span class="sig-paren">(</span><em>status</em>, <em>error=''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/job_manager.html#JobManager.set_status_standalone"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.job_manager.JobManager.set_status_standalone" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.job_manager.JobManager.start_job">
+<code class="descname">start_job</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/job_manager.html#JobManager.start_job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.job_manager.JobManager.start_job" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.job_manager.JobManager.status">
+<code class="descname">status</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/job_manager.html#JobManager.status"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.job_manager.JobManager.status" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.job_manager.JobManager.unpack_backup">
+<code class="descname">unpack_backup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/job_manager.html#JobManager.unpack_backup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.job_manager.JobManager.unpack_backup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.job_manager.JobManager.update_job_status">
+<code class="descname">update_job_status</code><span class="sig-paren">(</span><em>status</em>, <em>id_process=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/job_manager.html#JobManager.update_job_status"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.job_manager.JobManager.update_job_status" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-dgenies.lib.latest">
+<span id="dgenies-lib-latest-module"></span><h2>dgenies.lib.latest module<a class="headerlink" href="#module-dgenies.lib.latest" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="dgenies.lib.latest.Latest">
+<em class="property">class </em><code class="descclassname">dgenies.lib.latest.</code><code class="descname">Latest</code><a class="reference internal" href="_modules/dgenies/lib/latest.html#Latest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.latest.Latest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="method">
+<dt id="dgenies.lib.latest.Latest.load">
+<code class="descname">load</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/latest.html#Latest.load"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.latest.Latest.load" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.latest.Latest.update">
+<code class="descname">update</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/latest.html#Latest.update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.latest.Latest.update" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.latest.Latest.update_async">
+<code class="descname">update_async</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/latest.html#Latest.update_async"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.latest.Latest.update_async" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-dgenies.lib.mailer">
+<span id="dgenies-lib-mailer-module"></span><h2>dgenies.lib.mailer module<a class="headerlink" href="#module-dgenies.lib.mailer" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="dgenies.lib.mailer.Mailer">
+<em class="property">class </em><code class="descclassname">dgenies.lib.mailer.</code><code class="descname">Mailer</code><span class="sig-paren">(</span><em>app</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/mailer.html#Mailer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.mailer.Mailer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="method">
+<dt id="dgenies.lib.mailer.Mailer.send_mail">
+<code class="descname">send_mail</code><span class="sig-paren">(</span><em>recipients: list</em>, <em>subject: str</em>, <em>message: str</em>, <em>message_html: str = None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/mailer.html#Mailer.send_mail"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.mailer.Mailer.send_mail" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-dgenies.lib.paf">
+<span id="dgenies-lib-paf-module"></span><h2>dgenies.lib.paf module<a class="headerlink" href="#module-dgenies.lib.paf" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="dgenies.lib.paf.Paf">
+<em class="property">class </em><code class="descclassname">dgenies.lib.paf.</code><code class="descname">Paf</code><span class="sig-paren">(</span><em>paf: str</em>, <em>idx_q: str</em>, <em>idx_t: str</em>, <em>auto_parse: bool = True</em>, <em>mailer=None</em>, <em>id_job=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/paf.html#Paf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.paf.Paf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="method">
+<dt id="dgenies.lib.paf.Paf.build_list_no_assoc">
+<code class="descname">build_list_no_assoc</code><span class="sig-paren">(</span><em>to</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/paf.html#Paf.build_list_no_assoc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.paf.Paf.build_list_no_assoc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build list of queries that match with None target, or the opposite
+:param to: query or target
+:return: content of the file</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.paf.Paf.build_query_chr_as_reference">
+<code class="descname">build_query_chr_as_reference</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/paf.html#Paf.build_query_chr_as_reference"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.paf.Paf.build_query_chr_as_reference" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.paf.Paf.build_query_on_target_association_file">
+<code class="descname">build_query_on_target_association_file</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/paf.html#Paf.build_query_on_target_association_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.paf.Paf.build_query_on_target_association_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>For each query, get the best matching chromosome and save it to a CSV file.
+Use the order of queries
+:return: content of the file</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.paf.Paf.build_summary_stats">
+<code class="descname">build_summary_stats</code><span class="sig-paren">(</span><em>status_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/paf.html#Paf.build_summary_stats"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.paf.Paf.build_summary_stats" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get summary of identity
+:return: table with percents by category</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.paf.Paf.compute_gravity_contigs">
+<code class="descname">compute_gravity_contigs</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/paf.html#Paf.compute_gravity_contigs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.paf.Paf.compute_gravity_contigs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute gravity for each contig on each chromosome (how many big matches they have).
+Will be used to find which chromosome has the highest value for each contig
+:return:</p>
+<blockquote>
+<div><ul class="simple">
+<li><dl class="first docutils">
+<dt>gravity for each contig and each chromosome:</dt>
+<dd>{contig1: {chr1: value, chr2: value, …}, contig2: …}</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>For each block save lines inside:</dt>
+<dd>[median_on_query, squared length, median_on_target, x1, x2, y1, y2, length] (x : on target, y: on query)</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.paf.Paf.get_d3js_data">
+<code class="descname">get_d3js_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/paf.html#Paf.get_d3js_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.paf.Paf.get_d3js_data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.paf.Paf.get_queries_on_target_association">
+<code class="descname">get_queries_on_target_association</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/paf.html#Paf.get_queries_on_target_association"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.paf.Paf.get_queries_on_target_association" title="Permalink to this definition">¶</a></dt>
+<dd><p>For each target, get the list of queries associated to it
+:return:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.paf.Paf.get_query_on_target_association">
+<code class="descname">get_query_on_target_association</code><span class="sig-paren">(</span><em>with_coords=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/paf.html#Paf.get_query_on_target_association"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.paf.Paf.get_query_on_target_association" title="Permalink to this definition">¶</a></dt>
+<dd><p>For each query, get the best matching chromosome
+:return:</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.paf.Paf.get_summary_stats">
+<code class="descname">get_summary_stats</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/paf.html#Paf.get_summary_stats"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.paf.Paf.get_summary_stats" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.paf.Paf.is_contig_well_oriented">
+<code class="descname">is_contig_well_oriented</code><span class="sig-paren">(</span><em>lines: list</em>, <em>contig</em>, <em>chrom</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/paf.html#Paf.is_contig_well_oriented"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.paf.Paf.is_contig_well_oriented" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True if the contig is well oriented. A well oriented contig
+must have y increased when x increased. We check that only for highest matchs
+(small matches must be ignores)
+:param lines: lines inside the contig
+:return: True if well oriented, False else</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.paf.Paf.keyerror_message">
+<code class="descname">keyerror_message</code><span class="sig-paren">(</span><em>exception: KeyError</em>, <em>type_f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/paf.html#Paf.keyerror_message"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.paf.Paf.keyerror_message" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="dgenies.lib.paf.Paf.limit_idy">
+<code class="descname">limit_idy</code><em class="property"> = [0.25, 0.5, 0.75]</em><a class="headerlink" href="#dgenies.lib.paf.Paf.limit_idy" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="dgenies.lib.paf.Paf.max_nb_lines">
+<code class="descname">max_nb_lines</code><em class="property"> = 100000</em><a class="headerlink" href="#dgenies.lib.paf.Paf.max_nb_lines" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.paf.Paf.parse_index">
+<code class="descname">parse_index</code><span class="sig-paren">(</span><em>index_o: list</em>, <em>index_c: dict</em>, <em>full_len: int</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/paf.html#Paf.parse_index"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.paf.Paf.parse_index" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse index and merge too small contigs
+:param index_o: index order
+:param index_c: index contigs def
+:param full_len: length of the sequence
+:return: new index orders and contigs def</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.paf.Paf.parse_paf">
+<code class="descname">parse_paf</code><span class="sig-paren">(</span><em>merge_index=True</em>, <em>noise=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/paf.html#Paf.parse_paf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.paf.Paf.parse_paf" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="staticmethod">
+<dt id="dgenies.lib.paf.Paf.remove_noise">
+<em class="property">static </em><code class="descname">remove_noise</code><span class="sig-paren">(</span><em>lines</em>, <em>noise_limit</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/paf.html#Paf.remove_noise"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.paf.Paf.remove_noise" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.paf.Paf.reorient_contigs_in_paf">
+<code class="descname">reorient_contigs_in_paf</code><span class="sig-paren">(</span><em>contigs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/paf.html#Paf.reorient_contigs_in_paf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.paf.Paf.reorient_contigs_in_paf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reorient contigs in the PAF file
+:param contigs: contigs to be reoriented</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.paf.Paf.reverse_contig">
+<code class="descname">reverse_contig</code><span class="sig-paren">(</span><em>contig_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/paf.html#Paf.reverse_contig"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.paf.Paf.reverse_contig" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.paf.Paf.save_json">
+<code class="descname">save_json</code><span class="sig-paren">(</span><em>out</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/paf.html#Paf.save_json"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.paf.Paf.save_json" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.paf.Paf.set_sorted">
+<code class="descname">set_sorted</code><span class="sig-paren">(</span><em>is_sorted</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/paf.html#Paf.set_sorted"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.paf.Paf.set_sorted" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.lib.paf.Paf.sort">
+<code class="descname">sort</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/paf.html#Paf.sort"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.paf.Paf.sort" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sort contigs according to reference target and reorient them if needed</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-dgenies.lib.parsers">
+<span id="dgenies-lib-parsers-module"></span><h2>dgenies.lib.parsers module<a class="headerlink" href="#module-dgenies.lib.parsers" title="Permalink to this headline">¶</a></h2>
+<p>Define tools parsers here</p>
+<p>Each parser (main function) must have 2 and only 2 arguments:
+- First argument: input file which is the tool raw output
+- Second argument: finale PAF file</p>
+<p>Returns True if parse succeed, else False</p>
+<dl class="function">
+<dt id="dgenies.lib.parsers.maf">
+<code class="descclassname">dgenies.lib.parsers.</code><code class="descname">maf</code><span class="sig-paren">(</span><em>in_maf</em>, <em>out_paf</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/parsers.html#maf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.parsers.maf" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-dgenies.lib.upload_file">
+<span id="dgenies-lib-upload-file-module"></span><h2>dgenies.lib.upload_file module<a class="headerlink" href="#module-dgenies.lib.upload_file" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="dgenies.lib.upload_file.UploadFile">
+<em class="property">class </em><code class="descclassname">dgenies.lib.upload_file.</code><code class="descname">UploadFile</code><span class="sig-paren">(</span><em>name</em>, <em>type_f=None</em>, <em>size=None</em>, <em>not_allowed_msg=''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/upload_file.html#UploadFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.upload_file.UploadFile" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="method">
+<dt id="dgenies.lib.upload_file.UploadFile.get_file">
+<code class="descname">get_file</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/upload_file.html#UploadFile.get_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.upload_file.UploadFile.get_file" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-dgenies.lib.validators">
+<span id="dgenies-lib-validators-module"></span><h2>dgenies.lib.validators module<a class="headerlink" href="#module-dgenies.lib.validators" title="Permalink to this headline">¶</a></h2>
+<p>Define formats validators here (for alignment files)</p>
+<p>Each validator (main function) has a name which is exactly the name of the format in the aln-formats.yaml file.
+Only 1 argument to this function:
+- Input file to check</p>
+<p>Secondary functions must start with _</p>
+<p>Returns True if file is valid, else False</p>
+<dl class="function">
+<dt id="dgenies.lib.validators.idx">
+<code class="descclassname">dgenies.lib.validators.</code><code class="descname">idx</code><span class="sig-paren">(</span><em>in_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/validators.html#idx"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.validators.idx" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="dgenies.lib.validators.maf">
+<code class="descclassname">dgenies.lib.validators.</code><code class="descname">maf</code><span class="sig-paren">(</span><em>in_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/validators.html#maf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.validators.maf" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="dgenies.lib.validators.paf">
+<code class="descclassname">dgenies.lib.validators.</code><code class="descname">paf</code><span class="sig-paren">(</span><em>in_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/lib/validators.html#paf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.lib.validators.paf" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-dgenies.lib">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-dgenies.lib" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Floréal Cabanettes.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'1.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

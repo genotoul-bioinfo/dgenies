@@ -1,0 +1,744 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>dgenies package &mdash; D-Genies 1.1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="D-Genies 1.1 documentation" href="index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> D-Genies
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <!-- Local TOC -->
+                <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">dgenies package</a><ul>
+<li><a class="reference internal" href="#subpackages">Subpackages</a></li>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-dgenies.config_reader">dgenies.config_reader module</a></li>
+<li><a class="reference internal" href="#module-dgenies.database">dgenies.database module</a></li>
+<li><a class="reference internal" href="#module-dgenies.tools">dgenies.tools module</a></li>
+<li><a class="reference internal" href="#module-dgenies.views">dgenies.views module</a></li>
+<li><a class="reference internal" href="#module-dgenies">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">D-Genies</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>dgenies package</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/dgenies.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="dgenies-package">
+<h1>dgenies package<a class="headerlink" href="#dgenies-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="dgenies.lib.html">dgenies.lib package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="dgenies.lib.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dgenies.lib.html#module-dgenies.lib.crons">dgenies.lib.crons module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dgenies.lib.html#module-dgenies.lib.decorators">dgenies.lib.decorators module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dgenies.lib.html#dgenies-lib-drmaasession-module">dgenies.lib.drmaasession module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dgenies.lib.html#module-dgenies.lib.fasta">dgenies.lib.fasta module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dgenies.lib.html#module-dgenies.lib.functions">dgenies.lib.functions module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dgenies.lib.html#module-dgenies.lib.job_manager">dgenies.lib.job_manager module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dgenies.lib.html#module-dgenies.lib.latest">dgenies.lib.latest module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dgenies.lib.html#module-dgenies.lib.mailer">dgenies.lib.mailer module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dgenies.lib.html#module-dgenies.lib.paf">dgenies.lib.paf module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dgenies.lib.html#module-dgenies.lib.parsers">dgenies.lib.parsers module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dgenies.lib.html#module-dgenies.lib.upload_file">dgenies.lib.upload_file module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dgenies.lib.html#module-dgenies.lib.validators">dgenies.lib.validators module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dgenies.lib.html#module-dgenies.lib">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-dgenies.config_reader">
+<span id="dgenies-config-reader-module"></span><h2>dgenies.config_reader module<a class="headerlink" href="#module-dgenies.config_reader" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-dgenies.database">
+<span id="dgenies-database-module"></span><h2>dgenies.database module<a class="headerlink" href="#module-dgenies.database" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="dgenies.database.BaseModel">
+<em class="property">class </em><code class="descclassname">dgenies.database.</code><code class="descname">BaseModel</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/database.html#BaseModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.database.BaseModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">peewee.Model</span></code></p>
+<dl class="attribute">
+<dt id="dgenies.database.BaseModel.DoesNotExist">
+<code class="descname">DoesNotExist</code><a class="headerlink" href="#dgenies.database.BaseModel.DoesNotExist" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModelDoesNotExist</span></code></p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="dgenies.database.BaseModel.connect">
+<em class="property">classmethod </em><code class="descname">connect</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/database.html#BaseModel.connect"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.database.BaseModel.connect" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="dgenies.database.BaseModel.id">
+<code class="descname">id</code><em class="property"> = &lt;peewee.PrimaryKeyField object&gt;</em><a class="headerlink" href="#dgenies.database.BaseModel.id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="dgenies.database.Database">
+<em class="property">class </em><code class="descclassname">dgenies.database.</code><code class="descname">Database</code><a class="reference internal" href="_modules/dgenies/database.html#Database"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.database.Database" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="attribute">
+<dt id="dgenies.database.Database.nb_open">
+<code class="descname">nb_open</code><em class="property"> = 0</em><a class="headerlink" href="#dgenies.database.Database.nb_open" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="dgenies.database.Gallery">
+<em class="property">class </em><code class="descclassname">dgenies.database.</code><code class="descname">Gallery</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/database.html#Gallery"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.database.Gallery" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#dgenies.database.BaseModel" title="dgenies.database.BaseModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">dgenies.database.BaseModel</span></code></a></p>
+<dl class="attribute">
+<dt id="dgenies.database.Gallery.DoesNotExist">
+<code class="descname">DoesNotExist</code><a class="headerlink" href="#dgenies.database.Gallery.DoesNotExist" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">GalleryDoesNotExist</span></code></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="dgenies.database.Gallery.id">
+<code class="descname">id</code><em class="property"> = &lt;peewee.PrimaryKeyField object&gt;</em><a class="headerlink" href="#dgenies.database.Gallery.id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="dgenies.database.Gallery.job">
+<code class="descname">job</code><em class="property"> = &lt;peewee.ForeignKeyField object&gt;</em><a class="headerlink" href="#dgenies.database.Gallery.job" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="dgenies.database.Gallery.job_id">
+<code class="descname">job_id</code><em class="property"> = &lt;peewee.ForeignKeyField object&gt;</em><a class="headerlink" href="#dgenies.database.Gallery.job_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="dgenies.database.Gallery.name">
+<code class="descname">name</code><em class="property"> = &lt;peewee.CharField object&gt;</em><a class="headerlink" href="#dgenies.database.Gallery.name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="dgenies.database.Gallery.picture">
+<code class="descname">picture</code><em class="property"> = &lt;peewee.CharField object&gt;</em><a class="headerlink" href="#dgenies.database.Gallery.picture" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="dgenies.database.Gallery.query">
+<code class="descname">query</code><em class="property"> = &lt;peewee.CharField object&gt;</em><a class="headerlink" href="#dgenies.database.Gallery.query" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="dgenies.database.Gallery.target">
+<code class="descname">target</code><em class="property"> = &lt;peewee.CharField object&gt;</em><a class="headerlink" href="#dgenies.database.Gallery.target" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="dgenies.database.Job">
+<em class="property">class </em><code class="descclassname">dgenies.database.</code><code class="descname">Job</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/database.html#Job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.database.Job" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#dgenies.database.BaseModel" title="dgenies.database.BaseModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">dgenies.database.BaseModel</span></code></a></p>
+<dl class="attribute">
+<dt id="dgenies.database.Job.DoesNotExist">
+<code class="descname">DoesNotExist</code><a class="headerlink" href="#dgenies.database.Job.DoesNotExist" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">JobDoesNotExist</span></code></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="dgenies.database.Job.batch_type">
+<code class="descname">batch_type</code><em class="property"> = &lt;peewee.CharField object&gt;</em><a class="headerlink" href="#dgenies.database.Job.batch_type" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="dgenies.database.Job.date_created">
+<code class="descname">date_created</code><em class="property"> = &lt;peewee.DateTimeField object&gt;</em><a class="headerlink" href="#dgenies.database.Job.date_created" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="dgenies.database.Job.email">
+<code class="descname">email</code><em class="property"> = &lt;peewee.CharField object&gt;</em><a class="headerlink" href="#dgenies.database.Job.email" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="dgenies.database.Job.error">
+<code class="descname">error</code><em class="property"> = &lt;peewee.CharField object&gt;</em><a class="headerlink" href="#dgenies.database.Job.error" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="dgenies.database.Job.gallery_set">
+<code class="descname">gallery_set</code><a class="headerlink" href="#dgenies.database.Job.gallery_set" title="Permalink to this definition">¶</a></dt>
+<dd><p>Back-reference to expose related objects as a <cite>SelectQuery</cite>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="dgenies.database.Job.id">
+<code class="descname">id</code><em class="property"> = &lt;peewee.PrimaryKeyField object&gt;</em><a class="headerlink" href="#dgenies.database.Job.id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="dgenies.database.Job.id_job">
+<code class="descname">id_job</code><em class="property"> = &lt;peewee.CharField object&gt;</em><a class="headerlink" href="#dgenies.database.Job.id_job" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="dgenies.database.Job.id_process">
+<code class="descname">id_process</code><em class="property"> = &lt;peewee.IntegerField object&gt;</em><a class="headerlink" href="#dgenies.database.Job.id_process" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="dgenies.database.Job.mem_peak">
+<code class="descname">mem_peak</code><em class="property"> = &lt;peewee.IntegerField object&gt;</em><a class="headerlink" href="#dgenies.database.Job.mem_peak" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="dgenies.database.Job.status">
+<code class="descname">status</code><em class="property"> = &lt;peewee.CharField object&gt;</em><a class="headerlink" href="#dgenies.database.Job.status" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="dgenies.database.Job.time_elapsed">
+<code class="descname">time_elapsed</code><em class="property"> = &lt;peewee.IntegerField object&gt;</em><a class="headerlink" href="#dgenies.database.Job.time_elapsed" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="dgenies.database.Job.tool">
+<code class="descname">tool</code><em class="property"> = &lt;peewee.CharField object&gt;</em><a class="headerlink" href="#dgenies.database.Job.tool" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="dgenies.database.MyRetryDB">
+<em class="property">class </em><code class="descclassname">dgenies.database.</code><code class="descname">MyRetryDB</code><span class="sig-paren">(</span><em>database</em>, <em>threadlocals=True</em>, <em>autocommit=True</em>, <em>fields=None</em>, <em>ops=None</em>, <em>autorollback=False</em>, <em>use_speedups=True</em>, <em>**connect_kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/database.html#MyRetryDB"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.database.MyRetryDB" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">playhouse.shortcuts.RetryOperationalError</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">peewee.MySQLDatabase</span></code></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="dgenies.database.Session">
+<em class="property">class </em><code class="descclassname">dgenies.database.</code><code class="descname">Session</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/database.html#Session"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.database.Session" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#dgenies.database.BaseModel" title="dgenies.database.BaseModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">dgenies.database.BaseModel</span></code></a></p>
+<dl class="attribute">
+<dt id="dgenies.database.Session.DoesNotExist">
+<code class="descname">DoesNotExist</code><a class="headerlink" href="#dgenies.database.Session.DoesNotExist" title="Permalink to this definition">¶</a></dt>
+<dd><p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">SessionDoesNotExist</span></code></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dgenies.database.Session.ask_for_upload">
+<code class="descname">ask_for_upload</code><span class="sig-paren">(</span><em>change_status=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/database.html#Session.ask_for_upload"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.database.Session.ask_for_upload" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="dgenies.database.Session.date_created">
+<code class="descname">date_created</code><em class="property"> = &lt;peewee.DateTimeField object&gt;</em><a class="headerlink" href="#dgenies.database.Session.date_created" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="dgenies.database.Session.id">
+<code class="descname">id</code><em class="property"> = &lt;peewee.PrimaryKeyField object&gt;</em><a class="headerlink" href="#dgenies.database.Session.id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="dgenies.database.Session.keep_active">
+<code class="descname">keep_active</code><em class="property"> = &lt;peewee.BooleanField object&gt;</em><a class="headerlink" href="#dgenies.database.Session.keep_active" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="dgenies.database.Session.last_ping">
+<code class="descname">last_ping</code><em class="property"> = &lt;peewee.DateTimeField object&gt;</em><a class="headerlink" href="#dgenies.database.Session.last_ping" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="dgenies.database.Session.new">
+<em class="property">classmethod </em><code class="descname">new</code><span class="sig-paren">(</span><em>keep_active=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/database.html#Session.new"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.database.Session.new" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="dgenies.database.Session.ping">
+<code class="descname">ping</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/database.html#Session.ping"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.database.Session.ping" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="dgenies.database.Session.s_id">
+<code class="descname">s_id</code><em class="property"> = &lt;peewee.CharField object&gt;</em><a class="headerlink" href="#dgenies.database.Session.s_id" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="dgenies.database.Session.status">
+<code class="descname">status</code><em class="property"> = &lt;peewee.CharField object&gt;</em><a class="headerlink" href="#dgenies.database.Session.status" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="dgenies.database.Session.upload_folder">
+<code class="descname">upload_folder</code><em class="property"> = &lt;peewee.CharField object&gt;</em><a class="headerlink" href="#dgenies.database.Session.upload_folder" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-dgenies.tools">
+<span id="dgenies-tools-module"></span><h2>dgenies.tools module<a class="headerlink" href="#module-dgenies.tools" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="dgenies.tools.Tool">
+<em class="property">class </em><code class="descclassname">dgenies.tools.</code><code class="descname">Tool</code><span class="sig-paren">(</span><em>name</em>, <em>exec</em>, <em>command_line</em>, <em>all_vs_all</em>, <em>max_memory</em>, <em>threads=1</em>, <em>exec_cluster=None</em>, <em>threads_cluster=None</em>, <em>parser=None</em>, <em>split_before=False</em>, <em>help=None</em>, <em>order=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/tools.html#Tool"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.tools.Tool" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-dgenies.views">
+<span id="dgenies-views-module"></span><h2>dgenies.views module<a class="headerlink" href="#module-dgenies.views" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="dgenies.views.ask_upload">
+<code class="descclassname">dgenies.views.</code><code class="descname">ask_upload</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/views.html#ask_upload"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.views.ask_upload" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="dgenies.views.build_fasta">
+<code class="descclassname">dgenies.views.</code><code class="descname">build_fasta</code><span class="sig-paren">(</span><em>id_res</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/views.html#build_fasta"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.views.build_fasta" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate the fasta file of query</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>id_res</strong> (<em>str</em>) – job id</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="dgenies.views.build_query_as_reference">
+<code class="descclassname">dgenies.views.</code><code class="descname">build_query_as_reference</code><span class="sig-paren">(</span><em>id_res</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/views.html#build_query_as_reference"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.views.build_query_as_reference" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build fasta of query with contigs order like reference</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>id_res</strong> (<em>str</em>) – job id</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="dgenies.views.contact">
+<code class="descclassname">dgenies.views.</code><code class="descname">contact</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/views.html#contact"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.views.contact" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="dgenies.views.delete_job">
+<code class="descclassname">dgenies.views.</code><code class="descname">delete_job</code><span class="sig-paren">(</span><em>id_res</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/views.html#delete_job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.views.delete_job" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="dgenies.views.dl_fasta">
+<code class="descclassname">dgenies.views.</code><code class="descname">dl_fasta</code><span class="sig-paren">(</span><em>id_res</em>, <em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/views.html#dl_fasta"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.views.dl_fasta" title="Permalink to this definition">¶</a></dt>
+<dd><p>Download fasta file</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>id_res</strong> (<em>str</em>) – job id</li>
+<li><strong>filename</strong> (<em>str</em>) – file name (not used, but can be in the URL to define download filename to the browser)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="dgenies.views.documentation_dotplot">
+<code class="descclassname">dgenies.views.</code><code class="descname">documentation_dotplot</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/views.html#documentation_dotplot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.views.documentation_dotplot" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="dgenies.views.documentation_formats">
+<code class="descclassname">dgenies.views.</code><code class="descname">documentation_formats</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/views.html#documentation_formats"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.views.documentation_formats" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="dgenies.views.documentation_result">
+<code class="descclassname">dgenies.views.</code><code class="descname">documentation_result</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/views.html#documentation_result"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.views.documentation_result" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="dgenies.views.documentation_run">
+<code class="descclassname">dgenies.views.</code><code class="descname">documentation_run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/views.html#documentation_run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.views.documentation_run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="dgenies.views.download_file">
+<code class="descclassname">dgenies.views.</code><code class="descname">download_file</code><span class="sig-paren">(</span><em>id_res</em>, <em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/views.html#download_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.views.download_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Download a file from a job</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>id_res</strong> (<em>str</em>) – job id</li>
+<li><strong>filename</strong> (<em>str</em>) – file name</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="dgenies.views.download_paf">
+<code class="descclassname">dgenies.views.</code><code class="descname">download_paf</code><span class="sig-paren">(</span><em>id_res</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/views.html#download_paf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.views.download_paf" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="dgenies.views.free_noise">
+<code class="descclassname">dgenies.views.</code><code class="descname">free_noise</code><span class="sig-paren">(</span><em>id_res</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/views.html#free_noise"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.views.free_noise" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="dgenies.views.gallery">
+<code class="descclassname">dgenies.views.</code><code class="descname">gallery</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/views.html#gallery"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.views.gallery" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="dgenies.views.gallery_file">
+<code class="descclassname">dgenies.views.</code><code class="descname">gallery_file</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/views.html#gallery_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.views.gallery_file" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="dgenies.views.get_backup_file">
+<code class="descclassname">dgenies.views.</code><code class="descname">get_backup_file</code><span class="sig-paren">(</span><em>id_res</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/views.html#get_backup_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.views.get_backup_file" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="dgenies.views.get_file">
+<code class="descclassname">dgenies.views.</code><code class="descname">get_file</code><span class="sig-paren">(</span><em>file</em>, <em>gzip=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/views.html#get_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.views.get_file" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="dgenies.views.get_filter_out">
+<code class="descclassname">dgenies.views.</code><code class="descname">get_filter_out</code><span class="sig-paren">(</span><em>id_res</em>, <em>type_f</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/views.html#get_filter_out"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.views.get_filter_out" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="dgenies.views.get_filter_out_query">
+<code class="descclassname">dgenies.views.</code><code class="descname">get_filter_out_query</code><span class="sig-paren">(</span><em>id_res</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/views.html#get_filter_out_query"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.views.get_filter_out_query" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="dgenies.views.get_filter_out_target">
+<code class="descclassname">dgenies.views.</code><code class="descname">get_filter_out_target</code><span class="sig-paren">(</span><em>id_res</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/views.html#get_filter_out_target"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.views.get_filter_out_target" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="dgenies.views.get_graph">
+<code class="descclassname">dgenies.views.</code><code class="descname">get_graph</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/views.html#get_graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.views.get_graph" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="dgenies.views.get_query_as_reference">
+<code class="descclassname">dgenies.views.</code><code class="descname">get_query_as_reference</code><span class="sig-paren">(</span><em>id_res</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/views.html#get_query_as_reference"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.views.get_query_as_reference" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get fasta of query with contigs order like reference</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>id_res</strong> (<em>str</em>) – job id</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="dgenies.views.global_templates_variables">
+<code class="descclassname">dgenies.views.</code><code class="descname">global_templates_variables</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/views.html#global_templates_variables"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.views.global_templates_variables" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="dgenies.views.install">
+<code class="descclassname">dgenies.views.</code><code class="descname">install</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/views.html#install"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.views.install" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="dgenies.views.launch_analysis">
+<code class="descclassname">dgenies.views.</code><code class="descname">launch_analysis</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/views.html#launch_analysis"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.views.launch_analysis" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="dgenies.views.main">
+<code class="descclassname">dgenies.views.</code><code class="descname">main</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/views.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.views.main" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="dgenies.views.no_assoc">
+<code class="descclassname">dgenies.views.</code><code class="descname">no_assoc</code><span class="sig-paren">(</span><em>id_res</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/views.html#no_assoc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.views.no_assoc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get contigs that match with None target
+:param id_res: id of the result</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="dgenies.views.ping_upload">
+<code class="descclassname">dgenies.views.</code><code class="descname">ping_upload</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/views.html#ping_upload"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.views.ping_upload" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="dgenies.views.post_query_as_reference">
+<code class="descclassname">dgenies.views.</code><code class="descname">post_query_as_reference</code><span class="sig-paren">(</span><em>id_res</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/views.html#post_query_as_reference"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.views.post_query_as_reference" title="Permalink to this definition">¶</a></dt>
+<dd><p>Launch build fasta of query with contigs order like reference</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>id_res</strong> (<em>str</em>) – job id</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="dgenies.views.qt_assoc">
+<code class="descclassname">dgenies.views.</code><code class="descname">qt_assoc</code><span class="sig-paren">(</span><em>id_res</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/views.html#qt_assoc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.views.qt_assoc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Query - Target association TSV file</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>id_res</strong> – </td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="dgenies.views.result">
+<code class="descclassname">dgenies.views.</code><code class="descname">result</code><span class="sig-paren">(</span><em>id_res</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/views.html#result"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.views.result" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="dgenies.views.reverse_contig">
+<code class="descclassname">dgenies.views.</code><code class="descname">reverse_contig</code><span class="sig-paren">(</span><em>id_res</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/views.html#reverse_contig"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.views.reverse_contig" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="dgenies.views.run">
+<code class="descclassname">dgenies.views.</code><code class="descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/views.html#run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.views.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="dgenies.views.run_test">
+<code class="descclassname">dgenies.views.</code><code class="descname">run_test</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/views.html#run_test"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.views.run_test" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="dgenies.views.send_mail">
+<code class="descclassname">dgenies.views.</code><code class="descname">send_mail</code><span class="sig-paren">(</span><em>id_res</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/views.html#send_mail"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.views.send_mail" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="dgenies.views.sort_graph">
+<code class="descclassname">dgenies.views.</code><code class="descname">sort_graph</code><span class="sig-paren">(</span><em>id_res</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/views.html#sort_graph"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.views.sort_graph" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="dgenies.views.status">
+<code class="descclassname">dgenies.views.</code><code class="descname">status</code><span class="sig-paren">(</span><em>id_job</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/views.html#status"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.views.status" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="dgenies.views.summary">
+<code class="descclassname">dgenies.views.</code><code class="descname">summary</code><span class="sig-paren">(</span><em>id_res</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/views.html#summary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.views.summary" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="dgenies.views.upload">
+<code class="descclassname">dgenies.views.</code><code class="descname">upload</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies/views.html#upload"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.views.upload" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-dgenies">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-dgenies" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="dgenies.launch">
+<code class="descclassname">dgenies.</code><code class="descname">launch</code><span class="sig-paren">(</span><em>mode='webserver'</em>, <em>debug=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dgenies.html#launch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dgenies.launch" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Floréal Cabanettes.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'1.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

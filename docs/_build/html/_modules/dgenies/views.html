@@ -1,0 +1,1078 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>dgenies.views &mdash; D-Genies 1.1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="D-Genies 1.1 documentation" href="../../index.html"/>
+        <link rel="up" title="dgenies" href="../dgenies.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> D-Genies
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <!-- Local TOC -->
+                <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">D-Genies</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      
+          <li><a href="../dgenies.html">dgenies</a> &raquo;</li>
+      
+    <li>dgenies.views</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for dgenies.views</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">dgenies</span> <span class="k">import</span> <span class="n">app</span><span class="p">,</span> <span class="n">app_title</span><span class="p">,</span> <span class="n">app_folder</span><span class="p">,</span> <span class="n">config_reader</span><span class="p">,</span> <span class="n">mailer</span><span class="p">,</span> <span class="n">APP_DATA</span><span class="p">,</span> <span class="n">MODE</span><span class="p">,</span> <span class="n">DEBUG</span><span class="p">,</span> <span class="n">VERSION</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">threading</span>
+<span class="kn">import</span> <span class="nn">traceback</span>
+<span class="kn">from</span> <span class="nn">flask</span> <span class="k">import</span> <span class="n">render_template</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">url_for</span><span class="p">,</span> <span class="n">jsonify</span><span class="p">,</span> <span class="n">Response</span><span class="p">,</span> <span class="n">abort</span><span class="p">,</span> <span class="n">send_file</span><span class="p">,</span> <span class="n">Markup</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="k">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">dgenies.lib.paf</span> <span class="k">import</span> <span class="n">Paf</span>
+<span class="kn">from</span> <span class="nn">dgenies.lib.job_manager</span> <span class="k">import</span> <span class="n">JobManager</span>
+<span class="kn">from</span> <span class="nn">dgenies.lib.functions</span> <span class="k">import</span> <span class="n">Functions</span><span class="p">,</span> <span class="n">ALLOWED_EXTENSIONS</span>
+<span class="kn">from</span> <span class="nn">dgenies.lib.upload_file</span> <span class="k">import</span> <span class="n">UploadFile</span>
+<span class="kn">from</span> <span class="nn">dgenies.lib.fasta</span> <span class="k">import</span> <span class="n">Fasta</span>
+<span class="kn">from</span> <span class="nn">dgenies.lib.latest</span> <span class="k">import</span> <span class="n">Latest</span>
+<span class="kn">from</span> <span class="nn">dgenies.tools</span> <span class="k">import</span> <span class="n">Tools</span>
+<span class="kn">from</span> <span class="nn">markdown</span> <span class="k">import</span> <span class="n">Markdown</span>
+<span class="kn">from</span> <span class="nn">markdown.extensions.toc</span> <span class="k">import</span> <span class="n">TocExtension</span>
+<span class="kn">from</span> <span class="nn">markdown.extensions.tables</span> <span class="k">import</span> <span class="n">TableExtension</span>
+<span class="kn">import</span> <span class="nn">tarfile</span>
+<span class="kn">from</span> <span class="nn">jinja2</span> <span class="k">import</span> <span class="n">Environment</span>
+<span class="k">if</span> <span class="n">MODE</span> <span class="o">==</span> <span class="s2">&quot;webserver&quot;</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">dgenies.database</span> <span class="k">import</span> <span class="n">Session</span><span class="p">,</span> <span class="n">Gallery</span>
+    <span class="kn">from</span> <span class="nn">peewee</span> <span class="k">import</span> <span class="n">DoesNotExist</span>
+
+
+<div class="viewcode-block" id="global_templates_variables"><a class="viewcode-back" href="../../dgenies.html#dgenies.views.global_templates_variables">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">context_processor</span>
+<span class="k">def</span> <span class="nf">global_templates_variables</span><span class="p">():</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;title&quot;</span><span class="p">:</span> <span class="n">app_title</span><span class="p">,</span>
+        <span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="n">MODE</span><span class="p">,</span>
+        <span class="s2">&quot;all_jobs&quot;</span><span class="p">:</span> <span class="n">Functions</span><span class="o">.</span><span class="n">get_list_all_jobs</span><span class="p">(</span><span class="n">MODE</span><span class="p">),</span>
+        <span class="s2">&quot;debug&quot;</span><span class="p">:</span> <span class="n">DEBUG</span>
+    <span class="p">}</span></div>
+
+
+<span class="c1"># Main</span>
+<div class="viewcode-block" id="main"><a class="viewcode-back" href="../../dgenies.html#dgenies.views.main">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="k">if</span> <span class="n">MODE</span> <span class="o">==</span> <span class="s2">&quot;webserver&quot;</span><span class="p">:</span>
+        <span class="n">pict</span> <span class="o">=</span> <span class="n">Gallery</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">pict</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">pict</span> <span class="o">=</span> <span class="n">pict</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">picture</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">pict</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">pict</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s2">&quot;index.html&quot;</span><span class="p">,</span> <span class="n">menu</span><span class="o">=</span><span class="s2">&quot;index&quot;</span><span class="p">,</span> <span class="n">pict</span><span class="o">=</span><span class="n">pict</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="run"><a class="viewcode-back" href="../../dgenies.html#dgenies.views.run">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s2">&quot;/run&quot;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">run</span><span class="p">():</span>
+    <span class="n">tools</span> <span class="o">=</span> <span class="n">Tools</span><span class="p">()</span><span class="o">.</span><span class="n">tools</span>
+    <span class="n">tools_names</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">tools</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span><span class="n">tools</span><span class="p">[</span><span class="n">x</span><span class="p">]</span><span class="o">.</span><span class="n">order</span><span class="p">,</span> <span class="n">tools</span><span class="p">[</span><span class="n">x</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+    <span class="n">tools_ava</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">tool_name</span><span class="p">,</span> <span class="n">tool</span> <span class="ow">in</span> <span class="n">tools</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">tools_ava</span><span class="p">[</span><span class="n">tool_name</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">tool</span><span class="o">.</span><span class="n">all_vs_all</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="n">MODE</span> <span class="o">==</span> <span class="s2">&quot;webserver&quot;</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">Session</span><span class="o">.</span><span class="n">connect</span><span class="p">():</span>
+            <span class="n">s_id</span> <span class="o">=</span> <span class="n">Session</span><span class="o">.</span><span class="n">new</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">upload_folder</span> <span class="o">=</span> <span class="n">Functions</span><span class="o">.</span><span class="n">random_string</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+        <span class="n">tmp_dir</span> <span class="o">=</span> <span class="n">config_reader</span><span class="o">.</span><span class="n">upload_folder</span>
+        <span class="n">upload_folder_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tmp_dir</span><span class="p">,</span> <span class="n">upload_folder</span><span class="p">)</span>
+        <span class="k">while</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">upload_folder_path</span><span class="p">):</span>
+            <span class="n">upload_folder</span> <span class="o">=</span> <span class="n">Functions</span><span class="o">.</span><span class="n">random_string</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+            <span class="n">upload_folder_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tmp_dir</span><span class="p">,</span> <span class="n">upload_folder</span><span class="p">)</span>
+        <span class="n">s_id</span> <span class="o">=</span> <span class="n">upload_folder</span>
+    <span class="n">id_job</span> <span class="o">=</span> <span class="n">Functions</span><span class="o">.</span><span class="n">random_string</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y%m</span><span class="si">%d</span><span class="s1">%H%M%S&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s2">&quot;id_job&quot;</span> <span class="ow">in</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="p">:</span>
+        <span class="n">id_job</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="s2">&quot;id_job&quot;</span><span class="p">]</span>
+    <span class="n">email</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="k">if</span> <span class="s2">&quot;email&quot;</span> <span class="ow">in</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="p">:</span>
+        <span class="n">email</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="s2">&quot;email&quot;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s2">&quot;run.html&quot;</span><span class="p">,</span> <span class="n">id_job</span><span class="o">=</span><span class="n">id_job</span><span class="p">,</span> <span class="n">email</span><span class="o">=</span><span class="n">email</span><span class="p">,</span>
+                           <span class="n">menu</span><span class="o">=</span><span class="s2">&quot;run&quot;</span><span class="p">,</span> <span class="n">allowed_ext</span><span class="o">=</span><span class="n">ALLOWED_EXTENSIONS</span><span class="p">,</span> <span class="n">s_id</span><span class="o">=</span><span class="n">s_id</span><span class="p">,</span>
+                           <span class="n">max_upload_file_size</span><span class="o">=</span><span class="n">config_reader</span><span class="o">.</span><span class="n">max_upload_file_size</span><span class="p">,</span>
+                           <span class="n">example</span><span class="o">=</span><span class="n">config_reader</span><span class="o">.</span><span class="n">example_target</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                           <span class="n">target</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">config_reader</span><span class="o">.</span><span class="n">example_target</span><span class="p">),</span>
+                           <span class="n">query</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">config_reader</span><span class="o">.</span><span class="n">example_query</span><span class="p">),</span> <span class="n">tools_names</span><span class="o">=</span><span class="n">tools_names</span><span class="p">,</span> <span class="n">tools</span><span class="o">=</span><span class="n">tools</span><span class="p">,</span>
+                           <span class="n">tools_ava</span><span class="o">=</span><span class="n">tools_ava</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="n">VERSION</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="run_test"><a class="viewcode-back" href="../../dgenies.html#dgenies.views.run_test">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s2">&quot;/run-test&quot;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">run_test</span><span class="p">():</span>
+    <span class="k">if</span> <span class="n">MODE</span> <span class="o">==</span> <span class="s2">&quot;webserver&quot;</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">config_reader</span><span class="o">.</span><span class="n">allowed_ip_tests</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">remote_addr</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">config_reader</span><span class="o">.</span><span class="n">allowed_ip_tests</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">abort</span><span class="p">(</span><span class="mi">404</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">Session</span><span class="o">.</span><span class="n">connect</span><span class="p">():</span>
+            <span class="k">return</span> <span class="n">Session</span><span class="o">.</span><span class="n">new</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">abort</span><span class="p">(</span><span class="mi">500</span><span class="p">)</span></div>
+
+
+<span class="c1"># Launch analysis</span>
+<div class="viewcode-block" id="launch_analysis"><a class="viewcode-back" href="../../dgenies.html#dgenies.views.launch_analysis">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s2">&quot;/launch_analysis&quot;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">launch_analysis</span><span class="p">():</span>
+    <span class="k">if</span> <span class="n">MODE</span> <span class="o">==</span> <span class="s2">&quot;webserver&quot;</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">Session</span><span class="o">.</span><span class="n">connect</span><span class="p">():</span>
+                <span class="n">session</span> <span class="o">=</span> <span class="n">Session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">s_id</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="p">[</span><span class="s2">&quot;s_id&quot;</span><span class="p">])</span>
+        <span class="k">except</span> <span class="n">DoesNotExist</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;errors&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;Session has expired. Please refresh the page and try again&quot;</span><span class="p">]})</span>
+        <span class="n">upload_folder</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">upload_folder</span>
+        <span class="c1"># Delete session:</span>
+        <span class="n">session</span><span class="o">.</span><span class="n">delete_instance</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">upload_folder</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="p">[</span><span class="s2">&quot;s_id&quot;</span><span class="p">]</span>
+
+    <span class="n">id_job</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="p">[</span><span class="s2">&quot;id_job&quot;</span><span class="p">]</span>
+    <span class="n">email</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="p">[</span><span class="s2">&quot;email&quot;</span><span class="p">]</span>
+    <span class="n">file_query</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="p">[</span><span class="s2">&quot;query&quot;</span><span class="p">]</span>
+    <span class="n">file_query_type</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="p">[</span><span class="s2">&quot;query_type&quot;</span><span class="p">]</span>
+    <span class="n">file_target</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">]</span>
+    <span class="n">file_target_type</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="p">[</span><span class="s2">&quot;target_type&quot;</span><span class="p">]</span>
+    <span class="n">tool</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="p">[</span><span class="s2">&quot;tool&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;tool&quot;</span> <span class="ow">in</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">alignfile</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="p">[</span><span class="s2">&quot;alignfile&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;alignfile&quot;</span> <span class="ow">in</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">alignfile_type</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="p">[</span><span class="s2">&quot;alignfile_type&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;alignfile_type&quot;</span> <span class="ow">in</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">backup</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="p">[</span><span class="s2">&quot;backup&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;backup&quot;</span> <span class="ow">in</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">backup_type</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="p">[</span><span class="s2">&quot;backup_type&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;backup_type&quot;</span> <span class="ow">in</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span> <span class="k">else</span> <span class="kc">None</span>
+
+    <span class="c1"># Check form:</span>
+    <span class="n">form_pass</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">errors</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">if</span> <span class="n">alignfile</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">alignfile_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Server error: no alignfile_type in form. Please contact the support&quot;</span><span class="p">)</span>
+        <span class="n">form_pass</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">if</span> <span class="n">backup</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">backup</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span> <span class="ow">and</span> <span class="p">(</span><span class="n">backup_type</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">backup_type</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">):</span>
+        <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Server error: no backup_type in form. Please contact the support&quot;</span><span class="p">)</span>
+        <span class="n">form_pass</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">if</span> <span class="n">backup</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">backup</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+        <span class="n">alignfile</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">file_query</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">file_target</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">backup</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">file_target</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+            <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;No target fasta selected&quot;</span><span class="p">)</span>
+            <span class="n">form_pass</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">if</span> <span class="n">tool</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">tool</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">Tools</span><span class="p">()</span><span class="o">.</span><span class="n">tools</span><span class="p">:</span>
+        <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Tool unavailable: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">tool</span><span class="p">)</span>
+        <span class="n">form_pass</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">if</span> <span class="n">id_job</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+        <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Id of job not given&quot;</span><span class="p">)</span>
+        <span class="n">form_pass</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">if</span> <span class="n">MODE</span> <span class="o">==</span> <span class="s2">&quot;webserver&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">email</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+            <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Email not given&quot;</span><span class="p">)</span>
+            <span class="n">form_pass</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;^[\w.\-]+@[\w\-.]{2,}\.[a-z]{2,4}$&quot;</span><span class="p">,</span> <span class="n">email</span><span class="p">):</span>
+            <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Email is invalid&quot;</span><span class="p">)</span>
+            <span class="n">form_pass</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="c1"># Form pass</span>
+    <span class="k">if</span> <span class="n">form_pass</span><span class="p">:</span>
+        <span class="c1"># Get final job id:</span>
+        <span class="n">id_job</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;[^A-Za-z0-9_\-]+&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">id_job</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;_&quot;</span><span class="p">))</span>
+        <span class="n">id_job_orig</span> <span class="o">=</span> <span class="n">id_job</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="k">while</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">APP_DATA</span><span class="p">,</span> <span class="n">id_job</span><span class="p">)):</span>
+            <span class="n">id_job</span> <span class="o">=</span> <span class="n">id_job_orig</span> <span class="o">+</span> <span class="p">(</span><span class="s2">&quot;_</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">i</span><span class="p">)</span>
+            <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">folder_files</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">APP_DATA</span><span class="p">,</span> <span class="n">id_job</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">folder_files</span><span class="p">)</span>
+
+        <span class="c1"># Save files:</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">file_query</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+            <span class="n">example</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">if</span> <span class="n">file_query</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;example://&quot;</span><span class="p">):</span>
+                <span class="n">example</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">query_path</span> <span class="o">=</span> <span class="n">config_reader</span><span class="o">.</span><span class="n">example_query</span>
+                <span class="n">query_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">query_path</span><span class="p">)</span>
+                <span class="n">file_query_type</span> <span class="o">=</span> <span class="s2">&quot;local&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">query_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">file_query</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">file_query_type</span> <span class="o">==</span> <span class="s2">&quot;local&quot;</span> <span class="k">else</span> <span class="kc">None</span>
+                <span class="n">query_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;UPLOAD_FOLDER&quot;</span><span class="p">],</span> <span class="n">upload_folder</span><span class="p">,</span> <span class="n">file_query</span><span class="p">)</span> \
+                    <span class="k">if</span> <span class="n">file_query_type</span> <span class="o">==</span> <span class="s2">&quot;local&quot;</span> <span class="k">else</span> <span class="n">file_query</span>
+                <span class="k">if</span> <span class="n">file_query_type</span> <span class="o">==</span> <span class="s2">&quot;local&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">query_path</span><span class="p">):</span>
+                    <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Query file not correct!&quot;</span><span class="p">)</span>
+                    <span class="n">form_pass</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">query</span> <span class="o">=</span> <span class="n">Fasta</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">query_name</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">query_path</span><span class="p">,</span> <span class="n">type_f</span><span class="o">=</span><span class="n">file_query_type</span><span class="p">,</span> <span class="n">example</span><span class="o">=</span><span class="n">example</span><span class="p">)</span>
+        <span class="n">example</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">file_target</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">file_target</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;example://&quot;</span><span class="p">):</span>
+                <span class="n">example</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">target_path</span> <span class="o">=</span> <span class="n">config_reader</span><span class="o">.</span><span class="n">example_target</span>
+                <span class="n">target_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">target_path</span><span class="p">)</span>
+                <span class="n">file_target_type</span> <span class="o">=</span> <span class="s2">&quot;local&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">target_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">file_target</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;.gz&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">file_target_type</span> <span class="o">==</span> <span class="s2">&quot;local&quot;</span> <span class="k">else</span> <span class="kc">None</span>
+                <span class="n">target_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;UPLOAD_FOLDER&quot;</span><span class="p">],</span> <span class="n">upload_folder</span><span class="p">,</span> <span class="n">file_target</span><span class="p">)</span> \
+                    <span class="k">if</span> <span class="n">file_target_type</span> <span class="o">==</span> <span class="s2">&quot;local&quot;</span> <span class="k">else</span> <span class="n">file_target</span>
+                <span class="k">if</span> <span class="n">file_target_type</span> <span class="o">==</span> <span class="s2">&quot;local&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">target_path</span><span class="p">):</span>
+                    <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Target file not correct!&quot;</span><span class="p">)</span>
+                    <span class="n">form_pass</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">target</span> <span class="o">=</span> <span class="n">Fasta</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">target_name</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">target_path</span><span class="p">,</span> <span class="n">type_f</span><span class="o">=</span><span class="n">file_target_type</span><span class="p">,</span> <span class="n">example</span><span class="o">=</span><span class="n">example</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">alignfile</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">alignfile</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span> <span class="ow">and</span> <span class="n">backup</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">Path</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">folder_files</span><span class="p">,</span> <span class="s2">&quot;.align&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">touch</span><span class="p">()</span>
+
+        <span class="n">align</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">alignfile</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">alignfile</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
+            <span class="n">alignfile_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">alignfile</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">alignfile_type</span> <span class="o">==</span> <span class="s2">&quot;local&quot;</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="n">alignfile_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;UPLOAD_FOLDER&quot;</span><span class="p">],</span> <span class="n">upload_folder</span><span class="p">,</span> <span class="n">alignfile</span><span class="p">)</span> \
+                <span class="k">if</span> <span class="n">alignfile_type</span> <span class="o">==</span> <span class="s2">&quot;local&quot;</span> <span class="k">else</span> <span class="n">alignfile</span>
+            <span class="k">if</span> <span class="n">alignfile_type</span> <span class="o">==</span> <span class="s2">&quot;local&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">alignfile_path</span><span class="p">):</span>
+                <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Alignment file not correct!&quot;</span><span class="p">)</span>
+                <span class="n">form_pass</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">align</span> <span class="o">=</span> <span class="n">Fasta</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">alignfile_name</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">alignfile_path</span><span class="p">,</span> <span class="n">type_f</span><span class="o">=</span><span class="n">alignfile_type</span><span class="p">)</span>
+
+        <span class="n">bckp</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">backup</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">backup_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">backup</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">backup_type</span> <span class="o">==</span> <span class="s2">&quot;local&quot;</span> <span class="k">else</span> <span class="kc">None</span>
+            <span class="n">backup_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;UPLOAD_FOLDER&quot;</span><span class="p">],</span> <span class="n">upload_folder</span><span class="p">,</span> <span class="n">backup</span><span class="p">)</span> \
+                <span class="k">if</span> <span class="n">backup_type</span> <span class="o">==</span> <span class="s2">&quot;local&quot;</span> <span class="k">else</span> <span class="n">backup</span>
+            <span class="k">if</span> <span class="n">backup_type</span> <span class="o">==</span> <span class="s2">&quot;local&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">backup_path</span><span class="p">):</span>
+                <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;Backup file not correct!&quot;</span><span class="p">)</span>
+                <span class="n">form_pass</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">bckp</span> <span class="o">=</span> <span class="n">Fasta</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">backup_name</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">backup_path</span><span class="p">,</span> <span class="n">type_f</span><span class="o">=</span><span class="n">backup_type</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">form_pass</span><span class="p">:</span>
+            <span class="c1"># Launch job:</span>
+            <span class="n">job</span> <span class="o">=</span> <span class="n">JobManager</span><span class="p">(</span><span class="n">id_job</span><span class="o">=</span><span class="n">id_job</span><span class="p">,</span>
+                             <span class="n">email</span><span class="o">=</span><span class="n">email</span><span class="p">,</span>
+                             <span class="n">query</span><span class="o">=</span><span class="n">query</span><span class="p">,</span>
+                             <span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span>
+                             <span class="n">align</span><span class="o">=</span><span class="n">align</span><span class="p">,</span>
+                             <span class="n">backup</span><span class="o">=</span><span class="n">bckp</span><span class="p">,</span>
+                             <span class="n">mailer</span><span class="o">=</span><span class="n">mailer</span><span class="p">,</span>
+                             <span class="n">tool</span><span class="o">=</span><span class="n">tool</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">MODE</span> <span class="o">==</span> <span class="s2">&quot;webserver&quot;</span><span class="p">:</span>
+                <span class="n">job</span><span class="o">.</span><span class="n">launch</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">job</span><span class="o">.</span><span class="n">launch_standalone</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;redirect&quot;</span><span class="p">:</span> <span class="n">url_for</span><span class="p">(</span><span class="s2">&quot;.status&quot;</span><span class="p">,</span> <span class="n">id_job</span><span class="o">=</span><span class="n">id_job</span><span class="p">)})</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">form_pass</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;errors&quot;</span><span class="p">:</span> <span class="n">errors</span><span class="p">})</span></div>
+
+
+<span class="c1"># Status of a job</span>
+<div class="viewcode-block" id="status"><a class="viewcode-back" href="../../dgenies.html#dgenies.views.status">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/status/&lt;id_job&gt;&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">status</span><span class="p">(</span><span class="n">id_job</span><span class="p">):</span>
+    <span class="n">job</span> <span class="o">=</span> <span class="n">JobManager</span><span class="p">(</span><span class="n">id_job</span><span class="p">)</span>
+    <span class="n">j_status</span> <span class="o">=</span> <span class="n">job</span><span class="o">.</span><span class="n">status</span><span class="p">()</span>
+    <span class="n">mem_peak</span> <span class="o">=</span> <span class="n">j_status</span><span class="p">[</span><span class="s2">&quot;mem_peak&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;mem_peak&quot;</span> <span class="ow">in</span> <span class="n">j_status</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">mem_peak</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">mem_peak</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%.1f</span><span class="s2"> G&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">mem_peak</span> <span class="o">/</span> <span class="mf">1024.0</span> <span class="o">/</span> <span class="mf">1024.0</span><span class="p">)</span>
+    <span class="n">time_e</span> <span class="o">=</span> <span class="n">j_status</span><span class="p">[</span><span class="s2">&quot;time_elapsed&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;time_elapsed&quot;</span> <span class="ow">in</span> <span class="n">j_status</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">time_e</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">time_e</span> <span class="o">&lt;</span> <span class="mi">60</span><span class="p">:</span>
+            <span class="n">time_e</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%d</span><span class="s2"> secs&quot;</span> <span class="o">%</span> <span class="n">time_e</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">minutes</span> <span class="o">=</span> <span class="n">time_e</span> <span class="o">//</span> <span class="mi">60</span>
+            <span class="n">seconds</span> <span class="o">=</span> <span class="n">time_e</span> <span class="o">-</span> <span class="n">minutes</span> <span class="o">*</span> <span class="mi">60</span>
+            <span class="n">time_e</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%d</span><span class="s2"> min </span><span class="si">%d</span><span class="s2"> secs&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">minutes</span><span class="p">,</span> <span class="n">seconds</span><span class="p">)</span>
+    <span class="nb">format</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;format&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">format</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">format</span> <span class="o">==</span> <span class="s2">&quot;json&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span>
+            <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="n">j_status</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">],</span>
+            <span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="n">j_status</span><span class="p">[</span><span class="s2">&quot;error&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;#ID#&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+            <span class="s2">&quot;id_job&quot;</span><span class="p">:</span> <span class="n">id_job</span><span class="p">,</span>
+            <span class="s2">&quot;mem_peak&quot;</span><span class="p">:</span> <span class="n">mem_peak</span><span class="p">,</span>
+            <span class="s2">&quot;time_elapsed&quot;</span><span class="p">:</span> <span class="n">time_e</span>
+        <span class="p">})</span>
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s2">&quot;status.html&quot;</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="n">j_status</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">],</span>
+                           <span class="n">error</span><span class="o">=</span><span class="n">j_status</span><span class="p">[</span><span class="s2">&quot;error&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;#ID#&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+                           <span class="n">id_job</span><span class="o">=</span><span class="n">id_job</span><span class="p">,</span> <span class="n">menu</span><span class="o">=</span><span class="s2">&quot;results&quot;</span><span class="p">,</span> <span class="n">mem_peak</span><span class="o">=</span><span class="n">mem_peak</span><span class="p">,</span>
+                           <span class="n">time_elapsed</span><span class="o">=</span><span class="n">time_e</span><span class="p">,</span> <span class="n">do_align</span><span class="o">=</span><span class="n">job</span><span class="o">.</span><span class="n">do_align</span><span class="p">(),</span>
+                           <span class="n">query_filtered</span><span class="o">=</span><span class="n">job</span><span class="o">.</span><span class="n">is_query_filtered</span><span class="p">(),</span> <span class="n">target_filtered</span><span class="o">=</span><span class="n">job</span><span class="o">.</span><span class="n">is_target_filtered</span><span class="p">())</span></div>
+
+
+<span class="c1"># Results path</span>
+<div class="viewcode-block" id="result"><a class="viewcode-back" href="../../dgenies.html#dgenies.views.result">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s2">&quot;/result/&lt;id_res&gt;&quot;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">result</span><span class="p">(</span><span class="n">id_res</span><span class="p">):</span>
+    <span class="n">res_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">APP_DATA</span><span class="p">,</span> <span class="n">id_res</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s2">&quot;result.html&quot;</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="n">id_res</span><span class="p">,</span> <span class="n">menu</span><span class="o">=</span><span class="s2">&quot;result&quot;</span><span class="p">,</span> <span class="n">current_result</span><span class="o">=</span><span class="n">id_res</span><span class="p">,</span>
+                           <span class="n">is_gallery</span><span class="o">=</span><span class="n">Functions</span><span class="o">.</span><span class="n">is_in_gallery</span><span class="p">(</span><span class="n">id_res</span><span class="p">,</span> <span class="n">MODE</span><span class="p">),</span>
+                           <span class="n">fasta_file</span><span class="o">=</span><span class="n">Functions</span><span class="o">.</span><span class="n">query_fasta_file_exists</span><span class="p">(</span><span class="n">res_dir</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="gallery"><a class="viewcode-back" href="../../dgenies.html#dgenies.views.gallery">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s2">&quot;/gallery&quot;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">gallery</span><span class="p">():</span>
+    <span class="k">if</span> <span class="n">MODE</span> <span class="o">==</span> <span class="s2">&quot;webserver&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s2">&quot;gallery.html&quot;</span><span class="p">,</span> <span class="n">items</span><span class="o">=</span><span class="n">Functions</span><span class="o">.</span><span class="n">get_gallery_items</span><span class="p">(),</span> <span class="n">menu</span><span class="o">=</span><span class="s2">&quot;gallery&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">abort</span><span class="p">(</span><span class="mi">404</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="gallery_file"><a class="viewcode-back" href="../../dgenies.html#dgenies.views.gallery_file">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s2">&quot;/gallery/&lt;filename&gt;&quot;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">gallery_file</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">MODE</span> <span class="o">==</span> <span class="s2">&quot;webserver&quot;</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">send_file</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">config_reader</span><span class="o">.</span><span class="n">app_data</span><span class="p">,</span> <span class="s2">&quot;gallery&quot;</span><span class="p">,</span> <span class="n">filename</span><span class="p">))</span>
+        <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
+            <span class="n">abort</span><span class="p">(</span><span class="mi">404</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">abort</span><span class="p">(</span><span class="mi">404</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_file"><a class="viewcode-back" href="../../dgenies.html#dgenies.views.get_file">[docs]</a><span class="k">def</span> <span class="nf">get_file</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">gzip</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>  <span class="c1"># pragma: no cover</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Figure out how flask returns static files</span>
+        <span class="c1"># Tried:</span>
+        <span class="c1"># - render_template</span>
+        <span class="c1"># - send_file</span>
+        <span class="c1"># This should not be so non-obvious</span>
+        <span class="k">return</span> <span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span> <span class="k">if</span> <span class="n">gzip</span> <span class="k">else</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
+        <span class="n">abort</span><span class="p">(</span><span class="mi">404</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">IOError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">__traceback__</span><span class="p">)</span>
+        <span class="n">abort</span><span class="p">(</span><span class="mi">500</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="documentation_run"><a class="viewcode-back" href="../../dgenies.html#dgenies.views.documentation_run">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s2">&quot;/documentation/run&quot;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">documentation_run</span><span class="p">():</span>
+    <span class="n">latest</span> <span class="o">=</span> <span class="n">Latest</span><span class="p">()</span>
+    <span class="n">version</span> <span class="o">=</span> <span class="n">latest</span><span class="o">.</span><span class="n">latest</span>
+    <span class="n">max_upload_file_size</span> <span class="o">=</span> <span class="n">config_reader</span><span class="o">.</span><span class="n">max_upload_file_size</span>
+    <span class="k">if</span> <span class="n">max_upload_file_size</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="n">max_upload_file_size</span> <span class="o">=</span> <span class="s2">&quot;no limit&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">max_upload_file_size</span> <span class="o">=</span> <span class="n">Functions</span><span class="o">.</span><span class="n">get_readable_size</span><span class="p">(</span><span class="n">max_upload_file_size</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">max_upload_size</span> <span class="o">=</span> <span class="n">config_reader</span><span class="o">.</span><span class="n">max_upload_size</span>
+    <span class="k">if</span> <span class="n">max_upload_size</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="n">max_upload_size</span> <span class="o">=</span> <span class="s2">&quot;no limit&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">max_upload_size</span> <span class="o">=</span> <span class="n">Functions</span><span class="o">.</span><span class="n">get_readable_size</span><span class="p">(</span><span class="n">max_upload_size</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">max_upload_size_ava</span> <span class="o">=</span> <span class="n">config_reader</span><span class="o">.</span><span class="n">max_upload_size_ava</span>
+    <span class="k">if</span> <span class="n">max_upload_size_ava</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="n">max_upload_size_ava</span> <span class="o">=</span> <span class="s2">&quot;no limit&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">max_upload_size_ava</span> <span class="o">=</span> <span class="n">Functions</span><span class="o">.</span><span class="n">get_readable_size</span><span class="p">(</span><span class="n">max_upload_size_ava</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">app_folder</span><span class="p">,</span> <span class="s2">&quot;md&quot;</span><span class="p">,</span> <span class="s2">&quot;doc_run.md&quot;</span><span class="p">),</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span>  <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">install_instr</span><span class="p">:</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="n">install_instr</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+    <span class="n">env</span> <span class="o">=</span> <span class="n">Environment</span><span class="p">()</span>
+    <span class="n">template</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">from_string</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+    <span class="n">content</span> <span class="o">=</span> <span class="n">template</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="n">MODE</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="n">version</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">max_upload_file_size</span><span class="p">,</span> <span class="n">size_unc</span><span class="o">=</span><span class="n">max_upload_size</span><span class="p">,</span>
+                              <span class="n">size_ava</span><span class="o">=</span><span class="n">max_upload_size_ava</span><span class="p">)</span>
+    <span class="n">md</span> <span class="o">=</span> <span class="n">Markdown</span><span class="p">(</span><span class="n">extensions</span><span class="o">=</span><span class="p">[</span><span class="n">TocExtension</span><span class="p">(</span><span class="n">baselevel</span><span class="o">=</span><span class="mi">1</span><span class="p">)])</span>
+    <span class="n">content</span> <span class="o">=</span> <span class="n">Markup</span><span class="p">(</span><span class="n">md</span><span class="o">.</span><span class="n">convert</span><span class="p">(</span><span class="n">content</span><span class="p">))</span>
+    <span class="n">toc</span> <span class="o">=</span> <span class="n">Markup</span><span class="p">(</span><span class="n">md</span><span class="o">.</span><span class="n">toc</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s2">&quot;documentation.html&quot;</span><span class="p">,</span> <span class="n">menu</span><span class="o">=</span><span class="s2">&quot;documentation&quot;</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="n">content</span><span class="p">,</span> <span class="n">toc</span><span class="o">=</span><span class="n">toc</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="documentation_result"><a class="viewcode-back" href="../../dgenies.html#dgenies.views.documentation_result">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s2">&quot;/documentation/result&quot;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">documentation_result</span><span class="p">():</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">app_folder</span><span class="p">,</span> <span class="s2">&quot;md&quot;</span><span class="p">,</span> <span class="s2">&quot;user_manual.md&quot;</span><span class="p">),</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span>
+              <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">install_instr</span><span class="p">:</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="n">install_instr</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+    <span class="n">md</span> <span class="o">=</span> <span class="n">Markdown</span><span class="p">(</span><span class="n">extensions</span><span class="o">=</span><span class="p">[</span><span class="n">TocExtension</span><span class="p">(</span><span class="n">baselevel</span><span class="o">=</span><span class="mi">1</span><span class="p">)])</span>
+    <span class="n">content</span> <span class="o">=</span> <span class="n">Markup</span><span class="p">(</span><span class="n">md</span><span class="o">.</span><span class="n">convert</span><span class="p">(</span><span class="n">content</span><span class="p">))</span>
+    <span class="n">toc</span> <span class="o">=</span> <span class="n">Markup</span><span class="p">(</span><span class="n">md</span><span class="o">.</span><span class="n">toc</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s2">&quot;documentation.html&quot;</span><span class="p">,</span> <span class="n">menu</span><span class="o">=</span><span class="s2">&quot;documentation&quot;</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="n">content</span><span class="p">,</span> <span class="n">toc</span><span class="o">=</span><span class="n">toc</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="documentation_formats"><a class="viewcode-back" href="../../dgenies.html#dgenies.views.documentation_formats">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s2">&quot;/documentation/formats&quot;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">documentation_formats</span><span class="p">():</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">app_folder</span><span class="p">,</span> <span class="s2">&quot;md&quot;</span><span class="p">,</span> <span class="s2">&quot;doc_formats.md&quot;</span><span class="p">),</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span>
+              <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">install_instr</span><span class="p">:</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="n">install_instr</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+    <span class="n">md</span> <span class="o">=</span> <span class="n">Markdown</span><span class="p">(</span><span class="n">extensions</span><span class="o">=</span><span class="p">[</span><span class="n">TocExtension</span><span class="p">(</span><span class="n">baselevel</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">TableExtension</span><span class="p">()])</span>
+    <span class="n">content</span> <span class="o">=</span> <span class="n">Markup</span><span class="p">(</span><span class="n">md</span><span class="o">.</span><span class="n">convert</span><span class="p">(</span><span class="n">content</span><span class="p">))</span>
+    <span class="n">toc</span> <span class="o">=</span> <span class="n">Markup</span><span class="p">(</span><span class="n">md</span><span class="o">.</span><span class="n">toc</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s2">&quot;documentation.html&quot;</span><span class="p">,</span> <span class="n">menu</span><span class="o">=</span><span class="s2">&quot;documentation&quot;</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="n">content</span><span class="p">,</span> <span class="n">toc</span><span class="o">=</span><span class="n">toc</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="documentation_dotplot"><a class="viewcode-back" href="../../dgenies.html#dgenies.views.documentation_dotplot">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s2">&quot;/documentation/dotplot&quot;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">documentation_dotplot</span><span class="p">():</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">app_folder</span><span class="p">,</span> <span class="s2">&quot;md&quot;</span><span class="p">,</span> <span class="s2">&quot;doc_dotplot.md&quot;</span><span class="p">),</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span>
+              <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">install_instr</span><span class="p">:</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="n">install_instr</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+    <span class="n">md</span> <span class="o">=</span> <span class="n">Markdown</span><span class="p">(</span><span class="n">extensions</span><span class="o">=</span><span class="p">[</span><span class="n">TocExtension</span><span class="p">(</span><span class="n">baselevel</span><span class="o">=</span><span class="mi">1</span><span class="p">)])</span>
+    <span class="n">content</span> <span class="o">=</span> <span class="n">Markup</span><span class="p">(</span><span class="n">md</span><span class="o">.</span><span class="n">convert</span><span class="p">(</span><span class="n">content</span><span class="p">))</span>
+    <span class="n">toc</span> <span class="o">=</span> <span class="n">Markup</span><span class="p">(</span><span class="n">md</span><span class="o">.</span><span class="n">toc</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s2">&quot;documentation.html&quot;</span><span class="p">,</span> <span class="n">menu</span><span class="o">=</span><span class="s2">&quot;documentation&quot;</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="n">content</span><span class="p">,</span> <span class="n">toc</span><span class="o">=</span><span class="n">toc</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="install"><a class="viewcode-back" href="../../dgenies.html#dgenies.views.install">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s2">&quot;/install&quot;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">install</span><span class="p">():</span>
+    <span class="n">latest</span> <span class="o">=</span> <span class="n">Latest</span><span class="p">()</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">app_folder</span><span class="p">,</span> <span class="s2">&quot;md&quot;</span><span class="p">,</span> <span class="s2">&quot;INSTALL.md&quot;</span><span class="p">),</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">install_instr</span><span class="p">:</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="n">install_instr</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+    <span class="n">env</span> <span class="o">=</span> <span class="n">Environment</span><span class="p">()</span>
+    <span class="n">template</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">from_string</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+    <span class="n">content</span> <span class="o">=</span> <span class="n">template</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">version</span><span class="o">=</span><span class="n">latest</span><span class="o">.</span><span class="n">latest</span><span class="p">,</span> <span class="n">win32</span><span class="o">=</span><span class="n">latest</span><span class="o">.</span><span class="n">win32</span><span class="p">)</span>
+    <span class="n">md</span> <span class="o">=</span> <span class="n">Markdown</span><span class="p">(</span><span class="n">extensions</span><span class="o">=</span><span class="p">[</span><span class="n">TocExtension</span><span class="p">(</span><span class="n">baselevel</span><span class="o">=</span><span class="mi">1</span><span class="p">)])</span>
+    <span class="n">content</span> <span class="o">=</span> <span class="n">Markup</span><span class="p">(</span><span class="n">md</span><span class="o">.</span><span class="n">convert</span><span class="p">(</span><span class="n">content</span><span class="p">))</span>
+    <span class="n">toc</span> <span class="o">=</span> <span class="n">Markup</span><span class="p">(</span><span class="n">md</span><span class="o">.</span><span class="n">toc</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s2">&quot;documentation.html&quot;</span><span class="p">,</span> <span class="n">menu</span><span class="o">=</span><span class="s2">&quot;install&quot;</span><span class="p">,</span> <span class="n">content</span><span class="o">=</span><span class="n">content</span><span class="p">,</span> <span class="n">toc</span><span class="o">=</span><span class="n">toc</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="contact"><a class="viewcode-back" href="../../dgenies.html#dgenies.views.contact">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s2">&quot;/contact&quot;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">contact</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">render_template</span><span class="p">(</span><span class="s2">&quot;contact.html&quot;</span><span class="p">,</span> <span class="n">menu</span><span class="o">=</span><span class="s2">&quot;contact&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="download_paf"><a class="viewcode-back" href="../../dgenies.html#dgenies.views.download_paf">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s2">&quot;/paf/&lt;id_res&gt;&quot;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">download_paf</span><span class="p">(</span><span class="n">id_res</span><span class="p">):</span>
+    <span class="n">map_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">APP_DATA</span><span class="p">,</span> <span class="n">id_res</span><span class="p">,</span> <span class="s2">&quot;map.paf.sorted&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">map_file</span><span class="p">):</span>
+        <span class="n">map_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">APP_DATA</span><span class="p">,</span> <span class="n">id_res</span><span class="p">,</span> <span class="s2">&quot;map.paf&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">map_file</span><span class="p">):</span>
+        <span class="n">abort</span><span class="p">(</span><span class="mi">404</span><span class="p">)</span>
+    <span class="n">content</span> <span class="o">=</span> <span class="n">get_file</span><span class="p">(</span><span class="n">map_file</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">Response</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">mimetype</span><span class="o">=</span><span class="s2">&quot;text/plain&quot;</span><span class="p">)</span></div>
+
+
+<span class="c1"># Get graph (ajax request)</span>
+<div class="viewcode-block" id="get_graph"><a class="viewcode-back" href="../../dgenies.html#dgenies.views.get_graph">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/get_graph&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">get_graph</span><span class="p">():</span>
+    <span class="n">id_f</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span>
+    <span class="n">paf</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">APP_DATA</span><span class="p">,</span> <span class="n">id_f</span><span class="p">,</span> <span class="s2">&quot;map.paf&quot;</span><span class="p">)</span>
+    <span class="n">idx1</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">APP_DATA</span><span class="p">,</span> <span class="n">id_f</span><span class="p">,</span> <span class="s2">&quot;query.idx&quot;</span><span class="p">)</span>
+    <span class="n">idx2</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">APP_DATA</span><span class="p">,</span> <span class="n">id_f</span><span class="p">,</span> <span class="s2">&quot;target.idx&quot;</span><span class="p">)</span>
+
+    <span class="n">paf</span> <span class="o">=</span> <span class="n">Paf</span><span class="p">(</span><span class="n">paf</span><span class="p">,</span> <span class="n">idx1</span><span class="p">,</span> <span class="n">idx2</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">paf</span><span class="o">.</span><span class="n">parsed</span><span class="p">:</span>
+        <span class="n">valid</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">APP_DATA</span><span class="p">,</span> <span class="n">id_f</span><span class="p">,</span> <span class="s2">&quot;.valid&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">valid</span><span class="p">):</span>
+            <span class="n">Path</span><span class="p">(</span><span class="n">valid</span><span class="p">)</span><span class="o">.</span><span class="n">touch</span><span class="p">()</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">paf</span><span class="o">.</span><span class="n">get_d3js_data</span><span class="p">()</span>
+        <span class="n">res</span><span class="p">[</span><span class="s2">&quot;success&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="n">paf</span><span class="o">.</span><span class="n">error</span><span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="sort_graph"><a class="viewcode-back" href="../../dgenies.html#dgenies.views.sort_graph">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/sort/&lt;id_res&gt;&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">sort_graph</span><span class="p">(</span><span class="n">id_res</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">APP_DATA</span><span class="p">,</span> <span class="n">id_res</span><span class="p">,</span> <span class="s2">&quot;.all-vs-all&quot;</span><span class="p">)):</span>
+        <span class="n">paf_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">APP_DATA</span><span class="p">,</span> <span class="n">id_res</span><span class="p">,</span> <span class="s2">&quot;map.paf&quot;</span><span class="p">)</span>
+        <span class="n">idx1</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">APP_DATA</span><span class="p">,</span> <span class="n">id_res</span><span class="p">,</span> <span class="s2">&quot;query.idx&quot;</span><span class="p">)</span>
+        <span class="n">idx2</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">APP_DATA</span><span class="p">,</span> <span class="n">id_res</span><span class="p">,</span> <span class="s2">&quot;target.idx&quot;</span><span class="p">)</span>
+        <span class="n">paf</span> <span class="o">=</span> <span class="n">Paf</span><span class="p">(</span><span class="n">paf_file</span><span class="p">,</span> <span class="n">idx1</span><span class="p">,</span> <span class="n">idx2</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="n">paf</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">paf</span><span class="o">.</span><span class="n">parsed</span><span class="p">:</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">paf</span><span class="o">.</span><span class="n">get_d3js_data</span><span class="p">()</span>
+            <span class="n">res</span><span class="p">[</span><span class="s2">&quot;success&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="n">paf</span><span class="o">.</span><span class="n">error</span><span class="p">})</span>
+    <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;Sort is not available for All-vs-All mode&quot;</span><span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="reverse_contig"><a class="viewcode-back" href="../../dgenies.html#dgenies.views.reverse_contig">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/reverse-contig/&lt;id_res&gt;&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">reverse_contig</span><span class="p">(</span><span class="n">id_res</span><span class="p">):</span>
+    <span class="n">contig_name</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="p">[</span><span class="s2">&quot;contig&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">APP_DATA</span><span class="p">,</span> <span class="n">id_res</span><span class="p">,</span> <span class="s2">&quot;.all-vs-all&quot;</span><span class="p">)):</span>
+        <span class="n">paf_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">APP_DATA</span><span class="p">,</span> <span class="n">id_res</span><span class="p">,</span> <span class="s2">&quot;map.paf&quot;</span><span class="p">)</span>
+        <span class="n">idx1</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">APP_DATA</span><span class="p">,</span> <span class="n">id_res</span><span class="p">,</span> <span class="s2">&quot;query.idx&quot;</span><span class="p">)</span>
+        <span class="n">idx2</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">APP_DATA</span><span class="p">,</span> <span class="n">id_res</span><span class="p">,</span> <span class="s2">&quot;target.idx&quot;</span><span class="p">)</span>
+        <span class="n">paf</span> <span class="o">=</span> <span class="n">Paf</span><span class="p">(</span><span class="n">paf_file</span><span class="p">,</span> <span class="n">idx1</span><span class="p">,</span> <span class="n">idx2</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="n">paf</span><span class="o">.</span><span class="n">reverse_contig</span><span class="p">(</span><span class="n">contig_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">paf</span><span class="o">.</span><span class="n">parsed</span><span class="p">:</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">paf</span><span class="o">.</span><span class="n">get_d3js_data</span><span class="p">()</span>
+            <span class="n">res</span><span class="p">[</span><span class="s2">&quot;success&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="n">paf</span><span class="o">.</span><span class="n">error</span><span class="p">})</span>
+    <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;Sort is not available for All-vs-All mode&quot;</span><span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="free_noise"><a class="viewcode-back" href="../../dgenies.html#dgenies.views.free_noise">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/freenoise/&lt;id_res&gt;&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">free_noise</span><span class="p">(</span><span class="n">id_res</span><span class="p">):</span>
+    <span class="n">paf_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">APP_DATA</span><span class="p">,</span> <span class="n">id_res</span><span class="p">,</span> <span class="s2">&quot;map.paf&quot;</span><span class="p">)</span>
+    <span class="n">idx1</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">APP_DATA</span><span class="p">,</span> <span class="n">id_res</span><span class="p">,</span> <span class="s2">&quot;query.idx&quot;</span><span class="p">)</span>
+    <span class="n">idx2</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">APP_DATA</span><span class="p">,</span> <span class="n">id_res</span><span class="p">,</span> <span class="s2">&quot;target.idx&quot;</span><span class="p">)</span>
+    <span class="n">paf</span> <span class="o">=</span> <span class="n">Paf</span><span class="p">(</span><span class="n">paf_file</span><span class="p">,</span> <span class="n">idx1</span><span class="p">,</span> <span class="n">idx2</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="n">paf</span><span class="o">.</span><span class="n">parse_paf</span><span class="p">(</span><span class="n">noise</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="p">[</span><span class="s2">&quot;noise&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;1&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">paf</span><span class="o">.</span><span class="n">parsed</span><span class="p">:</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">paf</span><span class="o">.</span><span class="n">get_d3js_data</span><span class="p">()</span>
+        <span class="n">res</span><span class="p">[</span><span class="s2">&quot;success&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="n">paf</span><span class="o">.</span><span class="n">error</span><span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="build_fasta"><a class="viewcode-back" href="../../dgenies.html#dgenies.views.build_fasta">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/get-fasta-query/&lt;id_res&gt;&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">build_fasta</span><span class="p">(</span><span class="n">id_res</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate the fasta file of query</span>
+<span class="sd">    </span>
+<span class="sd">    :param id_res: job id</span>
+<span class="sd">    :type id_res: str</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">res_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">APP_DATA</span><span class="p">,</span> <span class="n">id_res</span><span class="p">)</span>
+    <span class="n">lock_query</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">res_dir</span><span class="p">,</span> <span class="s2">&quot;.query-fasta-build&quot;</span><span class="p">)</span>
+    <span class="n">is_sorted</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">res_dir</span><span class="p">,</span> <span class="s2">&quot;.sorted&quot;</span><span class="p">))</span>
+    <span class="n">compressed</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="p">[</span><span class="s2">&quot;gzip&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;true&quot;</span>
+    <span class="n">query_fasta</span> <span class="o">=</span> <span class="n">Functions</span><span class="o">.</span><span class="n">get_fasta_file</span><span class="p">(</span><span class="n">res_dir</span><span class="p">,</span> <span class="s2">&quot;query&quot;</span><span class="p">,</span> <span class="n">is_sorted</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">query_fasta</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">is_sorted</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">query_fasta</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.sorted&quot;</span><span class="p">):</span>
+            <span class="c1"># Do the sort</span>
+            <span class="n">Path</span><span class="p">(</span><span class="n">lock_query</span><span class="p">)</span><span class="o">.</span><span class="n">touch</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">compressed</span> <span class="ow">or</span> <span class="n">MODE</span> <span class="o">==</span> <span class="s2">&quot;standalone&quot;</span><span class="p">:</span>  <span class="c1"># If compressed, it will took a long time, so not wait</span>
+                <span class="n">Path</span><span class="p">(</span><span class="n">lock_query</span> <span class="o">+</span> <span class="s2">&quot;.pending&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">touch</span><span class="p">()</span>
+            <span class="n">index_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">res_dir</span><span class="p">,</span> <span class="s2">&quot;query.idx.sorted&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">MODE</span> <span class="o">==</span> <span class="s2">&quot;webserver&quot;</span><span class="p">:</span>
+                <span class="n">thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Timer</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">Functions</span><span class="o">.</span><span class="n">sort_fasta</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;job_name&quot;</span><span class="p">:</span> <span class="n">id_res</span><span class="p">,</span>
+                    <span class="s2">&quot;fasta_file&quot;</span><span class="p">:</span> <span class="n">query_fasta</span><span class="p">,</span>
+                    <span class="s2">&quot;index_file&quot;</span><span class="p">:</span> <span class="n">index_file</span><span class="p">,</span>
+                    <span class="s2">&quot;lock_file&quot;</span><span class="p">:</span> <span class="n">lock_query</span><span class="p">,</span>
+                    <span class="s2">&quot;compress&quot;</span><span class="p">:</span> <span class="n">compressed</span><span class="p">,</span>
+                    <span class="s2">&quot;mailer&quot;</span><span class="p">:</span> <span class="n">mailer</span><span class="p">,</span>
+                    <span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="n">MODE</span>
+                <span class="p">})</span>
+                <span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">Functions</span><span class="o">.</span><span class="n">sort_fasta</span><span class="p">(</span><span class="n">job_name</span><span class="o">=</span><span class="n">id_res</span><span class="p">,</span>
+                                     <span class="n">fasta_file</span><span class="o">=</span><span class="n">query_fasta</span><span class="p">,</span>
+                                     <span class="n">index_file</span><span class="o">=</span><span class="n">index_file</span><span class="p">,</span>
+                                     <span class="n">lock_file</span><span class="o">=</span><span class="n">lock_query</span><span class="p">,</span>
+                                     <span class="n">compress</span><span class="o">=</span><span class="n">compressed</span><span class="p">,</span>
+                                     <span class="n">mailer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                     <span class="n">mode</span><span class="o">=</span><span class="n">MODE</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">compressed</span> <span class="ow">or</span> <span class="n">MODE</span> <span class="o">==</span> <span class="s2">&quot;standalone&quot;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">MODE</span> <span class="o">==</span> <span class="s2">&quot;webserver&quot;</span><span class="p">:</span>
+                    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+                    <span class="k">while</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">lock_query</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">i</span> <span class="o">&lt;</span> <span class="mi">2</span> <span class="ow">or</span> <span class="n">MODE</span> <span class="o">==</span> <span class="s2">&quot;standalone&quot;</span><span class="p">):</span>
+                        <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span>
+                        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">lock_query</span> <span class="o">+</span> <span class="s2">&quot;.pending&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">lock_query</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;status_message&quot;</span><span class="p">:</span> <span class="s2">&quot;In progress&quot;</span><span class="p">})</span>
+                <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;status_message&quot;</span><span class="p">:</span> <span class="s2">&quot;Done&quot;</span><span class="p">,</span>
+                                <span class="s2">&quot;gzip&quot;</span><span class="p">:</span> <span class="n">compressed</span><span class="p">})</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;status_message&quot;</span><span class="p">:</span> <span class="s2">&quot;In progress&quot;</span><span class="p">})</span>
+        <span class="k">elif</span> <span class="n">is_sorted</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">lock_query</span><span class="p">):</span>
+            <span class="c1"># Sort is already in progress</span>
+            <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;status_message&quot;</span><span class="p">:</span> <span class="s2">&quot;In progress&quot;</span><span class="p">})</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># No sort to do or sort done</span>
+            <span class="k">if</span> <span class="n">compressed</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">query_fasta</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.gz.fasta&quot;</span><span class="p">):</span>
+                <span class="c1"># If compressed file is asked, we must compress it now if not done before...</span>
+                <span class="n">Path</span><span class="p">(</span><span class="n">lock_query</span><span class="p">)</span><span class="o">.</span><span class="n">touch</span><span class="p">()</span>
+                <span class="n">thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Timer</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">Functions</span><span class="o">.</span><span class="n">compress_and_send_mail</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">&quot;job_name&quot;</span><span class="p">:</span> <span class="n">id_res</span><span class="p">,</span>
+                    <span class="s2">&quot;fasta_file&quot;</span><span class="p">:</span> <span class="n">query_fasta</span><span class="p">,</span>
+                    <span class="s2">&quot;index_file&quot;</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">res_dir</span><span class="p">,</span> <span class="s2">&quot;query.idx.sorted&quot;</span><span class="p">),</span>
+                    <span class="s2">&quot;lock_file&quot;</span><span class="p">:</span> <span class="n">lock_query</span><span class="p">,</span>
+                    <span class="s2">&quot;compressed&quot;</span><span class="p">:</span> <span class="n">compressed</span><span class="p">,</span>
+                    <span class="s2">&quot;mailer&quot;</span><span class="p">:</span> <span class="n">mailer</span>
+                <span class="p">})</span>
+                <span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+                <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;status_message&quot;</span><span class="p">:</span> <span class="s2">&quot;In progress&quot;</span><span class="p">})</span>
+            <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s2">&quot;status_message&quot;</span><span class="p">:</span> <span class="s2">&quot;Done&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;gzip&quot;</span><span class="p">:</span> <span class="n">query_fasta</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.gz&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">query_fasta</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.gz.sorted&quot;</span><span class="p">)})</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                        <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;Unable to get fasta file for query. Please contact us to report the bug&quot;</span><span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="build_query_as_reference"><a class="viewcode-back" href="../../dgenies.html#dgenies.views.build_query_as_reference">[docs]</a><span class="k">def</span> <span class="nf">build_query_as_reference</span><span class="p">(</span><span class="n">id_res</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Build fasta of query with contigs order like reference</span>
+
+<span class="sd">    :param id_res: job id</span>
+<span class="sd">    :type id_res: str</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">paf_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">APP_DATA</span><span class="p">,</span> <span class="n">id_res</span><span class="p">,</span> <span class="s2">&quot;map.paf&quot;</span><span class="p">)</span>
+    <span class="n">idx1</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">APP_DATA</span><span class="p">,</span> <span class="n">id_res</span><span class="p">,</span> <span class="s2">&quot;query.idx&quot;</span><span class="p">)</span>
+    <span class="n">idx2</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">APP_DATA</span><span class="p">,</span> <span class="n">id_res</span><span class="p">,</span> <span class="s2">&quot;target.idx&quot;</span><span class="p">)</span>
+    <span class="n">paf</span> <span class="o">=</span> <span class="n">Paf</span><span class="p">(</span><span class="n">paf_file</span><span class="p">,</span> <span class="n">idx1</span><span class="p">,</span> <span class="n">idx2</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">mailer</span><span class="o">=</span><span class="n">mailer</span><span class="p">,</span> <span class="n">id_job</span><span class="o">=</span><span class="n">id_res</span><span class="p">)</span>
+    <span class="n">paf</span><span class="o">.</span><span class="n">parse_paf</span><span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">MODE</span> <span class="o">==</span> <span class="s2">&quot;webserver&quot;</span><span class="p">:</span>
+        <span class="n">thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Timer</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">paf</span><span class="o">.</span><span class="n">build_query_chr_as_reference</span><span class="p">)</span>
+        <span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">return</span> <span class="n">paf</span><span class="o">.</span><span class="n">build_query_chr_as_reference</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="post_query_as_reference"><a class="viewcode-back" href="../../dgenies.html#dgenies.views.post_query_as_reference">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/build-query-as-reference/&lt;id_res&gt;&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">post_query_as_reference</span><span class="p">(</span><span class="n">id_res</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Launch build fasta of query with contigs order like reference</span>
+
+<span class="sd">    :param id_res: job id</span>
+<span class="sd">    :type id_res: str</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">build_query_as_reference</span><span class="p">(</span><span class="n">id_res</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="get_query_as_reference"><a class="viewcode-back" href="../../dgenies.html#dgenies.views.get_query_as_reference">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/get-query-as-reference/&lt;id_res&gt;&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">get_query_as_reference</span><span class="p">(</span><span class="n">id_res</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get fasta of query with contigs order like reference</span>
+
+<span class="sd">    :param id_res: job id</span>
+<span class="sd">    :type id_res: str</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">MODE</span> <span class="o">!=</span> <span class="s2">&quot;standalone&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">abort</span><span class="p">(</span><span class="mi">404</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">send_file</span><span class="p">(</span><span class="n">build_query_as_reference</span><span class="p">(</span><span class="n">id_res</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="download_file"><a class="viewcode-back" href="../../dgenies.html#dgenies.views.download_file">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/download/&lt;id_res&gt;/&lt;filename&gt;&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">download_file</span><span class="p">(</span><span class="n">id_res</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Download a file from a job</span>
+
+<span class="sd">    :param id_res: job id</span>
+<span class="sd">    :type id_res: str</span>
+<span class="sd">    :param filename: file name</span>
+<span class="sd">    :type filename: str</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">file_dl</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">APP_DATA</span><span class="p">,</span> <span class="n">id_res</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">file_dl</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">send_file</span><span class="p">(</span><span class="n">file_dl</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">abort</span><span class="p">(</span><span class="mi">404</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="dl_fasta"><a class="viewcode-back" href="../../dgenies.html#dgenies.views.dl_fasta">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/fasta-query/&lt;id_res&gt;&#39;</span><span class="p">,</span> <span class="n">defaults</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;filename&#39;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">},</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/fasta-query/&lt;id_res&gt;/&lt;filename&gt;&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>  <span class="c1"># Use fake URL in mail to set download file name</span>
+<span class="k">def</span> <span class="nf">dl_fasta</span><span class="p">(</span><span class="n">id_res</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Download fasta file</span>
+
+<span class="sd">    :param id_res: job id</span>
+<span class="sd">    :type id_res: str</span>
+<span class="sd">    :param filename: file name (not used, but can be in the URL to define download filename to the browser)</span>
+<span class="sd">    :type filename: str</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">res_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">APP_DATA</span><span class="p">,</span> <span class="n">id_res</span><span class="p">)</span>
+    <span class="n">lock_query</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">res_dir</span><span class="p">,</span> <span class="s2">&quot;.query-fasta-build&quot;</span><span class="p">)</span>
+    <span class="n">is_sorted</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">res_dir</span><span class="p">,</span> <span class="s2">&quot;.sorted&quot;</span><span class="p">))</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">lock_query</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">is_sorted</span><span class="p">:</span>
+        <span class="n">query_fasta</span> <span class="o">=</span> <span class="n">Functions</span><span class="o">.</span><span class="n">get_fasta_file</span><span class="p">(</span><span class="n">res_dir</span><span class="p">,</span> <span class="s2">&quot;query&quot;</span><span class="p">,</span> <span class="n">is_sorted</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">query_fasta</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">query_fasta</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.gz&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">query_fasta</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.gz.sorted&quot;</span><span class="p">):</span>
+                <span class="n">content</span> <span class="o">=</span> <span class="n">get_file</span><span class="p">(</span><span class="n">query_fasta</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">Response</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">mimetype</span><span class="o">=</span><span class="s2">&quot;application/gzip&quot;</span><span class="p">)</span>
+            <span class="n">content</span> <span class="o">=</span> <span class="n">get_file</span><span class="p">(</span><span class="n">query_fasta</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">Response</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">mimetype</span><span class="o">=</span><span class="s2">&quot;text/plain&quot;</span><span class="p">)</span>
+    <span class="n">abort</span><span class="p">(</span><span class="mi">404</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="qt_assoc"><a class="viewcode-back" href="../../dgenies.html#dgenies.views.qt_assoc">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/qt-assoc/&lt;id_res&gt;&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;GET&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">qt_assoc</span><span class="p">(</span><span class="n">id_res</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Query - Target association TSV file</span>
+
+<span class="sd">    :param id_res:</span>
+<span class="sd">    :return:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">res_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">APP_DATA</span><span class="p">,</span> <span class="n">id_res</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">res_dir</span><span class="p">)</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">res_dir</span><span class="p">):</span>
+        <span class="n">paf_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">APP_DATA</span><span class="p">,</span> <span class="n">id_res</span><span class="p">,</span> <span class="s2">&quot;map.paf&quot;</span><span class="p">)</span>
+        <span class="n">idx1</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">APP_DATA</span><span class="p">,</span> <span class="n">id_res</span><span class="p">,</span> <span class="s2">&quot;query.idx&quot;</span><span class="p">)</span>
+        <span class="n">idx2</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">APP_DATA</span><span class="p">,</span> <span class="n">id_res</span><span class="p">,</span> <span class="s2">&quot;target.idx&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">paf</span> <span class="o">=</span> <span class="n">Paf</span><span class="p">(</span><span class="n">paf_file</span><span class="p">,</span> <span class="n">idx1</span><span class="p">,</span> <span class="n">idx2</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+            <span class="n">paf</span><span class="o">.</span><span class="n">parse_paf</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Unable to load data!&quot;</span><span class="p">)</span>
+            <span class="n">abort</span><span class="p">(</span><span class="mi">404</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="n">csv_content</span> <span class="o">=</span> <span class="n">paf</span><span class="o">.</span><span class="n">build_query_on_target_association_file</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">Response</span><span class="p">(</span><span class="n">csv_content</span><span class="p">,</span> <span class="n">mimetype</span><span class="o">=</span><span class="s2">&quot;text/plain&quot;</span><span class="p">)</span>
+    <span class="n">abort</span><span class="p">(</span><span class="mi">404</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="no_assoc"><a class="viewcode-back" href="../../dgenies.html#dgenies.views.no_assoc">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/no-assoc/&lt;id_res&gt;&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">no_assoc</span><span class="p">(</span><span class="n">id_res</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get contigs that match with None target</span>
+<span class="sd">    :param id_res: id of the result</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">res_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">APP_DATA</span><span class="p">,</span> <span class="n">id_res</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">res_dir</span><span class="p">)</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">res_dir</span><span class="p">):</span>
+        <span class="n">paf_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">APP_DATA</span><span class="p">,</span> <span class="n">id_res</span><span class="p">,</span> <span class="s2">&quot;map.paf&quot;</span><span class="p">)</span>
+        <span class="n">idx1</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">APP_DATA</span><span class="p">,</span> <span class="n">id_res</span><span class="p">,</span> <span class="s2">&quot;query.idx&quot;</span><span class="p">)</span>
+        <span class="n">idx2</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">APP_DATA</span><span class="p">,</span> <span class="n">id_res</span><span class="p">,</span> <span class="s2">&quot;target.idx&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">paf</span> <span class="o">=</span> <span class="n">Paf</span><span class="p">(</span><span class="n">paf_file</span><span class="p">,</span> <span class="n">idx1</span><span class="p">,</span> <span class="n">idx2</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Unable to load data!&quot;</span><span class="p">)</span>
+            <span class="n">abort</span><span class="p">(</span><span class="mi">404</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="n">file_content</span> <span class="o">=</span> <span class="n">paf</span><span class="o">.</span><span class="n">build_list_no_assoc</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="p">[</span><span class="s2">&quot;to&quot;</span><span class="p">])</span>
+        <span class="n">empty</span> <span class="o">=</span> <span class="n">file_content</span> <span class="o">==</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span>
+            <span class="s2">&quot;file_content&quot;</span><span class="p">:</span> <span class="n">file_content</span><span class="p">,</span>
+            <span class="s2">&quot;empty&quot;</span><span class="p">:</span> <span class="n">empty</span>
+        <span class="p">})</span>
+    <span class="n">abort</span><span class="p">(</span><span class="mi">404</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="summary"><a class="viewcode-back" href="../../dgenies.html#dgenies.views.summary">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/summary/&lt;id_res&gt;&#39;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">summary</span><span class="p">(</span><span class="n">id_res</span><span class="p">):</span>
+    <span class="n">paf_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">APP_DATA</span><span class="p">,</span> <span class="n">id_res</span><span class="p">,</span> <span class="s2">&quot;map.paf&quot;</span><span class="p">)</span>
+    <span class="n">idx1</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">APP_DATA</span><span class="p">,</span> <span class="n">id_res</span><span class="p">,</span> <span class="s2">&quot;query.idx&quot;</span><span class="p">)</span>
+    <span class="n">idx2</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">APP_DATA</span><span class="p">,</span> <span class="n">id_res</span><span class="p">,</span> <span class="s2">&quot;target.idx&quot;</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">paf</span> <span class="o">=</span> <span class="n">Paf</span><span class="p">(</span><span class="n">paf_file</span><span class="p">,</span> <span class="n">idx1</span><span class="p">,</span> <span class="n">idx2</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span>
+            <span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;Unable to load data!&quot;</span>
+        <span class="p">})</span>
+    <span class="n">percents</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">s_status</span> <span class="o">=</span> <span class="s2">&quot;waiting&quot;</span>  <span class="c1"># Accepted values: waiting, done, fail</span>
+    <span class="n">status_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">APP_DATA</span><span class="p">,</span> <span class="n">id_res</span><span class="p">,</span> <span class="s2">&quot;.summarize&quot;</span><span class="p">)</span>
+    <span class="n">fail_file</span> <span class="o">=</span> <span class="n">status_file</span> <span class="o">+</span> <span class="s2">&quot;.fail&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">status_file</span><span class="p">):</span>  <span class="c1"># The job is finished or not started</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">fail_file</span><span class="p">):</span>  <span class="c1"># The job has not started yet or has successfully ended</span>
+            <span class="n">percents</span> <span class="o">=</span> <span class="n">paf</span><span class="o">.</span><span class="n">get_summary_stats</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">percents</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># The job has not started yet</span>
+                <span class="n">Path</span><span class="p">(</span><span class="n">status_file</span><span class="p">)</span><span class="o">.</span><span class="n">touch</span><span class="p">()</span>
+                <span class="n">thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Timer</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">paf</span><span class="o">.</span><span class="n">build_summary_stats</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;status_file&quot;</span><span class="p">:</span> <span class="n">status_file</span><span class="p">})</span>
+                <span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>  <span class="c1"># The job has successfully ended</span>
+                <span class="n">s_status</span> <span class="o">=</span> <span class="s2">&quot;done&quot;</span>
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># The job has failed</span>
+            <span class="n">s_status</span> <span class="o">=</span> <span class="s2">&quot;fail&quot;</span>
+
+    <span class="k">if</span> <span class="n">s_status</span> <span class="o">==</span> <span class="s2">&quot;waiting&quot;</span><span class="p">:</span>  <span class="c1"># The job is running</span>
+        <span class="c1"># Check if the job end in the next 30 seconds</span>
+        <span class="n">nb_iter</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">status_file</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">fail_file</span><span class="p">)</span> <span class="ow">and</span> <span class="n">nb_iter</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="p">:</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+            <span class="n">nb_iter</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">status_file</span><span class="p">):</span>  <span class="c1"># The job has ended</span>
+            <span class="n">percents</span> <span class="o">=</span> <span class="n">paf</span><span class="o">.</span><span class="n">get_summary_stats</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">percents</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># The job has failed</span>
+                <span class="n">s_status</span> <span class="o">=</span> <span class="s2">&quot;fail&quot;</span>
+            <span class="k">else</span><span class="p">:</span>  <span class="c1"># The job has successfully ended</span>
+                <span class="n">s_status</span> <span class="o">=</span> <span class="s2">&quot;done&quot;</span>
+
+    <span class="k">if</span> <span class="n">s_status</span> <span class="o">==</span> <span class="s2">&quot;fail&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span>
+            <span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;Build of summary failed. Please contact us to report the bug&quot;</span>
+        <span class="p">})</span>
+    <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span>
+        <span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">&quot;percents&quot;</span><span class="p">:</span> <span class="n">percents</span><span class="p">,</span>
+        <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="n">s_status</span>
+    <span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="get_backup_file"><a class="viewcode-back" href="../../dgenies.html#dgenies.views.get_backup_file">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/backup/&lt;id_res&gt;&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">get_backup_file</span><span class="p">(</span><span class="n">id_res</span><span class="p">):</span>
+    <span class="n">res_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">APP_DATA</span><span class="p">,</span> <span class="n">id_res</span><span class="p">)</span>
+    <span class="n">tar</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">res_dir</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">.tar&quot;</span> <span class="o">%</span> <span class="n">id_res</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">tarfile</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">tar</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">tarf</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;map.paf&quot;</span><span class="p">,</span> <span class="s2">&quot;target.idx&quot;</span><span class="p">,</span> <span class="s2">&quot;query.idx&quot;</span><span class="p">):</span>
+            <span class="n">tarf</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">res_dir</span><span class="p">,</span> <span class="n">file</span><span class="p">),</span> <span class="n">arcname</span><span class="o">=</span><span class="n">file</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">send_file</span><span class="p">(</span><span class="n">tar</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_filter_out"><a class="viewcode-back" href="../../dgenies.html#dgenies.views.get_filter_out">[docs]</a><span class="k">def</span> <span class="nf">get_filter_out</span><span class="p">(</span><span class="n">id_res</span><span class="p">,</span> <span class="n">type_f</span><span class="p">):</span>
+    <span class="n">filter_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">APP_DATA</span><span class="p">,</span> <span class="n">id_res</span><span class="p">,</span> <span class="s2">&quot;.filter-&quot;</span> <span class="o">+</span> <span class="n">type_f</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">Response</span><span class="p">(</span><span class="n">get_file</span><span class="p">(</span><span class="n">filter_file</span><span class="p">),</span> <span class="n">mimetype</span><span class="o">=</span><span class="s2">&quot;text/plain&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_filter_out_query"><a class="viewcode-back" href="../../dgenies.html#dgenies.views.get_filter_out_query">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/filter-out/&lt;id_res&gt;/query&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">get_filter_out_query</span><span class="p">(</span><span class="n">id_res</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">get_filter_out</span><span class="p">(</span><span class="n">id_res</span><span class="o">=</span><span class="n">id_res</span><span class="p">,</span> <span class="n">type_f</span><span class="o">=</span><span class="s2">&quot;query&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_filter_out_target"><a class="viewcode-back" href="../../dgenies.html#dgenies.views.get_filter_out_target">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s1">&#39;/filter-out/&lt;id_res&gt;/target&#39;</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">get_filter_out_target</span><span class="p">(</span><span class="n">id_res</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">get_filter_out</span><span class="p">(</span><span class="n">id_res</span><span class="o">=</span><span class="n">id_res</span><span class="p">,</span> <span class="n">type_f</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ask_upload"><a class="viewcode-back" href="../../dgenies.html#dgenies.views.ask_upload">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s2">&quot;/ask-upload&quot;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">ask_upload</span><span class="p">():</span>
+    <span class="k">if</span> <span class="n">MODE</span> <span class="o">==</span> <span class="s2">&quot;standalone&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span>
+            <span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">&quot;allowed&quot;</span><span class="p">:</span> <span class="kc">True</span>
+        <span class="p">})</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">s_id</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="p">[</span><span class="s1">&#39;s_id&#39;</span><span class="p">]</span>
+        <span class="k">with</span> <span class="n">Session</span><span class="o">.</span><span class="n">connect</span><span class="p">():</span>
+            <span class="n">session</span> <span class="o">=</span> <span class="n">Session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">s_id</span><span class="o">=</span><span class="n">s_id</span><span class="p">)</span>
+            <span class="n">allowed</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">ask_for_upload</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span>
+            <span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">&quot;allowed&quot;</span><span class="p">:</span> <span class="n">allowed</span>
+        <span class="p">})</span>
+    <span class="k">except</span> <span class="n">DoesNotExist</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;Session not initialized. Please refresh the page.&quot;</span><span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="ping_upload"><a class="viewcode-back" href="../../dgenies.html#dgenies.views.ping_upload">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s2">&quot;/ping-upload&quot;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">ping_upload</span><span class="p">():</span>
+    <span class="k">if</span> <span class="n">MODE</span> <span class="o">==</span> <span class="s2">&quot;webserver&quot;</span><span class="p">:</span>
+        <span class="n">s_id</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="p">[</span><span class="s1">&#39;s_id&#39;</span><span class="p">]</span>
+        <span class="k">with</span> <span class="n">Session</span><span class="o">.</span><span class="n">connect</span><span class="p">():</span>
+            <span class="n">session</span> <span class="o">=</span> <span class="n">Session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">s_id</span><span class="o">=</span><span class="n">s_id</span><span class="p">)</span>
+            <span class="n">session</span><span class="o">.</span><span class="n">ping</span><span class="p">()</span>
+    <span class="k">return</span> <span class="s2">&quot;OK&quot;</span></div>
+
+
+<div class="viewcode-block" id="upload"><a class="viewcode-back" href="../../dgenies.html#dgenies.views.upload">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s2">&quot;/upload&quot;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">upload</span><span class="p">():</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">s_id</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="p">[</span><span class="s1">&#39;s_id&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">MODE</span> <span class="o">==</span> <span class="s2">&quot;webserver&quot;</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">with</span> <span class="n">Session</span><span class="o">.</span><span class="n">connect</span><span class="p">():</span>
+                    <span class="n">session</span> <span class="o">=</span> <span class="n">Session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">s_id</span><span class="o">=</span><span class="n">s_id</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">session</span><span class="o">.</span><span class="n">ask_for_upload</span><span class="p">(</span><span class="kc">False</span><span class="p">):</span>
+                        <span class="n">folder</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">upload_folder</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s2">&quot;files&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="s2">&quot;ERR&quot;</span><span class="p">,</span> <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;Not allowed to upload!&quot;</span><span class="p">})</span>
+            <span class="k">except</span> <span class="n">DoesNotExist</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">jsonify</span><span class="p">(</span>
+                    <span class="p">{</span><span class="s2">&quot;files&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="s2">&quot;ERR&quot;</span><span class="p">,</span> <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;Session not initialized. Please refresh the page.&quot;</span><span class="p">})</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">folder</span> <span class="o">=</span> <span class="n">s_id</span>
+
+        <span class="n">files</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">files</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">files</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]]</span>
+
+        <span class="k">if</span> <span class="n">files</span><span class="p">:</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="n">files</span><span class="o">.</span><span class="n">filename</span>
+            <span class="n">folder_files</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;UPLOAD_FOLDER&quot;</span><span class="p">],</span> <span class="n">folder</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">folder_files</span><span class="p">):</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">folder_files</span><span class="p">)</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="n">Functions</span><span class="o">.</span><span class="n">get_valid_uploaded_filename</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">folder_files</span><span class="p">)</span>
+            <span class="n">mime_type</span> <span class="o">=</span> <span class="n">files</span><span class="o">.</span><span class="n">content_type</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">Functions</span><span class="o">.</span><span class="n">allowed_file</span><span class="p">(</span><span class="n">files</span><span class="o">.</span><span class="n">filename</span><span class="p">,</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="p">[</span><span class="s1">&#39;formats&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)):</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="n">UploadFile</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">filename</span><span class="p">,</span> <span class="n">type_f</span><span class="o">=</span><span class="n">mime_type</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">not_allowed_msg</span><span class="o">=</span><span class="s2">&quot;File type not allowed&quot;</span><span class="p">)</span>
+                <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">folder_files</span><span class="p">)</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># save file to disk</span>
+                <span class="n">uploaded_file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">folder_files</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+                <span class="n">files</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">uploaded_file_path</span><span class="p">)</span>
+
+                <span class="c1"># get file size after saving</span>
+                <span class="n">size</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span><span class="p">(</span><span class="n">uploaded_file_path</span><span class="p">)</span>
+
+                <span class="c1"># return json for js call back</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="n">UploadFile</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">filename</span><span class="p">,</span> <span class="n">type_f</span><span class="o">=</span><span class="n">mime_type</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s2">&quot;files&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">result</span><span class="o">.</span><span class="n">get_file</span><span class="p">()],</span> <span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="s2">&quot;OK&quot;</span><span class="p">})</span>
+
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s2">&quot;files&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="s2">&quot;404&quot;</span><span class="p">,</span> <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;No file provided&quot;</span><span class="p">})</span>
+    <span class="k">except</span><span class="p">:</span>  <span class="c1"># Except all possible exceptions to prevent crashes</span>
+        <span class="n">traceback</span><span class="o">.</span><span class="n">print_exc</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span><span class="s2">&quot;files&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="s2">&quot;ERR&quot;</span><span class="p">,</span> <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="s2">&quot;An unexpected error has occurred on upload. &quot;</span>
+                                                                  <span class="s2">&quot;Please contact the support.&quot;</span><span class="p">})</span></div>
+
+
+<div class="viewcode-block" id="send_mail"><a class="viewcode-back" href="../../dgenies.html#dgenies.views.send_mail">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s2">&quot;/send-mail/&lt;id_res&gt;&quot;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">send_mail</span><span class="p">(</span><span class="n">id_res</span><span class="p">):</span>
+    <span class="n">allowed</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">key_file</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="s2">&quot;key&quot;</span> <span class="ow">in</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="p">:</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">form</span><span class="p">[</span><span class="s2">&quot;key&quot;</span><span class="p">]</span>
+        <span class="n">res_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">APP_DATA</span><span class="p">,</span> <span class="n">id_res</span><span class="p">)</span>
+        <span class="n">key_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">res_dir</span><span class="p">,</span> <span class="s2">&quot;.key&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">key_file</span><span class="p">):</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">key_file</span><span class="p">)</span> <span class="k">as</span> <span class="n">k_f</span><span class="p">:</span>
+                <span class="n">true_key</span> <span class="o">=</span> <span class="n">k_f</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">allowed</span> <span class="o">=</span> <span class="n">key</span> <span class="o">==</span> <span class="n">true_key</span>
+    <span class="k">if</span> <span class="n">allowed</span><span class="p">:</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">key_file</span><span class="p">)</span>
+        <span class="n">job_mng</span> <span class="o">=</span> <span class="n">JobManager</span><span class="p">(</span><span class="n">id_job</span><span class="o">=</span><span class="n">id_res</span><span class="p">,</span> <span class="n">mailer</span><span class="o">=</span><span class="n">mailer</span><span class="p">)</span>
+        <span class="n">job_mng</span><span class="o">.</span><span class="n">set_inputs_from_res_dir</span><span class="p">()</span>
+        <span class="n">job_mng</span><span class="o">.</span><span class="n">send_mail</span><span class="p">()</span>
+        <span class="k">return</span> <span class="s2">&quot;OK&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">abort</span><span class="p">(</span><span class="mi">403</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="delete_job"><a class="viewcode-back" href="../../dgenies.html#dgenies.views.delete_job">[docs]</a><span class="nd">@app</span><span class="o">.</span><span class="n">route</span><span class="p">(</span><span class="s2">&quot;/delete/&lt;id_res&gt;&quot;</span><span class="p">,</span> <span class="n">methods</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;POST&#39;</span><span class="p">])</span>
+<span class="k">def</span> <span class="nf">delete_job</span><span class="p">(</span><span class="n">id_res</span><span class="p">):</span>
+    <span class="n">job</span> <span class="o">=</span> <span class="n">JobManager</span><span class="p">(</span><span class="n">id_job</span><span class="o">=</span><span class="n">id_res</span><span class="p">)</span>
+    <span class="n">success</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="n">job</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">jsonify</span><span class="p">({</span>
+        <span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="n">success</span><span class="p">,</span>
+        <span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="n">error</span>
+    <span class="p">})</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Floréal Cabanettes.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'1.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

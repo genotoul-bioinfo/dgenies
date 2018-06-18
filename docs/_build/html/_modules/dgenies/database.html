@@ -1,0 +1,357 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>dgenies.database &mdash; D-Genies 1.1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="D-Genies 1.1 documentation" href="../../index.html"/>
+        <link rel="up" title="dgenies" href="../dgenies.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> D-Genies
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <!-- Local TOC -->
+                <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">D-Genies</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      
+          <li><a href="../dgenies.html">dgenies</a> &raquo;</li>
+      
+    <li>dgenies.database</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for dgenies.database</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">dgenies</span> <span class="k">import</span> <span class="n">MODE</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">dgenies.config_reader</span> <span class="k">import</span> <span class="n">AppConfigReader</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="k">import</span> <span class="n">datetime</span>
+
+<span class="n">config</span> <span class="o">=</span> <span class="n">AppConfigReader</span><span class="p">()</span>
+
+<span class="k">if</span> <span class="n">MODE</span> <span class="o">==</span> <span class="s2">&quot;webserver&quot;</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">peewee</span> <span class="k">import</span> <span class="n">SqliteDatabase</span><span class="p">,</span> <span class="n">Model</span><span class="p">,</span> <span class="n">CharField</span><span class="p">,</span> <span class="n">IntegerField</span><span class="p">,</span> <span class="n">DateTimeField</span><span class="p">,</span> <span class="n">BooleanField</span><span class="p">,</span> <span class="n">MySQLDatabase</span><span class="p">,</span> \
+        <span class="n">OperationalError</span><span class="p">,</span> <span class="n">ForeignKeyField</span>
+    <span class="kn">from</span> <span class="nn">playhouse.shortcuts</span> <span class="k">import</span> <span class="n">RetryOperationalError</span>
+
+    <span class="n">db_url</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">database_url</span>
+    <span class="n">db_type</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">database_type</span>
+
+
+<div class="viewcode-block" id="MyRetryDB"><a class="viewcode-back" href="../../dgenies.html#dgenies.database.MyRetryDB">[docs]</a>    <span class="k">class</span> <span class="nc">MyRetryDB</span><span class="p">(</span><span class="n">RetryOperationalError</span><span class="p">,</span> <span class="n">MySQLDatabase</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+    <span class="k">if</span> <span class="n">db_type</span> <span class="o">==</span> <span class="s2">&quot;sqlite&quot;</span><span class="p">:</span>
+        <span class="n">db</span> <span class="o">=</span> <span class="n">SqliteDatabase</span><span class="p">(</span><span class="n">db_url</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">db_type</span> <span class="o">==</span> <span class="s2">&quot;mysql&quot;</span><span class="p">:</span>
+        <span class="n">db</span> <span class="o">=</span> <span class="n">MyRetryDB</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">database_url</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">database_port</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">database_user</span><span class="p">,</span>
+                       <span class="n">passwd</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">database_password</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">database_db</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Unsupported database type: &quot;</span> <span class="o">+</span> <span class="n">db_type</span><span class="p">)</span>
+
+
+    <span class="k">class</span> <span class="nc">Database</span><span class="p">:</span>
+
+        <span class="n">nb_open</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">pass</span>
+
+        <span class="k">def</span> <span class="nf">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="n">Database</span><span class="o">.</span><span class="n">nb_open</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">db</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+            <span class="k">except</span> <span class="n">OperationalError</span><span class="p">:</span>
+                <span class="k">pass</span>
+
+        <span class="k">def</span> <span class="nf">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_val</span><span class="p">,</span> <span class="n">exc_tb</span><span class="p">):</span>
+            <span class="n">Database</span><span class="o">.</span><span class="n">nb_open</span> <span class="o">-=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">Database</span><span class="o">.</span><span class="n">nb_open</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">db</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="BaseModel"><a class="viewcode-back" href="../../dgenies.html#dgenies.database.BaseModel">[docs]</a>    <span class="k">class</span> <span class="nc">BaseModel</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+
+        <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+            <span class="n">database</span> <span class="o">=</span> <span class="n">db</span>
+
+<div class="viewcode-block" id="BaseModel.connect"><a class="viewcode-back" href="../../dgenies.html#dgenies.database.BaseModel.connect">[docs]</a>        <span class="nd">@classmethod</span>
+        <span class="k">def</span> <span class="nf">connect</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">Database</span><span class="p">()</span></div></div>
+
+
+    <span class="k">class</span> <span class="nc">Job</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">id_job</span> <span class="o">=</span> <span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">unique</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">email</span> <span class="o">=</span> <span class="n">CharField</span><span class="p">()</span>
+        <span class="n">id_process</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">batch_type</span> <span class="o">=</span> <span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;local&quot;</span><span class="p">)</span>
+        <span class="n">status</span> <span class="o">=</span> <span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;submitted&quot;</span><span class="p">)</span>
+        <span class="n">date_created</span> <span class="o">=</span> <span class="n">DateTimeField</span><span class="p">()</span>
+        <span class="n">error</span> <span class="o">=</span> <span class="n">CharField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="n">mem_peak</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">time_elapsed</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">tool</span> <span class="o">=</span> <span class="n">CharField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s2">&quot;minimap2&quot;</span><span class="p">,</span> <span class="n">max_length</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Gallery"><a class="viewcode-back" href="../../dgenies.html#dgenies.database.Gallery">[docs]</a>    <span class="k">class</span> <span class="nc">Gallery</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">job</span> <span class="o">=</span> <span class="n">ForeignKeyField</span><span class="p">(</span><span class="n">Job</span><span class="p">)</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">CharField</span><span class="p">()</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="n">CharField</span><span class="p">()</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">CharField</span><span class="p">()</span>
+        <span class="n">picture</span> <span class="o">=</span> <span class="n">CharField</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Session"><a class="viewcode-back" href="../../dgenies.html#dgenies.database.Session">[docs]</a>    <span class="k">class</span> <span class="nc">Session</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">s_id</span> <span class="o">=</span> <span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">unique</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">date_created</span> <span class="o">=</span> <span class="n">DateTimeField</span><span class="p">()</span>
+        <span class="n">upload_folder</span> <span class="o">=</span> <span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+        <span class="n">last_ping</span> <span class="o">=</span> <span class="n">DateTimeField</span><span class="p">()</span>
+        <span class="n">status</span> <span class="o">=</span> <span class="n">CharField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s2">&quot;reset&quot;</span><span class="p">)</span>
+        <span class="n">keep_active</span> <span class="o">=</span> <span class="n">BooleanField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>  <span class="c1"># Uploads made by the server must be keep active</span>
+
+<div class="viewcode-block" id="Session.new"><a class="viewcode-back" href="../../dgenies.html#dgenies.database.Session.new">[docs]</a>        <span class="nd">@classmethod</span>
+        <span class="k">def</span> <span class="nf">new</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">keep_active</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+            <span class="kn">from</span> <span class="nn">dgenies.lib.functions</span> <span class="k">import</span> <span class="n">Functions</span>
+            <span class="n">my_s_id</span> <span class="o">=</span> <span class="n">Functions</span><span class="o">.</span><span class="n">random_string</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+            <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">s_id</span> <span class="o">==</span> <span class="n">my_s_id</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">my_s_id</span> <span class="o">=</span> <span class="n">Functions</span><span class="o">.</span><span class="n">random_string</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+            <span class="n">upload_folder</span> <span class="o">=</span> <span class="n">Functions</span><span class="o">.</span><span class="n">random_string</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+            <span class="n">tmp_dir</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">upload_folder</span>
+            <span class="n">upload_folder_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tmp_dir</span><span class="p">,</span> <span class="n">upload_folder</span><span class="p">)</span>
+            <span class="k">while</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">upload_folder_path</span><span class="p">):</span>
+                <span class="n">upload_folder</span> <span class="o">=</span> <span class="n">Functions</span><span class="o">.</span><span class="n">random_string</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+                <span class="n">upload_folder_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tmp_dir</span><span class="p">,</span> <span class="n">upload_folder</span><span class="p">)</span>
+            <span class="bp">cls</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">s_id</span><span class="o">=</span><span class="n">my_s_id</span><span class="p">,</span> <span class="n">date_created</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(),</span> <span class="n">upload_folder</span><span class="o">=</span><span class="n">upload_folder</span><span class="p">,</span> <span class="n">last_ping</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(),</span>
+                       <span class="n">keep_active</span><span class="o">=</span><span class="n">keep_active</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">my_s_id</span></div>
+
+<div class="viewcode-block" id="Session.ask_for_upload"><a class="viewcode-back" href="../../dgenies.html#dgenies.database.Session.ask_for_upload">[docs]</a>        <span class="k">def</span> <span class="nf">ask_for_upload</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">change_status</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+            <span class="n">all_asked</span> <span class="o">=</span> <span class="n">Session</span><span class="o">.</span><span class="n">select</span><span class="p">()</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">Session</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="s2">&quot;pending&quot;</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">Session</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="s2">&quot;active&quot;</span><span class="p">))</span><span class="o">.</span>\
+                <span class="n">order_by</span><span class="p">(</span><span class="n">Session</span><span class="o">.</span><span class="n">date_created</span><span class="p">)</span>
+            <span class="n">nb_asked</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_asked</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">!=</span> <span class="s2">&quot;reset&quot;</span><span class="p">:</span>
+                <span class="n">change_status</span> <span class="o">=</span> <span class="kc">False</span>
+
+            <span class="n">status</span> <span class="o">=</span> <span class="s2">&quot;pending&quot;</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="s2">&quot;active&quot;</span> <span class="ow">or</span> <span class="p">(</span><span class="n">change_status</span> <span class="ow">and</span> <span class="n">nb_asked</span> <span class="o">&lt;</span> <span class="mi">5</span><span class="p">):</span>
+                <span class="n">status</span> <span class="o">=</span> <span class="s2">&quot;active&quot;</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">status</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">last_ping</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="s2">&quot;active&quot;</span></div>
+
+<div class="viewcode-block" id="Session.ping"><a class="viewcode-back" href="../../dgenies.html#dgenies.database.Session.ping">[docs]</a>        <span class="k">def</span> <span class="nf">ping</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">last_ping</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">save</span><span class="p">()</span></div></div>
+
+
+    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">analytics_enabled</span><span class="p">:</span>
+
+        <span class="k">class</span> <span class="nc">Analytics</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+            <span class="n">date_created</span> <span class="o">=</span> <span class="n">DateTimeField</span><span class="p">()</span>
+            <span class="n">target_size</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">()</span>
+            <span class="n">query_size</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">mail_client</span> <span class="o">=</span> <span class="n">CharField</span><span class="p">()</span>
+            <span class="n">batch_type</span> <span class="o">=</span> <span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">Analytics</span><span class="o">.</span><span class="n">table_exists</span><span class="p">():</span>
+            <span class="n">Analytics</span><span class="o">.</span><span class="n">create_table</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">Job</span><span class="o">.</span><span class="n">table_exists</span><span class="p">():</span>
+        <span class="n">Job</span><span class="o">.</span><span class="n">create_table</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">Gallery</span><span class="o">.</span><span class="n">table_exists</span><span class="p">():</span>
+        <span class="n">Gallery</span><span class="o">.</span><span class="n">create_table</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">Session</span><span class="o">.</span><span class="n">table_exists</span><span class="p">():</span>
+        <span class="n">Session</span><span class="o">.</span><span class="n">create_table</span><span class="p">()</span>
+
+<span class="k">else</span><span class="p">:</span>
+
+<div class="viewcode-block" id="Database"><a class="viewcode-back" href="../../dgenies.html#dgenies.database.Database">[docs]</a>    <span class="k">class</span> <span class="nc">Database</span><span class="p">:</span>
+
+        <span class="n">nb_open</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">pass</span>
+
+        <span class="k">def</span> <span class="nf">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">pass</span>
+
+        <span class="k">def</span> <span class="nf">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_val</span><span class="p">,</span> <span class="n">exc_tb</span><span class="p">):</span>
+            <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="Job"><a class="viewcode-back" href="../../dgenies.html#dgenies.database.Job">[docs]</a>    <span class="k">class</span> <span class="nc">Job</span><span class="p">:</span>
+
+        <span class="nd">@classmethod</span>
+        <span class="k">def</span> <span class="nf">connect</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">Database</span><span class="p">()</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Floréal Cabanettes.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'1.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

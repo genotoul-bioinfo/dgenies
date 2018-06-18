@@ -1,0 +1,323 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>dgenies.tools &mdash; D-Genies 1.1 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="D-Genies 1.1 documentation" href="../../index.html"/>
+        <link rel="up" title="dgenies" href="../dgenies.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> D-Genies
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <!-- Local TOC -->
+                <div class="local-toc"></div>
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">D-Genies</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      
+          <li><a href="../dgenies.html">dgenies</a> &raquo;</li>
+      
+    <li>dgenies.tools</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for dgenies.tools</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="k">import</span> <span class="n">Path</span>
+<span class="kn">import</span> <span class="nn">yaml</span>
+<span class="kn">from</span> <span class="nn">dgenies.lib.decorators</span> <span class="k">import</span> <span class="n">Singleton</span>
+<span class="kn">from</span> <span class="nn">dgenies.lib</span> <span class="k">import</span> <span class="n">parsers</span>
+
+
+<div class="viewcode-block" id="Tool"><a class="viewcode-back" href="../../dgenies.html#dgenies.tools.Tool">[docs]</a><span class="k">class</span> <span class="nc">Tool</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">exec</span><span class="p">,</span> <span class="n">command_line</span><span class="p">,</span> <span class="n">all_vs_all</span><span class="p">,</span> <span class="n">max_memory</span><span class="p">,</span> <span class="n">threads</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">exec_cluster</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">threads_cluster</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">parser</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">split_before</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a new tool</span>
+<span class="sd">        :param command_line: command line to launch the tool</span>
+<span class="sd">        :param all_vs_all: command line in all_vs_all mode (None if not available for the tool)</span>
+<span class="sd">        :param max_memory: max memory the tool is supposed to use (ex: 40G) - for cluster submissions</span>
+<span class="sd">        :param parser: name of the function in dgenies.lib.functions to launch after mapping to have a correct PAF out</span>
+<span class="sd">        file</span>
+<span class="sd">        :param split_before: True to split contigs before mapping</span>
+<span class="sd">        :type split_before: bool</span>
+<span class="sd">        :param help: help message to show in run form</span>
+<span class="sd">        :param order: order to show in run mode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+
+        <span class="c1"># Exec</span>
+        <span class="k">if</span> <span class="n">exec</span> <span class="o">==</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">exec</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">getfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">)),</span> <span class="s2">&quot;bin&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">exec</span> <span class="o">=</span> <span class="n">exec</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;###SYSEXEC###&quot;</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">executable</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">exec_cluster</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">exec_cluster</span> <span class="o">==</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">exec_cluster</span> <span class="o">=</span> <span class="n">exec</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">exec_cluster</span> <span class="o">=</span> <span class="n">exec_cluster</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;###SYSEXEC###&quot;</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">executable</span><span class="p">))</span>
+
+        <span class="c1"># Command line:</span>
+        <span class="k">if</span> <span class="s2">&quot;</span><span class="si">{exe}</span><span class="s2">&quot;</span> <span class="ow">in</span> <span class="n">command_line</span> <span class="ow">and</span> <span class="s2">&quot;</span><span class="si">{target}</span><span class="s2">&quot;</span> <span class="ow">in</span> <span class="n">command_line</span> <span class="ow">and</span> <span class="s2">&quot;</span><span class="si">{query}</span><span class="s2">&quot;</span> <span class="ow">in</span> <span class="n">command_line</span> <span class="ow">and</span> <span class="s2">&quot;</span><span class="si">{out}</span><span class="s2">&quot;</span> \
+                <span class="ow">in</span> <span class="n">command_line</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">command_line</span> <span class="o">=</span> <span class="n">command_line</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Tools: command_line must contains at least </span><span class="si">{exe}</span><span class="s2">, </span><span class="si">{target}</span><span class="s2">, </span><span class="si">{query}</span><span class="s2"> and </span><span class="si">{out}</span><span class="s2"> tags&quot;</span><span class="p">)</span>
+
+        <span class="c1"># All_vs_all:</span>
+        <span class="k">if</span> <span class="n">all_vs_all</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="p">(</span><span class="s2">&quot;</span><span class="si">{exe}</span><span class="s2">&quot;</span> <span class="ow">in</span> <span class="n">all_vs_all</span> <span class="ow">and</span> <span class="s2">&quot;</span><span class="si">{target}</span><span class="s2">&quot;</span> <span class="ow">in</span> <span class="n">all_vs_all</span> <span class="ow">and</span> <span class="s2">&quot;</span><span class="si">{out}</span><span class="s2">&quot;</span> <span class="ow">in</span> <span class="n">all_vs_all</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">all_vs_all</span> <span class="o">=</span> <span class="n">all_vs_all</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Tools: all_vs_all must contains at least </span><span class="si">{exe}</span><span class="s2">, </span><span class="si">{target}</span><span class="s2"> and </span><span class="si">{out}</span><span class="s2"> tags&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Max memory:</span>
+        <span class="k">if</span> <span class="n">max_memory</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">max_memory</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">max_memory</span> <span class="o">=</span> <span class="n">max_memory</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Tools: max_memory must be an integer, or !!null&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Threads:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">threads</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">threads</span> <span class="o">=</span> <span class="n">threads</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Tools: threads must be an integer&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">threads_cluster</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">threads_cluster</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">threads_cluster</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">threads_cluster</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">threads</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">threads_cluster</span> <span class="o">=</span> <span class="n">threads_cluster</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Tools: threads_cluster must be an integer, or !!null&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Parser:</span>
+        <span class="k">if</span> <span class="n">parser</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">parsers</span><span class="p">,</span> <span class="n">parser</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parser</span> <span class="o">=</span> <span class="n">parser</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Tools: parser </span><span class="si">%s</span><span class="s2"> is not defines in dgenies.lib.parsers!&quot;</span> <span class="o">%</span> <span class="n">parser</span><span class="p">)</span>
+
+        <span class="c1"># split_before:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">split_before</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">split_before</span> <span class="o">=</span> <span class="n">split_before</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Tools: split_before must be a boolean (True or False)&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Help:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">help</span> <span class="o">=</span> <span class="n">help</span>
+
+        <span class="c1"># Order:</span>
+        <span class="k">if</span> <span class="n">order</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">order</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">order</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">order</span> <span class="o">=</span> <span class="mi">1000</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">order</span> <span class="o">=</span> <span class="n">order</span></div>
+
+
+<span class="nd">@Singleton</span>
+<span class="k">class</span> <span class="nc">Tools</span><span class="p">:</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Load (from yaml file) and store available alignement tools</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tools</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">load_yaml</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">load_yaml</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">yaml_file</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">config_file_search</span> <span class="o">=</span> <span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">sep</span><span class="p">),</span> <span class="s2">&quot;dgenies&quot;</span><span class="p">,</span> <span class="s2">&quot;tools.yaml&quot;</span><span class="p">),</span>
+                              <span class="s2">&quot;/etc/dgenies/tools.yaml&quot;</span><span class="p">,</span>
+                              <span class="s2">&quot;/etc/dgenies/tools.yaml.local&quot;</span><span class="p">,</span>
+                              <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="o">.</span><span class="n">home</span><span class="p">()),</span> <span class="s2">&quot;.dgenies&quot;</span><span class="p">,</span> <span class="s2">&quot;tools.yaml&quot;</span><span class="p">),</span>
+                              <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="o">.</span><span class="n">home</span><span class="p">()),</span> <span class="s2">&quot;.dgenies&quot;</span><span class="p">,</span> <span class="s2">&quot;tools.yaml.local&quot;</span><span class="p">)]</span>
+
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;nt&quot;</span><span class="p">:</span>
+            <span class="n">config_file_search</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">executable</span><span class="p">,</span> <span class="s1">&#39;..&#39;</span><span class="p">,</span> <span class="s2">&quot;tools.yaml&quot;</span><span class="p">))</span>
+            <span class="n">config_file_search</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">executable</span><span class="p">,</span> <span class="s1">&#39;..&#39;</span><span class="p">,</span> <span class="s2">&quot;tools.yaml.local&quot;</span><span class="p">))</span>
+
+        <span class="n">app_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">getfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">))</span>
+        <span class="n">config_file_search</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">app_dir</span><span class="p">,</span> <span class="s2">&quot;tools-dev.yaml&quot;</span><span class="p">))</span>
+        <span class="n">config_file_search</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">app_dir</span><span class="p">,</span> <span class="s2">&quot;tools-dev.yaml.local&quot;</span><span class="p">))</span>
+
+        <span class="k">for</span> <span class="n">my_config_file</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="n">config_file_search</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">my_config_file</span><span class="p">):</span>
+                <span class="n">yaml_file</span> <span class="o">=</span> <span class="n">my_config_file</span>
+                <span class="k">break</span>
+        <span class="k">if</span> <span class="n">yaml_file</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="s2">&quot;ERROR: tools.yaml not found.&quot;</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">yaml_file</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">yml_f</span><span class="p">:</span>
+            <span class="n">tools_dict</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">yml_f</span><span class="p">)</span>
+            <span class="n">tools</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">props</span> <span class="ow">in</span> <span class="n">tools_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">tools</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">Tool</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">props</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tools</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">tools</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Floréal Cabanettes.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'1.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
