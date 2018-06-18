@@ -1,4 +1,7 @@
-import drmaa
+try:
+    import drmaa
+except:
+    print("Error: unable to import DRMAA module")
 from .decorators import Singleton
 
 @Singleton

@@ -487,7 +487,7 @@ def free_noise(id_res):
 def build_fasta(id_res):
     """
     Generate the fasta file of query
-    
+
     :param id_res: job id
     :type id_res: str
     """

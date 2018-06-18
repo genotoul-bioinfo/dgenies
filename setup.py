@@ -17,6 +17,13 @@ if os.name == "posix":
         config_dir = os.path.join(str(Path.home()), ".dgenies")
         wsgi_dir = config_dir
 
+    data_files = [(config_dir, ['application.properties']),
+                  (config_dir, ['tools.yaml']),
+                  (wsgi_dir, ['dgenies.wsgi'])]
+
+    if '--force' in sys.argv:
+        data_files = []
+
     setup(
         name='dgenies',
         version=version,
@@ -25,9 +32,7 @@ if os.name == "posix":
         include_package_data=True,
         zip_safe=False,
         install_requires=install_reqs,
-        data_files=[(config_dir, ['application.properties']),
-                    (config_dir, ['tools.yaml']),
-                    (wsgi_dir, ['dgenies.wsgi'])],
+        data_files=data_files,
         scripts=['src/bin/dgenies'],
     )
 
