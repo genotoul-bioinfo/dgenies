@@ -28,6 +28,9 @@ if MODE == "webserver":
 
 @app.context_processor
 def global_templates_variables():
+    """
+    Global variables used for any view
+    """
     return {
         "title": app_title,
         "mode": MODE,
@@ -39,6 +42,9 @@ def global_templates_variables():
 # Main
 @app.route("/", methods=['GET'])
 def main():
+    """
+    Index page
+    """
     if MODE == "webserver":
         pict = Gallery.select().order_by("id")
         if len(pict) > 0:
@@ -52,6 +58,9 @@ def main():
 
 @app.route("/run", methods=['GET'])
 def run():
+    """
+    Run page
+    """
     tools = Tools().tools
     tools_names = sorted(list(tools.keys()), key=lambda x: (tools[x].order, tools[x].name))
     tools_ava = {}
@@ -85,6 +94,9 @@ def run():
 
 @app.route("/run-test", methods=['GET'])
 def run_test():
+    """
+    Run test page (used to simulate a real client run)
+    """
     if MODE == "webserver":
         print(config_reader.allowed_ip_tests)
         if request.remote_addr not in config_reader.allowed_ip_tests:
@@ -97,6 +109,9 @@ def run_test():
 # Launch analysis
 @app.route("/launch_analysis", methods=['POST'])
 def launch_analysis():
+    """
+    Launch the job
+    """
     if MODE == "webserver":
         try:
             with Session.connect():
@@ -251,6 +266,12 @@ def launch_analysis():
 # Status of a job
 @app.route('/status/<id_job>', methods=['GET'])
 def status(id_job):
+    """
+    Status page
+
+    :param id_job: job id
+    :type id_job: str
+    """
     job = JobManager(id_job)
     j_status = job.status()
     mem_peak = j_status["mem_peak"] if "mem_peak" in j_status else None
@@ -283,6 +304,12 @@ def status(id_job):
 # Results path
 @app.route("/result/<id_res>", methods=['GET'])
 def result(id_res):
+    """
+    Result page
+
+    :param id_res: job id
+    :type id_res: str
+    """
     res_dir = os.path.join(APP_DATA, id_res)
     return render_template("result.html", id=id_res, menu="result", current_result=id_res,
                            is_gallery=Functions.is_in_gallery(id_res, MODE),
@@ -291,6 +318,9 @@ def result(id_res):
 
 @app.route("/gallery", methods=['GET'])
 def gallery():
+    """
+    Gallery page
+    """
     if MODE == "webserver":
         return render_template("gallery.html", items=Functions.get_gallery_items(), menu="gallery")
     return abort(404)
@@ -298,6 +328,11 @@ def gallery():
 
 @app.route("/gallery/<filename>", methods=['GET'])
 def gallery_file(filename):
+    """
+    Getting gallery illustration
+
+    :param filename: filename of the PNG file
+    """
     if MODE == "webserver":
         try:
             return send_file(os.path.join(config_reader.app_data, "gallery", filename))
@@ -307,6 +342,14 @@ def gallery_file(filename):
 
 
 def get_file(file, gzip=False):  # pragma: no cover
+    """
+    Download a file
+
+    :param file: filename
+    :type file: str
+    :param gzip: is file gzipped?
+    :type gzip: bool
+    """
     try:
         # Figure out how flask returns static files
         # Tried:
@@ -323,6 +366,9 @@ def get_file(file, gzip=False):  # pragma: no cover
 
 @app.route("/documentation/run", methods=['GET'])
 def documentation_run():
+    """
+    Documentation run page
+    """
     latest = Latest()
     version = latest.latest
     max_upload_file_size = config_reader.max_upload_file_size
@@ -354,6 +400,9 @@ def documentation_run():
 
 @app.route("/documentation/result", methods=['GET'])
 def documentation_result():
+    """
+    Documentation result page
+    """
     with open(os.path.join(app_folder, "md", "user_manual.md"), "r",
               encoding='utf-8') as install_instr:
         content = install_instr.read()
@@ -365,6 +414,9 @@ def documentation_result():
 
 @app.route("/documentation/formats", methods=['GET'])
 def documentation_formats():
+    """
+    Documentation formats page
+    """
     with open(os.path.join(app_folder, "md", "doc_formats.md"), "r",
               encoding='utf-8') as install_instr:
         content = install_instr.read()
@@ -376,6 +428,9 @@ def documentation_formats():
 
 @app.route("/documentation/dotplot", methods=['GET'])
 def documentation_dotplot():
+    """
+    Documentation dotplot page
+    """
     with open(os.path.join(app_folder, "md", "doc_dotplot.md"), "r",
               encoding='utf-8') as install_instr:
         content = install_instr.read()
@@ -387,6 +442,9 @@ def documentation_dotplot():
 
 @app.route("/install", methods=['GET'])
 def install():
+    """
+    Documentation: how to install? page
+    """
     latest = Latest()
 
     with open(os.path.join(app_folder, "md", "INSTALL.md"), "r", encoding='utf-8') as install_instr:
@@ -402,11 +460,20 @@ def install():
 
 @app.route("/contact", methods=['GET'])
 def contact():
+    """
+    Contact page
+    """
     return render_template("contact.html", menu="contact")
 
 
 @app.route("/paf/<id_res>", methods=['GET'])
 def download_paf(id_res):
+    """
+    Download PAF file of a job
+
+    :param id_res: job id
+    :type id_res: str
+    """
     map_file = os.path.join(APP_DATA, id_res, "map.paf.sorted")
     if not os.path.exists(map_file):
         map_file = os.path.join(APP_DATA, id_res, "map.paf")
@@ -419,6 +486,9 @@ def download_paf(id_res):
 # Get graph (ajax request)
 @app.route('/get_graph', methods=['POST'])
 def get_graph():
+    """
+    Get dot plot data for a job
+    """
     id_f = request.form["id"]
     paf = os.path.join(APP_DATA, id_f, "map.paf")
     idx1 = os.path.join(APP_DATA, id_f, "query.idx")
@@ -438,6 +508,12 @@ def get_graph():
 
 @app.route('/sort/<id_res>', methods=['POST'])
 def sort_graph(id_res):
+    """
+    Sort dot plot to referene
+
+    :param id_res: job id
+    :type id_res: str
+    """
     if not os.path.exists(os.path.join(APP_DATA, id_res, ".all-vs-all")):
         paf_file = os.path.join(APP_DATA, id_res, "map.paf")
         idx1 = os.path.join(APP_DATA, id_res, "query.idx")
@@ -454,6 +530,12 @@ def sort_graph(id_res):
 
 @app.route('/reverse-contig/<id_res>', methods=['POST'])
 def reverse_contig(id_res):
+    """
+    Reverse contig order
+
+    :param id_res: job id
+    :type id_res: str
+    """
     contig_name = request.form["contig"]
     if not os.path.exists(os.path.join(APP_DATA, id_res, ".all-vs-all")):
         paf_file = os.path.join(APP_DATA, id_res, "map.paf")
@@ -471,6 +553,12 @@ def reverse_contig(id_res):
 
 @app.route('/freenoise/<id_res>', methods=['POST'])
 def free_noise(id_res):
+    """
+    Remove noise from the dot plot
+
+    :param id_res: job id
+    :type id_res: str
+    """
     paf_file = os.path.join(APP_DATA, id_res, "map.paf")
     idx1 = os.path.join(APP_DATA, id_res, "query.idx")
     idx2 = os.path.join(APP_DATA, id_res, "target.idx")
@@ -675,7 +763,9 @@ def qt_assoc(id_res):
 def no_assoc(id_res):
     """
     Get contigs that match with None target
-    :param id_res: id of the result
+
+    :param id_res: job id
+    :type id_res: str
     """
     res_dir = os.path.join(APP_DATA, id_res)
     if os.path.exists(res_dir) and os.path.isdir(res_dir):
@@ -699,6 +789,12 @@ def no_assoc(id_res):
 
 @app.route('/summary/<id_res>', methods=['POST'])
 def summary(id_res):
+    """
+    Get Dot plot summary data
+
+    :param id_res: job id
+    :type id_res: str
+    """
     paf_file = os.path.join(APP_DATA, id_res, "map.paf")
     idx1 = os.path.join(APP_DATA, id_res, "query.idx")
     idx2 = os.path.join(APP_DATA, id_res, "target.idx")
@@ -752,6 +848,12 @@ def summary(id_res):
 
 @app.route('/backup/<id_res>')
 def get_backup_file(id_res):
+    """
+    Download archive backup file of a job
+
+    :param id_res: job id
+    :type id_res: str
+    """
     res_dir = os.path.join(APP_DATA, id_res)
     tar = os.path.join(res_dir, "%s.tar" % id_res)
     with tarfile.open(tar, "w") as tarf:
@@ -761,22 +863,45 @@ def get_backup_file(id_res):
 
 
 def get_filter_out(id_res, type_f):
+    """
+    Download filter fasta, when it has been filtered before job run
+
+    :param id_res: job id
+    :type id_res: str
+    :param type_f: type of fasta (query or target)
+    :type type_f: str
+    """
     filter_file = os.path.join(APP_DATA, id_res, ".filter-" + type_f)
     return Response(get_file(filter_file), mimetype="text/plain")
 
 
 @app.route('/filter-out/<id_res>/query')
 def get_filter_out_query(id_res):
+    """
+    Download query filtered fasta, when it has been filtered before job run
+
+    :param id_res: job id
+    :type id_res: str
+    """
     return get_filter_out(id_res=id_res, type_f="query")
 
 
 @app.route('/filter-out/<id_res>/target')
 def get_filter_out_target(id_res):
+    """
+    Download target filtered fasta, when it has been filtered before job run
+
+    :param id_res: job id
+    :type id_res: str
+    """
     return get_filter_out(id_res=id_res, type_f="target")
 
 
 @app.route("/ask-upload", methods=['POST'])
 def ask_upload():
+    """
+    Ask for upload: to keep a max number of concurrent uploads
+    """
     if MODE == "standalone":
         return jsonify({
             "success": True,
@@ -797,6 +922,9 @@ def ask_upload():
 
 @app.route("/ping-upload", methods=['POST'])
 def ping_upload():
+    """
+    When upload waiting, ping to be kept in the waiting line
+    """
     if MODE == "webserver":
         s_id = request.form['s_id']
         with Session.connect():
@@ -807,6 +935,9 @@ def ping_upload():
 
 @app.route("/upload", methods=['POST'])
 def upload():
+    """
+    Do upload of a file
+    """
     try:
         s_id = request.form['s_id']
         if MODE == "webserver":
@@ -859,6 +990,12 @@ def upload():
 
 @app.route("/send-mail/<id_res>", methods=['POST'])
 def send_mail(id_res):
+    """
+    Send mail
+
+    :param id_res: job id
+    :type id_res: str
+    """
     allowed = False
     key_file = None
     if "key" in request.form:
@@ -881,6 +1018,12 @@ def send_mail(id_res):
 
 @app.route("/delete/<id_res>", methods=['POST'])
 def delete_job(id_res):
+    """
+    Delete a job
+
+    :param id_res: job id
+    :type id_res: str
+    """
     job = JobManager(id_job=id_res)
     success, error = job.delete()
     return jsonify({

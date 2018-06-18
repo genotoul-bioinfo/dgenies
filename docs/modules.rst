@@ -1,5 +1,5 @@
-dgenies
-=======
+Packages & Modules
+------------------
 
 .. toctree::
    :maxdepth: 4
