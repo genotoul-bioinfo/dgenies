@@ -21,7 +21,7 @@ if os.name == "posix":
                   (config_dir, ['tools.yaml']),
                   (wsgi_dir, ['dgenies.wsgi'])]
 
-    if '--force' in sys.argv:
+    if "readthedoc" in sys.executable:
         data_files = []
 
     setup(
