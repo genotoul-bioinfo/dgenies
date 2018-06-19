@@ -22,10 +22,21 @@ ALLOWED_EXTENSIONS = {"fasta": ['fa', 'fasta', 'fna', 'fa.gz', 'fasta.gz', 'fna.
 
 class Functions:
 
+    """
+    General functions
+    """
+
     config = AppConfigReader()
 
     @staticmethod
     def allowed_file(filename, file_formats=("fasta",)):
+        """
+        Check whether a file has a valid format
+
+        :param filename: file path
+        :param file_formats: accepted file formats
+        :return: True if valid format, else False
+        """
         for file_format in file_formats:
             if '.' in filename and \
                    (filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS[file_format]
@@ -37,13 +48,26 @@ class Functions:
     def random_string(s_len):
         """
         Generate a random string
+
         :param s_len: length of the string to generate
+        :type s_len: int
         :return: the random string
+        :rtype: str
         """
         return ''.join([random.choice(string.ascii_letters + string.digits) for n in range(s_len)])
 
     @staticmethod
     def get_valid_uploaded_filename(filename, folder):
+        """
+        Check whether uploaded file already exists. If yes, rename it
+
+        :param filename: uploaded file
+        :type filename: str
+        :param folder: folder into save the file
+        :type folder: str
+        :return: unique filename
+        :rtype: str
+        """
         file_query_s = os.path.join(folder, filename)
         i = 2
         filename_orig = filename
@@ -55,6 +79,16 @@ class Functions:
 
     @staticmethod
     def __get_do_sort(fasta, is_sorted):
+        """
+        Check whether query must be sorted (False if already done)
+
+        :param fasta: fasta file
+        :type fasta: str
+        :param is_sorted: True if it's sorted
+        :type is_sorted: bool
+        :return: do sort
+        :rtype: bool
+        """
         do_sort = False
         if is_sorted:
             do_sort = True
@@ -64,6 +98,18 @@ class Functions:
 
     @staticmethod
     def get_fasta_file(res_dir, type_f, is_sorted):
+        """
+        Get fasta file path
+
+        :param res_dir: job results directory
+        :type res_dir: str
+        :param type_f: type of file (query or target)
+        :type type_f: str
+        :param is_sorted: is fasta sorted
+        :type is_sorted: bool
+        :return: fasta file path
+        :rtype: str
+        """
         fasta_file = None
         try:
             with open(os.path.join(res_dir, "." + type_f), "r") as save_name:
@@ -88,6 +134,14 @@ class Functions:
 
     @staticmethod
     def uncompress(filename):
+        """
+        Uncompress a gzipped file
+
+        :param filename: gzipped file
+        :type filename: str
+        :return: path of the uncompressed file
+        :rtype: str
+        """
         try:
             uncompressed = filename.rsplit('.', 1)[0]
             parts = uncompressed.rsplit("/", 1)
@@ -106,6 +160,14 @@ class Functions:
 
     @staticmethod
     def compress(filename):
+        """
+        Compress a file with gzip
+
+        :param filename: file to compress
+        :type filename: str
+        :return: path of the compressed file
+        :rtype: str
+        """
         try:
             if not filename.endswith(".gz") and not filename.endswith(".gz.sorted"):
                 compressed = filename + ".gz" if not filename.endswith(".sorted") else filename[:-7] + ".gz.sorted"
@@ -127,6 +189,16 @@ class Functions:
 
     @staticmethod
     def read_index(index_file):
+        """
+        Load index of query or target
+
+        :param index_file: index file path
+        :type index_file: str
+        :return:
+            * [0] index (size of each chromosome) {dict}
+            * [1] sample name {str}
+        :rtype: (dict, str)
+        """
         index = OrderedDict()
         with open(index_file, "r") as index_f:
             # Sample name without special chars:
@@ -145,6 +217,14 @@ class Functions:
 
     @staticmethod
     def get_mail_for_job(id_job):
+        """
+        Retrieve associated mail for a job
+
+        :param id_job: job id
+        :type id_job: int
+        :return: associated mail address
+        :rtype: str
+        """
         from dgenies.database import Job
         with Job.connect():
             j1 = Job.get(Job.id_job == id_job)
@@ -153,6 +233,24 @@ class Functions:
     @staticmethod
     def send_fasta_ready(mailer, job_name, sample_name, compressed=False, path="fasta-query", status="success",
                          ext="fasta"):
+        """
+        Send link to fasta file when treatment ended
+
+        :param mailer: mailer object
+        :type mailer: Mailer
+        :param job_name: job id
+        :type job_name: str
+        :param sample_name: sample name
+        :type sample_name: str
+        :param compressed: is a compressed fasta file
+        :type compressed: bool
+        :param path: fasta path
+        :type path: str
+        :param status: treatment status
+        :type status: str
+        :param ext: file extension
+        :type ext: str
+        """
         web_url = Functions.config.web_url
         with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "mail_templates", "dl_fasta.html")) \
                 as t_file:
@@ -171,6 +269,24 @@ class Functions:
 
     @staticmethod
     def sort_fasta(job_name, fasta_file, index_file, lock_file, compress=False, mailer=None, mode="webserver"):
+        """
+        Sort fasta file according to the sorted index file
+
+        :param job_name: job id
+        :type job_name: str
+        :param fasta_file: fasta file path
+        :type fasta_file: str
+        :param index_file: index file path
+        :type index_file: str
+        :param lock_file: lock file path
+        :type lock_file: str
+        :param compress: compress result fasta file
+        :type compress: bool
+        :param mailer: mailer object (to send mail)
+        :type mailer: Mailer
+        :param mode: webserver or standalone
+        :type mode: str
+        """
         index, sample_name = Functions.read_index(index_file)
         is_compressed = fasta_file.endswith(".gz")
         if is_compressed:
@@ -199,14 +315,38 @@ class Functions:
             Functions.send_fasta_ready(mailer, job_name, sample_name, compress)
 
     @staticmethod
-    def compress_and_send_mail(job_name, fasta_file, index_file, lock_file, compressed, mailer):
+    def compress_and_send_mail(job_name, fasta_file, index_file, lock_file, mailer):
+        """
+        Compress fasta file and the send mail with its link to the client
+
+        :param job_name: job id
+        :type job_name: str
+        :param fasta_file: fasta file path
+        :type fasta_file: str
+        :param index_file: index file path
+        :type index_file: str
+        :param lock_file: lock file path
+        :type lock_file: str
+        :param mailer: mailer object (to send mail)
+        :type mailer: Mailer
+        """
         Functions.compress(fasta_file)
         os.remove(lock_file)
         index, sample_name = Functions.read_index(index_file)
-        Functions.send_fasta_ready(mailer, job_name, sample_name, compressed)
+        Functions.send_fasta_ready(mailer, job_name, sample_name, True)
 
     @staticmethod
     def get_readable_size(size, nb_after_coma=1):
+        """
+        Get human readable size from a given size in bytes
+
+        :param size: size in bytes
+        :type size: int
+        :param nb_after_coma: number of digits after coma
+        :type nb_after_coma: int
+        :return: size, human readable
+        :rtype: str
+        """
         print(size)
         units = ["b", "Kb", "Mb", "Gb"]
         i = 0
@@ -217,6 +357,14 @@ class Functions:
 
     @staticmethod
     def get_readable_time(seconds):
+        """
+        Get human readable time
+
+        :param seconds: time in seconds
+        :type seconds: int
+        :return: time, human readable
+        :rtype: str
+        """
         time_r = "%d s" % seconds
         if seconds >= 60:
             minutes = seconds // 60
@@ -228,10 +376,22 @@ class Functions:
                 time_r = "%d h %d min %d s" % (hours, minutes, seconds)
         return time_r
 
-
-
     @staticmethod
     def get_gallery_items():
+        """
+        Get list of items from the gallery
+
+        :return: list of item of the gallery. Each item is a dict with 7 keys:
+
+            * `name` : name of the job
+            * `id_job` : id of the job
+            * `picture` : illustrating picture filename (located in gallery folder of the data folder)
+            * `query` : query specie name
+            * `target` : target specie name
+            * `mem_peak` : max memory used for the run (human readable)
+            * `time_elapsed` : time elapsed for the run (human readable)
+        :rtype: list of dict
+        """
         from dgenies.database import Gallery
         items = []
         for item in Gallery.select():
@@ -248,6 +408,16 @@ class Functions:
 
     @staticmethod
     def is_in_gallery(id_job, mode="webserver"):
+        """
+        Check whether a job is in the gallery
+
+        :param id_job: job id
+        :type id_job: str
+        :param mode: webserver or standalone
+        :type mode: str
+        :return: True if job is in the gallery, else False
+        :rtype: bool
+        """
         if mode == "webserver":
             from dgenies.database import Gallery, Job
             from peewee import DoesNotExist
@@ -259,6 +429,12 @@ class Functions:
 
     @staticmethod
     def _get_jobs_list():
+        """
+        Get list of jobs
+
+        :return: list of valid jobs
+        :rtype: list
+        """
         all_jobs = os.listdir(Functions.config.app_data)
         valid_jobs = []
         for job in all_jobs:
@@ -272,6 +448,14 @@ class Functions:
 
     @staticmethod
     def get_list_all_jobs(mode="webserver"):
+        """
+        Get list of all jobs
+
+        :param mode: webserver or standalone
+        :type mode: str
+        :return: list of all jobs in standalone mode. Empty list in webserver mode
+        :rtype: list
+        """
         if mode == "webserver":
             return []  # Don't give the list in webserver as it's multi-user
         all_jobs = Functions._get_jobs_list()
@@ -281,5 +465,13 @@ class Functions:
 
     @staticmethod
     def query_fasta_file_exists(res_dir):
+        """
+        Check if a fasta file exists
+
+        :param res_dir: job result directory
+        :type res_dir: str
+        :return: True if file exists and is a regular file, else False
+        :rtype: bool
+        """
         fasta_file = os.path.join(res_dir, ".query")
         return os.path.exists(fasta_file) and os.path.isfile(fasta_file)

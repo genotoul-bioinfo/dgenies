@@ -1,4 +1,8 @@
 class UploadFile:
+    """
+    Manage uploaded files
+    """
+
     def __init__(self, name, type_f=None, size=None, not_allowed_msg=''):
         self.name = name
         self.type = type_f
@@ -7,6 +11,12 @@ class UploadFile:
         self.url = "data/%s" % name
 
     def get_file(self):
+        """
+        Get file object
+
+        :return: file object
+        :rtype: dict
+        """
         if self.type is not None:
             # POST an image
             if self.type.startswith('image'):
@@ -15,7 +25,7 @@ class UploadFile:
                         "size": self.size, 
                         "url": self.url}
             
-            # POST an normal file
+            # POST a normal file
             elif self.not_allowed_msg == '':
                 return {"name": self.name,
                         "type": self.type,

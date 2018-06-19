@@ -1,4 +1,8 @@
 class Singleton:
+    """
+    Define a singleton (design pattern)
+    """
+
     def __init__(self, klass):
         self.klass = klass
         self.instance = None

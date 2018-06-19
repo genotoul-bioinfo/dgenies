@@ -4,6 +4,10 @@ from flask_mail import Mail, Message
 
 class Mailer:
 
+    """
+    Send mail throw flask app
+    """
+
     def __init__(self, app):
         self.app = app
         self.mail = Mail(app)
@@ -13,11 +17,29 @@ class Mailer:
         # self.mail_org = config_reader.get_mail_org()
         # self.disable = config_reader.get_disable_mail()
 
-    def __send_async_email(self, msg):
+    def _send_async_email(self, msg):
+        """
+        Send mail asynchronously
+
+        :param msg: message to send
+        :type msg: Message
+        """
         with self.app.app_context():
             self.mail.send(msg)
 
-    def send_mail(self, recipients: list, subject: str, message: str, message_html: str=None):
+    def send_mail(self, recipients, subject, message, message_html=None):
+        """
+        Send mail
+
+        :param recipients: list of recipients
+        :type recipients: list
+        :param subject: mail subject
+        :type subject: str
+        :param message: message (text)
+        :type message: str
+        :param message_html: message (html)
+        :type message_html: str
+        """
         sender = (self.config.mail_org, self.config.mail_status_sender) if self.config.mail_org is not None else \
             self.config.mail_status_sender
         reply = self.config.mail_reply
@@ -30,7 +52,7 @@ class Mailer:
                 sender=sender,
                 reply_to=reply
             )
-            self.__send_async_email(msg)
+            self._send_async_email(msg)
         else:  # Print debug
             print("################\n"
                   "# WARNING !!!! #\n"

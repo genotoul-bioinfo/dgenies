@@ -20,6 +20,9 @@ from Bio.SeqRecord import SeqRecord
 
 
 class Paf:
+    """
+    Functions applied to PAF files
+    """
     limit_idy = [0.25, 0.5, 0.75]
     max_nb_lines = 100000
 
@@ -57,7 +60,22 @@ class Paf:
             self.parse_paf()
 
     @staticmethod
-    def __flush_blocks(index_c, new_index_c, new_index_o, current_block):
+    def _flush_blocks(index_c, new_index_c, new_index_o, current_block):
+        """
+        When parsing index, build a mix of too small sequential contigs (if their number exceed 5), else just add
+        co to the new index
+
+        :param index_c: current index contigs def
+        :type index_c: dict
+        :param new_index_o: new index contigs order
+        :type new_index_o: list
+        :param new_index_c: new index contigs def
+        :type new_index_c: dict
+        :param current_block: contigs in the current analyzed block
+        :type current_block: list
+        :return: (new index contigs defs, new index contigs order)
+        :rtype: (dict, list)
+        """
         if len(current_block) >= 5:
             block_length = 0
             for contig in current_block:
@@ -73,28 +91,43 @@ class Paf:
 
     def parse_index(self, index_o: list, index_c: dict, full_len: int):
         """
-        Parse index and merge too small contigs
-        :param index_o: index order
+        Parse index and merge too small contigs together
+
+        :param index_o: index contigs order
+        :type index_o: list
         :param index_c: index contigs def
+        :type index_c: dict
         :param full_len: length of the sequence
-        :return: new index orders and contigs def
+        :type full_len: int
+        :return: (new contigs def, new contigs order)
+        :rtype: (dict, list)
         """
         new_index_o = []
         new_index_c = {}
         current_block = []
         for index in index_o:
             if index_c[index] >= 0.002 * full_len:
-                new_index_c, new_index_o = self.__flush_blocks(index_c, new_index_c, new_index_o, current_block)
+                new_index_c, new_index_o = self._flush_blocks(index_c, new_index_c, new_index_o, current_block)
                 current_block = []
                 new_index_c[index] = index_c[index]
                 new_index_o.append(index)
             else:
                 current_block.append(index)
-        new_index_c, new_index_o = self.__flush_blocks(index_c, new_index_c, new_index_o, current_block)
+        new_index_c, new_index_o = self._flush_blocks(index_c, new_index_c, new_index_o, current_block)
         return new_index_c, new_index_o
 
     @staticmethod
     def remove_noise(lines, noise_limit):
+        """
+        Remove noise from the dot plot
+
+        :param lines: lines of the dot plot, by class
+        :type lines: dict
+        :param noise_limit: line length limit
+        :type noise_limit: float
+        :return: kept lines, by class
+        :rtype: dict
+        """
         keep_lines = {
             "0": [],
             "1": [],
@@ -113,13 +146,31 @@ class Paf:
                     keep_lines[cls].append(line)
         return keep_lines
 
-    def keyerror_message(self, exception: KeyError, type_f):
+    def keyerror_message(self, exception, type_f):
+        """
+        Build message if contig not found in query or target
+
+        :param exception: exception object
+        :type exception: KeyError
+        :param type_f: type of data (query or target)
+        :type type_f: str
+        :return: error message
+        :rtype: str
+        """
         message = "Invalid contig for %s: %s" % (type_f, exception.args[0])
         if os.path.exists(os.path.join(self.data_dir, ".align")):
             message += ". May be you invert query and target files?"
         return message
 
     def parse_paf(self, merge_index=True, noise=True):
+        """
+        Parse PAF file
+
+        :param merge_index: if True, merge too small contigs in index
+        :type merge_index: bool
+        :param noise: if True, remove noise
+        :type noise: bool
+        """
         min_idy = 10000000000
         max_idy = -10000000000
         lines = {
@@ -219,6 +270,25 @@ class Paf:
         self.name_t = name_t
 
     def get_d3js_data(self):
+        """
+        Build data for D3.js client
+
+        :return: data for d3.js:
+
+            * y_len: length of query (Bp)
+            * x_len: length of target (Bp)
+            * min_idy: minimum of identity (float)
+            * max_idy: maximum of identity (float)
+            * lines: matches lines, by class of identity (dict)
+            * y_contigs: query contigs definitions (dict)
+            * y_order: query contigs order (list)
+            * x_contigs: target contigs definitions (dict)
+            * x_order: target contigs order (list)
+            * name_y: name of the query (str)
+            * name_x: name of the target (str)
+            * limit_idy: limit for each class of identities (list)
+        :rtype: dict
+        """
         return {
             'y_len': self.len_q,
             'x_len': self.len_t,
@@ -238,18 +308,31 @@ class Paf:
         }
 
     def save_json(self, out):
+        """
+        Save D3.js data to json
+
+        :param out: output file path
+        :type out: str
+        """
         import json
         data = self.get_d3js_data()
         with open(out, "w") as out_f:
             out_f.write(json.dumps(data))
 
-    def is_contig_well_oriented(self, lines: list, contig, chrom):
+    def is_contig_well_oriented(self, lines, contig, chrom):
         """
         Returns True if the contig is well oriented. A well oriented contig
-        must have y increased when x increased. We check that only for highest matchs
-        (small matches must be ignores)
+        must have y increased when x increased. We check that only for highest matches
+        (small matches must be ignored)
+
         :param lines: lines inside the contig
+        :type lines: list
+        :param contig: query contig name
+        :type contig: str
+        :param chrom: target chromosome name
+        :type chrom: str
         :return: True if well oriented, False else
+        :rtype: bool
         """
         lines.sort(key=lambda x: -x[-1])
         max_len = lines[0][-1]
@@ -286,6 +369,7 @@ class Paf:
     def reorient_contigs_in_paf(self, contigs):
         """
         Reorient contigs in the PAF file
+
         :param contigs: contigs to be reoriented
         """
         sorted_file = self.paf + ".sorted"
@@ -311,6 +395,12 @@ class Paf:
         return True
 
     def _update_query_index(self, contigs_reoriented):
+        """
+        Write new query index file (including new reoriented contigs info)
+
+        :param contigs_reoriented: reoriented contigs list
+        :type contigs_reoriented: list
+        """
         with open(self.idx_q, "w") as idx:
             idx.write(self.name_q + "\n")
             for contig in self.q_order:
@@ -318,6 +408,12 @@ class Paf:
                           + "\n")
 
     def set_sorted(self, is_sorted):
+        """
+        Change sorted status
+
+        :param is_sorted: new sorted status
+        :type is_sorted: bool
+        """
         self.sorted = is_sorted
         sorted_touch = os.path.join(os.path.dirname(self.paf), ".sorted")
         if is_sorted:
@@ -330,10 +426,12 @@ class Paf:
         """
         Compute gravity for each contig on each chromosome (how many big matches they have).
         Will be used to find which chromosome has the highest value for each contig
+
         :return:
-            - gravity for each contig and each chromosome:
+
+            * [0] gravity for each contig and each chromosome:
                 {contig1: {chr1: value, chr2: value, ...}, contig2: ...}
-            - For each block save lines inside:
+            * [1] For each block save lines inside:
                 [median_on_query, squared length, median_on_target, x1, x2, y1, y2, length] (x : on target, y: on query)
         """
         gravity_contig = {}
@@ -440,6 +538,12 @@ class Paf:
         self.parse_paf()
 
     def reverse_contig(self, contig_name):
+        """
+        Reverse contig
+
+        :param contig_name: contig name
+        :type contig_name: str
+        """
         self.parse_paf(False)
         reorient_contigs = [contig_name]
         self.reorient_contigs_in_paf(reorient_contigs)
@@ -453,7 +557,9 @@ class Paf:
     def get_query_on_target_association(self, with_coords=True):
         """
         For each query, get the best matching chromosome
-        :return:
+
+        :return: query on target association
+        :rtype: dict
         """
         gravity_contig, lines_on_block = self.compute_gravity_contigs()
         query_on_target = {}
@@ -496,7 +602,9 @@ class Paf:
     def get_queries_on_target_association(self):
         """
         For each target, get the list of queries associated to it
-        :return:
+
+        :return: list of queries associated to each target
+        :rtype: dict
         """
         gravity_contig = self.compute_gravity_contigs()[0]
         queries_on_target = {}
@@ -518,6 +626,7 @@ class Paf:
         """
         For each query, get the best matching chromosome and save it to a CSV file.
         Use the order of queries
+
         :return: content of the file
         """
         query_on_target = self.get_query_on_target_association(with_coords=True)
@@ -551,6 +660,7 @@ class Paf:
     def build_list_no_assoc(self, to):
         """
         Build list of queries that match with None target, or the opposite
+
         :param to: query or target
         :return: content of the file
         """
@@ -565,18 +675,38 @@ class Paf:
         return "\n".join(contigs_list) + "\n"
 
     def _add_percents(self, percents, item):
+        """
+        Update percents with interval
+
+        :param percents: initial percents
+        :type percents: dict
+        :param item: interval from IntervalTree
+        :type item: Interval
+        :return: new percents
+        :rtype: dict
+        """
         i_count = item.length()
         percents[str(item.data)] += i_count
         percents["-1"] -= i_count
         return percents
 
-    def _remove_overlaps(self, position_idy: IntervalTree, percents: dict):
+    def _remove_overlaps(self, position_idy, percents):
+        """
+        Remove overlaps between matches on the diagonal
+
+        :param position_idy: matches intervals with associated identity category
+        :type position_idy: IntervalTree
+        :param percents: Percent of matches for each identity category
+        :type percents: dict
+        :return: new percents (updated after overlap removing)
+        :rtype: dict
+        """
         while len(position_idy) > 0:
             item = position_idy.pop()
             start = item.begin
             end = item.end
             cat = item.data
-            overlaps = position_idy.search(start,end)
+            overlaps = position_idy.search(start, end)
             if len(overlaps) > 0:
                 has_overlap = False
                 for overlap in overlaps:
@@ -695,6 +825,7 @@ class Paf:
     def build_summary_stats(self, status_file):
         """
         Get summary of identity
+
         :return: table with percents by category
         """
         summary_file = self.paf + ".summary"
@@ -726,6 +857,12 @@ class Paf:
         return None
 
     def get_summary_stats(self):
+        """
+        Load summary statistics from file
+
+        :return: summary object or None if summary not already built
+        :rtype: dict
+        """
         summary_file = self.paf + ".summary"
         if os.path.exists(summary_file):
             with open(summary_file, "r") as summary_file:
@@ -734,6 +871,11 @@ class Paf:
         return None
 
     def build_query_chr_as_reference(self):
+        """
+        Assemble query contigs like reference chromosomes
+
+        :return: path of the fasta file
+        """
         try:
             if not self.sorted:
                 raise Exception("Contigs must be sorted to do that!")

@@ -7,6 +7,10 @@ from dgenies.config_reader import AppConfigReader
 
 class Latest:
 
+    """
+    Search latest version
+    """
+
     def __init__(self):
         self.latest = ""
         self.win32 = ""
@@ -15,6 +19,9 @@ class Latest:
         self.load()
 
     def load(self):
+        """
+        Load latest version: use cached version (if any) and then sync with Github
+        """
         if os.path.exists(self._save_latest):
             with open(self._save_latest, "r") as latest_f:
                 self.latest = latest_f.readline().rstrip()
@@ -27,10 +34,16 @@ class Latest:
             self.update()
 
     def update_async(self):
+        """
+        Update latest version asynchronously
+        """
         thread = threading.Timer(1, self.update)
         thread.start()
 
     def update(self):
+        """
+        Get latest version from Github
+        """
         try:
             call = requests.get("https://api.github.com/repos/genotoul-bioinfo/dgenies/releases/latest")
             if call.ok:
@@ -47,6 +60,9 @@ class Latest:
             self._write_update()
 
     def _write_update(self):
+        """
+        Save latest version to a file
+        """
         if self.latest != "" or self.win32 != "":
             with open(self._save_latest, "w") as latest_f:
                 latest_f.write("\n".join([self.latest, self.win32]))

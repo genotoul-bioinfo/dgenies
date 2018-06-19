@@ -9,6 +9,10 @@ from dgenies.config_reader import AppConfigReader
 
 class Crons:
 
+    """
+    Manage crontab jobs (webserver mode)
+    """
+
     def __init__(self, base_dir, debug):
         self.base_dir = base_dir
         self.debug = debug
@@ -17,6 +21,12 @@ class Crons:
         self.local_scheduler_pid_file = os.path.join(self.config.config_dir, ".local_scheduler_pid")
 
     def clear(self, kill_scheduler=True):
+        """
+        Clear all crons
+
+        :param kill_scheduler: if True, kill local scheduler currently running
+        :type kill_scheduler: bool
+        """
         # Remove old crons:
         self.my_cron.remove_all(comment="dgenies")
         self.my_cron.write()
@@ -30,12 +40,18 @@ class Crons:
                         p.terminate()
 
     def start_all(self):
+        """
+        Start all crons
+        """
         self.clear(False)
         self.init_clean_cron()
         self.init_launch_local_cron()
 
     @staticmethod
     def _get_python_exec():
+        """
+        Get python executable path
+        """
         pyexec = sys.executable
         match = re.match(r"^(.+)/lib/(python[^/]+)/((site-packages/bin/python)|())$", pyexec)
         if match:
@@ -44,6 +60,7 @@ class Crons:
 
     def init_clean_cron(self):
         """
+        Initialize clean cron: will clear old jobs.
         Clean cron is launched at 1h00am each day
         """
         clean_time = self.config.cron_clean_time
@@ -63,7 +80,6 @@ class Crons:
     def init_launch_local_cron(self):
         """
         Try to launch local scheduler (if not already launched)
-        :return:
         """
         if self.base_dir is not None:
             pyexec = self._get_python_exec()

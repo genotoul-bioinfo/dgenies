@@ -13,6 +13,15 @@ from Bio import AlignIO
 
 
 def maf(in_maf, out_paf):
+    """
+    Maf parser
+
+    :param in_maf: input maf file path
+    :type in_maf: str
+    :param out_paf:  output paf file path
+    :type out_paf: str
+    :return: True if success, else False
+    """
     maf_f = None
     try:
         with open(out_paf, "w") as paf:

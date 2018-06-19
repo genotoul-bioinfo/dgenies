@@ -15,6 +15,14 @@ import shutil, os
 
 
 def paf(in_file):
+    """
+    Paf validator
+
+    :param in_file: paf file to test
+    :type in_file: str
+    :return: True if valid, else False
+    :rtype: bool
+    """
     try:
         with open(in_file, "r") as aln:
             n = 0
@@ -37,6 +45,11 @@ def paf(in_file):
 
 
 def _filter_maf(in_file):
+    """
+    Filter Maf file (remove unused lines)
+
+    :param in_file: maf file to filter
+    """
     new_file = in_file + ".new"
     with open(in_file, "r") as inf, open(new_file, "w") as new:
         for line in inf:
@@ -47,6 +60,14 @@ def _filter_maf(in_file):
 
 
 def maf(in_file):
+    """
+    Maf validator
+
+    :param in_file: maf file to test
+    :type in_file: str
+    :return: True if valid, else False
+    :rtype: bool
+    """
     _filter_maf(in_file)
     try:
         maf = AlignIO.parse(in_file, "maf")
@@ -60,6 +81,14 @@ def maf(in_file):
 
 
 def idx(in_file):
+    """
+    Index file validator
+
+    :param in_file: index file to test
+    :type in_file: str
+    :return: True if valid, else False
+    :rtype: bool
+    """
     try:
         with open(in_file, "r") as inf:
             first_line = inf.readline()
