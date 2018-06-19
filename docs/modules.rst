@@ -1,7 +1,3 @@
-Packages & Modules
-------------------
+.. toctree:: 
 
-.. toctree::
-   :maxdepth: 4
-
-   dgenies
+   dgenies.rst
