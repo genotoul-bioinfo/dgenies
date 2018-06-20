@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
 
+"""
+D-Genies main binary
+
+- Launch D-Genies server
+- manage crons
+- clear jobs and data
+"""
+
 import os
 import argparse
 import webbrowser
@@ -17,6 +25,15 @@ config = AppConfigReader()
 
 
 def parse_args():
+    """
+    Parse arguments given from the user
+
+    :return:
+
+        * [0] action to do (run, clear, gallery, ...)
+        * [1] arguments object
+    :rtype: (str, argparse.Namespace)
+    """
     parser = argparse.ArgumentParser(description="Manage dgenies application")
     subparsers = parser.add_subparsers(dest="subparser_name")
 
@@ -89,6 +106,16 @@ def parse_args():
 
 
 def start_browser(host, port, app):
+    """
+    Start browser when the server is runned
+
+    :param host: host on which the server is launched
+    :type host: str
+    :param port: port on which the server is launched
+    :type port: int
+    :param app: Flask app object
+    :type app: Flask
+    """
     web_url = "http://{0}:{1}".format(host, port)
     status_code = -1
     tries = 0
@@ -109,6 +136,22 @@ def start_browser(host, port, app):
 
 
 def run(mode="standalone", debug=False, host="127.0.0.1", port=5000, no_crons=False, no_browser=False):
+    """
+    Run server
+
+    :param mode: webserver or standalone
+    :type mode: str
+    :param debug: True to enable debug mode
+    :type debug: bool
+    :param host: host on which run rhe server
+    :type host: str
+    :param port: port on which run the server
+    :type port: int
+    :param no_crons: True to disable crons
+    :type no_crons: bool
+    :param no_browser: True to don't launch the browser after server starts
+    :type no_browser: bool
+    """
     os.environ['DISABLE_CRONS'] = "True" if no_crons else "False"
     if debug:
         os.environ['LOGS'] = "True"
@@ -125,12 +168,18 @@ def run(mode="standalone", debug=False, host="127.0.0.1", port=5000, no_crons=Fa
 
 
 def clear_crons():
+    """
+    Clear crons
+    """
     from dgenies.lib.crons import Crons
     crons = Crons(None, True)
     crons.clear()
 
 
 def clear_logs():
+    """
+    Clear logs
+    """
     if hasattr(config, "log_dir"):
         log_files = glob(os.path.join(config.log_dir, "*.log"))
         for file in log_files:
@@ -141,6 +190,11 @@ def clear_logs():
 
 
 def clear_jobs(max_data_age=7, web=False):
+    """
+    Clear jobs
+    :param max_data_age: max age for jobs before removing them
+    :param web: True if webserver mode
+    """
     upload_folder = config.upload_folder
     app_data = config.app_data
     now = time.time()
@@ -190,6 +244,20 @@ def clear_jobs(max_data_age=7, web=False):
 
 
 def add_to_gallery(id_job, name, picture, query, target):
+    """
+    Add a job to the gallery
+
+    :param id_job: job id
+    :type id_job: str
+    :param name: name of the sample
+    :type name: str
+    :param picture: picture filename
+    :type picture: str
+    :param query: query name
+    :type query: str
+    :param target: target name
+    :type target: str
+    """
     from dgenies.database import Gallery, Job
     from peewee import DoesNotExist
     try:
@@ -207,6 +275,13 @@ def add_to_gallery(id_job, name, picture, query, target):
 
 
 def del_from_gallery_by_id(id_job):
+    """
+    Remove a job, by id
+
+    :param id_job: id of the job to delete
+    :return: list of pictures files to delete
+    :rtype: list
+    """
     from dgenies.database import Gallery, Job
     items = Gallery.select().join(Job).where(Job.id_job == id_job)
     list_pictures = []
@@ -217,6 +292,13 @@ def del_from_gallery_by_id(id_job):
 
 
 def del_from_gallery_by_name(name):
+    """
+    Remove a job, by name
+
+    :param name: name of the job to delete
+    :return: list of pictures files to delete
+    :rtype: list
+    """
     from dgenies.database import Gallery
     items = Gallery.select().where(Gallery.name == name)
     list_pictures = []

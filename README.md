@@ -10,6 +10,11 @@ You can use the demo instance [here](http://dgenies.toulouse.inra.fr).
 
 Or you can install your own instance. The install documentation is available [here](http://dgenies.toulouse.inra.fr/install).
 
+Documentation
+-------------
+
+Full documentation, including code API, is available [here](https://dgenies.readthedocs.io/en/latest/index.html).
+
 How to cite?
 ------------
 
