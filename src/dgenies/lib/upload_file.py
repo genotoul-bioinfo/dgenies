@@ -4,6 +4,17 @@ class UploadFile:
     """
 
     def __init__(self, name, type_f=None, size=None, not_allowed_msg=''):
+        """
+
+        :param name: File name
+        :type name: str
+        :param type_f: file MIME type
+        :type type_f: str
+        :param size: file size in bytes
+        :type size: int
+        :param not_allowed_msg: error to add for not allowed file
+        :type not_allowed_msg: str
+        """
         self.name = name
         self.type = type_f
         self.size = size

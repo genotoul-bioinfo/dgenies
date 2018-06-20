@@ -15,6 +15,19 @@ config_reader = AppConfigReader()
 
 
 def parse_upload_folders(upload_folder, now, max_age, fake=False):
+    """
+    Parse upload folders and remove too old files and folders
+
+    :param upload_folder: upload folder path
+    :type upload_folder: str
+    :param now: current timestamp
+    :type now: float
+    :param max_age: remove all files & folders older than this age. Define it for each category
+        (uploads, data, error, ...)
+    :type max_age: dict
+    :param fake: if True, just print files to delete, without delete them
+    :type fake: bool
+    """
     for file in os.listdir(upload_folder):
         file = os.path.join(upload_folder, file)
         create_date = os.path.getctime(file)
@@ -34,6 +47,19 @@ def parse_upload_folders(upload_folder, now, max_age, fake=False):
 
 
 def parse_database(app_data, max_age, fake=False):
+    """
+    Parse database and remove too old jobs (from database and from disk)
+
+    :param app_data: folder where jobs are stored
+    :type app_data: str
+    :param max_age: remove all files & folders older than this age. Define it for each category
+        (uploads, data, error, ...)
+    :type max_age: dict
+    :param fake: if True, just print files to delete, without delete them
+    :type fake: bool
+    :return: id jobs which are in the gallery (not removed independently of their age)
+    :rtype: list
+    """
     from dgenies.database import Job, Gallery
     gallery_jobs = []
     with Job.connect():
@@ -60,7 +86,22 @@ def parse_database(app_data, max_age, fake=False):
     return gallery_jobs
 
 
-def parse_data_folders(app_data, now, max_age, gallery_jobs, fake=False):
+def parse_data_folders(app_data, gallery_jobs, now, max_age, fake=False):
+    """
+    Parse data folder and remove too old jobs
+
+    :param app_data: folder where jobs are stored
+    :param gallery_jobs: id of jobs which are inside the gallery
+    :type gallery_jobs: list
+    :param now: current timestamp
+    :type now: float
+    :param max_age: remove all files & folders older than this age. Define it for each category
+        (uploads, data, error, ...)
+    :type max_age: dict
+    :param fake: if True, just print files to delete, without delete them
+    :type fake: bool
+    :return:
+    """
     for file in os.listdir(app_data):
         if file not in gallery_jobs and file not in ["gallery"]:
             file = os.path.join(app_data, file)

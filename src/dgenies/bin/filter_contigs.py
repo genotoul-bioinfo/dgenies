@@ -13,7 +13,28 @@ from Bio import SeqIO
 
 class Filter:
 
+    """
+    Filter of a fasta file: remove too small contigs
+    """
+
     def __init__(self, fasta, index_file, type_f, min_filtered=0, split=False, out_fasta=None, replace_fa=False):
+        """
+
+        :param fasta: fasta file path
+        :type fasta: str
+        :param index_file: index file path
+        :type index_file: str
+        :param type_f: type of sample (query or target)
+        :type type_f: str
+        :param min_filtered: minimum number of large contigs to allow filtering
+        :type min_filtered: int
+        :param split: are contigs split
+        :type split: bool
+        :param out_fasta: output fasta file path
+        :type out_fasta: str
+        :param replace_fa: if True, replace fasta file
+        :type replace_fa: bool
+        """
         self.fasta = fasta
         self.index_file = index_file
         self.type_f = type_f
@@ -26,6 +47,12 @@ class Filter:
         self.replace_fa = replace_fa
 
     def filter(self):
+        """
+        Run filter of contigs
+
+        :return: True if success, else False
+        :rtype: bool
+        """
         f_outs = self._check_filter()
         if len(f_outs) > 0:
             self._filter_out(f_outs=f_outs)
@@ -35,8 +62,9 @@ class Filter:
     def _check_filter(self):
         """
         Load index of fasta file, and determine contigs which must be removed. Remove them only in the index
-        :param index_file: index file for the fasta file
+
         :return: list of contigs which must be removed
+        :rtype: list
         """
         # Load contigs:
         name, order, contigs, reversed_c, abs_start, c_len = Index.load(index_file=self.index_file,
@@ -112,8 +140,9 @@ class Filter:
     def _filter_out(self, f_outs):
         """
         Remove too small contigs from Fasta file
-        :param fasta: fasta files
+
         :param f_outs: contigs which must be filtered out
+        :type f_outs: list
         """
         sequences = SeqIO.parse(open(self.fasta), "fasta")
         keeped = (record for record in sequences if record.name not in f_outs)

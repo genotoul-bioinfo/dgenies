@@ -7,11 +7,31 @@ import gzip
 
 class Index:
 
+    """
+    Manage Fasta Index
+    """
+
     def __init__(self):
         pass
 
     @staticmethod
     def load(index_file, merge_splits=False):
+        """
+        Load index
+
+        :param index_file: index file path
+        :type index: str
+        :param merge_splits: if True, merge split contigs together
+        :type merge_splits: bool
+        :return:
+            * [0] sample name
+            * [1] contigs order
+            * [2] contigs size
+            * [3] reversed status for each contig
+            * [4] absolute start position for each contig
+            * [5] total len of the sample
+        :rtype: (str, list, dict, dict, dict, int)
+        """
         with open(index_file, "r") as idx_q_f:
             abs_start = {}
             abs_current_start = 0
@@ -46,6 +66,20 @@ class Index:
 
     @staticmethod
     def save(index_file, name, contigs, order, reversed_c):
+        """
+        Save index
+
+        :param index_file: index file path
+        :type index_file: str
+        :param name: sample name
+        :type name: str
+        :param contigs: contigs size
+        :type contigs: dict
+        :param order: contifs order
+        :type order: list
+        :param reversed_c: reversed status for each contig
+        :type reversed_c: dict
+        """
         with open(index_file, "w") as idx:
             idx.write(name + "\n")
             for contig in order:
@@ -54,6 +88,23 @@ class Index:
 
 
 def index_file(fasta_path, fasta_name, out, write_fa=None):
+    """
+    Index fasta file
+
+    :param fasta_path: fasta file path
+    :type fasta_path: str
+    :param fasta_name: sample name
+    :type fasta_name: str
+    :param out: output index file
+    :type out: str
+    :param write_fa: file path of the new fasta file to write, None to don't save fasta in a new file
+    :type write_fa: str
+    :return:
+        * [0] True if success, else False
+        * [1] Number of contigs
+        * [2] Error message
+    :rtype: (bool, int, str)
+    """
     has_header = False
     next_header = False  # True if next line must be a header line
     compressed = fasta_path.endswith(".gz")
@@ -112,7 +163,7 @@ if __name__ == '__main__':
     parser.add_argument('-o', '--output', type=str, required=True, help="Output index file")
     args = parser.parse_args()
 
-    success, message = index_file(args.input, args.name, args.output)
+    success, nb_contigs, message = index_file(args.input, args.name, args.output)
     if success:
         print("Success!")
     else:

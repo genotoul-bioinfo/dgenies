@@ -165,3 +165,4 @@ texinfo_documents = [
 # -- Extension configuration -------------------------------------------------
 
 autodoc_default_flags = ['private-members']
+autoclass_content = "both"

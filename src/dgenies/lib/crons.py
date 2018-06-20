@@ -14,6 +14,13 @@ class Crons:
     """
 
     def __init__(self, base_dir, debug):
+        """
+
+        :param base_dir: software base directory path
+        :type base_dir: str
+        :param debug: True to enable debug mode
+        :type debug: bool
+        """
         self.base_dir = base_dir
         self.debug = debug
         self.my_cron = CronTab(user=getpass.getuser())

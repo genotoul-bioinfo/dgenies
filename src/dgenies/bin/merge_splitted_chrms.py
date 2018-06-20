@@ -6,7 +6,24 @@ from collections import OrderedDict
 
 class Merger:
 
+    """
+    Merge splitted contigs together in PAF file
+    """
+
     def __init__(self, paf_in, paf_out, query_in, query_out, debug=False):
+        """
+
+        :param paf_in: input PAF file path
+        :type paf_in: str
+        :param paf_out: output PAF file path
+        :type paf_out: str
+        :param query_in: input query index file path
+        :type query_in: str
+        :param query_out: output query index file path
+        :type query_out: str
+        :param debug: True to enable debug mode
+        :type debug: bool
+        """
         self.paf_in = paf_in
         self.paf_out = paf_out
         self.query_in = query_in
@@ -14,10 +31,19 @@ class Merger:
         self.debug = debug
 
     def _printer(self, message):
+        """
+        Print debug messages if debug mode enabled
+
+        :param message: message to print
+        :type message: str
+        """
         if self.debug:
             print(message)
 
     def merge(self):
+        """
+        Launch the merge
+        """
         self._printer("Loading query index...")
         contigs, contigs_split, q_name = self.load_query_index(self.query_in)
 
@@ -30,14 +56,18 @@ class Merger:
         self._printer("DONE!")
 
     @staticmethod
-    def _get_sorted_splits(contigs_split: dict, all_contigs: dict):
+    def _get_sorted_splits(contigs_split, all_contigs):
         """
         For each contigs_split, save how many base we will must add to each line of the corresponding split contig in PAF
         file.
         Also, save the final merged contig size in all contig dict
+
         :param contigs_split: split contigs
+        :type contigs_split: dict
         :param all_contigs: all and final contigs
+        :type all_contigs: dict
         :return: all contigs and new split contigs with start of each split contig set
+        :rtype: (dict, dict)
         """
         new_contigs = {}
         for contig, splits_d in contigs_split.items():
@@ -51,6 +81,17 @@ class Merger:
         return all_contigs, new_contigs
 
     def load_query_index(self, index):
+        """
+        Load query index
+
+        :param index: index file path
+        :type index: str
+        :return:
+            * [0] contigs length
+            * [1] splitted contigs length
+            * [2] sample name
+        :rtype: (dict, dict, str)
+        """
         contigs = OrderedDict()
         contigs_split = {}
         with open(index) as idx_f:
@@ -75,7 +116,17 @@ class Merger:
 
 
     @staticmethod
-    def write_query_index(index: str, contigs: dict, q_name: str):
+    def write_query_index(index, contigs, q_name):
+        """
+        Save new query index
+
+        :param index: index file path
+        :type index: str
+        :param contigs: contigs size
+        :type contigs: dict
+        :param q_name: sample name
+        :type q_name: str
+        """
         with open(index, "w") as idx_f:
             idx_f.write(q_name + "\n")
             for contig_name, contig_len in contigs.items():
@@ -83,6 +134,18 @@ class Merger:
 
     @staticmethod
     def merge_paf(paf_in, paf_out, contigs, contigs_split):
+        """
+        Do merge PAF staff
+
+        :param paf_in: path of input PAF with split contigs
+        :type paf_in: str
+        :param paf_out: path of output PAF where split contigs are now merged together
+        :type paf_out: str
+        :param contigs: contigs size
+        :type contigs: dict
+        :param contigs_split: split contigs size
+        :type contigs_split: dict
+        """
         with open(paf_in) as paf_i, open(paf_out, "w") as paf_o:
             for line in paf_i:
                 parts = line.strip("\n").split("\t")
@@ -100,6 +163,12 @@ class Merger:
 
 
 def parse_args():
+    """
+    Parse command line arguments
+
+    :return: arguments
+    :rtype: argparse.Namespace
+    """
     import argparse
 
     parser = argparse.ArgumentParser(description='Merge in PAF file and indexed when fasta has been split',

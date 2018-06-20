@@ -27,6 +27,21 @@ class Paf:
     max_nb_lines = 100000
 
     def __init__(self, paf: str, idx_q: str, idx_t: str, auto_parse: bool=True, mailer=None, id_job=None):
+        """
+
+        :param paf: PAF file path
+        :type paf: str
+        :param idx_q: query index file path
+        :type idx_q: str
+        :param idx_t: target index file path
+        :type idx_t: str
+        :param auto_parse: if True, parse PAF file at initialisation
+        :type auto_parse: bool
+        :param mailer: mailer object, to send mails
+        :type mailer: Mailer
+        :param id_job: job id
+        :type id_job: str
+        """
         self.paf = paf
         self.idx_q = idx_q
         self.idx_t = idx_t

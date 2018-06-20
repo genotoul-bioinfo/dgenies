@@ -10,7 +10,26 @@ from collections import OrderedDict
 
 class Splitter:
 
+    """
+    Split large contigs in smaller ones
+    """
+
     def __init__(self, input_f, name_f, output_f, size_c=10000000, query_index="query_split.idx", debug=False):
+        """
+
+        :param input_f: input fasta file path
+        :type input_f: str
+        :param name_f: sample name
+        :type name_f: str
+        :param output_f: output fasta file path
+        :type output_f: str
+        :param size_c: size of split contigs
+        :type size_c: int
+        :param query_index: index file path for query
+        :type query_index: str
+        :param debug: True to enable debug mode
+        :type debug: bool
+        """
         self.input_f = input_f
         self.name_f = name_f
         self.size_c = size_c
@@ -24,8 +43,9 @@ class Splitter:
 
     def split(self):
         """
-        Split contigs in smaller ones
-        :return: True if the Fasta is correct, else False
+        Split contigs in smaller ones staff
+
+        :return: True if the input Fasta is correct, else False
         """
         has_header = False
         next_header = False  # True if next line must be a header line

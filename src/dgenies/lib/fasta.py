@@ -4,6 +4,17 @@ class Fasta:
     """
 
     def __init__(self, name, path, type_f, example=False):
+        """
+
+        :param name: sample name
+        :type name: str
+        :param path: fasta file path
+        :type path: str
+        :param type_f: type of file (local file or URL)
+        :type type_f: str
+        :param example: is an example job
+        :type example: bool
+        """
         self._name = name
         self._path = path
         self._type = type_f

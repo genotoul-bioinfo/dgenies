@@ -18,6 +18,16 @@ DEBUG = False
 
 
 def launch(mode="webserver", debug=False):
+    """
+    Launch the application
+
+    :param mode: webserver or standalone
+    :type mode: str
+    :param debug: True to enable debug mode
+    :type debug: bool
+    :return: flask app object
+    :rtype: Flask
+    """
     global app, app_title, app_folder, APP_DATA, config_reader, mailer, MODE, DEBUG
     app_folder = os.path.dirname(os.path.realpath(__file__))
 

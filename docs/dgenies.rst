@@ -7,6 +7,7 @@ Subpackages
 .. toctree::
 
     dgenies.lib
+    dgenies.bin
 
 Submodules
 ^^^^^^^^^^
@@ -14,3 +15,10 @@ Submodules
 .. toctree::
 
     dgenies.submodules
+
+Module contents
+^^^^^^^^^^^^^^^
+
+.. toctree::
+
+    dgenies.content

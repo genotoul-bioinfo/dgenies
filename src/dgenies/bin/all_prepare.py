@@ -12,6 +12,7 @@ from index import index_file
 def index_fasta(name, filepath, out_dir, type_f, dofilter = True):
     """
     Index and filter fasta
+
     :param name: name of the specie
     :param filepath: full path of the fasta file
     :param out_dir: output folder

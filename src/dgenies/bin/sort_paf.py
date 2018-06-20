@@ -8,69 +8,38 @@ __VERSION__ = 0.1
 
 
 class Sorter:
+    """
+    Sort PAF file by match size
+    """
 
     def __init__(self, input_f, output_f):
+        """
+
+        :param input_f: input fasta file path
+        :type input_f: str
+        :param output_f: output fasta file path
+        :type output_f: str
+        """
         self.input_f = input_f
         self.output_f = output_f
 
     def sort(self):
+        """
+        Launch sort staff
+        """
         paf_lines = self._get_sorted_paf_lines()
         with open(self.output_f, "w") as out:
             out.write("\n".join(["\t".join(x[:-1]) for x in paf_lines]))
 
-    @staticmethod
-    def _sort_key_paf_lines(a):
-        x1 = int(a[2])
-        x2 = int(a[3])
-        y1 = int(a[7])
-        y2 = int(a[8])
-        return -sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2)) * (int(a[9]) / int(a[10]))
-
-    def _insert_line(self, line, paf_lines, next_search, min_search, max_search):
-        # print(line[3],".",line[2],".",line[8],".",line[7],".",line[9],".",line[10],".")
-        len_line = line[-1]
-        paf_line = paf_lines[next_search]
-        len_paf_line = paf_line[-1]
-        if len_line > len_paf_line:
-            if next_search == min_search:
-                paf_lines.insert(next_search, line)
-            else:
-                paf_line_next = paf_lines[next_search - 1]
-                len_paf_line_next = paf_line_next[-1]
-                if len_line < len_paf_line_next:
-                    paf_lines.insert(next_search, line)
-                elif next_search == 1:
-                    paf_lines.insert(0, line)
-                else:
-                    paf_lines = self._insert_line(line=line,
-                                                  paf_lines=paf_lines,
-                                                  next_search=min((next_search - min_search) // 2, next_search - 1),
-                                                  min_search=min_search,
-                                                  max_search=next_search)
-        elif len_line < len_paf_line:
-            if next_search == max_search:
-                paf_lines.insert(next_search + 1, line)
-            else:
-                paf_line_next = paf_lines[next_search+1]
-                len_paf_line_next = paf_line_next[-1]
-                if len_line > len_paf_line_next:
-                    paf_lines.insert(next_search + 1, line)
-                elif next_search == len(paf_lines) - 2:
-                    paf_lines.append(line)
-                else:
-                    paf_lines = self._insert_line(line=line,
-                                                  paf_lines=paf_lines,
-                                                  next_search=min(max(next_search + ((max_search - next_search) // 2),
-                                                                  next_search + 1), len(paf_lines)),
-                                                  min_search=next_search,
-                                                  max_search=max_search)
-        elif len_line == len_paf_line:
-            paf_lines.insert(next_search + 1, line)
-        if len(paf_lines) > 300000:
-            paf_lines = paf_lines[:300000]
-        return paf_lines
-
     def _sort_lines(self, lines):
+        """
+        Sort lines staff
+
+        :param lines: lines of PAF file to be sorted
+        :type lines: _io.TextIO
+        :return: sorted lines
+        :rtype: list
+        """
         paf_lines = []
         nb_lines = 0
         min_len = 0
@@ -100,6 +69,11 @@ class Sorter:
         return paf_lines
 
     def _get_sorted_paf_lines(self):
+        """
+        Get sorted PAF
+
+        :return: sorted PAF lines
+        """
         with open(self.input_f, "r") as lines:
             paf_lines = self._sort_lines(lines)
         return paf_lines

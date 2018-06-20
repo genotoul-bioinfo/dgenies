@@ -14,11 +14,12 @@ class Tool:
                  threads_cluster=None, parser=None, split_before=False, help=None, order=None):
         """
         Create a new tool
+
         :param command_line: command line to launch the tool
         :param all_vs_all: command line in all_vs_all mode (None if not available for the tool)
         :param max_memory: max memory the tool is supposed to use (ex: 40G) - for cluster submissions
         :param parser: name of the function in dgenies.lib.functions to launch after mapping to have a correct PAF out
-        file
+            file
         :param split_before: True to split contigs before mapping
         :type split_before: bool
         :param help: help message to show in run form
@@ -92,10 +93,11 @@ class Tool:
                 self.order = order
 
 
-
-
 @Singleton
 class Tools:
+    """
+    Load (from yaml file) and store available alignement tools
+    """
 
     def __init__(self):
         self.tools = {}

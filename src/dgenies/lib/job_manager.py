@@ -43,8 +43,27 @@ class JobManager:
     Jobs management
     """
 
-    def __init__(self, id_job: str, email: str=None, query: Fasta=None, target: Fasta=None, mailer=None,
+    def __init__(self, id_job, email=None, query: Fasta=None, target: Fasta=None, mailer=None,
                  tool="minimap2", align: Fasta=None, backup: Fasta=None):
+        """
+
+        :param id_job: job id
+        :type id_job: str
+        :param email: email from user
+        :type email: str
+        :param query: query fasta
+        :type query: Fasta
+        :param target: target fasta
+        :type target: Fasta
+        :param mailer: mailer object (to send mail throw flask app)
+        :type mailer: Mailer
+        :param tool: tool to use for mapping (choice from tools config)
+        :type tool: str
+        :param align: alignment file (PAF, MAF, ...) as a fasta object
+        :type align: Fasta
+        :param backup: backup TAR file
+        :type backup: Fasta
+        """
         self.id_job = id_job
         self.email = email
         self.query = query

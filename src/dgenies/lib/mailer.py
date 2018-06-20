@@ -9,6 +9,11 @@ class Mailer:
     """
 
     def __init__(self, app):
+        """
+
+        :param app: Flask app object
+        :type app: Flask
+        """
         self.app = app
         self.mail = Mail(app)
         self.config = AppConfigReader()

@@ -36,6 +36,11 @@ LOG_FILE = "stdout"
 
 
 def _printer(*messages):
+    """
+    print messages to stdout or to a file (according to LOG_FILE global constant)
+
+    :param messages: messages to print
+    """
     if DEBUG:
         if LOG_FILE == "stdout":
             print(*messages)
@@ -45,6 +50,14 @@ def _printer(*messages):
 
 
 def start_job(id_job, batch_system_type="local"):
+    """
+    Start a job (mapping step)
+
+    :param id_job: job id
+    :type id_job: str
+    :param batch_system_type: local, slurm or sge
+    :type batch_system_type: str
+    """
     _printer("Start job", id_job)
     with Job.connect():
         job = Job.get(Job.id_job == id_job)
@@ -56,6 +69,12 @@ def start_job(id_job, batch_system_type="local"):
 
 
 def get_scheduled_local_jobs():
+    """
+    Get list of jobs ready to be started (for local runs)
+
+    :return: list of jobs
+    :rtype: list
+    """
     all_jobs = []
     with Job.connect():
         jobs = Job.select().where((Job.batch_type == "local") & ((Job.status == "prepared") | (Job.status == "scheduled"))).\
@@ -68,6 +87,12 @@ def get_scheduled_local_jobs():
 
 
 def get_scheduled_cluster_jobs():
+    """
+    Get list of jobs ready to be started (for cluster runs)
+
+    :return: list of jobs
+    :rtype: list
+    """
     all_jobs = []
     with Job.connect():
         jobs = Job.select().where((Job.batch_type != "local") & ((Job.status == "prepared") | (Job.status == "scheduled"))).\
@@ -80,6 +105,12 @@ def get_scheduled_cluster_jobs():
 
 
 def prepare_job(id_job):
+    """
+    Launch job preparation of data
+
+    :param id_job: job id
+    :type id_job: str
+    """
     _printer("Prepare data for job:", id_job)
     with Job.connect():
         job = Job.get(Job.id_job == id_job)
@@ -91,23 +122,47 @@ def prepare_job(id_job):
 
 
 def get_prep_scheduled_jobs():
+    """
+    Get list of jobs ready to be prepared (all data is downloaded and parsed)
+
+    :return: list of jobs
+    :rtype: list
+    """
     with Job.connect():
         jobs = Job.select().where(Job.status == "waiting").order_by(Job.date_created)
         return [(j.id_job, j.batch_type) for j in jobs]
 
 
 def get_preparing_jobs_nb():
+    """
+    Get number of jobs in preparation step (for local runs)
+
+    :return: number of jobs
+    :rtype: int
+    """
     with Job.connect():
         return len(Job.select().where(Job.status == "preparing"))
 
 
 def get_preparing_jobs_cluster_nb():
+    """
+    Get number of jobs in preparation step (for cluster runs)
+
+    :return: number of jobs
+    :rtype: int
+    """
     with Job.connect():
         return len(Job.select().where(Job.status == "preparing-cluster")), \
                len(Job.select().where(Job.status == "prepare-scheduled"))
 
 
 def parse_started_jobs():
+    """
+    Parse all started jobs: check all is OK, change jobs status if needed. Look for died jobs
+
+    :return: (list of id of jobs started locally, list of id of jobs started on cluster)
+    :rtype: (list, list)
+    """
     with Job.connect():
         jobs_started = []  # Only local jobs
         cluster_jobs_started = []  # Only cluster jobs
@@ -157,6 +212,9 @@ def parse_started_jobs():
 
 
 def parse_uploads_asks():
+    """
+    Parse asks for an upload: allow new uploads when other end, remove expired sessions, ...
+    """
     with Session.connect():
         now = datetime.now()
         # Get allowed:
@@ -195,11 +253,20 @@ def parse_uploads_asks():
 
 @atexit.register
 def cleaner():
+    """
+    Exit DRMAA session at program exit
+    """
     if "DRMAA_SESSION" in globals():
         DRMAA_SESSION.exit()
 
 
 def move_job_to_cluster(id_job):
+    """
+    Change local job to be run on the cluster
+
+    :param id_job:
+    :return:
+    """
     with Job.connect():
         job = Job.get(Job.id_job == id_job)
         job.batch_type = config_reader.batch_system_type
@@ -207,6 +274,10 @@ def move_job_to_cluster(id_job):
 
 
 def parse_args():
+    """
+    Parse command line arguments and define DEBUG and LOG_FILE constants
+    """
+
     global DEBUG, LOG_FILE
 
     parser = argparse.ArgumentParser(description="Start local scheduler")
