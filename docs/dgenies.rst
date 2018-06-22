@@ -1,5 +1,5 @@
-Packages & Modules
-------------------
+Python packages & modules
+-------------------------
 
 Subpackages
 ^^^^^^^^^^^

@@ -3,16 +3,29 @@ if (!dgenies || !dgenies.result) {
 }
 dgenies.result.export = {};
 
-
+/**
+ * Build SVG tag and content
+ *
+ * @param {string} width svg width size (with unit [px])
+ * @returns {string} svg tag and content
+ */
 dgenies.result.export.get_svg = function (width="5000px") {
     return `<svg version='1.1' xmlns='http://www.w3.org/2000/svg' width='${width}' height='${width}' viewBox='0 0 100 100'>${$("#draw-in").find(">svg").html()}</svg>`;
 };
 
+/**
+ * Save file
+ * @param {Blob} blob file content to save
+ * @param {string} format file format
+ */
 dgenies.result.export.save_file = function(blob, format) {
     dgenies.hide_loading();
     saveAs(blob, `map_${d3.boxplot.name_y}_to_${d3.boxplot.name_x}.${format}`);
 };
 
+/**
+ * Export dot plot as PNG
+ */
 dgenies.result.export.export_png = function() {
     dgenies.show_loading("Building picture...", 210);
     window.setTimeout(() => {
@@ -27,6 +40,9 @@ dgenies.result.export.export_png = function() {
     }, 0);
 };
 
+/**
+ * Export dot plot as SVG
+ */
 dgenies.result.export.export_svg = function () {
     dgenies.show_loading("Building picture...", 180);
     window.setTimeout(() => {
@@ -39,6 +55,9 @@ dgenies.result.export.export_svg = function () {
     }, 0);
 };
 
+/**
+ * Download PAF alignment file
+ */
 dgenies.result.export.export_paf = function () {
     let export_div = $("div#export-pict");
     export_div.html("");
@@ -48,6 +67,10 @@ dgenies.result.export.export_paf = function () {
     document.getElementById('my-download').click();
 };
 
+/**
+ * Download query fasta file
+ * @param {boolean} gzip if true, gzip the file
+ */
 dgenies.result.export.dl_fasta = function (gzip=false) {
     let export_div = $("div#export-pict");
     export_div.html("");
@@ -57,6 +80,10 @@ dgenies.result.export.dl_fasta = function (gzip=false) {
     document.getElementById('my-download').click();
 };
 
+/**
+ * Export fasta file
+ * @param {boolean} compress if true compress (gzip) the file
+ */
 dgenies.result.export.export_fasta = function(compress=false) {
     dgenies.show_loading("Building file...", 180);
     dgenies.post("/get-fasta-query/" + dgenies.result.id_res,
@@ -84,6 +111,9 @@ dgenies.result.export.export_fasta = function(compress=false) {
         });
 };
 
+/**
+ * Show export dialog
+ */
 dgenies.result.export.ask_export_fasta = function () {
     if (dgenies.mode === "webserver") {
         let dialog = $("<div>")
@@ -122,6 +152,9 @@ dgenies.result.export.ask_export_fasta = function () {
     }
 };
 
+/**
+ * Download association table between queries and targets
+ */
 dgenies.result.export.export_association_table = function () {
     let export_div = $("div#export-pict");
     export_div.html("");
@@ -132,6 +165,9 @@ dgenies.result.export.export_association_table = function () {
     document.getElementById('my-download').click();
 };
 
+/**
+ * Download backup file of the project
+ */
 dgenies.result.export.export_backup_file = function() {
     dgenies.show_loading("Building file...", 180);
     window.setTimeout(() => {
@@ -145,6 +181,10 @@ dgenies.result.export.export_backup_file = function() {
     });
 };
 
+/**
+ * Export list of contigs with no association with any target or any query
+ * @param {string} to: query or target
+ */
 dgenies.result.export.export_no_association_file = function (to) {
     window.setTimeout(() => {
         dgenies.show_loading("Building file...", 180);
@@ -164,6 +204,9 @@ dgenies.result.export.export_no_association_file = function (to) {
     }, 0);
 };
 
+/**
+ * Export query like reference fasta file (webserver mode)
+ */
 dgenies.result.export.export_query_as_reference_fasta_webserver = function() {
     dgenies.post(`/build-query-as-reference/${dgenies.result.id_res}`,
         {},
@@ -177,6 +220,9 @@ dgenies.result.export.export_query_as_reference_fasta_webserver = function() {
         });
 };
 
+/**
+ * Export query like reference fasta file (standalone mode)
+ */
 dgenies.result.export.export_query_as_reference_fasta_standalone = function () {
     dgenies.show_loading("Building file...", 180);
     window.setTimeout(() => {
@@ -199,6 +245,9 @@ dgenies.result.export.export_query_as_reference_fasta_standalone = function () {
     }, 0);
 };
 
+/**
+ * Manage exports
+ */
 dgenies.result.export.export = function () {
     let select = $("form#export select");
     let selection = parseInt(select.val());

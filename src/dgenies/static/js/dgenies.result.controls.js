@@ -3,6 +3,9 @@ if (!dgenies || !dgenies.result) {
 }
 dgenies.result.controls = {};
 
+/**
+ * Initialise controls of the result page
+ */
 dgenies.result.controls.init = function () {
     $("#sort-contigs").click(dgenies.result.controls.launch_sort_contigs);
     $("#hide-noise").click(dgenies.result.controls.launch_hide_noise);
@@ -12,6 +15,9 @@ dgenies.result.controls.init = function () {
     $("form#export select").change(dgenies.result.export.export);
 };
 
+/**
+ * Build summary
+ */
 dgenies.result.controls.summary = function () {
     dgenies.show_loading("Building...");
     window.setTimeout(() => {
@@ -34,6 +40,9 @@ dgenies.result.controls.summary = function () {
     }, 0);
 };
 
+/**
+ * Build contigs sort
+ */
 dgenies.result.controls.launch_sort_contigs = function () {
     d3.boxplot.zoom.reset_scale();
     window.setTimeout(() => {
@@ -58,6 +67,9 @@ dgenies.result.controls.launch_sort_contigs = function () {
     }, 0);
 };
 
+/**
+ * Build reverse of a contig
+ */
 dgenies.result.controls.launch_reverse_contig = function () {
     if (d3.boxplot.query_selected !== null) {
         d3.boxplot.zoom.reset_scale();
@@ -87,6 +99,9 @@ dgenies.result.controls.launch_reverse_contig = function () {
     }
 };
 
+/**
+ * Hide noise
+ */
 dgenies.result.controls.launch_hide_noise = function () {
     d3.boxplot.zoom.reset_scale();
     window.setTimeout(() => {
@@ -112,6 +127,9 @@ dgenies.result.controls.launch_hide_noise = function () {
     }, 0);
 };
 
+/**
+ * Select zone with select boxes
+ */
 dgenies.result.controls.select_zone = function() {
     let contig_select = $("#select-contig").find(":selected");
     let target_select = $("#select-target").find(":selected");
@@ -123,6 +141,9 @@ dgenies.result.controls.select_zone = function() {
     }
 };
 
+/**
+ * Delete current job (confirmed)
+ */
 dgenies.result.controls.do_delete_job = function () {
     dgenies.post(`/delete/${dgenies.result.id_res}`,
         {},
@@ -141,6 +162,9 @@ dgenies.result.controls.do_delete_job = function () {
         })
 };
 
+/**
+ * Ask confirm for delete current job
+ */
 dgenies.result.controls.delete_job = function () {
     let dialog = $("<div>")
         .attr("id", "dialog-confirm")

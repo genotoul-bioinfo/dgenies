@@ -92,6 +92,12 @@ d3.boxplot.color_mixes = "#969696";
 //Filter sizes:
 d3.boxplot.min_sizes = [0, 0.01, 0.02, 0.03, 0.05, 1, 2];
 
+/**
+ * Initialize dotplot
+ *
+ * @param {string} id_res job id
+ * @param {boolean} from_file true to load data from a file (default: false, load from server)
+ */
 d3.boxplot.init = function (id_res=null, from_file=false) {
     if (id_res === null) {
         id_res = dgenies.result.id_res;
@@ -121,6 +127,13 @@ d3.boxplot.init = function (id_res=null, from_file=false) {
     }
 };
 
+/**
+ * Launch draw of dot plot
+ *
+ * @param {string} res
+ * @param {boolean} update if true, just update the existing dot plot (don't initialize events)
+ * @param {boolean} noise_change if false, set noise to true
+ */
 d3.boxplot.launch = function(res, update=false, noise_change=false) {
     dgenies.fill_select_zones(res["x_order"], res["y_order"]);
     if (res["sorted"]) {
@@ -168,6 +181,12 @@ d3.boxplot.launch = function(res, update=false, noise_change=false) {
     d3.boxplot.mousetip.init();
 };
 
+/**
+ * Find target chromosome where the user click
+ *
+ * @param {float} x coordinate on X axis
+ * @returns {string|null} chromosome name
+ */
 d3.boxplot.select_target = function (x) {
     for (let zone in d3.boxplot.x_zones) {
         if (d3.boxplot.x_zones[zone][0] < x && x <= d3.boxplot.x_zones[zone][1]) {
@@ -177,6 +196,12 @@ d3.boxplot.select_target = function (x) {
     return null;
 };
 
+/**
+ * Find query contig where the user click
+ *
+ * @param {float} y coordinate on Y axis
+ * @returns {string|null} contig name
+ */
 d3.boxplot.select_query = function(y) {
     for (let zone in d3.boxplot.y_zones) {
         if (d3.boxplot.y_zones[zone][0] < y && y <= d3.boxplot.y_zones[zone][1]) {
@@ -184,8 +209,17 @@ d3.boxplot.select_query = function(y) {
         }
     }
     return null;
-}
+};
 
+/**
+ * Find zone (query contig and target chromosome) based on coordinates
+ *
+ * @param {float} x coordinate on X axis
+ * @param {float} y coordinate on Y axis
+ * @param {string} x_zone selected chromosome on X axis (target)
+ * @param {string} y_zone selected contig on Y axis (query)
+ * @param {boolean} force if true, select zone even if a zone is already selected
+ */
 d3.boxplot.select_zone = function (x=null, y=null, x_zone=null, y_zone=null, force=false) {
     d3.boxplot.mousetip.hide();
     dgenies.show_loading();
@@ -242,6 +276,12 @@ d3.boxplot.select_zone = function (x=null, y=null, x_zone=null, y_zone=null, for
     }, 0);
 };
 
+/**
+ * Draw left axis
+ *
+ * @param {int} y_max max value of y on the Y axis
+ * @param {int} y_min min value of y on the Y axis
+ */
 d3.boxplot.draw_left_axis = function (y_max, y_min = 0) {
     let axis_length = 500;
 
@@ -294,6 +334,12 @@ d3.boxplot.draw_left_axis = function (y_max, y_min = 0) {
     }
 };
 
+/**
+ * Draw bottom axis
+ *
+ * @param {int} x_max max value of x on the X axis
+ * @param {int} x_min min value of x on the X axis
+ */
 d3.boxplot.draw_bottom_axis = function (x_max, x_min = 0) {
 
     let axis_length = 500;
@@ -344,6 +390,9 @@ d3.boxplot.draw_bottom_axis = function (x_max, x_min = 0) {
     }
 };
 
+/**
+ * Zoom on left axis
+ */
 d3.boxplot.zoom_left_axis = function() {
     let transform = d3.boxplot.container.attr("transform");
     if (transform === null) {
@@ -358,6 +407,9 @@ d3.boxplot.zoom_left_axis = function() {
     d3.boxplot.draw_left_axis(max_y, min_y);
 };
 
+/**
+ * Zoom on bottom axis
+ */
 d3.boxplot.zoom_bottom_axis = function() {
     let transform = d3.boxplot.container.attr("transform");
     if (transform === null) {
@@ -373,6 +425,11 @@ d3.boxplot.zoom_bottom_axis = function() {
     d3.boxplot.draw_bottom_axis(max_x, min_x);
 };
 
+/**
+ * Draw top axis
+ *
+ * @param {object} x_zones: name of chromosomes of the target
+ */
 d3.boxplot.draw_top_axis = function (x_zones=d3.boxplot.x_zones) {
     $("svg.top-axis").remove();  //Remove previous axis (if any)
     let transform = d3.boxplot.container.attr("transform");
@@ -462,6 +519,11 @@ d3.boxplot.draw_top_axis = function (x_zones=d3.boxplot.x_zones) {
     }
 };
 
+/**
+ * Draw right axis
+ *
+ * @param {object} y_zones name of contigs of the query
+ */
 d3.boxplot.draw_right_axis = function (y_zones=d3.boxplot.y_zones) {
     $("svg.right-axis").remove();  //Remove previous axis (if any)
     let transform = d3.boxplot.container.attr("transform");
@@ -555,6 +617,9 @@ d3.boxplot.draw_right_axis = function (y_zones=d3.boxplot.y_zones) {
     }
 };
 
+/**
+ * Draw backgrounds of all axis
+ */
 d3.boxplot.draw_axis_bckgd = function () {
     // Top:
     let svg_top = d3.boxplot.svgsupercontainer.append("svg:svg")
@@ -610,10 +675,21 @@ d3.boxplot.draw_axis_bckgd = function () {
         .style("fill", d3.boxplot.background_axis);
 };
 
+/**
+ * Sort function key for color identity
+ *
+ * @param a
+ * @param b
+ * @returns {number}
+ * @private
+ */
 d3.boxplot._sort_color_idy = function(a, b) {
     return parseFloat(b) - parseFloat(a);
 };
 
+/**
+ * Draw legend
+ */
 d3.boxplot.draw_legend = function () {
     d3.select("#legend .draw").html(""); //Empty legend
     let color_idy = d3.boxplot.color_idy[d3.boxplot.color_idy_theme];
@@ -664,6 +740,13 @@ d3.boxplot.draw_legend = function () {
 
 };
 
+/**
+ * Get length of a given line
+ *
+ * @param {array} line line object
+ * @returns {number} line length
+ * @private
+ */
 d3.boxplot._get_line_len = function (line) {
     let x1 = line[0] / d3.boxplot.x_len * d3.boxplot.scale;
     let x2 = line[1] / d3.boxplot.x_len * d3.boxplot.scale;
@@ -672,14 +755,41 @@ d3.boxplot._get_line_len = function (line) {
     return Math.sqrt(Math.pow(x2-x1, 2) + Math.pow(y2-y1, 2));
 };
 
+/**
+ * Sort lines with their length (DESC)
+ *
+ * @param {array} l1 line object
+ * @param {array} l2 line object
+ * @returns {number}
+ * @private
+ */
 d3.boxplot._sort_lines = function(l1, l2) {
     return d3.boxplot._get_line_len(l2) - d3.boxplot._get_line_len(l1);
 };
 
+/**
+ * Sort lines with their identity (DESC)
+ *
+ * @param {array} l1 line object
+ * @param {array} l2 line object
+ * @returns {number}
+ * @private
+ */
 d3.boxplot._sort_lines_by_idy = function(l1, l2) {
     return l1[4] - l2[4];
 };
 
+/**
+ * Build line data for D3.js
+ *
+ * @param {object} d data object of the line
+ * @param {int} min_size min size of line. Beside it, don't draw the line
+ * @param {int|null} max_size max size of line. Over it, don't draw the line
+ * @param {number} x_len length of x (target)
+ * @param {number} y_len length of y (query)
+ * @returns {string} path object
+ * @private
+ */
 d3.boxplot.__lineFunction = function(d, min_size=0, max_size=null, x_len, y_len) {
     d = d.sort(d3.boxplot._sort_lines_by_idy);
     let path = [];
@@ -698,6 +808,15 @@ d3.boxplot.__lineFunction = function(d, min_size=0, max_size=null, x_len, y_len)
     return path.join(" ")
 };
 
+/**
+ * Draw matches on dot plot for the given identity class
+ *
+ * @param {string} idy identity class of matches to draw
+ * @param {object} lines matches definitions
+ * @param {number} x_len total length of target
+ * @param {number} y_len total length of query
+ * @private
+ */
 d3.boxplot.__draw_idy_lines = function (idy, lines, x_len, y_len) {
     let min_sizes = d3.boxplot.min_sizes;
     for (let i=0; i<min_sizes.length; i++) {
@@ -714,6 +833,9 @@ d3.boxplot.__draw_idy_lines = function (idy, lines, x_len, y_len) {
     }
 };
 
+/**
+ * Switch to next color theme
+ */
 d3.boxplot.switch_color_theme = function () {
     if (!d3.boxplot.all_disabled) {
         let current_theme = d3.boxplot.color_idy_theme;
@@ -728,6 +850,11 @@ d3.boxplot.switch_color_theme = function () {
     }
 };
 
+/**
+ * Change color theme to the given one
+ *
+ * @param {string} theme theme name
+ */
 d3.boxplot.change_color_theme = function (theme) {
     if (d3.boxplot.color_idy_themes.indexOf(theme) === -1) {
         throw "Theme not valid!"
@@ -740,37 +867,14 @@ d3.boxplot.change_color_theme = function (theme) {
     d3.boxplot.draw_legend();
 };
 
+/**
+ * Draw matches on dot plot
+ *
+ * @param {object} lines matches definition
+ * @param {number} x_len total len of target
+ * @param {number} y_len total len of query
+ */
 d3.boxplot.draw_lines = function (lines=d3.boxplot.lines, x_len=d3.boxplot.x_len, y_len=d3.boxplot.y_len) {
-
-    // let tmp_max = d3.boxplot.max_idy - d3.boxplot.min_idy;
-    //
-    // let nb_lines = 0;
-    // for (let i = 0; i < lines.length; i++) {
-    //     nb_lines++;
-    //     if (nb_lines > 50000) {
-    //         break;
-    //     }
-    //     let line = lines[i];
-    //     let x1 = line[0] / x_len * d3.boxplot.scale;
-    //     let x2 = line[1] / x_len * d3.boxplot.scale;
-    //     let y1 = d3.boxplot.scale - (line[2] / y_len * d3.boxplot.scale);
-    //     let y2 = d3.boxplot.scale - (line[3] / y_len * d3.boxplot.scale);
-    //     let line_len = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-    //     let color = "#000";
-    //     for (let part in color_idy) {
-    //         if (line[4] >= part) {
-    //             color = color_idy[part];
-    //         }
-    //     }
-    //     d3.boxplot.container.append("line")
-    //         .attr("x1", x1)
-    //         .attr("y1", y1)
-    //         .attr("x2", x2)
-    //         .attr("y2", y2)
-    //         .attr("class", "content-lines")
-    //         .attr("stroke-width", d3.boxplot.scale / 400)
-    //         .attr("stroke", line_len >= 1 ? color : "black");
-    // }
 
     //Remove old lines (if any):
     $("path.content-lines").remove();
@@ -782,6 +886,14 @@ d3.boxplot.draw_lines = function (lines=d3.boxplot.lines, x_len=d3.boxplot.x_len
     d3.boxplot.events.filter_size(d3.boxplot.min_size);
 };
 
+/**
+ * Draw dot plot
+ *
+ * @param {object} x_contigs length associated to each contig of the query
+ * @param {array} x_order order of query contigs
+ * @param {object} y_contigs length associated to each chromosome of the target
+ * @param {array} y_order order of target chromosomes
+ */
 d3.boxplot.draw = function (x_contigs, x_order, y_contigs, y_order) {
     let width = 850;
     let height = 850;

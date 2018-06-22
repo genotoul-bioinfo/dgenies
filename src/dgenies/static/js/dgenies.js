@@ -3,6 +3,12 @@ dgenies.loading = "#loading";
 dgenies.noise = true;
 dgenies.mode = "webserver";
 
+/**
+ * Initialise dgenies client app
+ *
+ * @param {array} all_jobs list of user jobs (in standalone mode, empty in other modes)
+ * @param {string} mode server mode (standalone or webserver)
+ */
 dgenies.init = function(all_jobs, mode) {
     dgenies.mode = mode;
     let cookies = $.cookie("results");
@@ -16,10 +22,18 @@ dgenies.init = function(all_jobs, mode) {
     dgenies.update_results(cookies);
 };
 
+/**
+ * Save cookie on the browser
+ * @param {array} cookies list of jobs
+ */
 dgenies.save_cookies = function(cookies) {
     $.cookie("results", cookies.join("|"), {path: '/'});
-}
+};
 
+/**
+ * Update list of jobs
+ * @param {array} results: new list of jobs
+ */
 dgenies.update_results = function(results) {
     let job_list_item = $("ul.nav li.result ul");
     job_list_item.html("");
@@ -38,6 +52,13 @@ dgenies.update_results = function(results) {
     }
 };
 
+/**
+ * Show new notification
+ *
+ * @param {string} text notification text
+ * @param {string} type notification type (danger, warning, info, success) according to Bootstrap Notify library
+ * @param {int} delay time before hide notification
+ */
 dgenies.notify = function (text, type="warning", delay=5000) {
     $.notify({
         message: text
@@ -57,6 +78,12 @@ dgenies.notify = function (text, type="warning", delay=5000) {
     })
 };
 
+/**
+ * Show loading popup
+ *
+ * @param {string} message loading message
+ * @param {int} width popup width
+ */
 dgenies.show_loading = function (message="Loading...", width=118) {
     $("input,form#export select").prop("disabled", true);
     d3.boxplot.all_disabled = true;
@@ -71,6 +98,9 @@ dgenies.show_loading = function (message="Loading...", width=118) {
     });
 };
 
+/**
+ * Hide loading popup
+ */
 dgenies.hide_loading = function () {
     $("input,form#export select").prop("disabled", false);
     d3.boxplot.all_disabled = false;
@@ -78,15 +108,29 @@ dgenies.hide_loading = function () {
     dgenies.reset_loading_message();
 };
 
+/**
+ * Change loading message on current popup
+ *
+ * @param {string} message new message
+ */
 dgenies.set_loading_message = function (message) {
     $(dgenies.loading).find(".mylabel").html(message);
 };
 
+/**
+ * Reset loading message to its default value
+ */
 dgenies.reset_loading_message = function () {
     $(dgenies.loading).find(".mylabel").html("Loading...");
     $(dgenies.loading).find(".label").width(118);
 };
 
+/**
+ * Fill list of zones on select boxes (contigs and chromosomes)
+ *
+ * @param {array} x_targets list of chromosomes of target
+ * @param {array} y_contigs list of contigs of query
+ */
 dgenies.fill_select_zones = function(x_targets, y_contigs) {
     let select_contig = $("select#select-contig");
     select_contig.find("option[value!='###NONE###']").remove();
@@ -128,10 +172,25 @@ dgenies.fill_select_zones = function(x_targets, y_contigs) {
     select_target.trigger("chosen:updated")
 };
 
+/**
+ * Show human readable number higher than 1000: 1000 -> 1,000
+ *
+ * @param {int} x number
+ * @returns {string} human readable number
+ */
 dgenies.numberWithCommas = function(x) {
     return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 };
 
+/**
+ * Ajax server call
+ *
+ * @param url url to call
+ * @param data data to send
+ * @param success success function
+ * @param error error function
+ * @param method method (GET, POST, ...)
+ */
 dgenies.ajax = function(url, data, success, error, method="POST") {
     $.ajax(url,
         {
@@ -146,6 +205,15 @@ dgenies.ajax = function(url, data, success, error, method="POST") {
     );
 };
 
+/**
+ * Post server call
+ *
+ * @param url url to call
+ * @param data data to send
+ * @param success success function
+ * @param error error function
+ * @param async make call asynchronous
+ */
 dgenies.post = function(url, data, success, error, async=true) {
     dgenies.ajax({
         url: url,
@@ -156,6 +224,14 @@ dgenies.post = function(url, data, success, error, async=true) {
         async: async})
 };
 
+/**
+ * Get server call
+ *
+ * @param url url to call
+ * @param data data to send
+ * @param success success function
+ * @param error error function
+ */
 dgenies.get = function (url, data, success, error) {
     dgenies.ajax(url, data, success, error, "GET")
 };

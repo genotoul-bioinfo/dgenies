@@ -16,6 +16,7 @@ import os
 import sys
 sys.path.insert(0, os.path.join(os.path.abspath('..'), "src"))
 import dgenies
+os.environ['DISABLE_CRONS'] = "True"
 dgenies.launch()
 
 
@@ -45,6 +46,7 @@ extensions = [
     'sphinx.ext.doctest',
     'sphinx.ext.coverage',
     'sphinx.ext.viewcode',
+    'sphinx_js'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -166,3 +168,5 @@ texinfo_documents = [
 
 autodoc_default_flags = ['private-members']
 autoclass_content = "both"
+
+js_source_path = '../src/dgenies/static/js'

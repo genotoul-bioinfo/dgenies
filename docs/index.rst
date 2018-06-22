@@ -29,7 +29,7 @@ How to use?
 * `Supported file formats <http://dgenies.toulouse.inra.fr/documentation/formats>`_
 
 
-Python code API
+Code API
 ===============
 
 Index

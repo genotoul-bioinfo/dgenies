@@ -10,3 +10,4 @@ dgenies.egg-info
 application.properties.local
 dist
 docs/_build
+docs/javascript

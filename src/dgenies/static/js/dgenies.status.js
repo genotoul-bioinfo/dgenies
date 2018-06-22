@@ -4,7 +4,12 @@ if (!dgenies) {
 dgenies.status = {};
 dgenies.status.mode = "webserver";
 
-
+/**
+ * initialise the app for status page
+ *
+ * @param {string} status job status
+ * @param {string} mode server mode (standalone or webserver)
+ */
 dgenies.status.init = function (status, mode) {
     dgenies.status.mode = mode;
     if (status !== "success" && status !== "done" && status !== "no-match" && status !== "fail") {
@@ -12,6 +17,9 @@ dgenies.status.init = function (status, mode) {
     }
 };
 
+/**
+ * Page autoreload periodically
+ */
 dgenies.status.autoreload = function () {
     let get_p = new URLSearchParams(window.location.search);
     let refresh = get_p.get("refresh") !== null ? parseInt(get_p.get("refresh")) : 1;

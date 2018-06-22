@@ -4,6 +4,10 @@ if (!dgenies || !dgenies.result) {
 dgenies.result.summary = {};
 dgenies.result.summary.percents = {};
 
+/**
+ * Show summary window
+ * @param {object} percents: percents for each identity category
+ */
 dgenies.result.summary.show = function(percents) {
     dgenies.result.summary.percents = percents;
     let svgcontainer = d3.select("#draw-stats").html("").append("svg:svg")
@@ -78,6 +82,13 @@ dgenies.result.summary.show = function(percents) {
     })
 };
 
+/**
+ * Get label of the percent class
+ *
+ * @param {string} percent_class percent class
+ * @returns {string} percent class label
+ * @private
+ */
 dgenies.result.summary._get_label = function (percent_class) {
     switch (percent_class) {
             case "-1":
@@ -93,14 +104,28 @@ dgenies.result.summary._get_label = function (percent_class) {
         }
 };
 
+/**
+ * Get SVG picture of the summary
+ *
+ * @returns {string} svg picture
+ */
 dgenies.result.summary.get_svg = function () {
     return `<svg version='1.1' xmlns='http://www.w3.org/2000/svg' width='500px' height='220px'>${$("#draw-stats").find(">svg").html()}</svg>`;
 };
 
+/**
+ * Save to a file
+ *
+ * @param blob data to save
+ * @param {string} format file format
+ */
 dgenies.result.summary.save_file = function (blob, format) {
     saveAs(blob, `summary_${d3.boxplot.name_y}_to_${d3.boxplot.name_x}.${format}`);
 };
 
+/**
+ * Export summary to tsv
+ */
 dgenies.result.summary.export_tsv = function () {
     let content = "category\tpercent\n";
     for (let percent in dgenies.result.summary.percents) {
@@ -109,6 +134,9 @@ dgenies.result.summary.export_tsv = function () {
     dgenies.result.summary.save_file(new Blob([content], {type: "plain/text"}), "tsv");
 };
 
+/**
+ * Export summary to svg
+ */
 dgenies.result.summary.export_svg = function () {
     let svg = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" " +
                   "\"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">";
@@ -117,6 +145,9 @@ dgenies.result.summary.export_svg = function () {
     dgenies.result.summary.save_file(blob, "svg");
 };
 
+/**
+ * Export summary to png
+ */
 dgenies.result.summary.export_png = function () {
     let export_div = $("div#export-pict");
     export_div.html("").append($("<canvas>"));

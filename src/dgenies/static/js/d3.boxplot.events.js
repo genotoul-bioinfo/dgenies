@@ -3,6 +3,9 @@ if (!d3 || !d3.boxplot) {
 }
 d3.boxplot.events = {};
 
+/**
+ * Initialise events
+ */
 d3.boxplot.events.init = function () {
     $("input#filter_size").change(function() {
         d3.boxplot.events.filter_size(d3.boxplot.min_sizes[this.value]);
@@ -23,6 +26,9 @@ d3.boxplot.events.init = function () {
 
 };
 
+/**
+ * Initialise context menu
+ */
 d3.boxplot.events.init_context_menu = function () {
     d3.boxplot.svgcontainer.on("mousedown", function() {
         let event = d3.event;
@@ -48,6 +54,11 @@ d3.boxplot.events.init_context_menu = function () {
     });
 };
 
+/**
+ * Set break lines visibility: color and thickness, or hidden
+ *
+ * @param {string} value: visibility value: "0"-> hidden to "5" -> max visibility value
+ */
 d3.boxplot.events.set_break_lines_visibility = function(value) {
     if (value === "0") {
         d3.boxplot.break_lines_show = false;
@@ -96,6 +107,11 @@ d3.boxplot.events.set_break_lines_visibility = function(value) {
     }
 };
 
+/**
+ * Remove too small matches
+ *
+ * @param {number} min_size minimum size. Beside it, hide matches
+ */
 d3.boxplot.events.filter_size = function(min_size) {
     for(let i=0; i<d3.boxplot.min_sizes.length; i++) {
         let size = d3.boxplot.min_sizes[i];
@@ -109,6 +125,11 @@ d3.boxplot.events.filter_size = function(min_size) {
     d3.boxplot.min_size = min_size
 };
 
+/**
+ * Remove low identity matches
+ *
+ * @param {number} min_idy minimum of identity. Beside it, hide matches
+ */
 d3.boxplot.events.filter_identity = function (min_idy) {
     d3.boxplot.min_idy_draw = min_idy;
     dgenies.show_loading();
@@ -121,11 +142,21 @@ d3.boxplot.events.filter_identity = function (min_idy) {
     }, 0);
 };
 
+/**
+ * If stroke precision checked, strole-linecap is set to "butt". Else "round" to improve visibility of matches
+ *
+ * @param {boolean} rounded if true, improve bisibility by add round cap to lines
+ */
 d3.boxplot.events.stroke_linecap = function(rounded) {
     d3.boxplot.linecap = rounded ? "round" : "butt";
     $("path").attr("stroke-linecap", d3.boxplot.linecap);
 };
 
+/**
+ * Change matches lines stroke width
+ *
+ * @param {string} width new width class ("1", "2", or "3")
+ */
 d3.boxplot.events.stroke_width = function (width) {
     let stroke_width = d3.boxplot.scale / 600;
     if (width === "1") {

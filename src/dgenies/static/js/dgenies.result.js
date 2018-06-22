@@ -6,12 +6,20 @@ dgenies.result = {};
 // GLOBAL VARIABLES:
 dgenies.result.id_res = null;
 
+/**
+ * Initialise app for result app
+ *
+ * @param {string} id_res job id
+ */
 dgenies.result.init = function(id_res) {
     dgenies.result.id_res = id_res;
     dgenies.result.add_to_list();
     d3.boxplot.init();
 };
 
+/**
+ * Update list of results from cookie
+ */
 dgenies.result.add_to_list = function () {
     let cookies = $.cookie("results");
     cookies = cookies !== undefined ? cookies.split("|") : [];
@@ -22,6 +30,10 @@ dgenies.result.add_to_list = function () {
     }
 };
 
+/**
+ * Remove a job in cookie
+ * @param {string} job job id to remove
+ */
 dgenies.result.remove_job_from_cookie = function(job) {
     let cookies = $.cookie("results");
     cookies = cookies !== undefined ? cookies.split("|") : [];

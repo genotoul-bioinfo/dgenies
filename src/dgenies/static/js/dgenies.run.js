@@ -23,6 +23,16 @@ dgenies.run.query_example = "";
 dgenies.run.tool_has_ava = {};
 dgenies.run.enabled = true;
 
+/**
+ * Initialise app for run page
+ *
+ * @param {string} s_id session id
+ * @param {object} allowed_ext
+ * @param {int} max_upload_file_size maximum upload file size
+ * @param {string} target_example target example pseudo path
+ * @param {string} query_example query example pseudo path
+ * @param {object} tool_has_ava defines if each available tool has an all-vs-all mode
+ */
 dgenies.run.init = function (s_id, allowed_ext, max_upload_file_size=1073741824, target_example="", query_example="",
                              tool_has_ava={}) {
     dgenies.run.s_id = s_id;
@@ -36,6 +46,9 @@ dgenies.run.init = function (s_id, allowed_ext, max_upload_file_size=1073741824,
     dgenies.run.init_fileuploads();
 };
 
+/**
+ * Restore run form
+ */
 dgenies.run.restore_form = function () {
     let ftypes = ["query", "target", "alignfile", "queryidx", "targetidx", "backup"];
     for (let f in ftypes) {
@@ -44,6 +57,11 @@ dgenies.run.restore_form = function () {
     }
 };
 
+/**
+ * Upload next file
+ *
+ * @returns {boolean} true if there is a next upload, else false and run submit
+ */
 dgenies.run.upload_next = function () {
     let next = dgenies.run.files.pop();
     while (next === undefined && dgenies.run.files.length > 0) {
@@ -57,12 +75,26 @@ dgenies.run.upload_next = function () {
     return false;
 };
 
+/**
+ * Notify and reanable form on upload server error
+ *
+ * @param {string} fasta fasta file (name) which fails
+ * @param data data from server call
+ * @private
+ */
 dgenies.run.__upload_server_error = function(fasta, data) {
     dgenies.notify("message" in data ? data["message"]: `An error has occured when uploading <b>${fasta}</b> file. Please contact us to report the bug!`,
                     "danger");
     dgenies.run.enable_form();
 };
 
+/**
+ * Check if a file has a valid format
+ *
+ * @param {string} filename filename
+ * @param {array} formats expected file format
+ * @returns {boolean} true if valid, else false
+ */
 dgenies.run.allowed_file = function (filename, formats) {
     let allowed_ext = [];
     for (let f in formats) {
@@ -74,6 +106,14 @@ dgenies.run.allowed_file = function (filename, formats) {
          allowed_ext.indexOf(filename.rsplit('.', 2).splice(1).join(".").toLowerCase()) !== -1);
 };
 
+/**
+ * Init file upload forms staff
+ *
+ * @param {string} ftype type of file (query, target, ...)
+ * @param {array} formats valid formats
+ * @param {int} position position of file in the upload queue
+ * @private
+ */
 dgenies.run._init_fileupload = function(ftype, formats, position) {
     $(`input.file-${ftype}`).fileupload({
         dataType: 'json',
@@ -91,7 +131,7 @@ dgenies.run._init_fileupload = function(ftype, formats, position) {
             }
         },
         progressall: function (e, data) {
-            var progress = parseInt(data.loaded / data.total * 100, 10);
+            let progress = parseInt(data.loaded / data.total * 100, 10);
             $(`#progress-${ftype}`).find('.bar').css(
                 'width',
                 progress + '%'
@@ -118,6 +158,9 @@ dgenies.run._init_fileupload = function(ftype, formats, position) {
     });
 };
 
+/**
+ * Init file upload forms
+ */
 dgenies.run.init_fileuploads = function () {
     let ftypes = {"query": {"formats": ["fasta",]},
                   "target": {"formats": ["fasta",]},
@@ -136,6 +179,12 @@ dgenies.run.init_fileuploads = function () {
     });
 };
 
+/**
+ * Get file size (human readable)
+ *
+ * @param {int} size file size in bytes
+ * @returns {string} human readable size
+ */
 dgenies.run.get_file_size_str = function(size) {
     if (size < 1000) {
         return size + " O";
@@ -149,6 +198,9 @@ dgenies.run.get_file_size_str = function(size) {
     return Math.round(size / 1073741824) + " Go";
 };
 
+/**
+ * Fill inputs with example data
+ */
 dgenies.run.fill_examples = function () {
     dgenies.run.show_tab("tab1");
     $("select.target").val("1").trigger("change");
@@ -159,6 +211,12 @@ dgenies.run.fill_examples = function () {
     }
 };
 
+/**
+ * Initialise file change events
+ *
+ * @param {string} ftype type of file (query, target, ...)
+ * @private
+ */
 dgenies.run._set_file_event = function(ftype) {
     let max_file_size_txt = dgenies.run.get_file_size_str(dgenies.run.max_upload_file_size);
     $(`input.file-${ftype}`).change(function () {
@@ -187,12 +245,23 @@ dgenies.run._set_file_event = function(ftype) {
     });
 };
 
+/**
+ * Initialise change source of file (local, url) event
+ *
+ * @param {string} ftype type of file (query, target, ...)
+ * @private
+ */
 dgenies.run._set_file_select_event = function(ftype) {
     $(`select.${ftype}`).change(function() {
         dgenies.run.change_fasta_type(ftype, $(`select.${ftype}`).find(":selected").text().toLowerCase())
     });
 };
 
+/**
+ * Change displayed tab
+ *
+ * @param {string} tab id of the tab to show
+ */
 dgenies.run.show_tab = function(tab) {
     $(`#tabs #${tab}`).addClass("active");
     $(`#tabs .tab:not(#${tab})`).removeClass("active");
@@ -200,6 +269,9 @@ dgenies.run.show_tab = function(tab) {
     $(`.tabx.${tab}`).show();
 };
 
+/**
+ * Initialise events
+ */
 dgenies.run.set_events = function() {
     let ftypes = ["query", "target", "alignfile", "queryidx", "targetidx", "backup"];
     $.each(ftypes, function (i, ftype) {
@@ -218,6 +290,13 @@ dgenies.run.set_events = function() {
     })
 };
 
+/**
+ * Change source of fasta (local or url)
+ *
+ * @param {string} fasta type of fasta (query, target, ...)
+ * @param {string} type source of fasta (local or url)
+ * @param {boolean} keep_url if true, keep url in form, else empty it
+ */
 dgenies.run.change_fasta_type = function (fasta, type, keep_url=false) {
     let button = $("button#button-" + fasta);
     let input = $("input#" + fasta);
@@ -239,15 +318,27 @@ dgenies.run.change_fasta_type = function (fasta, type, keep_url=false) {
     $("div.file-size." + fasta).html("");
 };
 
+/**
+ * Set filename for input fasta
+ *
+ * @param {string} name filename
+ * @param {string} fasta type of fasta (query, target, ...)
+ */
 dgenies.run.set_filename = function (name, fasta) {
     $("input#" + fasta).val(name);
 };
 
+/**
+ * Disable run form
+ */
 dgenies.run.disable_form = function () {
     dgenies.run.enabled = false;
     $("input, select, button").prop("disabled", true);
 };
 
+/**
+ * Enable run form
+ */
 dgenies.run.enable_form = function () {
     $('.progress').find('.bar').css(
         'width', '0%'
@@ -266,11 +357,22 @@ dgenies.run.enable_form = function () {
     dgenies.run.enabled = true;
 };
 
+/**
+ * Reset file input
+ *
+ * @param  {string}inp_name type of fasta (query, target, ...)
+ */
 dgenies.run.reset_file_input = function(inp_name) {
     dgenies.run.change_fasta_type(inp_name, $(`select.${inp_name}`).find(":selected").text().toLowerCase(), true);
     dgenies.run.files[dgenies.run.files_nb[inp_name]] = undefined;
 };
 
+/**
+ * Reset all inputs in the given tab
+ *
+ * @param {string} tab tab name
+ * @param {boolean} except_backup if true, don't reset backup input
+ */
 dgenies.run.reset_file_form = function(tab, except_backup=false) {
     let ftypes = [];
     let i = 0;
@@ -288,6 +390,9 @@ dgenies.run.reset_file_form = function(tab, except_backup=false) {
     });
 };
 
+/**
+ * Do form submit staff (done once all uploads are done successfully)
+ */
 dgenies.run.do_submit = function () {
     let data = {
         "id_job": $("input#id_job").val(),
@@ -342,10 +447,20 @@ dgenies.run.do_submit = function () {
         );
 };
 
+/**
+ * Add an error to the form
+ *
+ * @param {string} error error message to display
+ */
 dgenies.run.add_error = function (error) {
     $("div.errors-submit ul.flashes").append($("<li>").append(error));
 };
 
+/**
+ * Validate form
+ *
+ * @returns {boolean} true if form is valid, else false
+ */
 dgenies.run.valid_form = function () {
     let has_errors = false;
 
@@ -413,27 +528,53 @@ dgenies.run.valid_form = function () {
     return !has_errors;
 };
 
+/**
+ * Show loading for a fasta uploading file
+ *
+ * @param {string} fasta uploading file type (query, target, ...)
+ */
 dgenies.run.show_loading = function(fasta) {
     $(".loading-file." + fasta).show();
 };
 
+/**
+ * Hide loading for a fasta uploaded file
+ *
+ * @param {string} fasta uploaded file type (query, target, ...)
+ */
 dgenies.run.hide_loading = function(fasta) {
     $(".loading-file." + fasta).hide();
 };
 
+/**
+ * Show success: file uploaded successfully
+ *
+ * @param {string} fasta uploaded type of file (query, target, ...)
+ */
 dgenies.run.show_success = function(fasta) {
     $(".upload-success." + fasta).show()
 };
 
+/**
+ * Hide success on a file
+ *
+ * @param {string} fasta type of file (query, target, ...)
+ */
 dgenies.run.hide_success = function(fasta) {
     $(".upload-success." + fasta).hide()
 };
 
+/**
+ * Remove all errors displayed
+ */
 dgenies.run.reset_errors = function() {
     $("label").removeClass("error");
     $("div.errors-submit ul.flashes").find("li").remove();
 };
 
+/**
+ * Ask server to start uploads
+ */
 dgenies.run.ask_for_upload = function () {
     console.log("Ask for upload...");
     dgenies.post("/ask-upload",
@@ -459,6 +600,9 @@ dgenies.run.ask_for_upload = function () {
     );
 };
 
+/**
+ * Ping server: we still upload or wait for upload
+ */
 dgenies.run.ping_upload = function () {
     dgenies.post("/ping-upload",
         {
@@ -469,11 +613,25 @@ dgenies.run.ping_upload = function () {
     );
 };
 
+/**
+ * Check if an URL is valid
+ *
+ * @param {string} url the url to check
+ * @returns {boolean} true if valid, else false
+ */
 dgenies.run.check_url = function (url) {
     return url.startsWith("http://") || url.startsWith("https://") || url.startsWith("ftp://") ||
         url.startsWith("example://");
 };
 
+/**
+ * Start upload staff
+ *
+ * @param ftype type of file (query, target, ...)
+ * @param fname fasta name
+ * @returns {boolean} true if has uploads
+ * @private
+ */
 dgenies.run._start_upload = function(ftype, fname) {
     let has_uploads = false;
     let fasta_type = parseInt($(`select.${ftype}`).val());
@@ -494,6 +652,9 @@ dgenies.run._start_upload = function(ftype, fname) {
     return has_uploads;
 };
 
+/**
+ * Launch upload of files
+ */
 dgenies.run.start_uploads = function() {
     let has_uploads = false;
     let tab = $("#tabs .tab.active").attr("id");
@@ -519,12 +680,18 @@ dgenies.run.start_uploads = function() {
     }
 };
 
+/**
+ * Show global loading
+ */
 dgenies.run.show_global_loading = function () {
     $("button#submit").hide();
     $("button#example").hide();
     $("div#uploading-loading").show();
 };
 
+/**
+ * Submit form
+ */
 dgenies.run.submit = function () {
     dgenies.run.reset_errors();
     if (dgenies.run.valid_form()) {

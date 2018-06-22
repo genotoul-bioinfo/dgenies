@@ -3,6 +3,9 @@ if (!d3 || !d3.boxplot) {
 }
 d3.boxplot.zoom = {};
 
+/**
+ * Initialize zoom.init module
+ */
 d3.boxplot.zoom.init = function() {
     d3.boxplot.svgcontainer.on("click", d3.boxplot.zoom.click);
     d3.select(".drawcontainer")
@@ -72,6 +75,9 @@ d3.boxplot.zoom.init = function() {
 //     }
 // };
 
+/**
+ * Click event action
+ */
 d3.boxplot.zoom.click = function () {
     if (!d3.event.ctrlKey && !d3.boxplot.all_disabled) {
         let event = d3.event;
@@ -86,6 +92,9 @@ d3.boxplot.zoom.click = function () {
     }
 };
 
+/**
+ * Mousedown event action
+ */
 d3.boxplot.zoom.mousedown = function() {
     if (d3.boxplot.zoom_enabled) {
         d3.boxplot.mousetip.hide();
@@ -108,10 +117,16 @@ d3.boxplot.zoom.mousedown = function() {
     }
 };
 
+/**
+ * Mouseup event action
+ */
 d3.boxplot.zoom.mouseup = function() {
     d3.boxplot.translate_start = null;
 };
 
+/**
+ * Translate event action
+ */
 d3.boxplot.zoom.translate = function () {
     let rect = $("g.container")[0].getBoundingClientRect();
     let posX = d3.boxplot.posX,
@@ -159,7 +174,9 @@ d3.boxplot.zoom.translate = function () {
     }
 };
 
-
+/**
+ * Zoom staff
+ */
 d3.boxplot.zoom.zoom = function () {
     if (d3.event.ctrlKey) {
         d3.event.preventDefault();
@@ -209,6 +226,11 @@ d3.boxplot.zoom.zoom = function () {
     }
 };
 
+/**
+ * Restore previous scale
+ *
+ * @param transform: transform object
+ */
 d3.boxplot.zoom.restore_scale = function(transform) {
     if (d3.boxplot.zone_selected) {
         d3.boxplot.select_zone(null, null, d3.boxplot.zone_selected[0], d3.boxplot.zone_selected[1], true)
@@ -236,6 +258,14 @@ d3.boxplot.zoom.restore_scale = function(transform) {
     }
 };
 
+/**
+ * Reset scale
+ *
+ * @param {boolean} temp if true, reset it temporarily
+ * @param {function} after function to launch after staff
+ * @param {boolean} force do it even if events are disabled
+ * @returns {boolean} true if done, else false
+ */
 d3.boxplot.zoom.reset_scale = function (temp=false, after=null, force=true) {
     if (!d3.boxplot.all_disabled || force) {
         dgenies.show_loading();

@@ -3,6 +3,14 @@ if (!d3 || !d3.boxplot) {
 }
 d3.boxplot.mousetip = {};
 
+/**
+ * Mouse tip basis
+ *
+ * @param my_tip
+ * @param relative_to
+ * @param {int} x
+ * @param {int} y
+ */
 $.fn.mousetip = function(my_tip, relative_to=null, x=20, y=20) {
     
     let $this = $(this);
@@ -82,15 +90,26 @@ $.fn.mousetip = function(my_tip, relative_to=null, x=20, y=20) {
     });
 };
 
+/**
+ * Initialise tooltip
+ */
 d3.boxplot.mousetip.init = function () {
     $("#draw").append($("<span>").attr("class", "tip"));
     $("g.container").mousetip(".tip", "#draw");
 };
 
+/**
+ * Hide tooltip
+ */
 d3.boxplot.mousetip.hide = function () {
     $(".tip", "#draw").hide();
 }
 
+/**
+ * get label to show
+ * @param {string} label initial label
+ * @returns {string} new label
+ */
 d3.boxplot.mousetip.get_label = function (label) {
     if (label.startsWith("###MIX###")) {
         let parts = label.substr(10).split("###");
