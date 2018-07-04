@@ -128,11 +128,13 @@ if MODE == "webserver":
     if config.analytics_enabled:
 
         class Analytics(BaseModel):
+            id_job = CharField(max_length=50, default="unknown")
             date_created = DateTimeField()
             target_size = IntegerField()
             query_size = IntegerField(null=True)
             mail_client = CharField()
             batch_type = CharField(max_length=20)
+            status = CharField(max_length=20, default="unknown")
 
         if not Analytics.table_exists():
             Analytics.create_table()

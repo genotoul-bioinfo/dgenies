@@ -1075,6 +1075,8 @@ class JobManager:
     def prepare_data_local(self):
         """
         Prepare data locally. On standalone mode, launch job after, if success.
+        :return: True if job succeed, else False
+        :rtype: bool
         """
         with open(self.preptime_file, "w") as ptime, Job.connect():
             self.set_job_status("preparing")
@@ -1154,6 +1156,7 @@ class JobManager:
             self.set_job_status("prepared")
             if MODE != "webserver":
                 self.run_job("local")
+            return True
 
     def _end_of_prepare_dotplot(self):
         """
@@ -1269,9 +1272,11 @@ class JobManager:
                 with Job.connect():
                     job = Job.get(Job.id_job == self.id_job)
                     if job.batch_type == "local":
-                        self.prepare_data_local()
+                        success = self.prepare_data_local()
                     else:
-                        self.prepare_data_cluster(job.batch_type)
+                        success = self.prepare_data_cluster(job.batch_type)
+                    if not success:
+                        self._set_analytics_job_status("fail-prepare")
             else:
                 self.prepare_data_local()
         else:
@@ -1360,6 +1365,7 @@ class JobManager:
                                 job = Job.get(Job.id_job == self.id_job)
                                 job.status = status
                                 job.error = error
+                                self._set_analytics_job_status("fail-sort")
                             else:
                                 self.set_status_standalone(status, error)
                     if success:
@@ -1368,14 +1374,22 @@ class JobManager:
                             job = Job.get(Job.id_job == self.id_job)
                             job.status = "success"
                             job.save()
+
+                            # Analytics:
+                            self._set_analytics_job_status("success")
+                            if self.config.send_mail_status:
+                                self.send_mail_post()
+
                         else:
                             self.set_status_standalone(status)
+            elif MODE == "webserver":
+                self._set_analytics_job_status("fail-map")
         except Exception as e:
             traceback.print_exc()
             self.set_job_status("fail", "Your job has failed for an unexpected reason. Please contact the support if"
                                         "the problem persists.")
-        if MODE == "webserver" and self.config.send_mail_status:
-            self.send_mail_post()
+            if MODE == "webserver":
+                self._set_analytics_job_status("fail-map-after")
 
     def _save_analytics_data(self):
         """
@@ -1389,12 +1403,21 @@ class JobManager:
             if self.query is not None:
                 query_size = os.path.getsize(self.query.get_path())
             log = Analytics.create(
+                id_job=self.id_job,
                 date_created=datetime.now(),
                 target_size=target_size,
                 query_size=query_size,
                 mail_client=job.email,
                 batch_type=job.batch_type)
             log.save()
+
+    def _set_analytics_job_status(self, status):
+        if self.config.analytics_enabled:
+            from dgenies.database import Analytics
+            with Job.connect():
+                analytic = Analytics.get(Analytics.id_job == self.id_job)
+                analytic.status = status
+                analytic.save()
 
     def unpack_backup(self):
         """
@@ -1443,6 +1466,8 @@ class JobManager:
         :type error_set: bool
         """
         with Job.connect():
+            if self.config.analytics_enabled:
+                self._save_analytics_data()
             if success:
                 if self.backup is not None:
                     success = self.unpack_backup()
@@ -1457,12 +1482,11 @@ class JobManager:
                     job = Job.get(Job.id_job == self.id_job)
                     job.status = status
                     job.save()
-                    if self.config.analytics_enabled:
-                        self._save_analytics_data()
                 else:
                     self.set_status_standalone(status)
                     self.prepare_data_in_thread()
             else:
+                self._set_analytics_job_status("fail-getfiles")
                 if not error_set:
                     status = "fail"
                     error = "<p>Error while getting input files. Please contact the support to report the bug.</p>"
