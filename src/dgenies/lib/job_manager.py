@@ -1394,6 +1394,9 @@ class JobManager:
                 self._set_analytics_job_status("fail-map")
         except Exception as e:
             traceback.print_exc()
+            with open(self.logs, 'a') as f:
+                f.write(str(e))
+                f.write(traceback.format_exc())
             self.set_job_status("fail", "Your job has failed for an unexpected reason. Please contact the support if"
                                         "the problem persists.")
             if MODE == "webserver":
