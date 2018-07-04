@@ -1406,7 +1406,7 @@ class JobManager:
         from dgenies.database import Analytics
         with Job.connect():
             job = Job.get(Job.id_job == self.id_job)
-            target_size = os.path.getsize(self.target.get_path())
+            target_size = os.path.getsize(self.target.get_path()) if self.target is not None else 0
             query_size = None
             if self.query is not None:
                 query_size = os.path.getsize(self.query.get_path())
