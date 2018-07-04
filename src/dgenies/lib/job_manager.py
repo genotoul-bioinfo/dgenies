@@ -1421,6 +1421,12 @@ class JobManager:
             log.save()
 
     def _set_analytics_job_status(self, status):
+        """
+        Change status for a job in analytics database
+
+        :param status: new status
+        :type status: str (20)
+        """
         if self.config.analytics_enabled:
             from dgenies.database import Analytics
             with Job.connect():
