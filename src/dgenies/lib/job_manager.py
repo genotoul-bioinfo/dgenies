@@ -1189,6 +1189,8 @@ class JobManager:
         if MODE == "webserver" and self.config.send_mail_status:
             self.send_mail_post()
 
+        return True
+
     def prepare_dotplot_cluster(self, batch_system_type):
         """
         Prepare data if alignment already done: just index the fasta (if index not given), then parse the alignment
@@ -1232,9 +1234,11 @@ class JobManager:
         if success:
             if self.query is None:
                 shutil.copy(self.idx_t, self.idx_q)
-            self._end_of_prepare_dotplot()
+            return self._end_of_prepare_dotplot()
         elif MODE == "webserver" and self.config.send_mail_status:
             self.send_mail_post()
+
+        return False
 
     def prepare_dotplot_local(self):
         """
@@ -1261,7 +1265,7 @@ class JobManager:
         else:
             shutil.copy(self.idx_t, self.idx_q)
 
-        self._end_of_prepare_dotplot()
+        return self._end_of_prepare_dotplot()
 
     def prepare_data(self):
         """
@@ -1284,9 +1288,13 @@ class JobManager:
                 with Job.connect():
                     job = Job.get(Job.id_job == self.id_job)
                     if job.batch_type == "local":
-                        self.prepare_dotplot_local()
+                        success = self.prepare_dotplot_local()
                     else:
-                        self.prepare_dotplot_cluster(job.batch_type)
+                        success = self.prepare_dotplot_cluster(job.batch_type)
+                    if success:
+                        self._set_analytics_job_status("success")
+                    else:
+                        self._set_analytics_job_status("fail-all")
             else:
                 self.prepare_dotplot_local()
 
@@ -1408,7 +1416,8 @@ class JobManager:
                 target_size=target_size,
                 query_size=query_size,
                 mail_client=job.email,
-                batch_type=job.batch_type)
+                batch_type=job.batch_type,
+                job_type="new" if (self.align is None and self.backup is None) else "plot")
             log.save()
 
     def _set_analytics_job_status(self, status):

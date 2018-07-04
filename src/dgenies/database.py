@@ -134,6 +134,7 @@ if MODE == "webserver":
             query_size = IntegerField(null=True)
             mail_client = CharField()
             batch_type = CharField(max_length=20)
+            job_type = CharField(max_length=5, default="unknown")
             status = CharField(max_length=20, default="unknown")
 
         if not Analytics.table_exists():
