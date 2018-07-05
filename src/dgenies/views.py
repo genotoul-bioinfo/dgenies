@@ -198,11 +198,19 @@ def launch_analysis():
                 file_query_type = "local"
             else:
                 query_name = os.path.splitext(file_query.replace(".gz", ""))[0] if file_query_type == "local" else None
-                query_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder, file_query) \
-                    if file_query_type == "local" else file_query
-                if file_query_type == "local" and not os.path.exists(query_path):
-                    errors.append("Query file not correct!")
-                    form_pass = False
+                if file_query_type == "local":
+                    query_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder, file_query)
+                    if os.path.exists(query_path):
+                        if " " in file_query:
+                            new_query_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder,
+                                                                       file_query.replace(" ", "_"))
+                            shutil.move(query_path, new_query_path)
+                            query_path = new_query_path
+                    else:
+                        errors.append("Query file not correct!")
+                        form_pass = False
+                else:
+                    query_path = file_query
             query = Fasta(name=query_name, path=query_path, type_f=file_query_type, example=example)
         example = False
         target = None
@@ -213,12 +221,21 @@ def launch_analysis():
                 target_name = os.path.basename(target_path)
                 file_target_type = "local"
             else:
-                target_name = os.path.splitext(file_target.replace(".gz", ""))[0] if file_target_type == "local" else None
-                target_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder, file_target) \
-                    if file_target_type == "local" else file_target
-                if file_target_type == "local" and not os.path.exists(target_path):
-                    errors.append("Target file not correct!")
-                    form_pass = False
+                target_name = os.path.splitext(file_target.replace(".gz", ""))[0] if file_target_type == "local" \
+                    else None
+                if file_target_type == "local":
+                    target_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder, file_target)
+                    if os.path.exists(target_path):
+                        if " " in target_path:
+                            new_target_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder,
+                                                           file_target.replace(" ", "_"))
+                            shutil.move(target_path, new_target_path)
+                            target_path = new_target_path
+                    else:
+                        errors.append("Target file not correct!")
+                        form_pass = False
+                else:
+                    target_path = file_target
             target = Fasta(name=target_name, path=target_path, type_f=file_target_type, example=example)
 
         if alignfile is not None and alignfile != "" and backup is not None:

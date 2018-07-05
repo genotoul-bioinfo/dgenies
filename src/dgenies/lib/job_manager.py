@@ -1485,7 +1485,7 @@ class JobManager:
         :type error_set: bool
         """
         with Job.connect():
-            if self.config.analytics_enabled:
+            if MODE == "webserver" and self.config.analytics_enabled:
                 self._save_analytics_data()
             if success:
                 if self.backup is not None:
