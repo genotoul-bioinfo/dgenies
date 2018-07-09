@@ -4,6 +4,16 @@ if (!d3 || !d3.boxplot) {
 d3.boxplot.mousetip = {};
 
 /**
+ * Get color (black/white) depending on bgColor so it would be clearly seen.
+ * @param bgColor
+ * @returns {string}
+ */
+d3.boxplot.mousetip.getColorByBgColor = function(bgColor) {
+    if (!bgColor) { return ''; }
+    return (parseInt(bgColor.replace('#', ''), 16) > 0xffffff / 2) ? '#000' : '#fff';
+}
+
+/**
  * Mouse tip basis
  *
  * @param my_tip
@@ -31,8 +41,6 @@ $.fn.mousetip = function(my_tip, relative_to=null, x=20, y=20) {
 
         tip.hide();
 
-        if (!e.ctrlKey && !d3.boxplot.zone_selected) {
-
             window.setTimeout(() => {
 
                 let rect = relative_to === null ? this.getBoundingClientRect() : $(relative_to)[0].getBoundingClientRect();
@@ -52,6 +60,8 @@ $.fn.mousetip = function(my_tip, relative_to=null, x=20, y=20) {
                 let x_g = (e.pageX - posX_g) / width_c * d3.boxplot.scale,
                     y_g = d3.boxplot.scale - ((e.pageY - posY_g) / height_c * d3.boxplot.scale);
 
+                let match = d3.boxplot.mousetip.get_match(e);
+
                 let x_zone = "unknown";
                 for (let zone in d3.boxplot.x_zones) {
                     if (d3.boxplot.x_zones[zone][0] < x_g && x_g <= d3.boxplot.x_zones[zone][1]) {
@@ -67,26 +77,58 @@ $.fn.mousetip = function(my_tip, relative_to=null, x=20, y=20) {
                     }
                 }
 
-                tip.html(`<table class="drawtooltip">
+                let html = "";
+
+                if (match !== null) {
+                    html = `<strong>Query:</strong> ${match.y_zone}<br/>(${match.y_match[0]} - ${match.y_match[1]})<br/>
+                            <strong>Target:</strong> ${match.x_zone}<br/>(${match.x_match[0]} - ${match.x_match[1]})<br/>
+                            <strong>Identity:</strong> ${Math.round(match.idy * 100) / 100}`
+                }
+                else {
+                    html = `<table class="drawtooltip">
                         <tr>
                             <td class="tt-label">Query:</td><td>${y_zone}</td>
                         </tr>
                         <tr>
                             <td class="tt-label">Target:</td><td>${x_zone}</td>
                         </tr>
-                      </table>`);
+                        </table>`;
+                }
 
-                if (!hidden) {
-                    tip.show().css({
+                tip.html(html);
 
-                        top: mouseY, left: mouseX
+                let css = {top: mouseY, left: mouseX}
 
-                    });
+                if (match === null) {
+                    css.color = "#000";
+                    css.background = "#ededed";
+                }
+                else {
+                    let idy_class = "";
+                    if (match.idy >= 0.75) {
+                        idy_class = "3";
+                    }
+                    else if (match.idy >= 0.5) {
+                        idy_class = "2";
+                    }
+                    else if (match.idy >= 0.25) {
+                        idy_class = "1";
+                    }
+                    else if (match.idy >= 0) {
+                        idy_class = "0";
+                    }
+                    else {
+                        idy_class = "-1"
+                    }
+                    css.background = d3.boxplot.color_idy[d3.boxplot.color_idy_theme][idy_class];
+                    css.color = d3.boxplot.mousetip.getColorByBgColor(css.background)
+                }
+
+                if (!hidden && ((!e.ctrlKey && !d3.boxplot.zone_selected) || match !== null)) {
+                    tip.show().css(css);
                 }
 
             }, 0);
-
-        }
     });
 };
 
@@ -119,4 +161,79 @@ d3.boxplot.mousetip.get_label = function (label) {
         }
     }
     return label;
+};
+
+/**
+ * Get match override by mouse cursor
+ *
+ * @param e mouse event
+ * @returns {{x_zone: string, y_zone: string, x_match: float[], y_match: float[], idy: float}}
+ */
+d3.boxplot.mousetip.get_match = function(e) {
+    let rect = $("g.container")[0].getBoundingClientRect();
+    let posX = rect.left + window.scrollX,
+        posY = rect.top + window.scrollY,
+        width_c = rect.width,
+        height_c = rect.height;
+    let c_x = (e.pageX - posX) / width_c * d3.boxplot.scale,
+        c_y = d3.boxplot.scale - ((e.pageY - posY) / height_c * d3.boxplot.scale);
+    c_x = c_x / d3.boxplot.scale * d3.boxplot.x_len;
+    c_y = c_y / d3.boxplot.scale * d3.boxplot.y_len;
+    let error_x = d3.boxplot.content_lines_width / d3.boxplot.scale * d3.boxplot.x_len;
+    let error_y = d3.boxplot.content_lines_width / d3.boxplot.scale * d3.boxplot.y_len;
+    // let error_x = 0,
+    //     error_y = 0;
+    let match = null;
+    let found = false;
+    for (let i=3; i>=0; i--) {
+        let j = 0;
+        while(!found && j < d3.boxplot.lines[i].length) {
+            let line = d3.boxplot.lines[i][j];
+            //console.log(c_x, c_y, line[0],line[1],line[2],line[3]);
+            let x_a = Math.min(line[0], line[1]);
+            let x_b = Math.max(line[0], line[1]);
+            let y_a = Math.min(line[2], line[3]);
+            let y_b = Math.max(line[2], line[3]);
+            if (x_a <= c_x && c_x <= x_b && y_a <= c_y && c_y <= y_b) {
+                let m = (y_b - y_a) / (x_b - x_a);
+                let p = y_a - (m * x_a);
+                let y_xmouse = (m * c_x) + p;
+                if (y_xmouse - error_y <= c_y && c_y <= y_xmouse + error_y) {
+                    match = line;
+                    found = true;
+                }
+            }
+            j++;
+        }
+    }
+    if (match !== null) {
+        let y_zone = match[5];
+        let x_zone = match[6];
+        let y_min = null;
+        let y_max = null;
+        if (y_zone in d3.boxplot.y_zones) {
+            let cy_min = d3.boxplot.y_zones[y_zone][0] / d3.boxplot.scale * d3.boxplot.y_len;
+            y_min = d3.boxplot.get_human_readable_size(match[2] - cy_min, 3, "&nbsp;");
+            y_max = d3.boxplot.get_human_readable_size(match[3] - cy_min, 3, "&nbsp;");
+        }
+        let x_min = null;
+        let x_max = null;
+        if (x_zone in d3.boxplot.x_zones) {
+            let cx_min = d3.boxplot.x_zones[x_zone][0] / d3.boxplot.scale * d3.boxplot.x_len;
+            x_min = d3.boxplot.get_human_readable_size(match[0] - cx_min, 3, "&nbsp;");
+            x_max = d3.boxplot.get_human_readable_size(match[1] - cx_min, 3, "&nbsp;");
+        }
+        console.log("MATCH:");
+        console.log(y_zone, y_min, y_max);
+        console.log(x_zone, x_min, x_max);
+        console.log(match[4]);
+        return {
+            x_zone: x_zone,
+            y_zone: y_zone,
+            x_match: [x_min, x_max],
+            y_match: [y_min, y_max],
+            idy: match[4]
+        }
+    }
+    return null;
 }

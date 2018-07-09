@@ -25,7 +25,13 @@ Or, you can select the zone by selecting a query and a target in the dropdown me
 
 To come back to the initial view, click on the icon at the top right of the dotplot or press ESC.
 
-### (3) Export
+### (3) Matches details
+
+For each match, you can view positions on query and on target and the precise identity value by placing mouse cursor over it.
+
+Due to technical limits, it doesn't work for too small matches. You can zoom to make it working for them.
+
+### (4) Export
 
 Several export options are available:
 
@@ -41,7 +47,7 @@ And, if you sorted the dotplot:
 * Download the Fasta query file with contigs in the same order as in the dotplot.
 * Download all contigs of the query assembled like the chromosomes of the target. We take the diagonal match line, and for all contigs that match the same chromosome, we stick them together, separated by a 100-N block.
 
-### (4) Color scheme
+### (5) Color scheme
 
 You can change the default color scheme. Five other color schemes are available:
 
@@ -53,40 +59,40 @@ You can change the default color scheme. Five other color schemes are available:
 
 To change color scheme, click on the legend.
 
-### (5) Match size filtering
+### (6) Match size filtering
 
 You can remove too small matches by moving the slider. By increments, it remove matches with size of 0.001 to 0.2% of the dotplot width. Too small matches are also removed by the `Remove noise` button (see below).
 
-### (6) Match identity filtering
+### (7) Match identity filtering
 
 Set the minimal identity to show. All matches with a lower identity value will be hidden.
 
-### (7) Strong precision
+### (8) Strong precision
 
 When checked, the strong precision check-box reduces match borders removing small matches from the graphical panel, often showing gaps between non contiguous matches.
 
-### (8) Line breadth
+### (9) Line breadth
 
 Change the match lines thickness with the slider.
 
-### (9) Chrom. border breadth
+### (10) Chrom. border breadth
 
 Change the visibility of the chromosomes borders with the slider.
 
-### (10) Sort
+### (11) Sort
 
 You can sort (or unsort) contigs by clicking on the button. Contigs of the query will be sorted according to the reference. It will take few seconds.
 
 How it works? For each contig of the query we search the region which have the biggest matches with the target and store these coordinates. Then, we sort contigs by their associated coordinates.
 
-### (11) Hide noise
+### (12) Hide noise
 
 To remove noise. A match is considered noise if its size is small and its size frequency is quite high. Therefore we group matches by size bins, the number of bins corresponds to one tenth of the number of alignments, the bins are scanned in increasing size order to find the most represented one and from this one the one corresponding to one percent of its count is searched. All the alignments in bins smaller in size than this one are considered noise. It will take few seconds.
 
-### (12) Similarity summary
+### (13) Similarity summary
 
 To ease dot plot comparison, clicking the summary button generates a bar graph presenting the reference similarity profile, meaning the sums of the projections of the matches on the reference per similarity category divided by the total reference length. This graph is produced after sorting the query along the reference, removing included matches and noise filtering; result not shown on the graphical panel. It gives a realistic view of the overall reference and query similarity which is often not very precisely measured through visual inspection.
 
-### (13) Delete job
+### (14) Delete job
 
 By clicking on the button, your job will be definitively removed on the server. Be careful, this operation can not be undone!

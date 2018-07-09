@@ -277,6 +277,29 @@ d3.boxplot.select_zone = function (x=null, y=null, x_zone=null, y_zone=null, for
 };
 
 /**
+ * Get human readable size in Kb or Mb for a number in bases
+ *
+ * @param {int} nbases size in bases
+ * @param {int} precision unit to use (auto: select according to number size)
+ * @param {string} space space before unit (space or non-breaking space for example)
+ * @returns {string} human readable size
+ */
+d3.boxplot.get_human_readable_size = function (nbases, precision=1, space=" ") {
+    let lab = "";
+    let prec = parseInt("1" + "0".repeat(precision))
+    if (nbases > 1000000) {
+        lab = (Math.round(nbases / (1000000 / prec)) / prec).toString() + space + "M";
+    }
+    else if (nbases > 1000) {
+        lab = (Math.round(nbases / (1000 / prec)) / prec).toString() + space + "K";
+    }
+    else {
+        lab = Math.round(nbases).toString();
+    }
+    return lab;
+};
+
+/**
  * Draw left axis
  *
  * @param {int} y_max max value of y on the Y axis
@@ -305,16 +328,7 @@ d3.boxplot.draw_left_axis = function (y_max, y_min = 0) {
         let y = axis_length / 10 * i;
         let y_t = y_min + y_size / 10 * i;
         if (y_t >= 0 && y_t <= d3.boxplot.y_len) {
-            let y_lab = "";
-            if (y_t > 1000000) {
-                y_lab = (Math.round(y_t / 100000) / 10).toString() + " M";
-            }
-            else if (y_t > 1000) {
-                y_lab = (Math.round(y_t / 100) / 10).toString() + " K";
-            }
-            else {
-                y_lab = Math.round(y_t).toString();
-            }
+            let y_lab = d3.boxplot.get_human_readable_size(y_t);
             container_left.append("line")
                 .attr("x1", y)
                 .attr("y1", 15)
@@ -361,16 +375,7 @@ d3.boxplot.draw_bottom_axis = function (x_max, x_min = 0) {
         let x = axis_length / 10 * i;
         let x_t = x_min + x_size / 10 * i;
         if (x_t >= 0 && x_t <= d3.boxplot.x_len) {
-            let x_lab = "";
-            if (x_t >= 1000000) {
-                x_lab = (Math.round(x_t / 100000) / 10).toString() + " M";
-            }
-            else if (x_t >= 1000) {
-                x_lab = (Math.round(x_t / 100) / 10).toString() + " K";
-            }
-            else {
-                x_lab = Math.round(x_t).toString()
-            }
+            let x_lab = d3.boxplot.get_human_readable_size(x_t);
             svg_bottom.append("line")
                 .attr("x1", x)
                 .attr("y1", 0)
@@ -883,6 +888,7 @@ d3.boxplot.draw_lines = function (lines=d3.boxplot.lines, x_len=d3.boxplot.x_len
     for (let i=0; i <4; i++) {
         d3.boxplot.__draw_idy_lines(i.toString(), lines, x_len, y_len)
     }
+
     d3.boxplot.events.filter_size(d3.boxplot.min_size);
 };
 
