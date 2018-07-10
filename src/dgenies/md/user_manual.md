@@ -29,7 +29,7 @@ To come back to the initial view, click on the icon at the top right of the dotp
 
 For each match, you can view positions on query and on target and the precise identity value by placing mouse cursor over it.
 
-Due to technical limits, it doesn't work for too small matches. You can zoom to make it working for them.
+Due to technical limits, it doesn't work for too small matches. You can zoom to make it work for them.
 
 ### (4) Export
 
