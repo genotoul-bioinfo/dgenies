@@ -1410,9 +1410,10 @@ class JobManager:
         with Job.connect():
             job = Job.get(Job.id_job == self.id_job)
             target_size = os.path.getsize(self.target.get_path()) if (self.target is not None and self.target.get_type()
-                                                                      == "local") else 0
+                                                                      == "local" and
+                                                                      os.path.exists(self.target.get_path())) else 0
             query_size = None
-            if self.query is not None and self.query.get_type() == "local":
+            if self.query is not None and self.query.get_type() == "local" and os.path.exists(self.query.get_path()):
                 query_size = os.path.getsize(self.query.get_path())
             log = Analytics.create(
                 id_job=self.id_job,
