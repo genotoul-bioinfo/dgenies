@@ -1431,7 +1431,7 @@ class JobManager:
         :param status: new status
         :type status: str (20)
         """
-        if self.config.analytics_enabled:
+        if self.config.analytics_enabled and MODE == "webserver":
             from dgenies.database import Analytics
             with Job.connect():
                 analytic = Analytics.get(Analytics.id_job == self.id_job)

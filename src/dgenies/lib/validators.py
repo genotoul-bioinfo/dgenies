@@ -12,6 +12,7 @@ Returns True if file is valid, else False
 
 from Bio import AlignIO
 import shutil, os
+import traceback
 
 
 def paf(in_file):
@@ -28,9 +29,9 @@ def paf(in_file):
             n = 0
             for line in aln:
                 parts = line.rstrip().split("\t")
-                if len(parts) < 12:
+                if len(parts) < 11:
                     return False
-                for i in (1, 2, 3, 6, 7, 8, 9, 10, 11):
+                for i in (1, 2, 3, 6, 7, 8, 9, 10):
                     if not parts[i].isdigit():
                         return False
                 if parts[4] not in ("+", "-"):
@@ -39,9 +40,10 @@ def paf(in_file):
                 if n == 1000:
                     break
     except:
+        traceback.print_exc()
         return False
     else:
-        return  True
+        return True
 
 
 def _filter_maf(in_file):

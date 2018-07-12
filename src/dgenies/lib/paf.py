@@ -264,7 +264,7 @@ class Paf:
             max_index = counts.index(max_value)
             limit_index = -1
             for i in range(max_index, len(counts)):
-                if counts[i] < max_value / 100:
+                if counts[i] < max_value / 50:
                     limit_index = i
                     break
             if limit_index > -1:

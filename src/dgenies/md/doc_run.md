@@ -63,6 +63,14 @@ Max file size: {{size}} ({{size_unc}} once uncompressed)
 
 {% set puce=puce+1 %}
 
+#### ({{puce}}) Aligner
+
+You can choose aligner to use for mapping. By default, it's minimap2.
+
+If your job fails due to memory limit reached, you can try mashmap. It uses less resources. But is only suitable for highly similar genomes as it only detect matches with more than 75% of identity.
+
+{% set puce=puce+1 %}
+
 ### Plot alignment mode
 
 Dot plot an existing alignment file.

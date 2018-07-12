@@ -85,8 +85,16 @@ def parse_args():
                              help="Id (name) of the job to delete from the gallery")
     gallery_del.add_argument("-n", "--name", type=str, required=False,
                              help="Name of the job shown in the gallery")
-    gallery_del.add_argument("--remove-pict", help="Clear crons", type=bool, const=True, nargs="?", required=False,
-                       default=False)
+    gallery_del.add_argument("--remove-pict", help="Remove picture file", action='store_const',
+                              const=True, default=False)
+
+    # Run message
+    inforun = subparsers.add_parser("inforun", help="Set a message at the top of the run page")
+    inforun.set_defaults(which="inforun")
+    inforun.add_argument("-m", "--message", type=str, required=False, help="Message to add")
+    inforun.add_argument("-c", "--clear", help="Remove message", action='store_const',
+                         const=True, default=False)
+    #inforun.add_argument("")
 
     args = parser.parse_args()
 
