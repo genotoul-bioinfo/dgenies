@@ -28,7 +28,7 @@
     </style>
     {% if inforun is not none %}
         <div class="inforun {{ inforun.type }}">
-            {{ inforun.message }}
+            {{ inforun.message | safe }}
         </div>
     {% endif %}
     <form id="submit_minimap" method=post action="#">
