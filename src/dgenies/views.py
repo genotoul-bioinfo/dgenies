@@ -1,12 +1,14 @@
 from dgenies import app, app_title, app_folder, config_reader, mailer, APP_DATA, MODE, DEBUG, VERSION
 
 import os
+import sys
 import time
 import datetime
 import shutil
 import re
 import threading
 import traceback
+import json
 from flask import render_template, request, url_for, jsonify, Response, abort, send_file, Markup
 from pathlib import Path
 from dgenies.lib.paf import Paf
@@ -61,6 +63,15 @@ def run():
     """
     Run page
     """
+    inforun = None
+    inforun_file = os.path.join(config_reader.config_dir, ".inforun")
+    if os.path.exists(inforun_file):
+        try:
+            with open(inforun_file, "r") as info:
+                inforun = json.loads(info.read())
+        except json.JSONDecodeError:
+            print("Unable to parse inforun file. Ignoring it.", file=sys.stderr)
+            pass
     tools = Tools().tools
     tools_names = sorted(list(tools.keys()), key=lambda x: (tools[x].order, tools[x].name))
     tools_ava = {}
@@ -89,7 +100,7 @@ def run():
                            example=config_reader.example_target != "",
                            target=os.path.basename(config_reader.example_target),
                            query=os.path.basename(config_reader.example_query), tools_names=tools_names, tools=tools,
-                           tools_ava=tools_ava, version=VERSION)
+                           tools_ava=tools_ava, version=VERSION, inforun=inforun)
 
 
 @app.route("/run-test", methods=['GET'])

@@ -464,6 +464,33 @@ div.navbar {
 
 /* Run form: */
 
+div.inforun {
+    padding: 10px;
+    font-weight: bold;
+    border: 2px solid;
+    border-top: 0 !important;
+}
+
+div.inforun.info {
+    background: #51ccff;
+    border-color: #084863;
+}
+
+div.inforun.warn {
+    background: #ff7d06;
+    border-color: #7a3502;
+}
+
+div.inforun.critical {
+    background: #ff3e31;
+    border-color: #80221b;
+}
+
+div.inforun.success {
+    background: #32e04d;
+    border-color: #13561e;
+}
+
 div.submit-form table td {
     padding-bottom: 8px;
     vertical-align: bottom;

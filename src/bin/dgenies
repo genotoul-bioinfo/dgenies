@@ -12,6 +12,7 @@ import os
 import argparse
 import webbrowser
 import threading
+import json
 from glob import glob
 import time
 from dgenies.config_reader import AppConfigReader
@@ -91,10 +92,11 @@ def parse_args():
     # Run message
     inforun = subparsers.add_parser("inforun", help="Set a message at the top of the run page")
     inforun.set_defaults(which="inforun")
-    inforun.add_argument("-m", "--message", type=str, required=False, help="Message to add")
+    inforun.add_argument("-m", "--message", type=str, help="Message to add")
+    inforun.add_argument("-t", "--type", type=str, choices=["info", "warn", "critical", "success"],
+                         help="Type of message")
     inforun.add_argument("-c", "--clear", help="Remove message", action='store_const',
                          const=True, default=False)
-    #inforun.add_argument("")
 
     args = parser.parse_args()
 
@@ -107,6 +109,8 @@ def parse_args():
         return "clear", args
     if args.subparser_name == "gallery":
         return "gallery_" + args.which, args
+    if args.subparser_name == "inforun":
+        return "inforun", args
     else:
         parser.print_help()
         print("\nYou must specify the command to launch")
@@ -316,6 +320,21 @@ def del_from_gallery_by_name(name):
     return list_pictures
 
 
+def set_inforun_message(message, type):
+    inforun_file = os.path.join(config.config_dir, ".inforun")
+    with open(inforun_file, "w") as info:
+        info.write(json.dumps({
+            "message": message,
+            "type": type
+        }))
+
+
+def clear_inforun():
+    inforun_file = os.path.join(config.config_dir, ".inforun")
+    if os.path.exists(inforun_file):
+        os.remove(inforun_file)
+
+
 if __name__ == "__main__":
     command, args = parse_args()
     if command == "run":
@@ -346,3 +365,14 @@ if __name__ == "__main__":
                     os.remove(os.path.join(config.app_data, "gallery", picture))
                 except FileNotFoundError:
                     pass
+    elif command == "inforun":
+        if args.clear:
+            clear_inforun()
+        else:
+            if args.message is None:
+                print("-m/--message option is required if -c/--clear not given")
+                exit(1)
+            if args.type is None:
+                print("-t/--type option is required if -c/--clear not given")
+                exit(1)
+            set_inforun_message(args.message, args.type)
