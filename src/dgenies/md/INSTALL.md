@@ -406,6 +406,7 @@ Just define 2 functions:
 * Add the first one in the `src/dgenies/lib/validators.py` file of the D-Genies repository. It takes only one argument: the input file. It checks if the file format is correct and returns True in this case, else it returns False. The function name must be the same as the expected input file extension.  
 * Add the second one in the `src/dgenies/lib/parsers.py` file of the D-Genies repository. It takes two arguments: the input and the output file. It convert the input file into a valid PAF file. The function name must be same as the previous one.
 
+
 Maintenance
 -----------
 
@@ -424,6 +425,19 @@ The `dgenies` command can be used to do some maintenance staff.
 **Clear crons (webserver mode):**
 
     dgenies clear -c
+    
+**Display message on run form:**
+
+You can display a message at the top of the run form. It can be used to add extra informations for user, or for prevent him for problem or for a maintenance on your instance.
+
+    dgenies inforun -m "message to display" -t [warn, critical, info, success]
+    
+`-m <message>`: message to display. Html allowed.  
+`-t <type>`: type of message: warn (orange background), critical (red background), info (blue background) or success (green background).
+
+Remove the message by:
+
+    dgenies inforun -c
 
 Gallery
 -------
