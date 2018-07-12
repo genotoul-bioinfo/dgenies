@@ -18,7 +18,7 @@ me = singleton.SingleInstance()
 config_reader = AppConfigReader()
 
 # Add DRMAA lib in env:
-if config_reader.drmaa_lib_path is not None:
+if config_reader.drmaa_lib_path is not None and config_reader.batch_system_type != "local":
     os.environ["DRMAA_LIBRARY_PATH"] = config_reader.drmaa_lib_path
     try:
         import drmaa
