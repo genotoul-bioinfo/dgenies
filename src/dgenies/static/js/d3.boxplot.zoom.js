@@ -15,80 +15,13 @@ d3.boxplot.zoom.init = function() {
     d3.boxplot.svgcontainer.on("wheel", d3.boxplot.zoom.zoom);
 };
 
-// d3.boxplot.zoom.zoom = function () {
-//     console.log(d3.event);
-//     if (d3.event.ctrlKey) {
-//         d3.event.preventDefault();
-//         let rect = $("g.container")[0].getBoundingClientRect();
-//         let posX = rect.left,
-//             posY = rect.top,
-//             width_c = rect.width,
-//             height_c = rect.height;
-//         let cursor_x = (d3.event.pageX - posX) / width_c * d3.boxplot.x_len,
-//             cursor_y = (d3.event.pageY - posY) / height_c * d3.boxplot.y_len;
-//         console.log(cursor_x, cursor_y);
-//         let zoom_f = 1.2;
-//         let old_transform = d3.boxplot.container.attr("transform")
-//         if (old_transform !== null) {
-//             let search_tr = old_transform.match(/translate\(([-\de.]+),([-\de.]+)\)/);
-//             let search_sc = old_transform.match(/scale\(([-\de.]+)(,[-\de.]+)?\)/);
-//             old_transform = {
-//                 "scale": parseFloat(search_sc[1]),
-//                 "translate": [parseFloat(search_tr[1]), parseFloat(search_tr[2])]
-//             }
-//         }
-//         else {
-//             old_transform = {
-//                 "scale": 1,
-//                 "translate": [0, 0]
-//             }
-//         }
-//         console.log(old_transform);
-//
-//         //Cursor localisation on picture with old zoom:
-//         let cursor_old = [(cursor_x - old_transform["translate"][0]), (cursor_y - old_transform["translate"][1])]; //x0,y0 bleu (visible)
-//         console.log([(cursor_x - old_transform["translate"][0]), (cursor_y - old_transform["translate"][1])]);
-//         console.log("c_old", cursor_old);
-//         let new_scale,
-//             cursor_new;
-//         if (d3.event.deltaY < 0) {
-//             new_scale = old_transform["scale"] * zoom_f;
-//             cursor_new = [cursor_old[0] * zoom_f, cursor_old[1] * zoom_f];
-//         }
-//         else {
-//             new_scale = old_transform["scale"] / zoom_f;
-//             if (new_scale < 1) {
-//                 new_scale = 1;
-//                 zoom_f = old_transform["scale"] / new_scale;
-//             }
-//             cursor_new = [cursor_old[0] / zoom_f, cursor_old[1] / zoom_f];
-//         }
-//
-//         let new_transform = vsprintf("translate(%f,%f) scale(%f)",
-//             [old_transform["translate"][0] - (cursor_new[0] - cursor_old[0]),
-//              old_transform["translate"][1] - (cursor_new[1] - cursor_old[1]),
-//              new_scale]);
-//         d3.boxplot.container.attr("transform", new_transform);
-//
-//         //Correct lines stroke width to be not impacted by the zoom:
-//         d3.selectAll("line.content-lines").attr("stroke-width", (d3.boxplot.x_len / 400) / new_scale);
-//     }
-// };
-
 /**
  * Click event action
  */
 d3.boxplot.zoom.click = function () {
     if (!d3.event.ctrlKey && !d3.boxplot.all_disabled) {
-        let event = d3.event;
-        let rect = $("g.container")[0].getBoundingClientRect();
-        let posX = rect.left + window.scrollX,
-            posY = rect.top + window.scrollY,
-            width_c = rect.width,
-            height_c = rect.height;
-        let x = (event.pageX - posX) / width_c * d3.boxplot.scale,
-            y = d3.boxplot.scale - ((event.pageY - posY) / height_c * d3.boxplot.scale);
-        d3.boxplot.select_zone(x, y);
+        let cursor = d3.boxplot.zoom._cursor_pos();
+        d3.boxplot.select_zone(cursor[0], cursor[1]);
     }
 };
 
@@ -175,6 +108,27 @@ d3.boxplot.zoom.translate = function () {
 };
 
 /**
+ * Get cursor position
+ *
+ * @param {DOMRect} rect if given, dont get it from DOM
+ * @returns {*[]} x and y position, plus the container rect object at third position
+ * @private
+ */
+d3.boxplot.zoom._cursor_pos = function(rect=null) {
+    let event = d3.event;
+    if (rect === null) {
+        rect = $("g.container")[0].getBoundingClientRect();
+    }
+    let posX = rect.left + window.scrollX,
+        posY = rect.top + window.scrollY,
+        width_c = rect.width,
+        height_c = rect.height;
+    let x = (event.pageX - posX) / width_c * d3.boxplot.scale,
+        y = d3.boxplot.scale - ((event.pageY - posY) / height_c * d3.boxplot.scale);
+    return [x, y, rect];
+};
+
+/**
  * Zoom staff
  */
 d3.boxplot.zoom.zoom = function () {
@@ -182,6 +136,7 @@ d3.boxplot.zoom.zoom = function () {
         d3.event.preventDefault();
         d3.boxplot.mousetip.hide();
         if (d3.boxplot.zoom_enabled) {
+            let cursor = d3.boxplot.zoom._cursor_pos();
             let zoom_f = 1.2;
             let old_transform = d3.boxplot.container.attr("transform");
             if (old_transform !== null) {
@@ -199,19 +154,36 @@ d3.boxplot.zoom.zoom = function () {
                 }
             }
             let new_scale;
+            let new_rect = cursor[2];
             if (d3.event.deltaY < 0) {
                 new_scale = old_transform["scale"] * zoom_f;
+                new_rect["width"] *= zoom_f;
+                new_rect["height"] *= zoom_f;
             }
             else {
                 new_scale = old_transform["scale"] / zoom_f;
+                let scale_ratio = zoom_f;
                 if (new_scale < 1) {
                     new_scale = 1;
+                    scale_ratio = old_transform["scale"]
                 }
+                new_rect["width"] /= scale_ratio;
+                new_rect["height"] /= scale_ratio;
             }
-            let new_transform = `translate(${old_transform["translate"][0]},${old_transform["translate"][1]}) 
+
+            new_rect["bottom"] = new_rect["y"] + new_rect["height"];
+            new_rect["right"] = new_rect["x"] + new_rect["width"];
+
+            let new_cursor = d3.boxplot.zoom._cursor_pos(new_rect);
+            let x_trans = (new_cursor[0] - cursor[0]) * new_scale;
+            let y_trans = (new_cursor[1] - cursor[1]) * new_scale;
+
+            let new_transform = `translate(${old_transform["translate"][0]+x_trans},${old_transform["translate"][1]-y_trans}) 
             scale(${new_scale})`;
             d3.boxplot.container.attr("transform", new_transform);
             d3.boxplot.zoom_scale_lines = new_scale;
+
+            d3.boxplot.zoom._cursor_pos();
 
             //Correct lines stroke width to be not impacted by the zoom:
             d3.selectAll("path.content-lines").attr("stroke-width", d3.boxplot.content_lines_width / new_scale);
