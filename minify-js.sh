@@ -23,3 +23,5 @@ babel.js -o jquery.fileupload.min.js --compact --minified jquery.fileupload.js j
 babel.js -o dgenies.run.min.js --compact --minified dgenies.run.js
 babel.js -o dgenies.status.min.js --compact --minified dgenies.status.js
 babel.js -o dgenies.documentation.min.js --compact --minified dgenies.documentation.js
+
+babel.js -o dgenies-offline-result.min.js --compact --minified jquery-3.2.1.min.js popper.min.js bootstrap.min.js bootstrap-notify.min.js jquery-ui.min.js jquery.cookie-1.4.1.min.js dgenies.min.js chosen.jquery.min.js FileSaver.min.js canvg.min.js d3.min.js dgenies.result.min.js BootstrapMenu.min.js

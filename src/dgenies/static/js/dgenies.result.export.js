@@ -246,6 +246,37 @@ dgenies.result.export.export_query_as_reference_fasta_standalone = function () {
 };
 
 /**
+ * Download offline viewer
+ */
+dgenies.result.export.export_offline_viewer = function() {
+    dgenies.show_loading("Building file...", 180);
+    window.setTimeout(() => {
+        dgenies.post(`/summary/${dgenies.result.id_res}`,
+            {},
+            function (data) {
+                dgenies.hide_loading();
+                if (data["success"]) {
+                    if (data["status"] === "done") {
+                        let export_div = $("div#export-pict");
+                        export_div.html("");
+                        export_div.append($("<a>").attr("href", `/viewer/${dgenies.result.id_res}`)
+                            .attr("download", dgenies.result.id_res + ".html").attr("id", "my-download")
+                            .text("download"));
+                        dgenies.hide_loading();
+                        document.getElementById('my-download').click();
+                    }
+                    else if (data["status"] === "waiting") {
+                        dgenies.result.export.export_offline_viewer();
+                    }
+                }
+                else {
+                    dgenies.notify(data["message"] || "An error occurred! Please contact us to report the bug", "danger");
+                }
+            })
+    }, 0);
+};
+
+/**
  * Manage exports
  */
 dgenies.result.export.export = function () {
@@ -290,6 +321,10 @@ dgenies.result.export.export = function () {
             }
             else if (selection === 9) {
                 dgenies.result.export.export_backup_file();
+                async = true;
+            }
+            else if (selection === 10) {
+                dgenies.result.export.export_offline_viewer();
                 async = true;
             }
             else

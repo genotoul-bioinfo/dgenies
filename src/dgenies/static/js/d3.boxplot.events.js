@@ -3,6 +3,20 @@ if (!d3 || !d3.boxplot) {
 }
 d3.boxplot.events = {};
 
+d3.boxplot.events.context_menu = {
+    actions: [{
+        name: 'Export SVG',
+        onClick: dgenies.result.export.export_svg
+    },{
+        name: 'Export PNG',
+        onClick: dgenies.result.export.export_png
+    },{
+        name: 'Reverse query',
+        isShown: function() {return d3.boxplot.name_x !== d3.boxplot.name_y},
+        onClick: dgenies.result.controls.launch_reverse_contig
+    }]
+};
+
 /**
  * Initialise events
  */
@@ -39,19 +53,7 @@ d3.boxplot.events.init_context_menu = function () {
         d3.boxplot.query_selected = d3.boxplot.select_query(y);
     });
 
-    let menu = new BootstrapMenu("svg.svgcontainer", {
-        actions: [{
-            name: 'Export SVG',
-            onClick: dgenies.result.export.export_svg
-        },{
-            name: 'Export PNG',
-            onClick: dgenies.result.export.export_png
-        },{
-            name: 'Reverse query',
-            isShown: function() {return d3.boxplot.name_x !== d3.boxplot.name_y},
-            onClick: dgenies.result.controls.launch_reverse_contig
-        }]
-    });
+    let menu = new BootstrapMenu("svg.svgcontainer", d3.boxplot.events.context_menu);
 };
 
 /**

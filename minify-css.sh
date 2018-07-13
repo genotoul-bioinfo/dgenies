@@ -16,3 +16,4 @@ fi
 cd src/dgenies/static/css
 
 index.js -o dgenies.min.css dgenies.css
+index.js -o dgenies-offline-result.min.css chosen.min.css animate.css jquery-ui.min.css bootstrap.min.css bootstrap-theme.min.css dgenies.min.css

@@ -924,6 +924,33 @@ def get_filter_out_target(id_res):
     return get_filter_out(id_res=id_res, type_f="target")
 
 
+@app.route('/viewer/<id_res>')
+def get_viewer_html(id_res):
+    """
+    Get HTML file with offline interactive viewer inside
+
+    :param id_res: job id
+    :type id_res: str
+    """
+    paf = os.path.join(APP_DATA, id_res, "map.paf")
+    idx1 = os.path.join(APP_DATA, id_res, "query.idx")
+    idx2 = os.path.join(APP_DATA, id_res, "target.idx")
+
+    paf = Paf(paf, idx1, idx2)
+
+    if paf.parsed:
+        res = paf.get_d3js_data()
+        res["success"] = True
+        percents = paf.get_summary_stats()
+        with open(os.path.join(app_folder, "static", "js", "dgenies-offline-result.min.js"), "r") as js_min:
+            js = js_min.read()
+        with open(os.path.join(app_folder, "static", "css", "dgenies-offline-result.min.css"), "r") as css_min:
+            css = css_min.read()
+        return render_template("map_offline.html", json=json.dumps(res), version=VERSION, js=js, css=css,
+                               percents=percents)
+    return abort(403)
+
+
 @app.route("/ask-upload", methods=['POST'])
 def ask_upload():
     """
