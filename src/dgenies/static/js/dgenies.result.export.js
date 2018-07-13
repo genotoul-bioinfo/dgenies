@@ -174,7 +174,7 @@ dgenies.result.export.export_backup_file = function() {
         let export_div = $("div#export-pict");
         export_div.html("");
         export_div.append($("<a>").attr("href", `/backup/${dgenies.result.id_res}`)
-            .attr("download", dgenies.result.id_res + ".tar").attr("id", "my-download")
+            .attr("download", d3.boxplot.name_y + "_" + d3.boxplot.name_x + "_" + dgenies.result.id_res + ".tar").attr("id", "my-download")
             .text("download"));
         dgenies.hide_loading();
         document.getElementById('my-download').click();
@@ -260,7 +260,8 @@ dgenies.result.export.export_offline_viewer = function() {
                         let export_div = $("div#export-pict");
                         export_div.html("");
                         export_div.append($("<a>").attr("href", `/viewer/${dgenies.result.id_res}`)
-                            .attr("download", dgenies.result.id_res + ".html").attr("id", "my-download")
+                            .attr("download", d3.boxplot.name_y + "_" + d3.boxplot.name_x + "_" +
+                                dgenies.result.id_res + ".html").attr("id", "my-download")
                             .text("download"));
                         dgenies.hide_loading();
                         document.getElementById('my-download').click();
