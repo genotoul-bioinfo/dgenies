@@ -16,7 +16,7 @@ def parse_js_file(module_name, file_path, js_writer, separator):
         js_writer.write(module_name + "\n")
         js_writer.write(len(module_name) * separator + "\n\n")
         js_code = js_f.read()
-        functions_doc = re.findall(r"/\*\*[^/]+\*/\n([^\n/]+) = function", js_code)
+        functions_doc = re.findall(r"/\*\*.*?\*/\n([^\n/]+) = function", js_code, re.DOTALL)
         functions_doc.sort(key=lambda x: "0000000" if x.rsplit(".", 1)[-1] == "init" else
                            (("zzzzzzzzzz" + x) if x.rsplit(".", 1)[-1].startswith("_") else x))
         for func in functions_doc:
@@ -69,6 +69,26 @@ def build_rst_files():
     if os.path.exists("javascript"):
         shutil.rmtree("javascript")
     os.mkdir("javascript")
+
+    if os.path.exists("javascript/js"):
+        shutil.rmtree("javascript/js")
+    os.mkdir("javascript/js")
+
+    app_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+    js_dir = os.path.join(app_dir, "src", "dgenies", "static", "js")
+    js_files =  set()
+    for package in PACKAGES:
+        for file in glob(os.path.join(js_dir, package + "*")):
+            is_excl = False
+            for excl in EXCLUDES:
+                if os.path.basename(file).startswith(excl):
+                    is_excl = True
+                    break
+            if not is_excl and not file.endswith(".min.js"):
+                js_files.add(file)
+
+    for js_file in js_files:
+        os.symlink(js_file, os.path.join("javascript", "js", os.path.basename(js_file)))
 
     print("Parse javascript files...")
     js_files = get_modules_list()

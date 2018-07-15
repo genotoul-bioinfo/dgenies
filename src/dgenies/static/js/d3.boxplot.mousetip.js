@@ -5,6 +5,7 @@ d3.boxplot.mousetip = {};
 
 /**
  * Get color (black/white) depending on bgColor so it would be clearly seen.
+ *
  * @param bgColor
  * @returns {string}
  */
@@ -22,21 +23,21 @@ d3.boxplot.mousetip.getColorByBgColor = function(bgColor) {
  * @param {int} y
  */
 $.fn.mousetip = function(my_tip, relative_to=null, x=20, y=20) {
-    
+
     let $this = $(this);
     let tip = relative_to === null ? $(my_tip, this) : $(my_tip, relative_to);
     let hidden = true;
-    
+
     $this.hover(function(e) {
         if (!e.ctrlKey) {
             tip.show();
             hidden = false;
         }
-    
+
     }, function() {
         hidden = true;
         tip.hide().removeAttr('style');
-    
+
     }).mousemove(function(e) {
 
         tip.hide();
@@ -149,6 +150,7 @@ d3.boxplot.mousetip.hide = function () {
 
 /**
  * get label to show
+ *
  * @param {string} label initial label
  * @returns {string} new label
  */

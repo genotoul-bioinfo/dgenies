@@ -173,4 +173,4 @@ texinfo_documents = [
 autodoc_default_flags = ['private-members']
 autoclass_content = "both"
 
-js_source_path = '../src/dgenies/static/js'
+js_source_path = 'javascript/js'
