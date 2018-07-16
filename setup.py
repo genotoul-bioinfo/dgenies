@@ -7,7 +7,7 @@ with open('requirements.txt') as f:
     install_reqs = f.read().strip().split('\n')
 # reqs is a list of requirement
 # e.g. ['django==1.5.1', 'mezzanine==1.4.6']
-version = '1.1.1'
+version = '1.2.0'
 
 if os.name == "posix":
 

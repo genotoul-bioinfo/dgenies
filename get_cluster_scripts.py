@@ -4,7 +4,7 @@ import argparse
 import wget
 import os
 
-VERSION = "1.1.1"
+VERSION = "1.2.0"
 
 parser = argparse.ArgumentParser(description="Split huge contigs")
 parser.add_argument('-d', '--dir', type=str, required=False, help="Folder into store files", default=".")
