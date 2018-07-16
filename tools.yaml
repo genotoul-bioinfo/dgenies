@@ -3,7 +3,7 @@ minimap2:
   command_line: "{exe} -t {threads} {target} {query} > {out}"
   all_vs_all: "{exe} -t {threads} -X {target} {target} > {out}"
   max_memory: 40
-  threads: 8
+  threads: 4
   parser: !!null
   split_before: True
   help: "Better for low similar fasta files"
@@ -14,7 +14,7 @@ mashmap:
   command_line: "{exe} -t {threads} -r {target} -q {query} -o {out}"
   all_vs_all: !!null
   max_memory: 20
-  threads: 8
+  threads: 4
   parser: mashmap2paf
   split_before: False
   help: "Faster for high similar fasta files"
