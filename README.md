@@ -1,3 +1,8 @@
+[![GitHub release](https://img.shields.io/github/release/genotoul-bioinfo/dgenies.svg)](https://GitHub.com/genotoul-bioinfo/dgenies/releases/) [![PyPI version](https://badge.fury.io/py/dgenies.svg)](https://badge.fury.io/py/dgenies) [![GitHub license](https://img.shields.io/github/license/genotoul-bioinfo/dgenies.svg)](https://github.com/genotoul-bioinfo/dgenies/blob/master/LICENSE.txt)
+ [![made-with-python](https://img.shields.io/badge/Made%20with-Python-1f425f.svg)](https://www.python.org/) [![Documentation Status](https://readthedocs.org/projects/dgenies/badge/?version=latest)](http://dgenies.readthedocs.io/?badge=latest) [![Github all releases](https://img.shields.io/github/downloads/genotoul-bioinfo/dgenies/total.svg)](https://GitHub.com/genotoul-bioinfo/dgenies/releases/)
+
+
+
 D-Genies
 --------
 
