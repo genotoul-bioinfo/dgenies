@@ -92,6 +92,10 @@ d3.boxplot.color_mixes = "#969696";
 //Filter sizes:
 d3.boxplot.min_sizes = [0, 0.01, 0.02, 0.03, 0.05, 1, 2];
 
+//Help pictures:
+d3.boxplot.help_zoom = "/static/images/ctrl_plus_mouse.png";
+d3.boxplot.help_trans = "/static/images/ctrl_plus_click.png";
+
 /**
  * Initialize dotplot
  *
@@ -1021,12 +1025,12 @@ d3.boxplot.draw = function (x_contigs, x_order, y_contigs, y_order) {
 
     draw.append($("<div>").attr("id", "help-zoom")
                           .append("Press CTRL to zoom")
-                          .append($("<img>").attr("src", "/static/images/ctrl_plus_mouse.png")
+                          .append($("<img>").attr("src", d3.boxplot.help_zoom)
                                             .attr("alt", "")).hide().on("click", function() {$(this).hide()}));
 
     draw.append($("<div>").attr("id", "help-trans")
                           .append("Press CTRL to translate")
-                          .append($("<img>").attr("src", "/static/images/ctrl_plus_click.png")
+                          .append($("<img>").attr("src", d3.boxplot.help_trans)
                                             .attr("alt", "")).hide().on("click", function() {$(this).hide()})
         .on("mouseup", function() {d3.boxplot.translate_start = null; $("#help-trans").fadeOut("slow");}));
 
