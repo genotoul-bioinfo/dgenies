@@ -576,7 +576,7 @@ dgenies.run.reset_errors = function() {
  * Ask server to start uploads
  */
 dgenies.run.ask_for_upload = function () {
-    console.log("Ask for upload...");
+    console.info("Ask for upload...");
     dgenies.post("/ask-upload",
     {
         "s_id": dgenies.run.s_id

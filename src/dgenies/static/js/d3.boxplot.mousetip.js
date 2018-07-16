@@ -191,7 +191,6 @@ d3.boxplot.mousetip.get_match = function(e) {
         let j = 0;
         while(!found && j < d3.boxplot.lines[i].length) {
             let line = d3.boxplot.lines[i][j];
-            //console.log(c_x, c_y, line[0],line[1],line[2],line[3]);
             let x_a = Math.min(line[0], line[1]);
             let x_b = Math.max(line[0], line[1]);
             let y_a = Math.min(line[2], line[3]);
@@ -225,10 +224,6 @@ d3.boxplot.mousetip.get_match = function(e) {
             x_min = d3.boxplot.get_human_readable_size(match[0] - cx_min, 3, "&nbsp;");
             x_max = d3.boxplot.get_human_readable_size(match[1] - cx_min, 3, "&nbsp;");
         }
-        console.log("MATCH:");
-        console.log(y_zone, y_min, y_max);
-        console.log(x_zone, x_min, x_max);
-        console.log(match[4]);
         return {
             x_zone: x_zone,
             y_zone: y_zone,

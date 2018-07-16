@@ -101,6 +101,13 @@ d3.boxplot.zoom.translate = function () {
         let new_transform = `translate(${translate[0]}, ${translate[1]}) scale(${scale_x}, ${scale_y})`;
         d3.boxplot.container.attr("transform", new_transform);
 
+        if (translate[0] !== 0 || translate[1] !== 0) {
+            $("#restore-all").show();
+        }
+        else {
+            $("#restore-all").hide();
+        }
+
         //Update axis:
         d3.boxplot.draw_top_axis();
         d3.boxplot.draw_right_axis();
@@ -183,9 +190,10 @@ d3.boxplot.zoom.zoom = function () {
             let new_cursor = d3.boxplot.zoom._cursor_pos(new_rect);
             let x_trans = (new_cursor[0] - cursor[0]) * new_scale;
             let y_trans = (new_cursor[1] - cursor[1]) * new_scale;
+            let translate_x = old_transform["translate"][0]+x_trans;
+            let translate_y = old_transform["translate"][1]-y_trans;
 
-            let new_transform = `translate(${old_transform["translate"][0]+x_trans},${old_transform["translate"][1]-y_trans}) 
-            scale(${new_scale})`;
+            let new_transform = `translate(${translate_x},${translate_y}) scale(${new_scale})`;
             d3.boxplot.container.attr("transform", new_transform);
             d3.boxplot.zoom_scale_lines = new_scale;
 
@@ -200,6 +208,14 @@ d3.boxplot.zoom.zoom = function () {
             d3.boxplot.draw_right_axis();
             d3.boxplot.zoom_bottom_axis();
             d3.boxplot.zoom_left_axis();
+
+            if ((translate_x <= 0.00001 && translate_x >= -0.00001) &&
+                (translate_y <= 0.00001 && translate_y >= -0.00001) && new_scale === 1) {
+                $("#restore-all").hide();
+            }
+            else {
+                $("#restore-all").show();
+            }
         }
     }
     else if (d3.boxplot.zoom_enabled) {
