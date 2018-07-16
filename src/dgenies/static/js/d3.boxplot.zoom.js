@@ -2,6 +2,7 @@ if (!d3 || !d3.boxplot) {
     throw "d3.boxplot wasn't included!"
 }
 d3.boxplot.zoom = {};
+d3.boxplot.zoom.help_timeout = null;
 
 /**
  * Initialize zoom.init module
@@ -55,6 +56,7 @@ d3.boxplot.zoom.mousedown = function() {
  */
 d3.boxplot.zoom.mouseup = function() {
     d3.boxplot.translate_start = null;
+    $("#help-trans").fadeOut("slow");
 };
 
 /**
@@ -104,6 +106,10 @@ d3.boxplot.zoom.translate = function () {
         d3.boxplot.draw_right_axis();
         d3.boxplot.zoom_bottom_axis();
         d3.boxplot.zoom_left_axis();
+    }
+    else if(d3.boxplot.translate_start !== null) {
+        let help_trans = $("#help-trans");
+        help_trans.fadeIn("slow");
     }
 };
 
@@ -195,6 +201,16 @@ d3.boxplot.zoom.zoom = function () {
             d3.boxplot.zoom_bottom_axis();
             d3.boxplot.zoom_left_axis();
         }
+    }
+    else if (d3.boxplot.zoom_enabled) {
+        let help_zoom = $("#help-zoom");
+        help_zoom.fadeIn("slow");
+        if (d3.boxplot.zoom.help_timeout !== null) {
+            window.clearTimeout(d3.boxplot.zoom.help_timeout);
+        }
+        d3.boxplot.zoom.help_timeout = window.setTimeout(() => {
+            help_zoom.fadeOut("slow");
+        }, 700);
     }
 };
 

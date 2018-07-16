@@ -1019,6 +1019,17 @@ d3.boxplot.draw = function (x_contigs, x_order, y_contigs, y_order) {
         dgenies.hide_loading();
     }, 0);
 
+    draw.append($("<div>").attr("id", "help-zoom")
+                          .append("Press CTRL to zoom")
+                          .append($("<img>").attr("src", "/static/images/ctrl_plus_mouse.png")
+                                            .attr("alt", "")).hide().on("click", function() {$(this).hide()}));
+
+    draw.append($("<div>").attr("id", "help-trans")
+                          .append("Press CTRL to translate")
+                          .append($("<img>").attr("src", "/static/images/ctrl_plus_click.png")
+                                            .attr("alt", "")).hide().on("click", function() {$(this).hide()})
+        .on("mouseup", function() {d3.boxplot.translate_start = null; $("#help-trans").fadeOut("slow");}));
+
     d3.boxplot.zoom.init();
 
     d3.boxplot.events.init_context_menu();
