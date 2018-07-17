@@ -622,7 +622,17 @@ class JobManager:
         if fasta.is_example():
             shutil.copy(fasta.get_path(), finale_path)
         else:
-            shutil.move(fasta.get_path(), finale_path)
+            if os.path.exists(fasta.get_path()):
+                shutil.move(fasta.get_path(), finale_path)
+            else:
+                other_file = os.path.join(self.output_dir, ("query" if type_f == "target" else "query") + "_" +
+                                          os.path.basename(fasta.get_path()))
+                if os.path.exists(other_file):
+                    shutil.copy(other_file, finale_path)
+                else:
+                    raise Exception("Unable to copy %s file from temp to finale path: %s file does not exists" %
+                                    (type_f, fasta.get_path()))
+
         with open(os.path.join(self.output_dir, "." + type_f), "w") as save_file:
             save_file.write(finale_path)
         return finale_path
