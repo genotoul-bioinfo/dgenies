@@ -384,6 +384,8 @@ class JobManager:
                     job.save()
                 else:
                     self.set_status_standalone(status)
+                if status == "no-match":
+                    self._set_analytics_job_status("no-match")
                 return status == "succeed"
             self.error = self.search_error()
             status = "fail"
@@ -562,6 +564,8 @@ class JobManager:
         self.check_job_status_sge()):
             if step == "start":
                 status = self.check_job_success()
+                if status == "no-match":
+                    self._set_analytics_job_status("no-match")
             else:
                 status = "prepared"
             # job = Job.get(id_job=self.id_job)
@@ -1446,8 +1450,9 @@ class JobManager:
             from dgenies.database import Analytics
             with Job.connect():
                 analytic = Analytics.get(Analytics.id_job == self.id_job)
-                analytic.status = status
-                analytic.save()
+                if analytic.status != "no-match":
+                    analytic.status = status
+                    analytic.save()
 
     def unpack_backup(self):
         """
