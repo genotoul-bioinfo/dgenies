@@ -136,6 +136,7 @@ if MODE == "webserver":
             batch_type = CharField(max_length=20)
             job_type = CharField(max_length=5, default="unk")
             status = CharField(max_length=20, default="unknown")
+            tool = CharField(default="undefined", max_length=50, null=True)
 
         if not Analytics.table_exists():
             Analytics.create_table()

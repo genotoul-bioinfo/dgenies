@@ -78,6 +78,7 @@ class JobManager:
         self.config = AppConfigReader()
         self.tools = Tools().tools
         self.tool = self.tools[tool] if tool is not None else None
+        self.tool_name = tool
         # Outputs:
         self.output_dir = os.path.join(self.config.app_data, id_job)
         self.preptime_file = os.path.join(self.output_dir, "prep_times")
@@ -1436,7 +1437,8 @@ class JobManager:
                 query_size=query_size,
                 mail_client=job.email,
                 batch_type=job.batch_type,
-                job_type="new" if (self.align is None and self.backup is None) else "plot")
+                job_type="new" if (self.align is None and self.backup is None) else "plot",
+                tool=self.tool_name if self.tool_name is not None else "unset")
             log.save()
 
     def _set_analytics_job_status(self, status):
