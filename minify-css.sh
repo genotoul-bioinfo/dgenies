@@ -8,7 +8,8 @@ if [ ! $(which index.js) ] ; then
     npm install --prefix ~ minifier
 
     Then, add it to the PATH:
-    export PATH=\$PATH:~/node_modules/minifier
+    bash: export PATH=\$PATH:~/node_modules/minifier
+    fish: set PATH \$PATH ~/node_modules/minifier
     """
     exit 1
 fi

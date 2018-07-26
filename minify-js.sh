@@ -10,7 +10,8 @@ if [ ! $(which babel.js) ] ; then
     npm install --prefix ~ --save-dev babel-cli
 
     Then, add it to the PATH:
-    export PATH=\$PATH:~/node_modules/babel-cli/bin
+    bash: export PATH=\$PATH:~/node_modules/babel-cli/bin
+    fish: set PATH \$PATH ~/node_modules/babel-cli/bin
     """
     exit 1
 fi
