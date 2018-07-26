@@ -22,6 +22,7 @@ dgenies.run.target_example = "";
 dgenies.run.query_example = "";
 dgenies.run.tool_has_ava = {};
 dgenies.run.enabled = true;
+dgenies.run.valid = true;
 
 /**
  * Initialise app for run page
@@ -454,6 +455,7 @@ dgenies.run.do_submit = function () {
  */
 dgenies.run.add_error = function (error) {
     $("div.errors-submit ul.flashes").append($("<li>").append(error));
+    dgenies.run.valid = false;
 };
 
 /**
@@ -671,12 +673,17 @@ dgenies.run.start_uploads = function() {
         let test_has_uploads = dgenies.run._start_upload(input[0], input[1]);
         has_uploads = has_uploads || test_has_uploads;
     });
-    if (has_uploads) {
-        $("div#uploading-loading").html("Asking for upload...");
-        dgenies.run.ask_for_upload();
+    if (dgenies.run.valid) {
+        if (has_uploads) {
+            $("div#uploading-loading").html("Asking for upload...");
+            dgenies.run.ask_for_upload();
+        }
+        else {
+            dgenies.run.upload_next();
+        }
     }
     else {
-        dgenies.run.upload_next();
+        dgenies.run.valid = true;
     }
 };
 
