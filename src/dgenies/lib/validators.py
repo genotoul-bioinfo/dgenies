@@ -7,6 +7,8 @@ Only 1 argument to this function:
 
 Secondary functions must start with _
 
+Validators for non-mapping files must start with "v_"
+
 Returns True if file is valid, else False
 """
 
@@ -82,7 +84,7 @@ def maf(in_file):
         return True
 
 
-def idx(in_file):
+def v_idx(in_file):
     """
     Index file validator
 

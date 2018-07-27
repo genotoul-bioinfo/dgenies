@@ -868,7 +868,7 @@ class JobManager:
                     return False, True, None
             elif input_type != "backup":
                 if my_input.get_path().endswith(".idx"):
-                    if not validators.idx(my_input.get_path()):
+                    if not validators.v_idx(my_input.get_path()):
                         self.set_job_status("fail",
                                             "%s index file is invalid. Please check your file." %
                                             input_type.capitalize())
@@ -1474,7 +1474,7 @@ class JobManager:
                     return False
                 target_path = os.path.join(self.output_dir, "target.idx")
                 query_path = os.path.join(self.output_dir, "query.idx")
-                if not validators.idx(target_path) or not validators.idx(query_path):
+                if not validators.v_idx(target_path) or not validators.v_idx(query_path):
                     return False
                 self.align = Fasta(name="map", path=self.paf_raw, type_f="local")
                 self.aln_format = "paf"

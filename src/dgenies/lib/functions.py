@@ -15,7 +15,8 @@ import dgenies.lib.validators as validators
 
 ALLOWED_EXTENSIONS = {"fasta": ['fa', 'fasta', 'fna', 'fa.gz', 'fasta.gz', 'fna.gz'],
                       "idx": ['idx',],
-                      "map": [o[0] for o in getmembers(validators) if isfunction(o[1]) and not o[0].startswith("_")],
+                      "map": [o[0] for o in getmembers(validators) if isfunction(o[1]) and not o[0].startswith("_") and
+                              not o[0].startswith("v_")],
                       "backup": ['tar']}
 # map: all functions of validators which does not starts with an underscore.
 
