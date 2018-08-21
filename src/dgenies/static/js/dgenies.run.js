@@ -644,7 +644,7 @@ dgenies.run._start_upload = function(ftype, fname) {
         has_uploads = true;
     }
     else {
-        dgenies.run.files[0] = undefined;
+        dgenies.run.files[dgenies.run.files_nb[ftype]] = undefined;
         if (fasta_val !== "" && !dgenies.run.check_url(fasta_val)) {
             dgenies.run.add_error(`${fname} file: invalid URL`, "error");
             dgenies.run.enable_form();
