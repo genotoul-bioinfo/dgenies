@@ -13,5 +13,5 @@ drmaa==0.7.*
 intervaltree==2.1.*
 argparse==1.4
 Markdown==2.6.*
-pyyaml==3.12
+pyyaml==4.21b
 sphinx-js
