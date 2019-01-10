@@ -3,7 +3,7 @@ Flask-Mail==0.9.*
 Jinja2==2.9.*
 peewee==2.10.2
 numpy
-requests==2.18.*
+requests==2.20.*
 biopython==1.70
 python-crontab==2.2.*
 psutil==5.4.*
