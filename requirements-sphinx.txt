@@ -6,7 +6,7 @@ numpy
 requests==2.20.*
 biopython==1.70
 python-crontab==2.2.*
-psutil==5.7.*
+psutil>=5.6.6
 tendo==0.2.*
 matplotlib==2.1.*
 drmaa==0.7.*
