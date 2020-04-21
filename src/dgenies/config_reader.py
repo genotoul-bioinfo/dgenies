@@ -24,7 +24,8 @@ class AppConfigReader:
                               "/etc/dgenies/application.properties",
                               "/etc/dgenies/application.properties.local",
                               os.path.join(str(Path.home()), ".dgenies", "application.properties"),
-                              os.path.join(str(Path.home()), ".dgenies", "application.properties.local")]
+                              os.path.join(str(Path.home()), ".dgenies", "application.properties.local"),
+                              os.path.join(self.app_dir, '..', 'etc', 'dgenies', 'application.properties')]
 
         if os.name == "nt":
             config_file.insert(1, os.path.join(sys.executable, '..', "application.properties"))

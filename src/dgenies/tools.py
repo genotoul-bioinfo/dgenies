@@ -104,12 +104,14 @@ class Tools:
         self.load_yaml()
 
     def load_yaml(self):
+        self.app_dir = os.path.dirname(inspect.getfile(self.__class__))
         yaml_file = None
         config_file_search = [os.path.join(os.path.abspath(os.sep), "dgenies", "tools.yaml"),
                               "/etc/dgenies/tools.yaml",
                               "/etc/dgenies/tools.yaml.local",
                               os.path.join(str(Path.home()), ".dgenies", "tools.yaml"),
-                              os.path.join(str(Path.home()), ".dgenies", "tools.yaml.local")]
+                              os.path.join(str(Path.home()), ".dgenies", "tools.yaml.local"),
+                              os.path.join(self.app_dir, '..', 'etc', 'dgenies', 'tools.yaml')]
 
         if os.name == "nt":
             config_file_search.insert(1, os.path.join(sys.executable, '..', "tools.yaml"))
