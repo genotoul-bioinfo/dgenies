@@ -117,6 +117,7 @@ class Tools:
 
         app_dir = os.path.dirname(inspect.getfile(self.__class__))
         config_file_search.append(os.path.join(app_dir, "tools-dev.yaml"))
+        config_file_search.append(os.path.join(app_dir, '..', "etc", "dgenies", "tools.yaml"))
         config_file_search.append(os.path.join(app_dir, "tools-dev.yaml.local"))
 
         for my_config_file in reversed(config_file_search):

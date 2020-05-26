@@ -25,17 +25,17 @@ class AppConfigReader:
                               "/etc/dgenies/application.properties.local",
                               os.path.join(str(Path.home()), ".dgenies", "application.properties"),
                               os.path.join(str(Path.home()), ".dgenies", "application.properties.local")]
-
         if os.name == "nt":
-            config_file.insert(1, os.path.join(sys.executable, '..', "application.properties"))
-            config_file.insert(1, os.path.join(sys.executable, '..', "application.properties.local"))
+            config_file_search.insert(1, os.path.join(sys.executable, '..', "application.properties"))
+            config_file_search.insert(1, os.path.join(sys.executable, '..', "application.properties.local"))
+
+        config_file_search.append(os.path.join(self.app_dir, "application-dev.properties"))
+        config_file_search.append(os.path.join(self.app_dir, '..', "etc", "dgenies", "application.properties"))
+        config_file_search.append(os.path.join(self.app_dir, "application-dev.properties.local"))
 
         for my_config_file in config_file_search:
             if os.path.exists(my_config_file):
                 config_file.append(my_config_file)
-
-        config_file.append(os.path.join(self.app_dir, "application-dev.properties"))
-        config_file.append(os.path.join(self.app_dir, "application-dev.properties.local"))
 
         if len(config_file) == 0:
             raise FileNotFoundError("ERROR: application.properties not found.")
