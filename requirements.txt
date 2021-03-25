@@ -13,4 +13,4 @@ drmaa==0.7.*
 intervaltree==2.1.*
 argparse==1.4
 Markdown==2.6.*
-pyyaml==4.2b1
+pyyaml==5.4
