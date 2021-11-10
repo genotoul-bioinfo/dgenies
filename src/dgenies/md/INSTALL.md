@@ -46,30 +46,30 @@ Then, you need to restart your webserver.
 
 ### Requirements
 
-D-Genies requires python >= 3.5 to run.
+D-Genies requires python >= 3.5, < 3.10 to run.
 
-We use minimap2 for mapping. A binary of minimap2 is shipped with the program. Alternatively, you can
-install your own from [their repository](https://github.com/lh3/minimap2).
+We use minimap2 (and mashmap2 on linux) for mapping. A binary of each of them is shipped with the program. Alternatively, you can
+install your own from [minimap2](https://github.com/lh3/minimap2) and [mashmap2](https://github.com/marbl/MashMap/) repositories.
 
 Some python modules are required (will be automatically installed by the commands above):
 
-    flask==0.12.*
-    Jinja2==2.9.*
+    Flask==1.0.*
+    Jinja2~=2.11.3
     numpy
-    requests==2.18.*
-    biopython==1.70
-    psutil==5.4.*
+    requests~=2.20.1
+    biopython>=1.70
+    psutil~=5.6.6
     tendo==0.2.*
-    matplotlib==2.1.*
+    matplotlib>=2.1.*
     intervaltree==2.1.*
-    argparse==1.4
     Markdown==2.6.*
+    pyyaml~=5.4.1
 
 Additional modules for webserver mode:
 
     Flask-Mail==0.9.*
     peewee==2.10.2
-    python-crontab==2.2.*
+    python-crontab>=2.2.*
 
 And if you use a cluster (webserver mode):
 
