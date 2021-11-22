@@ -120,7 +120,7 @@ Windows: just click on the launcher in the desktop or into the install folder.
 Flask webserver (which is used in standalone mode) is not recommended in production servers.
 So, we recommend using the WSGY module of Apache (or µWSGI + nginx, not documented here).
 
-Once dgenies is installed, you just need to use the `/var/www/dgenies.wsgi` file into your apache
+Once dgenies is installed, you just need to use the `/var/www/dgenies/dgenies.wsgi` file into your apache
 virtualhost file.
 
 Here is an example of configuration file for apache:
@@ -313,7 +313,7 @@ You can make easily make some changes to the application, described below. To do
     
 The created folder is named the `D-Genies repository` in the text below.
 
-Then, you make changes described below. When done, you can easily install the cusomized version with this command:
+Then, you make changes described below. When done, you can easily install the customized version with this command:
 
     pip install .
     
