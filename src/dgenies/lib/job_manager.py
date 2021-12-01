@@ -540,7 +540,7 @@ class JobManager:
         native_specs = self.config.drmaa_native_specs
         if batch_system_type == "slurm":
             if native_specs == "###DEFAULT###":
-                native_specs = "--mem-per-cpu={0} --mincpus={1} -N 1=1 --time={2}"
+                native_specs = "--mem-per-cpu={0} --mincpus={1} --time={2}"
             if step == "prepare":
                 jt.nativeSpecification = native_specs.format(memory, 1, "02:00:00")
             elif step == "start":
