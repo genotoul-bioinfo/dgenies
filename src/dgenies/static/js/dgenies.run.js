@@ -147,7 +147,8 @@ dgenies.run._init_fileupload = function(ftype, formats, position) {
                 dgenies.run.enable_form();
             }
             else {
-                $(`input#ftype`).val(data["files"][0]["name"]);
+                // get the rename file (if renamed) from the server side
+                $(`input#${ftype}`).val(data["files"][0]["name"]);
                 dgenies.run.hide_loading(ftype);
                 dgenies.run.show_success(ftype);
                 dgenies.run.upload_next();
