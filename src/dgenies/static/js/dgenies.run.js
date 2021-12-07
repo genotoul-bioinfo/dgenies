@@ -51,7 +51,7 @@ dgenies.run.init = function (s_id, allowed_ext, max_upload_file_size=1073741824,
  * Restore run form
  */
 dgenies.run.restore_form = function () {
-    let ftypes = ["query", "target", "alignfile", "queryidx", "targetidx", "backup"];
+    let ftypes = ["query", "target", "queryidx", "targetidx", "alignfile", "backup"];
     for (let f in ftypes) {
         let ftype = ftypes[f];
         dgenies.run.change_fasta_type(ftype, $(`select.${ftype}`).find(":selected").text().toLowerCase(), true);
@@ -348,13 +348,13 @@ dgenies.run.enable_form = function () {
     $("input, select, button").prop("disabled", false);
     $("div#uploading-loading").hide();
     $("button#submit").show();
-    let ftypes = ["query", "target", "alignfile", "targetidx", "queryidx", "backup"];
+    let ftypes = ["query", "target", "targetidx", "queryidx", "alignfile", "backup"];
     for (let f in ftypes) {
         let ftype = ftypes[f];
         dgenies.run.hide_loading(ftype);
         dgenies.run.hide_success(ftype);
     }
-    dgenies.run.files = [undefined, undefined, undefined, undefined, undefined];
+    dgenies.run.files = [undefined, undefined, undefined, undefined, undefined, undefined];
     dgenies.run.restore_form();
     dgenies.run.enabled = true;
 };
@@ -573,6 +573,7 @@ dgenies.run.hide_success = function(fasta) {
 dgenies.run.reset_errors = function() {
     $("label").removeClass("error");
     $("div.errors-submit ul.flashes").find("li").remove();
+    dgenies.run.valid = true;
 };
 
 /**
