@@ -2,10 +2,11 @@
 **/.directory
 */*.pyc
 .idea
+.vscode
 dgenies/database.sqlite
 logs/*
 !logs/README
-dgenies/.local_scheduler_pid
+**/.local_scheduler_pid
 dgenies.egg-info
 application.properties.local
 dist
