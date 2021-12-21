@@ -887,8 +887,8 @@ def get_backup_file(id_res):
     :type id_res: str
     """
     res_dir = os.path.join(APP_DATA, id_res)
-    tar = os.path.join(res_dir, "%s.tar" % id_res)
-    with tarfile.open(tar, "w") as tarf:
+    tar = os.path.join(res_dir, "%s.tar.gz" % id_res)
+    with tarfile.open(tar, "w:gz") as tarf:
         for file in ("map.paf", "target.idx", "query.idx"):
             tarf.add(os.path.join(res_dir, file), arcname=file)
     return send_file(tar)

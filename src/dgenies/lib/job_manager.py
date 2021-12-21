@@ -1461,7 +1461,7 @@ class JobManager:
         Untar backup file
         """
         try:
-            with tarfile.open(self.backup.get_path(), "r") as tar:
+            with tarfile.open(self.backup.get_path(), "r:*") as tar:
                 names = tar.getnames()
                 if len(names) != 3:
                     return False
