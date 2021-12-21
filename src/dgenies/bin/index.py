@@ -2,7 +2,7 @@
 
 import io
 import re
-import gzip
+from xopen import xopen
 
 
 class Index:
@@ -112,41 +112,40 @@ def index_file(fasta_path, fasta_name, out, write_fa=None):
     write_f = None
     if write_fa is not None:
         write_f = open(write_fa, "w")
-    with (gzip.open(fasta_path) if compressed else open(fasta_path)) as in_file, \
+    with (xopen(fasta_path) if compressed else open(fasta_path)) as fasta, \
             open(out, "w") as out_file:
         out_file.write(fasta_name + "\n")
-        with (io.TextIOWrapper(in_file) if compressed else in_file) as fasta:
-            contig = None
-            len_c = 0
-            nb_line = 0
-            for line in fasta:
-                nb_line += 1
-                if write_f is not None:
-                    write_f.write(line)
-                line = line.strip("\n")
-                if re.match(r"^>.+", line) is not None:
-                    has_header = True
-                    next_header = False
-                    if contig is not None:
-                        if len_c > 0:
-                            nb_contigs += 1
-                            out_file.write("%s\t%d\n" % (contig, len_c))
-                        else:
-                            return False, 0, "Error: contig is empty: %s" % contig
-                    contig = re.split("\s", line[1:])[0]
-                    len_c = 0
-                elif len(line) > 0:
-                    if next_header or re.match(r"^[ATGCKMRYSWBVHDXN.\-]+$", line.upper()) is None:
-                        if next_header:
-                            return False, 0, "Error: new header line expected at line %d" % nb_line
-                        return False, 0, "Error: invalid sequence at line %d" % nb_line
-                    len_c += len(line)
-                elif len(line) == 0:
-                    next_header = True
+        contig = None
+        len_c = 0
+        nb_line = 0
+        for line in fasta:
+            nb_line += 1
+            if write_f is not None:
+                write_f.write(line)
+            line = line.strip("\n")
+            if re.match(r"^>.+", line) is not None:
+                has_header = True
+                next_header = False
+                if contig is not None:
+                    if len_c > 0:
+                        nb_contigs += 1
+                        out_file.write("%s\t%d\n" % (contig, len_c))
+                    else:
+                        return False, 0, "Error: contig is empty: %s" % contig
+                contig = re.split("\s", line[1:])[0]
+                len_c = 0
+            elif len(line) > 0:
+                if next_header or re.match(r"^[ATGCKMRYSWBVHDXN.\-]+$", line.upper()) is None:
+                    if next_header:
+                        return False, 0, "Error: new header line expected at line %d" % nb_line
+                    return False, 0, "Error: invalid sequence at line %d" % nb_line
+                len_c += len(line)
+            elif len(line) == 0:
+                next_header = True
 
-            if contig is not None and len_c > 0:
-                nb_contigs += 1
-                out_file.write("%s\t%d\n" % (contig, len_c))
+        if contig is not None and len_c > 0:
+            nb_contigs += 1
+            out_file.write("%s\t%d\n" % (contig, len_c))
 
     if write_f is not None:
         write_f.close()

@@ -1,7 +1,6 @@
 import os
 import random
 import string
-import gzip
 import shutil
 import sys
 import re
@@ -10,6 +9,7 @@ from inspect import getmembers, isfunction
 from collections import OrderedDict
 from Bio import SeqIO
 from jinja2 import Template
+from xopen import xopen
 from dgenies.config_reader import AppConfigReader
 import dgenies.lib.validators as validators
 
@@ -152,8 +152,8 @@ class Functions:
             while os.path.exists(uncompressed):
                 uncompressed = "%s/%d_%s" % (file_path, n, basename)
                 n += 1
-            with open(filename, "rb") as infile, open(uncompressed, "wb") as outfile:
-                outfile.write(gzip.decompress(infile.read()))
+            with xopen(filename) as infile, open(uncompressed, "wb") as outfile:
+                outfile.write(infile.read())
             return uncompressed
         except Exception as e:
             print(traceback.format_exc())
@@ -179,7 +179,7 @@ class Functions:
                 while os.path.exists(compressed):
                     compressed = "%s/%d_%s" % (file_path, n, basename)
                     n += 1
-                with open(filename, "rb") as infile, gzip.open(compressed, "wb") as outfile:
+                with open(filename, "rb") as infile, xopen(compressed, mode="wb") as outfile:
                     shutil.copyfileobj(infile, outfile)
                 os.remove(filename)
                 return compressed

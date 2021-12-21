@@ -14,3 +14,4 @@ intervaltree==2.1.*
 Markdown==2.6.*
 pyyaml~=5.4.1
 sphinx-js
+xopen >=1.0

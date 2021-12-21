@@ -3,7 +3,7 @@
 import sys
 import os
 import re
-import gzip
+from xopen import xopen
 import io
 from collections import OrderedDict
 
@@ -49,40 +49,38 @@ class Splitter:
         """
         has_header = False
         next_header = False  # True if next line must be a header line
-        with (gzip.open(self.input_f) if self.input_gz else open(self.input_f)) as gz_file, \
-                (gzip.open(self.output_f, "wb") if self.output_gz else open(self.output_f, "w"))  as o_file:
-            with (io.TextIOWrapper(gz_file) if self.input_gz else gz_file) as fasta, \
-                    (io.TextIOWrapper(o_file, encoding='utf-8') if self.output_gz else o_file) as enc, \
-                    open(self.index_file, "w") as index_f:
-                index_f.write(self.name_f + "\n")
-                chr_name = None
-                fasta_str = ""
-                nb_line = 0
-                for line in fasta:
-                    nb_line += 1
-                    line = line.strip("\n")
-                    if re.match(r"^>.+", line) is not None:
-                        has_header = True
-                        next_header = False
-                        if chr_name is not None and len(fasta_str) > 0:
-                            self.nb_contigs += 1
-                            self.flush_contig(fasta_str, chr_name, self.size_c, enc, index_f)
-                        elif chr_name is not None:
-                            return False, "Error: contig is empty: %s" % chr_name
-                        chr_name = re.split("\s", line[1:])[0]
-                        fasta_str = ""
-                        if self.debug:
-                            print("Parsing contig \"%s\"... " % chr_name, end="")
-                    elif len(line) > 0:
-                        if next_header or re.match(r"^[ATGCKMRYSWBVHDXN.\-]+$", line.upper()) is None:
-                            if next_header:
-                                return False, "Error: new header line expected at line %d" % nb_line
-                            return False, "Error: invalid sequence at line %d" % nb_line
-                        fasta_str += line
-                    elif len(line) == 0:
-                        next_header = True
-                self.nb_contigs += 1
-                self.flush_contig(fasta_str, chr_name, self.size_c, enc, index_f)
+        with (xopen(self.input_f) if self.input_gz else open(self.input_f)) as fasta, \
+            (xopen(self.output_f, mode="wb") if self.output_gz else open(self.output_f, "w")) as enc, \
+                open(self.index_file, "w") as index_f:
+            index_f.write(self.name_f + "\n")
+            chr_name = None
+            fasta_str = ""
+            nb_line = 0
+            for line in fasta:
+                nb_line += 1
+                line = line.strip("\n")
+                if re.match(r"^>.+", line) is not None:
+                    has_header = True
+                    next_header = False
+                    if chr_name is not None and len(fasta_str) > 0:
+                        self.nb_contigs += 1
+                        self.flush_contig(fasta_str, chr_name, self.size_c, enc, index_f)
+                    elif chr_name is not None:
+                        return False, "Error: contig is empty: %s" % chr_name
+                    chr_name = re.split("\s", line[1:])[0]
+                    fasta_str = ""
+                    if self.debug:
+                        print("Parsing contig \"%s\"... " % chr_name, end="")
+                elif len(line) > 0:
+                    if next_header or re.match(r"^[ATGCKMRYSWBVHDXN.\-]+$", line.upper()) is None:
+                        if next_header:
+                            return False, "Error: new header line expected at line %d" % nb_line
+                        return False, "Error: invalid sequence at line %d" % nb_line
+                    fasta_str += line
+                elif len(line) == 0:
+                    next_header = True
+            self.nb_contigs += 1
+            self.flush_contig(fasta_str, chr_name, self.size_c, enc, index_f)
         return has_header, ""
 
     @staticmethod

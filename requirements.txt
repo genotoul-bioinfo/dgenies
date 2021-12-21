@@ -9,6 +9,7 @@ matplotlib>=2.1.*
 intervaltree==2.1.*
 Markdown==2.6.*
 pyyaml~=5.4.1
+xopen >=1.0
 Flask-Mail==0.9.*
 peewee==2.10.2
 python-crontab>=2.2.*
