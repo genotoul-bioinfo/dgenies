@@ -22,6 +22,7 @@ from markdown import Markdown
 from markdown.extensions.toc import TocExtension
 from markdown.extensions.tables import TableExtension
 import tarfile
+from xopen import xopen
 from jinja2 import Environment
 if MODE == "webserver":
     from dgenies.database import Session, Gallery
@@ -888,9 +889,10 @@ def get_backup_file(id_res):
     """
     res_dir = os.path.join(APP_DATA, id_res)
     tar = os.path.join(res_dir, "%s.tar.gz" % id_res)
-    with tarfile.open(tar, "w:gz") as tarf:
-        for file in ("map.paf", "target.idx", "query.idx"):
-            tarf.add(os.path.join(res_dir, file), arcname=file)
+    with xopen(tar, mode="wb", compresslevel=9) as gz_file:
+        with tarfile.open(fileobj=gz_file, mode="w|") as tarf:
+            for file in ("map.paf", "target.idx", "query.idx"):
+                tarf.add(os.path.join(res_dir, file), arcname=file)
     return send_file(tar)
 
 
