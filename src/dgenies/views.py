@@ -181,7 +181,12 @@ def launch_analysis():
         if email == "":
             errors.append("Email not given")
             form_pass = False
-        elif not re.match(r"^[\w.\-]+@[\w\-.]{2,}\.[a-z]{2,4}$", email):
+        elif not re.match(r"^.+@.+\..+$", email):
+            # The email regex is simple because checking email address is not simple (RFC3696).
+            # Sending an email to the address is the most reliable way to check if the email address is correct.
+            # The only constrains we set on the email address are:
+            # - to have at least one @ in it, with something before and something after
+            # - to have something.tdl syntax for email server, as it will be used over Internet (not mandatory in RFC)
             errors.append("Email is invalid")
             form_pass = False
 
