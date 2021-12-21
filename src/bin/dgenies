@@ -342,12 +342,14 @@ if __name__ == "__main__":
     elif command == "clear":
         if args:
             if args.crons:
+                print("Cleaning crons...")
                 clear_crons()
             if args.logs:
+                print("Cleaning logs...")
                 clear_logs()
             if args.jobs:
+                print("Cleaning jobs...")
                 clear_jobs(args.max_age, args.web)
-            clear_jobs(args.max_age, args.web)
     elif command == "gallery_add":
         add_to_gallery(args.id_job, args.name, args.pict, args.query, args.target)
     elif command == "gallery_del":
