@@ -58,7 +58,7 @@ Example:
 
 ## Backup file
 
-Backup file is a TAR archive. It contains three files:
+Backup file is a TAR archive that can be gzipped. It contains three files:
 
 * The alignment file, in paf format, named `map.paf`.
 * The target index, named `target.idx`.
