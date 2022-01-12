@@ -1,26 +1,112 @@
-Install your own instance
-=========================
+# Run your own instance of D-Genies
 
 {% if version != "" %}
 Latest available version: **{{version}}**
 {% endif %}
 
-Linux
------
+D-Genies is designed to run on Linux and Windows.
+It may works on macOS, but this case is not tested.
 
-### Install
+D-Genies can be run in 2 modes. Depending the mode you will run it, installation must be adapted :
 
-Install in 1 step:
+- Standalone mode, for a single user on his own computer
+- Webserver mode, for multiple users through a webserver, can be connected to a HPC for computation
 
-As root:
+Windows version of D-Genies is limited to standalone mode.
+
+## Linux
+
+### Requirements
+
+D-Genies requires a 64 bits system with python >= 3.5, < 3.10 to run.
+
+D-Genies uses Minimap2 and MashMap (v2.0) for mapping. A x86_64 binary of each of them is shipped with it.
+Alternatively, you can install your own binaries from [Minimap2](https://github.com/lh3/minimap2) and [MashMap](https://github.com/marbl/MashMap/) repositories and teel D-Genies to use them by [editing executable paths in the `tools.yaml` file](#add-or-change-alignment-tools).
+
+At the moment, all python modules listed below, with the exception of `mysqlclient`, are automatically installed by D-Genies regardless to the mode it will be runned.
+We list them for information purposes
+
+#### Standalone mode
+
+Following python modules are required in order to run D-Genies in standalone mode:
+
+    biopython>=1.70
+    Flask==1.0.*
+    intervaltree==2.1.*
+    Jinja2~=2.11.3
+    Markdown==2.6.*
+    matplotlib>=2.1.*
+    numpy
+    psutil~=5.6.6
+    pyyaml~=5.4.1
+    requests~=2.20.1
+    tendo==0.2.*
+
+#### Webserver mode
+
+Webserver mode uses some additional python modules:
+
+    Flask-Mail==0.9.*
+    peewee==2.10.2
+    python-crontab>=2.2.*
+
+D-Genies uses by default `sqlite` to store job states. In webserver mode, you may want to use a more performant RDBM engine.
+D-Genies allows to use `mysql` or `mariadb` as alternative to `sqlite`.
+In this case you must install `mysqlclient` python module (that will not be installed automatically).
+
+Webserver mode also requires the `time` executable located at `/usr/bin/time` to be installed (package `time` on debian or redhat based distributions).
+
+#### Connection to a cluster (HPC)
+
+D-Genies, in webserver mode, is designed to work with [`slurm`](https://slurm.schedmd.com/) job scheduler with [drmaa](https://github.com/natefoo/slurm-drmaa) capacities.
+It also works with `SGE`, but this later is not intensivelly tested.
+
+If you like to connect D-Genies to a cluster, an additionnal module is required:
+
+    drmaa==0.7.*
+
+The [*Running with a cluster with* section](#running-with-a-cluster) will help you to configure D-Genies to run with your cluster.
+
+### Installation
+
+D-Genies can be installed in many ways:
+
+- if you aim to run D-Genies in standalone mode, the installation with [conda](#install-with-conda) or with [pip as user](#install-with-pip) are recommended methods;
+- if you aim to run D-Genies in webserver mode, the install with [pip as root](#install-with-pip) or [from source](#install-from-source) may be more adapted.
+
+#### Install with conda
+
+If you want to run D-Genies in standalone mode, you can use [anaconda](https://www.anaconda.com/products/individual)/[miniconda](https://docs.conda.io/en/latest/miniconda.html)
+
+    conda create -c conda-forge -c bioconda -n dgenies dgenies
+
+#### Install with pip
+
+`pip` is another easy way to install D-Genies. You can use this way to install D-Genies in a virtualenv.
+
+**As simple user** (recommended for standalone mode):
+
+    pip3 install --user dgenies
+
+When installed as user, following configuration files are written in `~/.dgenies/` directory:
+
+- `application.properties`
+- `tools.yaml`
+- `dgenies.wsgi`
+
+**As root** (recommended for webserver mode):
 
     pip3 install dgenies
 
-Or as simple user:
+The installation process as root will create following configuration files:
 
-    pip3 install dgenies --user
+- /etc/dgenies/application.properties
+- /etc/dgenies/tools.yaml
+- /var/www/dgenies/dgenies.wsgi
 
-Alternatively, you can install it manually:
+#### Install from source
+
+Alternatively, you can install D-Genies manually from its source repository:
 
     git clone https://github.com/genotoul-bioinfo/dgenies
     cd dgenies
@@ -32,7 +118,7 @@ Alternatively, you can install it manually:
 #### Standalone mode
 
     pip3 install dgenies --upgrade
-    
+
 Add `--user` flag if you have not root access.
 
 #### Webserver mode
@@ -40,67 +126,35 @@ Add `--user` flag if you have not root access.
     dgenies clear -c
     pip3 install dgenies --upgrade
 
-Then, you need to restart your webserver.
+Then, you need to restart your webserver. This will restart D-Genies instance.
 
-
+## Windows
 
 ### Requirements
 
-D-Genies requires python >= 3.5, < 3.10 to run.
-
-We use minimap2 (and mashmap2 on linux) for mapping. A binary of each of them is shipped with the program. Alternatively, you can
-install your own from [minimap2](https://github.com/lh3/minimap2) and [mashmap2](https://github.com/marbl/MashMap/) repositories.
-
-Some python modules are required (will be automatically installed by the commands above):
-
-    Flask==1.0.*
-    Jinja2~=2.11.3
-    numpy
-    requests~=2.20.1
-    biopython>=1.70
-    psutil~=5.6.6
-    tendo==0.2.*
-    matplotlib>=2.1.*
-    intervaltree==2.1.*
-    Markdown==2.6.*
-    pyyaml~=5.4.1
-
-Additional modules for webserver mode:
-
-    Flask-Mail==0.9.*
-    peewee==2.10.2
-    python-crontab>=2.2.*
-
-And if you use a cluster (webserver mode):
-
-    drmaa==0.7.*
-
-In webserver mode, you must install `mysqlclient` python module (will not be installed automatically) if you use mysql as RDBM.
-
-
-Windows
--------
-
-We provide an installer to install D-Genies. You can download it 
-[here]({%if win32 %}{{win32}}{% else %}https://github.com/genotoul-bioinfo/dgenies/releases{% endif %}).
-
-All requirements are present inside the package, so you don't have to do anything else.
-
-### System requirements
-
 You need Windows 7 or newer, 64 bits architecture.
 
+### Installation
 
-How to start
--------------
+We provide an installer to install D-Genies. [Download it]({%if win32 %}{{win32}}{% else %}https://github.com/genotoul-bioinfo/dgenies/releases{% endif %}) and run it.
 
-You can launch DGenies in `standalone` mode or in `webserver` mode. You can use standalone mode if
-you launch it locally and only one user launch jobs at once. If you are several users to use it
-simultaneously or if you run it on a server, you must run it in webserver mode.
+All requirements are present inside it, so you don't have to do anything else.
+
+Only Minimap2 is provided with Windows version.
+
+*Note: The installer is not signed. Microsoft Defender SmartScreen will throw a warning about it. You can still install D-Genies by clicking on "More info" and then "Run anyway".*
+
+### Upgrade
+
+Just install the new version above the old one.
+
+## How to start
 
 ### Standalone mode
 
-Unix: start with the command below:
+#### Linux
+
+Start D-Genies with the command below:
 
     dgenies run
 
@@ -109,7 +163,9 @@ Optional arguments:
 `-p <port>` run in a specified port (default: 5000)
 `--no-browser` don't start the browser automatically
 
-Windows: just click on the launcher in the desktop or into the install folder.
+#### Windows 
+
+You can launch D-Genies from Start menu, or double-click on the launcher present on the desktop (if chosen during the installation process) or into the installation folder.
 
 ### Webserver mode
 
@@ -120,7 +176,7 @@ Windows: just click on the launcher in the desktop or into the install folder.
 Flask webserver (which is used in standalone mode) is not recommended in production servers.
 So, we recommend using the WSGY module of Apache (or µWSGI + nginx, not documented here).
 
-Once dgenies is installed, you just need to use the `/var/www/dgenies/dgenies.wsgi` file into your apache
+Once D-Genies is installed, you just need to use the `/var/www/dgenies/dgenies.wsgi` file into your apache
 virtualhost file.
 
 Here is an example of configuration file for apache:
@@ -158,92 +214,93 @@ Optional parameters:
 `--no-crons` don't run the crons automatically
 `--no-browser` don't start the browser automatically (always true if *-d* option is given)
 
+You also need to run the D-Genies local scheduler
 
+    src/dgenies/bin/local_scheduler.py -d "true"
 
-Running with a cluster
-----------------------
+## Running with a cluster
 
-If you want to run jobs on a cluster, some configuration is required. We only support SLURM and SGE schedulers. But please note that only SLURM scheduler has been fully tested.
+If you want to run jobs on a cluster, some configuration is required. We only support [`slurm`](https://slurm.schedmd.com/) and `SGE` schedulers. But please note that only `slurm` scheduler has been fully tested.
 
-Note: submitting jobs on a cluster is only available for webserver mode.
+*Note: submitting jobs on a cluster is only available for webserver mode.*
 
-Jobs are submitted throw the DRMAA library. So you need it for your scheduler. Please see [configuration below](#cluster) to define path to this library.
+Jobs are submitted through the `drmma` library. So you need it for your scheduler. Please see [the cluster configuration section](#cluster) to define path to this library.
 
-Also, scripts for preparing data must be moved in a location accessible by all nodes of your cluster. You must move them in a same folder and set the full path to `all_prepare.py` script (full path on the nodes of the cluster) in the configuration file ([see below](#cluster)).
+Also, scripts for preparing data must be installed in a location accessible by all nodes of your cluster. You must put them in a same folder and set the full path to `all_prepare.py` script (full path on the nodes of the cluster) in the configuration file like described in [the cluster configuration section](#cluster).
 
-To get these scripts, follow the commands below:
+You can get these scripts with the following commands:
 
     curl https://raw.githubusercontent.com/genotoul-bioinfo/dgenies/v{{version}}/get_cluster_scripts.py > get_cluster_scripts.py
     python get_cluster_scripts.py -d <dir>
 
-With `<dir>`: the folder into save the scripts (must be accessible by cluster nodes).
+Where `<dir>` is the folder where the scripts will be saved (must be accessible by cluster nodes).
 
+## Configuration
 
+Changing the default configuration is not required for standalone mode, but you may want to customize some parts of D-Genies.
 
-Configuration
--------------
+Configuration file location:
 
-Changing the default configuration is not required for standalone mode, but you can want to custom some parts of the program.
+- Linux:
+  - `/etc/dgenies/application.properties` if installed with root access  
+  - `~/.dgenies/application.properties` else  
+- Windows:
+  - `application.properties` file of the install folder
 
-Configuration file location:  
-* Linux:  
-    * `/etc/dgenies/application.properties` if installed with root access  
-    * `~/.dgenies/application.properties` else  
-* Windows:  
-    * `application.properties` file of the install folder
+A good practice, when editing the D-Genies configuration, is to copy `application.properties` to `application.properties.local` (at the same location), and modify `application.properties.local`. It avoids to erase of the file on upgrades.
 
-The file is divided in 9 parts described below.
-
-To change this file, please copy it into `application.properties.local` (at the same location) to avoid erase of the file on upgrades.
+The configuration file is divided in 9 sections described below.
 
 ### Global
 
 Main parameters are stored into this section:
 
-* `config_dir`: where configuration file will be stored.
-* `upload_folder`: where uploaded files will be stored.
-* `data_folder`: where data files will be stored (PAF files and other files used for the dotplot).
-* `threads_local`: number of threads to use for local jobs.
-* `web_url`: public URL of your website.
-* `max_upload_size`: max size allowed for query and target file (-1 to avoid the limit) - size uncompressed.
-* `max_upload_size_ava`: max size allowed for target file for all-vs-all mode (only target given, -1 to avoid the limit) - size uncompressed.
-* `max_upload_file_size`: max size of the uploaded size (real size of the file, compressed or not, -1 to avoid the limit).
+- `config_dir`: where configuration file will be stored.
+- `upload_folder`: where uploaded files will be stored.
+- `data_folder`: where data files will be stored (PAF files and other files used for the dotplot).
+- `threads_local`: number of threads to use for local jobs.
+- `web_url`: public URL of your website.
+- `max_upload_size`: max size allowed for query and target file (-1 to avoid the limit) - size uncompressed.
+- `max_upload_size_ava`: max size allowed for target file for all-vs-all mode (only target given, -1 to avoid the limit) - size uncompressed.
+- `max_upload_file_size`: max size of the uploaded size (real size of the file, compressed or not, -1 to avoid the limit).
 
 For webserver mode only (ignored in standalone mode):
 
-* `batch_system_type`: local for run all jobs locally, sge or slurm to use a cluster scheduler.
+- `batch_system_type`: local for run all jobs locally, sge or slurm to use a cluster scheduler.
 
 ### Debug
 
 Some parameters for debug:
 
-* `enable`: True to enable debug
-* `log_dir`: folder into store debug logs
+- `enable`: True to enable debug
+- `log_dir`: folder into store debug logs
 
 ### Cluster
 
 This section concerns only the webserver mode with *batch_system_type* not set to *local*.
 
-* `drmaa_lib_path`: absolute path to the drmaa library. Required as we use the DRMAA library to submit jobs to the cluster.
-* `native_specs`: how to set memory, time and number of CPU on the cluster (should be kept as default).
+D-Genies is tested with [slurm-drmaa](https://github.com/natefoo/slurm-drmaa).
+
+- `drmaa_lib_path`: absolute path to the drmaa library. Required as we use the DRMAA library to submit jobs to the cluster.
+- `native_specs`: how to set memory, time and number of CPU on the cluster (should be kept as default).
 
 By default, small jobs are still launched locally even if *batch_system_type* is not set to *local*, and if not too much of these jobs are running or waiting. This limit can be customized:
 
-* `max_run_local`: max number of jobs running locally (if this number is reached, future jobs will be submitted to the cluster regardless of their size). Set to 0 to run all jobs on the cluster.
-* `max_wait_local`; max number of jobs waiting for a local run (if this number is reached, future jobs will be submitted to the cluster regardless of their size). Set to 0 to run all jobs on the cluster.
+- `max_run_local`: max number of jobs running locally (if this number is reached, future jobs will be submitted to the cluster regardless of their size). Set to 0 to run all jobs on the cluster.
+- `max_wait_local`; max number of jobs waiting for a local run (if this number is reached, future jobs will be submitted to the cluster regardless of their size). Set to 0 to run all jobs on the cluster.
 
 You can also customize the size from which jobs are submitted on the cluster. If only one of these limit is reached, the job is submitted on the cluster.
 
-* `min_query_size`: minimum size for the query (uncompressed).
-* `min_size_target`: minimum size for the target (uncompressed).
+- `min_query_size`: minimum size for the query (uncompressed).
+- `min_size_target`: minimum size for the target (uncompressed).
 
 Other parameters:
 
-* `prepare_script`: absolute path to the all_prepare.py script downloaded in the section [above](#running-with-a-cluster).
-* `python3_exec`: path to python3 executable on the cluster.
-* `memory`: max memory to reserve on the cluster.
-* `memory_ava`: max memory to reserve on the cluster un all-vs-all mode (should be higher than memory).
-* `threads`: number of threads for launching jobs on the cluster (must be a divider of the memory).
+- `prepare_script`: absolute path to the all_prepare.py script downloaded in the section [above](#running-with-a-cluster).
+- `python3_exec`: path to python3 executable on the cluster.
+- `memory`: max memory to reserve on the cluster.
+- `memory_ava`: max memory to reserve on the cluster un all-vs-all mode (should be higher than memory).
+- `threads`: number of threads for launching jobs on the cluster (must be a divider of the memory).
 
 ### Database
 
@@ -251,15 +308,15 @@ This section concerns only the webserver mode.
 
 In webserver mode, we use a database to store jobs.
 
-* `type`: sqlite or mysql. We recommend mysql for better performances.
-* `url`: path to the sqlite file, or url to the mysql server (localhost if the mysql server is on the same machine).
+- `type`: sqlite or mysql. We recommend mysql for better performances.
+- `url`: path to the sqlite file, or url to the mysql server (localhost if the mysql server is on the same machine).
 
 If type is mysql, some other parameters must be filled:
 
-* `port`: port to connect to mysql (3306 as default).
-* `db`: name of the database.
-* `user`: username to connect to the database.
-* `password`: the associated password.
+- `port`: port to connect to mariadb or mysql (3306 as default).
+- `db`: name of the database.
+- `user`: username to connect to the database.
+- `password`: the associated password.
 
 ### Mail
 
@@ -267,10 +324,10 @@ This section concerns only the webserver mode.
 
 At the end of the job, a mail is send to the user to advise him of the end of the job.
 
-* `status`: mail to use for status mail.
-* `reply`: mail to use as reply to.
-* `org`: name of the organisation who send the mail.
-* `send_mail_status`: True to send mail status, False else. Should be True in production.
+- `status`: mail to use for status mail.
+- `reply`: mail to use as reply to.
+- `org`: name of the organisation who send the mail.
+- `send_mail_status`: True to send mail status, False else. Should be True in production.
 
 ### Cron
 
@@ -278,8 +335,8 @@ This section concerns only the webserver mode.
 
 We use crons to launch the local scheduler who start jobs, and some script that clean old jobs.
 
-* `clean_time`: time at which we launch the clean job (example: 1h00)
-* `clean_freq`: frequency of the clean job execution
+- `clean_time`: time at which we launch the clean job (example: 1h00)
+- `clean_freq`: frequency of the clean job execution
 
 ### Jobs
 
@@ -287,9 +344,9 @@ This section concerns only the webserver mode.
 
 Several parameters for jobs:
 
-* `run_local`: max number of concurrent jobs launched locally.
-* `data_prepare`: max number of data prepare jobs launched locally.
-* `max_concurrent_dl`: max number of concurrent upload of files allowed.
+- `run_local`: max number of concurrent jobs launched locally.
+- `data_prepare`: max number of data prepare jobs launched locally.
+- `max_concurrent_dl`: max number of concurrent upload of files allowed.
 
 ### Example
 
@@ -303,22 +360,19 @@ If at least target is filled, a button "Load example" will be shown in the run f
 
 Set `enable_logging_runs` to True will enable storage of analytics data. It stores for each job creation date, user mail, size of query and target, and batch type.
 
-
-Customize your installation
----------------------------
+## Customize your installation
 
 You can make easily make some changes to the application, described below. To do so, you must first clone the D-Genies repository (except if changes can be done in the current installation, see below):
 
     git clone https://github.com/genotoul-bioinfo/dgenies
-    
+
 The created folder is named the `D-Genies repository` in the text below.
 
 Then, you make changes described below. When done, you can easily install the customized version with this command:
 
     pip install .
-    
-Add the `--upgrade` flag if you already have D-Genies installed.
 
+Add the `--upgrade` flag if you already have D-Genies installed.
 
 ### Add or change alignment tools
 
@@ -326,13 +380,14 @@ D-Genies uses minimap2 as default aligner, but you can add other tools, or repla
 
 If your tool needs a parser (see below), you must customize the installation (see above). For other changes, you can make them on your current installation.
 
-Tools definition YAML file:  
-* Linux:  
-    * `/etc/dgenies/tools.yaml` if installed with root access  
-    * `~/.dgenies/tools.yaml` else  
-* Windows:  
-    * `tools.yaml` file of the install folder
-    
+Tools definition YAML file:
+
+- Linux:
+  - `/etc/dgenies/tools.yaml` if installed with root access  
+  - `~/.dgenies/tools.yaml` else  
+- Windows:
+  - `tools.yaml` file of the install folder
+
 To change this file, please copy it into `tools.yaml.local` (at the same location) to avoid to erase the file on upgrades.
 
 Note: you can also edit the `tools.yaml` file of the D-Genies repository, which will be installed then (if you customize the installation). Edit it without renaming it.
@@ -351,10 +406,10 @@ Required.
 
 The command line skeleton defines how to launch the program, in the `command_line` property. The skeleton must include the following tags:
   
-* `{exe}`: will be replaced by the executable path
-* `{target}`: will be replaced by the target fasta file
-* `{query}`: will be replaced by the query fasta file
-* `{out}`: will be replaced by the output file
+- `{exe}`: will be replaced by the executable path
+- `{target}`: will be replaced by the target fasta file
+- `{query}`: will be replaced by the query fasta file
+- `{out}`: will be replaced by the output file
 
 If the tool can be multithreaded, add the `{threads}` tag which will be replaced by the number of threads to use.
 
@@ -396,19 +451,16 @@ Optional. Default: random.
 
 Define in which order we show tools in the run form. Set it in the `order` property.
 
-
 ### Add new formats
 
 In `Plot alignment` mode in run form ([see here](/documentation/run#plot-alignment-mode)), we propose by default only PAF and MAF formats. It's easy to add new formats.
 
 Just define 2 functions:
 
-* Add the first one in the `src/dgenies/lib/validators.py` file of the D-Genies repository. It takes only one argument: the input file. It checks if the file format is correct and returns True in this case, else it returns False. The function name must be the same as the expected input file extension.  
-* Add the second one in the `src/dgenies/lib/parsers.py` file of the D-Genies repository. It takes two arguments: the input and the output file. It convert the input file into a valid PAF file. The function name must be same as the previous one.
+- Add the first one in the `src/dgenies/lib/validators.py` file of the D-Genies repository. It takes only one argument: the input file. It checks if the file format is correct and returns True in this case, else it returns False. The function name must be the same as the expected input file extension.  
+- Add the second one in the `src/dgenies/lib/parsers.py` file of the D-Genies repository. It takes two arguments: the input and the output file. It convert the input file into a valid PAF file. The function name must be same as the previous one.
 
-
-Maintenance
------------
+## Maintenance
 
 The `dgenies` command can be used to do some maintenance staff.
 
@@ -425,13 +477,13 @@ The `dgenies` command can be used to do some maintenance staff.
 **Clear crons (webserver mode):**
 
     dgenies clear -c
-    
+
 **Display message on run form:**
 
 You can display a message at the top of the run form. It can be used to add extra informations for user, or for prevent him for problem or for a maintenance on your instance.
 
     dgenies inforun -m "message to display" -t [warn, critical, info, success]
-    
+
 `-m <message>`: message to display. Html allowed.  
 `-t <type>`: type of message: warn (orange background), critical (red background), info (blue background) or success (green background).
 
@@ -439,8 +491,7 @@ Remove the message by:
 
     dgenies inforun -c
 
-Gallery
--------
+## Gallery
 
 Note: gallery is only available in webserver mode.
 
