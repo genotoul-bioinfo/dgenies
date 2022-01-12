@@ -6,7 +6,7 @@
 
 - Backup archive is now a `tar.gz` file. Old `tar` backup archive are still supported
 - Speedup compressed file operations by using [`xopen` library](https://github.com/pycompression/xopen)
-- Upgrade embedded minimap2 to the latest available version (2.23)
+- Upgrade embedded minimap2 to the latest available version (2.24)
 
 ### Other changes
 
@@ -15,8 +15,9 @@
 - Correct default `slurm` parameters to match last version of [slurm-drmaa](https://github.com/natefoo/slurm-drmaa) (1.1.3)
 - Update documentation:
   - Explain how similarity/identity measure is computed
-  - Describe what is expected in backup archive
-  - Update deployment instruction for webserver and cluster mode
+  - Add link in D-Genies to what is expected in backup archive
+- Wiki
+  - Cookbooks
   - Additional information for developers
 
 ## 1.2.0.2 (2021-11-15) - pypi release only
