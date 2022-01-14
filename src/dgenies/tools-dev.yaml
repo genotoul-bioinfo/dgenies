@@ -1,7 +1,7 @@
 minimap2:
   exec: default
-  command_line: "{exe} -t {threads} {target} {query} > {out}"
-  all_vs_all: "{exe} -t {threads} -X {target} {target} > {out}"
+  command_line: "{exe} -t {threads} {target} {query} -o {out}"
+  all_vs_all: "{exe} -t {threads} -X {target} {target} -o {out}"
   max_memory: 40
   threads: 8
   parser: !!null
