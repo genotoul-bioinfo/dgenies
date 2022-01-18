@@ -326,7 +326,7 @@ class JobManager:
         :rtype: str
         """
         logs = os.path.join(self.output_dir, "logs.txt")
-        if os.path.exists(logs):
+        if os.path.exists(logs) and os.name == 'posix':
             lines = subprocess.check_output(['tail', '-2', logs]).decode("utf-8").split("\n")
             if re.match(r"\[morecore] \d+ bytes requested but not available.", lines[1]) or \
                     re.match(r"\[morecore] \d+ bytes requested but not available.", lines[1]) or \

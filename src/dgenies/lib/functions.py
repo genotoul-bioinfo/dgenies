@@ -14,7 +14,7 @@ from dgenies.config_reader import AppConfigReader
 import dgenies.lib.validators as validators
 
 ALLOWED_EXTENSIONS = {"fasta": ['fa', 'fasta', 'fna', 'fa.gz', 'fasta.gz', 'fna.gz'],
-                      "idx": ['idx',],
+                      "idx": ['idx'],
                       "map": [o[0] for o in getmembers(validators) if isfunction(o[1]) and not o[0].startswith("_") and
                               not o[0].startswith("v_")],
                       "backup": ['tar', 'tar.gz']}
@@ -152,7 +152,7 @@ class Functions:
             while os.path.exists(uncompressed):
                 uncompressed = "%s/%d_%s" % (file_path, n, basename)
                 n += 1
-            with xopen(filename) as infile, open(uncompressed, "wb") as outfile:
+            with xopen(filename, "rb") as infile, open(uncompressed, "wb") as outfile:
                 outfile.write(infile.read())
             return uncompressed
         except Exception as e:
@@ -179,7 +179,7 @@ class Functions:
                 while os.path.exists(compressed):
                     compressed = "%s/%d_%s" % (file_path, n, basename)
                     n += 1
-                with open(filename, "rb") as infile, xopen(compressed, mode="wb") as outfile:
+                with open(filename, "rb") as infile, xopen(compressed, "wb") as outfile:
                     shutil.copyfileobj(infile, outfile)
                 os.remove(filename)
                 return compressed

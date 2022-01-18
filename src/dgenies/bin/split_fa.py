@@ -49,9 +49,9 @@ class Splitter:
         """
         has_header = False
         next_header = False  # True if next line must be a header line
-        with (xopen(self.input_f) if self.input_gz else open(self.input_f)) as fasta, \
-            (xopen(self.output_f, mode="wb") if self.output_gz else open(self.output_f, "w")) as enc, \
-                open(self.index_file, "w") as index_f:
+        with (xopen(self.input_f, mode="r") if self.input_gz else open(self.input_f, mode="r")) as fasta, \
+            (xopen(self.output_f, mode="w") if self.output_gz else open(self.output_f, mode="w")) as enc, \
+                open(self.index_file, mode="w") as index_f:
             index_f.write(self.name_f + "\n")
             chr_name = None
             fasta_str = ""

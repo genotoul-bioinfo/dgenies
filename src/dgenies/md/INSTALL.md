@@ -21,7 +21,7 @@ Windows version of D-Genies is limited to standalone mode.
 D-Genies requires a 64 bits system with python >= 3.5, < 3.10 to run.
 
 D-Genies uses Minimap2 and MashMap (v2.0) for mapping. A x86_64 binary of each of them is shipped with it.
-Alternatively, you can install your own binaries from [Minimap2](https://github.com/lh3/minimap2) and [MashMap](https://github.com/marbl/MashMap/) repositories and teel D-Genies to use them by [editing executable paths in the `tools.yaml` file](#add-or-change-alignment-tools).
+Alternatively, you can install your own binaries from [Minimap2](https://github.com/lh3/minimap2) and [MashMap](https://github.com/marbl/MashMap/) repositories and tell D-Genies to use them by [editing executable paths in the `tools.yaml` file](#add-or-change-alignment-tools).
 
 At the moment, all python modules listed below, with the exception of `mysqlclient`, are automatically installed by D-Genies regardless to the mode it will be runned.
 We list them for information purposes
@@ -58,7 +58,7 @@ Webserver mode also requires the `time` executable located at `/usr/bin/time` to
 
 #### Connection to a cluster (HPC)
 
-D-Genies, in webserver mode, is designed to work with [`slurm`](https://slurm.schedmd.com/) job scheduler with [drmaa](https://github.com/natefoo/slurm-drmaa) capacities.
+D-Genies, in webserver mode, can use [`slurm`](https://slurm.schedmd.com/) job scheduler with [drmaa](https://github.com/natefoo/slurm-drmaa) capacities to compute heavy jobs.
 It also works with `SGE`, but this later is not intensivelly tested.
 
 If you like to connect D-Genies to a cluster, an additionnal module is required:
