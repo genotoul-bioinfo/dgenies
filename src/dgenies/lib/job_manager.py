@@ -967,6 +967,7 @@ class JobManager:
                 job = None
                 self.set_status_standalone(status)
             correct = True
+            error_set = False
             should_be_local = True
             max_upload_size_readable = self.config.max_upload_size / 1024 / 1024  # Set it in Mb
             files_to_download = []
@@ -1012,7 +1013,7 @@ class JobManager:
                     return False, True, True
 
             all_downloaded = True
-            if correct :
+            if correct:
                 if len(files_to_download) > 0:
                     all_downloaded = False
                     thread = threading.Timer(0, self.download_files_with_pending,
@@ -1025,7 +1026,7 @@ class JobManager:
                         and self.get_pending_local_number() < self.config.max_run_local:
                     job.batch_type = "local"
                     job.save()
-        return correct, False, all_downloaded
+        return correct, error_set, all_downloaded
 
     def send_mail_post(self):
         """
@@ -1626,7 +1627,7 @@ class JobManager:
         """
         Get job status and error. In webserver mode, get also mem peak and time elapsed
 
-        :return: status and other informations
+        :return: status and other information
         :rtype: dict
         """
         if MODE == "webserver":
