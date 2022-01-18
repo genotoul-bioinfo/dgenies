@@ -28,12 +28,11 @@ def good_paf_line(parts):
     :return: True if line is correctly formatted
     :rtype: bool
     """
-    result = len(parts) >= 11 \
+    result = len(parts) >= 12 \
         and reduce(lambda x, y: x and y, (z.isdigit() for z in parts[1:4])) \
         and parts[4] in ['+', '-'] \
-        and reduce(lambda x, y: x and y, (z.isdigit() for z in parts[6:11]))
-    if result and len(parts) >= 12:
-        result = parts[11].isdigit() and 0 <= int(parts[11]) <= 255
+        and reduce(lambda x, y: x and y, (z.isdigit() for z in parts[6:12])) \
+        and 0 <= int(parts[11]) <= 255
     return result
 
 

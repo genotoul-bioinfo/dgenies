@@ -79,5 +79,5 @@ def mashmap2paf(in_paf, out_paf):
             parts = line.rstrip().split(" ")
             parts[9] = str(round(float(parts[9]) / 100.0 * 1000.0))
             parts.append("1000")
-            out_p.write("\t".join(parts) + "\n")
+            out_p.write("\t".join(parts) + "\t255" + "\n")
 
