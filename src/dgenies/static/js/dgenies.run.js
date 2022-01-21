@@ -271,6 +271,18 @@ dgenies.run.show_tab = function(tab) {
     $(`.tabx.${tab}`).show();
 };
 
+
+/**
+ * Change displayed options (if any)
+ *
+ * @param {string} tool id to show
+ */
+
+dgenies.run.show_tool_options = function(tool) {
+    $(`.optionx:not(tool-options-${tool})`).hide();
+    $(`.optionx.tool-options-${tool}`).show();
+};
+
 /**
  * Initialise events
  */
@@ -289,6 +301,9 @@ dgenies.run.set_events = function() {
     });
     $("#tabs .tab").click(function() {
         dgenies.run.show_tab($(this).attr("id"));
+    });
+    $("input[name=tool]").click(function() {
+        dgenies.run.show_tool_options($(this).val());
     })
 };
 
