@@ -11,7 +11,7 @@ from dgenies.lib import parsers
 class Tool:
 
     def __init__(self, name, exec, command_line, all_vs_all, max_memory, threads=1, exec_cluster=None,
-                 threads_cluster=None, parser=None, split_before=False, help=None, order=None):
+                 threads_cluster=None, parser=None, split_before=False, help=None, order=None, options=None):
         """
         Create a new tool
 
@@ -91,6 +91,13 @@ class Tool:
                 self.order = 1000
             else:
                 self.order = order
+
+        # Options
+        if options is None or isinstance(options, list):
+            self.options = options
+        else:
+            raise ValueError("Tools: options must be a yaml list")
+
 
 
 @Singleton

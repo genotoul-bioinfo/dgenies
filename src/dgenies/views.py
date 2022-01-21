@@ -76,8 +76,10 @@ def run():
     tools = Tools().tools
     tools_names = sorted(list(tools.keys()), key=lambda x: (tools[x].order, tools[x].name))
     tools_ava = {}
+    options = {}
     for tool_name, tool in tools.items():
         tools_ava[tool_name] = 1 if tool.all_vs_all is not None else 0
+        options[tool_name] = tool.options
     if MODE == "webserver":
         with Session.connect():
             s_id = Session.new()
@@ -101,7 +103,7 @@ def run():
                            example=config_reader.example_target != "",
                            target=os.path.basename(config_reader.example_target),
                            query=os.path.basename(config_reader.example_query), tools_names=tools_names, tools=tools,
-                           tools_ava=tools_ava, version=VERSION, inforun=inforun)
+                           tools_ava=tools_ava, options=options, version=VERSION, inforun=inforun)
 
 
 @app.route("/run-test", methods=['GET'])
@@ -143,6 +145,7 @@ def launch_analysis():
     file_target = request.form["target"]
     file_target_type = request.form["target_type"]
     tool = request.form["tool"] if "tool" in request.form else None
+    options = request.form.getlist("options[]")
     alignfile = request.form["alignfile"] if "alignfile" in request.form else None
     alignfile_type = request.form["alignfile_type"] if "alignfile_type" in request.form else None
     backup = request.form["backup"] if "backup" in request.form else None
@@ -172,6 +175,11 @@ def launch_analysis():
 
     if tool is not None and tool not in Tools().tools:
         errors.append("Tool unavailable: %s" % tool)
+        form_pass = False
+
+    valid_options, options = get_options(tool, options)
+    if not valid_options:
+        errors.append("Chosen options unavailable")
         form_pass = False
 
     if id_job == "":
@@ -287,7 +295,8 @@ def launch_analysis():
                              align=align,
                              backup=bckp,
                              mailer=mailer,
-                             tool=tool)
+                             tool=tool,
+                             options=options)
             if MODE == "webserver":
                 job.launch()
             else:
@@ -373,6 +382,35 @@ def gallery_file(filename):
         except FileNotFoundError:
             abort(404)
     return abort(404)
+
+
+def get_options(tool_name, chosen_options):
+    """
+    Transform options chosen in javascript into parameters
+
+    :return: True is chosen options are valid + a string containing optionnal parameters to use with tool
+    :rtype: boolean, str
+    """
+    tools = Tools().tools
+    tool = tools[tool_name] if tool_name in tools else None
+    tool_options = tool.options
+    print(tool_options)
+    print(chosen_options)
+    # We filter options for the chosen tool.
+    tool_prefix = "tool-options-%s-" % tool_name
+    print(tool_prefix)
+    filtered_options = [s[len(tool_prefix):].split("-") for s in chosen_options if s.startswith(tool_prefix)]
+    print(filtered_options)
+    valid = True
+    options_params = None
+    try:
+        options_params = [tool_options[int(o)]['entries'][int(e)]['value'] for o, e in filtered_options]
+    except KeyError:
+        valid = False
+    except IndexError:
+        valid = False
+    print(options_params)
+    return True, " ".join(options_params)
 
 
 def get_file(file, gzip=False):  # pragma: no cover

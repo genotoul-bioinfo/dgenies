@@ -408,7 +408,10 @@ dgenies.run.do_submit = function () {
             "query_type": $("select.query").find(":selected").text().toLowerCase(),
             "target": $("input#target").val(),
             "target_type": $("select.target").find(":selected").text().toLowerCase(),
-            "tool": $("input[name=tool]:checked").val()
+            "tool": $("input[name=tool]:checked").val(),
+            "options": $.map($("input[name|='tool-options']:checked"), function(element) {
+                                                                           return $(element).val();
+                                                                    })
         });
     }
     else {

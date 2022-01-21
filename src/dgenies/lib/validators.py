@@ -19,7 +19,7 @@ import traceback
 from functools import reduce
 
 
-def good_paf_line(parts):
+def _good_paf_line(parts):
     """
     Check PAF line splitted in many parts
 
@@ -52,7 +52,7 @@ def paf(in_file, n_max=None):
             n = 0
             for line in aln:
                 parts = line.rstrip().split("\t")
-                if not good_paf_line(parts):
+                if not _good_paf_line(parts):
                     return False
                 n += 1
                 if n_max and n >= n_max:

@@ -44,9 +44,8 @@ class JobManager:
     """
 
     def __init__(self, id_job, email=None, query: Fasta=None, target: Fasta=None, mailer=None,
-                 tool="minimap2", align: Fasta=None, backup: Fasta=None):
+                 tool="minimap2", align: Fasta=None, backup: Fasta=None, options=None):
         """
-
         :param id_job: job id
         :type id_job: str
         :param email: email from user
@@ -63,6 +62,8 @@ class JobManager:
         :type align: Fasta
         :param backup: backup TAR file
         :type backup: Fasta
+        :param options: list of str containing options for the chosen tool
+        :type options: list
         """
         self.id_job = id_job
         self.email = email
@@ -79,6 +80,7 @@ class JobManager:
         self.tools = Tools().tools
         self.tool = self.tools[tool] if tool is not None else None
         self.tool_name = tool
+        self.options = options if tool is not None or options is not None else None
         # Outputs:
         self.output_dir = os.path.join(self.config.app_data, id_job)
         self.preptime_file = os.path.join(self.output_dir, "prep_times")
@@ -358,6 +360,7 @@ class JobManager:
         command_line = command_line.replace("{exe}", self.tool.exec) \
                                    .replace("{target}", self.target.get_path()) \
                                    .replace("{threads}", str(self.tool.threads)) \
+                                   .replace("{options}", self.options) \
                                    .replace("{out}", self.paf_raw)
 
         cmd += command_line.split(" ")
