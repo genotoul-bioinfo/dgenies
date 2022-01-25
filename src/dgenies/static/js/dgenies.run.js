@@ -279,8 +279,10 @@ dgenies.run.show_tab = function(tab) {
  */
 
 dgenies.run.show_tool_options = function(tool) {
-    $(`.optionx:not(tool-options-${tool})`).hide();
-    $(`.optionx.tool-options-${tool}`).show();
+    $(`.optionx:not(tool-options-${tool})`).addClass("hidden");
+    if($(`.optionx.tool-options-${tool}`).length > 1){
+        $(`.optionx.tool-options-${tool}`).removeClass("hidden");
+    }
 };
 
 /**

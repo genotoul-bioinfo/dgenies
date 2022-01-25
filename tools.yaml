@@ -1,13 +1,32 @@
 minimap2:
   exec: default
-  command_line: "{exe} -t {threads} {target} {query} -o {out}"
-  all_vs_all: "{exe} -t {threads} -X {target} {target} -o {out}"
+  command_line: "{exe} -t {threads} {options} -o {out} {target} {query}"
+  all_vs_all: "{exe} -t {threads} {options} -o {out} -X {target} {target}"
   max_memory: 40
   threads: 4
   parser: !!null
   split_before: True
   help: "Better for low similar fasta files"
   order: 0
+  options:
+    -
+      label: Repeatedness
+      type: radio
+      help: "Ignore top fraction of most frequent minimizers"
+      entries:
+        -
+          label: "few repeats"
+          value: "-f 0.0002"
+          help: "-f 0.0002"
+          default: True
+        -
+          label: "some repeats"
+          value: "-f 0.002"
+          help: "-f 0.002"
+        -
+          label: "many repeats"
+          value: "-f 0.02"
+          help: "-f 0.02"
 
 mashmap:
   exec: default
@@ -19,3 +38,4 @@ mashmap:
   split_before: False
   help: "Faster for high similar fasta files"
   order: 1
+  options: !!null

@@ -136,7 +136,6 @@
                                     </td>
                                     <td>
                                     {% for tool in tools_names %}
-                                        {% if loop.index0 == 0 %}{% set default_tool = tool %}{% endif %}
                                         <label style="vertical-align: bottom; line-height: 35px;" class="radio-inline">
                                             <input type="radio" id="tool-{{ tool }}" name="tool" value="{{ tool }}"
                                         {% if loop.index0 == 0 %}checked{% endif %} style="vertical-align: top;"/>
@@ -158,20 +157,18 @@
                             {% endif %}
                             {% if tools | length > 1 %}
                                 {% for tool in tools_names %}
-                                    <tr class="tabx tab1 optionx tool-options-{{tool}}">
+                                    <tr class="tabx tab1 optionx tool-options-{{tool}} {% if loop.index0 != 0 or not options[tool] %}hidden{% endif %}">
                                         <td colspan="2" style="vertical-align:top;">
-                                            <label class="options">Options</label>
-                                            <div id="tool-options">
-                                                <div class="tool-options" id="tool-options-{{tool}} {% if tool == default_tool %}activate{% endif %}">
-                                                    tool-options-{{tool}}</div>
+                                            <div id="tool-options-{{tool}}">
+                                                <label class="options">Options</label>
                                             </div>
                                         </td>
                                     </tr>
                                     {% if options[tool] %}
-                                        <tr class="tabx tab1 optionx tool-options-{{tool}}">
+                                        <tr class="tabx tab1 optionx tool-options-{{tool}} {% if loop.index0 != 0 %}hidden{% endif %}" >
                                             {% for opt in options[tool] %}
+                                                {% set outer_loop = loop %}
                                                 <td style="vertical-align:top;">
-                                                    {% set outer_loop = loop %}
                                                     {{ opt.label }}
                                                 </td>
                                                 <td>
@@ -192,30 +189,36 @@
                                     {% endif %}
                                 {% endfor %}
                             {% else %}
-                                <tr class="tabx tab1">
-                                    <td colspan="2">
-                                        {% for tool in tools_names %}
-                                            {% if options[tool] %}
-                                                {% for opt in options[tool] %}
-                                                    <td>
-                                                        {% set outer_loop = loop %}
-                                                        {% for entry in opt['entries'] %}
-                                                            <label style="vertical-align: bottom;" class="radio">
-                                                                <input type="{{ opt.type }}" id="tool-options-{{ outer_loop.index0 }}-{{ loop.index0 }}"
-                                                                       name="tool-options-{{tool}}-{{ outer_loop.index0 }}{% if opt.type != 'radio' %}-{{loop.index0}}{% endif %}"
-                                                                       value="tool-options-{{tool}}-{{ outer_loop.index0 }}-{{ loop.index0 }}"
-                                                                       {% if entry.default %}checked{% endif %}/>
-                                                                {{ entry.label | capitalize }}
-                                                                <span class="glyphicon glyphicon-question-sign" style="color: #2aabd2"
-                                                                      title="{{ entry.help }}"></span>
-                                                            </label>
-                                                        {% endfor %}
-                                                    </td>
-                                               {% endfor %}
-                                            {% endif %}
-                                        {% endfor %}
+                                {% set tool = tools_names[0] %}
+                                <tr class="tabx tab1 optionx tool-options-{{tool}} {% if not options[tool] %}hidden{% endif %}">
+                                    <td colspan="2" style="vertical-align:top;">
+                                        <div id="tool-options">
+                                            <label class="options">Options</label>
+                                        </div>
                                     </td>
                                 </tr>
+                                {% if options[tool] %}
+                                    <tr class="tabx tab1 optionx tool-options-{{tool}}" >
+                                        {% for opt in options[tool] %}
+                                            <td style="vertical-align:top;">
+                                                {{ opt.label }}
+                                            </td>
+                                            <td>
+                                                {% for entry in opt['entries'] %}
+                                                    <label style="vertical-align: bottom; line-height: 35px;" class="radio">
+                                                        <input type="{{ opt.type }}" id="tool-options-{{tool}}-0-{{ loop.index0 }}"
+                                                               name="tool-options-{{tool}}-0{% if opt.type != 'radio' %}-{{loop.index0}}{% endif %}"
+                                                               value="tool-options-{{tool}}-0-{{ loop.index0 }}"
+                                                               {% if entry.default %}checked{% endif %}/>
+                                                        {{ entry.label | capitalize }}
+                                                        <span class="glyphicon glyphicon-question-sign" style="color: #2aabd2"
+                                                              title="{{ entry.help }}"></span>
+                                                    </label>
+                                                {% endfor %}
+                                            </td>
+                                        {% endfor %}
+                                    </tr>
+                                {% endif %}
                             {% endif %}
 
 
