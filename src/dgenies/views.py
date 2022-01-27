@@ -407,7 +407,6 @@ def get_options(tool_name, chosen_options):
         valid = False
     except IndexError:
         valid = False
-    print(options_params)
     return True, " ".join(options_params)
 
 

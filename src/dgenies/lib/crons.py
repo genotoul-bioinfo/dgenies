@@ -27,12 +27,14 @@ class Crons:
         self.config = AppConfigReader()
         self.local_scheduler_pid_file = os.path.join(self.config.config_dir, ".local_scheduler_pid")
 
-    def clear(self, kill_scheduler=True):
+    def clear(self, kill_scheduler=True, remove_pid_file=True):
         """
         Clear all crons
 
         :param kill_scheduler: if True, kill local scheduler currently running
         :type kill_scheduler: bool
+        :param remove_pid_file: if True, remove pid file if local scheduler was killed successfully
+        :type remove_pid_file: bool
         """
         # Remove old crons:
         self.my_cron.remove_all(comment="dgenies")
@@ -42,9 +44,10 @@ class Crons:
             if os.path.exists(self.local_scheduler_pid_file):
                 with open(self.local_scheduler_pid_file) as p_f:
                     pid = int(p_f.readline().strip("\n"))
-                    if psutil.pid_exists(pid):
-                        p = psutil.Process(pid)
-                        p.terminate()
+                if psutil.pid_exists(pid) and remove_pid_file:
+                    p = psutil.Process(pid)
+                    p.terminate()
+                    os.remove(self.local_scheduler_pid_file)
 
     def start_all(self):
         """
