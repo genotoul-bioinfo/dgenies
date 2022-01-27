@@ -604,6 +604,7 @@ class JobManager:
             args = args[:args.index(">")]
         args = args.replace("{target}", self.target.get_path()) \
                    .replace("{threads}", str(self.tool.threads_cluster)) \
+                   .replace("{options}", self.options) \
                    .replace("{out}", self.paf_raw)
 
         args = args.split(" ")
@@ -1586,7 +1587,8 @@ class JobManager:
                     j11.delete_instance()
             if self.target is not None or self.backup is not None:
                 job = Job.create(id_job=self.id_job, email=self.email, batch_type=self.config.batch_system_type,
-                                 date_created=datetime.now(), tool=self.tool.name if self.tool is not None else None)
+                                 date_created=datetime.now(), tool=self.tool.name if self.tool is not None else None,
+                                 options=self.options)
                 job.save()
                 if not os.path.exists(self.output_dir):
                     os.mkdir(self.output_dir)
@@ -1595,7 +1597,7 @@ class JobManager:
             else:
                 job = Job.create(id_job=self.id_job, email=self.email, batch_type=self.config.batch_system_type,
                                  date_created=datetime.now(), tool=self.tool.name if self.tool is not None else None,
-                                 status="fail")
+                                 options=self.options, status="fail")
                 job.save()
 
     def set_status_standalone(self, status, error=""):

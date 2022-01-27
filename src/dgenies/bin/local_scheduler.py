@@ -63,7 +63,7 @@ def start_job(id_job, batch_system_type="local"):
         job = Job.get(Job.id_job == id_job)
         job.status = "starting"
         job.save()
-        job_mng = JobManager(id_job=id_job, email=job.email, tool=job.tool)
+        job_mng = JobManager(id_job=id_job, email=job.email, tool=job.tool, options=job.options)
         job_mng.set_inputs_from_res_dir()
         job_mng.run_job_in_thread(batch_system_type)
 
@@ -117,6 +117,7 @@ def prepare_job(id_job):
         job.status = "preparing"
         job.save()
         job_mng = JobManager(id_job=id_job, email=job.email, tool=job.tool)
+#        job_mng = JobManager(id_job=id_job, email=job.email, tool=job.tool, options=job.options)
         job_mng.set_inputs_from_res_dir()
         job_mng.prepare_data_in_thread()
 

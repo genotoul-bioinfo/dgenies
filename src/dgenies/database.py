@@ -69,6 +69,7 @@ if MODE == "webserver":
         mem_peak = IntegerField(null=True)
         time_elapsed = IntegerField(null=True)
         tool = CharField(default="minimap2", max_length=50, null=True)
+        options = CharField(max_length=127, null=True)
 
 
     class Gallery(BaseModel):

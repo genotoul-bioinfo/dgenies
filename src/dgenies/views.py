@@ -388,19 +388,17 @@ def get_options(tool_name, chosen_options):
     """
     Transform options chosen in javascript into parameters
 
-    :return: True is chosen options are valid + a string containing optionnal parameters to use with tool
+    :return: True is chosen options are valid + a string containing optional parameters to use with tool
     :rtype: boolean, str
     """
     tools = Tools().tools
+    if tool_name is None:
+        return True, None
     tool = tools[tool_name] if tool_name in tools else None
-    tool_options = tool.options
-    print(tool_options)
-    print(chosen_options)
+    tool_options = tool.options if tool is not None else None
     # We filter options for the chosen tool.
     tool_prefix = "tool-options-%s-" % tool_name
-    print(tool_prefix)
     filtered_options = [s[len(tool_prefix):].split("-") for s in chosen_options if s.startswith(tool_prefix)]
-    print(filtered_options)
     valid = True
     options_params = None
     try:
