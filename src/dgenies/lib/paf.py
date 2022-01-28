@@ -388,6 +388,7 @@ class Paf:
         :param contigs: contigs to be reoriented
         """
         sorted_file = self.paf + ".sorted"
+        contigs = set(contigs)
         with open(self.paf, "r") as source, open(sorted_file, "w") as target:
             for line in source:
                 parts = line.strip("\n").split("\t")
@@ -416,6 +417,7 @@ class Paf:
         :param contigs_reoriented: reoriented contigs list
         :type contigs_reoriented: list
         """
+        contigs_reoriented = set(contigs_reoriented)
         with open(self.idx_q, "w") as idx:
             idx.write(self.name_q + "\n")
             for contig in self.q_order:
