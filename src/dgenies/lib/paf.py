@@ -9,6 +9,7 @@ from numpy import mean
 from pathlib import Path
 import json
 from dgenies.bin.index import Index
+from dgenies.config_reader import AppConfigReader
 from dgenies.lib.functions import Functions
 from intervaltree import IntervalTree
 import matplotlib as mpl
@@ -23,8 +24,9 @@ class Paf:
     """
     Functions applied to PAF files
     """
+    config = AppConfigReader()
     limit_idy = [0.25, 0.5, 0.75]
-    max_nb_lines = 100000
+    max_nb_lines = config.max_nb_lines
 
     def __init__(self, paf: str, idx_q: str, idx_t: str, auto_parse: bool=True, mailer=None, id_job=None):
         """

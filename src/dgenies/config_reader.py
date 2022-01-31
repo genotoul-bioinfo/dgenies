@@ -139,6 +139,12 @@ class AppConfigReader:
         except NoOptionError:
             return 1024 * 1024 * 1024
 
+    def _get_max_nb_lines(self):
+        try:
+            return int(self._replace_vars(self.reader.get("global", "max_nb_lines")))
+        except NoOptionError:
+            return 100000
+
     def _get_database_type(self):
         try:
             return self.reader.get("database", "type")
