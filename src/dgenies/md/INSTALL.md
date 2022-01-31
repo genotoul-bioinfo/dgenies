@@ -263,6 +263,7 @@ Main parameters are stored into this section:
 - `max_upload_size`: max size allowed for query and target file (-1 to avoid the limit) - size uncompressed.
 - `max_upload_size_ava`: max size allowed for target file for all-vs-all mode (only target given, -1 to avoid the limit) - size uncompressed.
 - `max_upload_file_size`: max size of the uploaded size (real size of the file, compressed or not, -1 to avoid the limit).
+- `max_nb_lines`: Maximum number of lines displayed for paf file (default: 100000).
 
 For webserver mode only (ignored in standalone mode):
 
@@ -409,6 +410,7 @@ The command line skeleton defines how to launch the program, in the `command_lin
 - `{exe}`: will be replaced by the executable path
 - `{target}`: will be replaced by the target fasta file
 - `{query}`: will be replaced by the query fasta file
+- `{options}`: will be replaced by the options fields selected
 - `{out}`: will be replaced by the output file
 
 If the tool can be multithreaded, add the `{threads}` tag which will be replaced by the number of threads to use.
@@ -450,6 +452,84 @@ Define a message to show aside the tool name in the run form. Set it in the `hel
 Optional. Default: random.
 
 Define in which order we show tools in the run form. Set it in the `order` property.
+
+#### Options
+
+Optional.
+
+Define options displayed in form. List of individual options where each element of the list is defined as follow. Displayed in list oreder.
+
+**Example** :
+
+```yml
+options:
+  -
+    label: Repeatedness
+    type: radio
+    help: "Ignore top fraction of most frequent minimizers"
+    entries:
+      -
+        label: "few repeats"
+        value: "-f 0.0002"
+        help: "-f 0.0002"
+        default: True
+      -
+        label: "some repeats"
+        value: "-f 0.002"
+        help: "-f 0.002"
+      -
+        label: "many repeats"
+        value: "-f 0.02"
+        help: "-f 0.02"
+```
+
+
+##### Label
+
+Required.
+
+Text displayed in the form for the option
+
+##### Type
+
+Required.
+
+Type of option. Either 'radio' or 'checklist'.
+
+##### Help
+
+Optional.
+
+Define a message to show aside the option label in the run form. Set it in the `help` property.
+
+##### Entries
+
+List of choice allowed for the current option. Each entry must/can have the following keys:
+
+###### Label
+
+Required.
+
+Text displayed in the form for the entry
+
+###### Value
+
+Required.
+
+Command line parameter that will be used when the option is chosen.
+
+###### Help
+
+Optional.
+
+Define a message to show aside the entry label in the run form. Set it in the `help` property.
+
+###### Default
+
+Optional. Default: False
+
+Set it to true in order to have this entry enable by default.
+
 
 ### Add new formats
 

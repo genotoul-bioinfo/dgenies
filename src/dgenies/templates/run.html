@@ -169,7 +169,8 @@
                                             {% for opt in options[tool] %}
                                                 {% set outer_loop = loop %}
                                                 <td style="vertical-align:top;">
-                                                    {{ opt.label }}
+                                                    {{ opt.label }}<span class="glyphicon glyphicon-question-sign" style="color: #2aabd2"
+                                                                  title="{{ opt.help }}"></span>
                                                 </td>
                                                 <td>
                                                     {% for entry in opt['entries'] %}
