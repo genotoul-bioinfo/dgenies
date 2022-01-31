@@ -461,27 +461,25 @@ Define options displayed in form. List of individual options where each element 
 
 **Example** :
 
-```yml
-options:
-  -
-    label: Repeatedness
-    type: radio
-    help: "Ignore top fraction of most frequent minimizers"
-    entries:
+    options:
       -
-        label: "few repeats"
-        value: "-f 0.0002"
-        help: "-f 0.0002"
-        default: True
-      -
-        label: "some repeats"
-        value: "-f 0.002"
-        help: "-f 0.002"
-      -
-        label: "many repeats"
-        value: "-f 0.02"
-        help: "-f 0.02"
-```
+        label: Repeatedness
+        type: radio
+        help: "Ignore top fraction of most frequent minimizers"
+        entries:
+          -
+            label: "few repeats"
+            value: "-f 0.0002"
+            help: "-f 0.0002"
+            default: True
+          -
+            label: "some repeats"
+            value: "-f 0.002"
+            help: "-f 0.002"
+          -
+            label: "many repeats"
+            value: "-f 0.02"
+            help: "-f 0.02"
 
 
 ##### Label
