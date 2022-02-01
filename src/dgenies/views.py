@@ -76,10 +76,10 @@ def run():
     tools = Tools().tools
     tools_names = sorted(list(tools.keys()), key=lambda x: (tools[x].order, tools[x].name))
     tools_ava = {}
-    options = {}
+    tools_options = {}
     for tool_name, tool in tools.items():
         tools_ava[tool_name] = 1 if tool.all_vs_all is not None else 0
-        options[tool_name] = tool.options
+        tools_options[tool_name] = tool.options
     if MODE == "webserver":
         with Session.connect():
             s_id = Session.new()
@@ -103,7 +103,7 @@ def run():
                            example=config_reader.example_target != "",
                            target=os.path.basename(config_reader.example_target),
                            query=os.path.basename(config_reader.example_query), tools_names=tools_names, tools=tools,
-                           tools_ava=tools_ava, options=options, version=VERSION, inforun=inforun)
+                           tools_ava=tools_ava, tools_options=tools_options, version=VERSION, inforun=inforun)
 
 
 @app.route("/run-test", methods=['GET'])
@@ -145,7 +145,7 @@ def launch_analysis():
     file_target = request.form["target"]
     file_target_type = request.form["target_type"]
     tool = request.form["tool"] if "tool" in request.form else None
-    options = request.form.getlist("options[]")
+    tool_options = request.form.getlist("tool_options[]")
     alignfile = request.form["alignfile"] if "alignfile" in request.form else None
     alignfile_type = request.form["alignfile_type"] if "alignfile_type" in request.form else None
     backup = request.form["backup"] if "backup" in request.form else None
@@ -177,7 +177,7 @@ def launch_analysis():
         errors.append("Tool unavailable: %s" % tool)
         form_pass = False
 
-    valid_options, options = get_options(tool, options)
+    valid_options, options = get_tools_options(tool, tool_options)
     if not valid_options:
         errors.append("Chosen options unavailable")
         form_pass = False
@@ -384,7 +384,7 @@ def gallery_file(filename):
     return abort(404)
 
 
-def get_options(tool_name, chosen_options):
+def get_tools_options(tool_name, chosen_options):
     """
     Transform options chosen in javascript into parameters
 

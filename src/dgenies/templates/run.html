@@ -138,10 +138,11 @@
                                     {% for tool in tools_names %}
                                         <label style="vertical-align: bottom; line-height: 35px;" class="radio-inline">
                                             <input type="radio" id="tool-{{ tool }}" name="tool" value="{{ tool }}"
-                                        {% if loop.index0 == 0 %}checked{% endif %} style="vertical-align: top;"/>
-                                        {{ tool | capitalize }}
+                                            {% if loop.index0 == 0 %}checked{% endif %} style="vertical-align: top;"/>
+                                            {{ tool | capitalize }}
                                             <span class="glyphicon glyphicon-question-sign" style="color: #2aabd2"
-                                                  title="{{ tools[tool].help }}"></span></label>
+                                                  title="{{ tools[tool].help }}"></span>
+                                        </label>
                                     {% endfor %}
                                     </td>
                                 </tr>
@@ -157,32 +158,35 @@
                             {% endif %}
                             {% if tools | length > 1 %}
                                 {% for tool in tools_names %}
-                                    <tr class="tabx tab1 optionx tool-options-{{tool}} {% if loop.index0 != 0 or not options[tool] %}hidden{% endif %}">
+                                    <tr class="tabx tab1 optionx tool-options-{{tool}} {% if loop.index0 != 0 or not tools[tool].options %}hidden{% endif %}">
                                         <td colspan="2" style="vertical-align:top;">
                                             <div id="tool-options-{{tool}}">
                                                 <label class="options">Options</label>
                                             </div>
                                         </td>
                                     </tr>
-                                    {% if options[tool] %}
+                                    {% if tools[tool].options %}
                                         <tr class="tabx tab1 optionx tool-options-{{tool}} {% if loop.index0 != 0 %}hidden{% endif %}" >
-                                            {% for opt in options[tool] %}
+                                            {% for opt in tools_options[tool] %}
                                                 {% set outer_loop = loop %}
                                                 <td style="vertical-align:top;">
-                                                    {{ opt.label }}<span class="glyphicon glyphicon-question-sign" style="color: #2aabd2"
-                                                                  title="{{ opt.help }}"></span>
+                                                    {{ opt.label }}&nbsp<span class="glyphicon glyphicon-question-sign" style="color: #2aabd2"
+                                                                              title="{{ opt.help }}"></span>
                                                 </td>
                                                 <td>
                                                     {% for entry in opt['entries'] %}
-                                                        <label style="vertical-align: bottom; line-height: 35px;" class="radio">
+                                                        <div class="form-check">
                                                             <input type="{{ opt.type }}" id="tool-options-{{tool}}-{{ outer_loop.index0 }}-{{ loop.index0 }}"
                                                                    name="tool-options-{{tool}}-{{ outer_loop.index0 }}{% if opt.type != 'radio' %}-{{loop.index0}}{% endif %}"
                                                                    value="tool-options-{{tool}}-{{ outer_loop.index0 }}-{{ loop.index0 }}"
+                                                                   class="form-check-input"
                                                                    {% if entry.default %}checked{% endif %}/>
-                                                            {{ entry.label | capitalize }}
-                                                            <span class="glyphicon glyphicon-question-sign" style="color: #2aabd2"
-                                                                  title="{{ entry.help }}"></span>
-                                                        </label>
+                                                            <label class="form-check-label" style="vertical-align: bottom; line-height: 30px; font-weight: normal;"
+                                                                   for="tool-options-{{tool}}-{{ outer_loop.index0 }}-{{ loop.index0 }}">
+                                                                {{ entry.label | capitalize }}&nbsp<span class="glyphicon glyphicon-question-sign" style="color: #2aabd2"
+                                                                      title="{{ entry.help }}"></span>
+                                                            </label>
+                                                        </div>
                                                     {% endfor %}
                                                 </td>
                                             {% endfor %}
@@ -191,30 +195,36 @@
                                 {% endfor %}
                             {% else %}
                                 {% set tool = tools_names[0] %}
-                                <tr class="tabx tab1 optionx tool-options-{{tool}} {% if not options[tool] %}hidden{% endif %}">
+                                <tr class="tabx tab1 optionx tool-options-{{tool}} {% if not tools[tool].options %}hidden{% endif %}">
                                     <td colspan="2" style="vertical-align:top;">
                                         <div id="tool-options">
                                             <label class="options">Options</label>
                                         </div>
                                     </td>
                                 </tr>
-                                {% if options[tool] %}
+                                {% if tools[tool].options %}
                                     <tr class="tabx tab1 optionx tool-options-{{tool}}" >
-                                        {% for opt in options[tool] %}
+                                        {% for opt in tools[tool].options %}
                                             <td style="vertical-align:top;">
-                                                {{ opt.label }}
+                                                {{ opt.label }}&nbsp<span class="glyphicon glyphicon-question-sign" style="color: #2aabd2"
+                                                                          title="{{ opt.help }}"></span>
                                             </td>
                                             <td>
                                                 {% for entry in opt['entries'] %}
-                                                    <label style="vertical-align: bottom; line-height: 35px;" class="radio">
-                                                        <input type="{{ opt.type }}" id="tool-options-{{tool}}-0-{{ loop.index0 }}"
-                                                               name="tool-options-{{tool}}-0{% if opt.type != 'radio' %}-{{loop.index0}}{% endif %}"
-                                                               value="tool-options-{{tool}}-0-{{ loop.index0 }}"
-                                                               {% if entry.default %}checked{% endif %}/>
-                                                        {{ entry.label | capitalize }}
-                                                        <span class="glyphicon glyphicon-question-sign" style="color: #2aabd2"
+                                                <div class="form-check">
+                                                    <input class="form-check-input"
+                                                           type="{{ opt.type }}"
+                                                           id="tool-options-{{tool}}-0-{{ loop.index0 }}"
+                                                           name="tool-options-{{tool}}-0{% if opt.type != 'radio' %}-{{loop.index0}}{% endif %}"
+                                                           value="tool-options-{{tool}}-0-{{ loop.index0 }}"
+                                                           {% if entry.default %}checked{% endif %}/>
+                                                    <label class="form-check-label"
+                                                           for="tool-options-{{tool}}-0-{{ loop.index0 }}"
+                                                           style="vertical-align: bottom; line-height: 30px; font-weight: normal;">
+                                                        {{ entry.label | capitalize }}&nbsp<span class="glyphicon glyphicon-question-sign" style="color: #2aabd2"
                                                               title="{{ entry.help }}"></span>
                                                     </label>
+                                                </div>
                                                 {% endfor %}
                                             </td>
                                         {% endfor %}

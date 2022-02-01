@@ -23,7 +23,6 @@ dgenies.run.query_example = "";
 dgenies.run.tool_has_ava = {};
 dgenies.run.enabled = true;
 dgenies.run.valid = true;
-
 /**
  * Initialise app for run page
  *
@@ -420,15 +419,17 @@ dgenies.run.do_submit = function () {
     };
     let tab = $("#tabs .tab.active").attr("id");
     if (tab === "tab1") {
+        tool = $("input[name=tool]:checked").val()
         data = Object.assign({}, data, {
             "query": $("input#query").val(),
             "query_type": $("select.query").find(":selected").text().toLowerCase(),
             "target": $("input#target").val(),
             "target_type": $("select.target").find(":selected").text().toLowerCase(),
-            "tool": $("input[name=tool]:checked").val(),
-            "options": $.map($("input[name|='tool-options']:checked"), function(element) {
-                                                                           return $(element).val();
-                                                                    })
+            "tool": tool,
+            "tool_options": $.map($(`input[name|='tool-options-${tool}']:checked`),
+                                  function(element) {
+                                      return $(element).val();
+                                  })
         });
     }
     else {

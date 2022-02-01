@@ -1,18 +1,23 @@
 # Changelog
 
-## 1.2.1 (2022-01-??)
+## 1.3 (2022-0?-??)
 
 ### Major changes
 
-- Backup archive is now a `tar.gz` file. Old `tar` backup archive are still supported
-- Speedup compressed file operations by using [`xopen` library](https://github.com/pycompression/xopen)
+- Add `repeatedness` option with minimap2. This option needs to upgrade the database schema.
+- Backup archive is now a `tar.gz` file. Old `tar` backup archive are still supported.
 - Upgrade embedded minimap2 to the latest available version (2.24)
 
 ### Other changes
 
+- Check if PAF file is correctly formatted
+- Performance improvement 
+- Expose `mx_nb_lines` parameter
+- Speedup compressed file operations by using [`xopen` library](https://github.com/pycompression/xopen)
 - Fix upload form. Form is now correctly reset when a field is missing or erroneous.
 - Fix filename collision. Uploading a query file and a target file with the same filename now works correctly
 - Correct default `slurm` parameters to match last version of [slurm-drmaa](https://github.com/natefoo/slurm-drmaa) (1.1.3)
+- Remove local scheduler pid file when stopping it 
 - Update documentation:
   - Explain how similarity/identity measure is computed
   - Add link in D-Genies to what is expected in backup archive
