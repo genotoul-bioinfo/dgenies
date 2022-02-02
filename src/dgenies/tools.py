@@ -103,14 +103,14 @@ class Tool:
 @Singleton
 class Tools:
     """
-    Load (from yaml file) and store available alignement tools
+    Load (from yaml file) and store available alignment tools
     """
 
     def __init__(self):
         self.tools = {}
-        self.load_yaml()
+        self.load_yaml(trusted=True)
 
-    def load_yaml(self):
+    def load_yaml(self, trusted=False):
         app_dir = os.path.dirname(inspect.getfile(self.__class__))
         yaml_file = None
         config_file_search = [os.path.join(os.path.abspath(os.sep), "dgenies", "tools.yaml"),
@@ -135,7 +135,7 @@ class Tools:
             raise FileNotFoundError("ERROR: tools.yaml not found.")
 
         with open(yaml_file, "r") as yml_f:
-            tools_dict = yaml.load(yml_f)
+            tools_dict = yaml.load(yml_f, Loader=yaml.FullLoader if trusted else yaml.SafeLoader)
             tools = {}
             for name, props in tools_dict.items():
                 tools[name] = Tool(name=name, **props)

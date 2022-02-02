@@ -9,15 +9,9 @@ config = AppConfigReader()
 if MODE == "webserver":
     from peewee import SqliteDatabase, Model, CharField, IntegerField, DateTimeField, BooleanField, MySQLDatabase, \
         OperationalError, ForeignKeyField
-    from playhouse.shortcuts import RetryOperationalError
 
     db_url = config.database_url
     db_type = config.database_type
-
-
-    class MyRetryDB(RetryOperationalError, MySQLDatabase):
-        pass
-
 
     if db_type == "sqlite":
         db = SqliteDatabase(db_url)

@@ -725,7 +725,7 @@ class Paf:
             start = item.begin
             end = item.end
             cat = item.data
-            overlaps = position_idy.search(start, end)
+            overlaps = position_idy.overlap(start, end)
             if len(overlaps) > 0:
                 has_overlap = False
                 for overlap in overlaps:
