@@ -16,8 +16,8 @@ if MODE == "webserver":
     if db_type == "sqlite":
         db = SqliteDatabase(db_url)
     elif db_type == "mysql":
-        db = MyRetryDB(host=config.database_url, port=config.database_port, user=config.database_user,
-                       passwd=config.database_password, database=config.database_db)
+        db = MySQLDatabase(host=config.database_url, port=config.database_port, user=config.database_user,
+                           passwd=config.database_password, database=config.database_db)
     else:
         raise Exception("Unsupported database type: " + db_type)
 
