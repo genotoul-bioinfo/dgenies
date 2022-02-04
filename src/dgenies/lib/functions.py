@@ -337,7 +337,7 @@ class Functions:
         Functions.send_fasta_ready(mailer, job_name, sample_name, True)
 
     @staticmethod
-    def get_readable_size(size, nb_after_coma=1):
+    def get_readable_size(size, nb_after_coma=1, base="B"):
         """
         Get human readable size from a given size in bytes
 
@@ -345,13 +345,15 @@ class Functions:
         :type size: int
         :param nb_after_coma: number of digits after coma
         :type nb_after_coma: int
+        :param base: base unit of size, must be either "B", "KiB", "MiB" or "GiB"
+        :type nb_after_coma: str
         :return: size, human readable
         :rtype: str
         """
         print(size)
-        units = ["b", "Kb", "Mb", "Gb"]
-        i = 0
-        while size >= 1024 and i < 3:
+        units = ["B", "KiB", "MiB", "GiB"]
+        i = units.index(base)
+        while size >= 1024 and i < (len(units)-1):
             size /= 1024.0
             i += 1
         return str("%." + str(nb_after_coma) + "f %s") % (size, units[i])
@@ -402,7 +404,7 @@ class Functions:
                 "picture": item.picture,
                 "query": item.query,
                 "target": item.target,
-                "mem_peak": Functions.get_readable_size(item.job.mem_peak),
+                "mem_peak": Functions.get_readable_size(item.job.mem_peak, base="Kb"),
                 "time_elapsed": Functions.get_readable_time(item.job.time_elapsed)
             })
         return items

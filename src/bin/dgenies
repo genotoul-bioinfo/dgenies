@@ -103,7 +103,7 @@ def parse_args():
     if args.subparser_name == "run":
         return "run", [args.mode, args.debug, args.host, args.port, args.no_crons, args.no_browser]
     if args.subparser_name == "clear":
-        if args.crons == False and args.logs == False and args.jobs == False:
+        if args.crons is False and args.logs is False and args.jobs is False:
             print("Nothing to do.")
             return "clear", None
         return "clear", args
