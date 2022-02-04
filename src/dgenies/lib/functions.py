@@ -404,7 +404,7 @@ class Functions:
                 "picture": item.picture,
                 "query": item.query,
                 "target": item.target,
-                "mem_peak": Functions.get_readable_size(item.job.mem_peak, base="Kb"),
+                "mem_peak": Functions.get_readable_size(item.job.mem_peak, base="KiB"),
                 "time_elapsed": Functions.get_readable_time(item.job.time_elapsed)
             })
         return items
