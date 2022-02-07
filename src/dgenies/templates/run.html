@@ -357,16 +357,16 @@
                 {% endif %}
                 <div class="tabx tab1">
                     {% set fnote_tab = fnote %}
-                    <p class="afterworlff"><sup id="fn{{ fnote_tab }}"><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup> Can be gzipped.</p>
+                    <p class="afterworlff"><sup id="fn{{ fnote_tab }}"><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup> Can be gzipped. Must end with <code>.fa</code>, <code>.fasta</code>, <code>.fna</code>, <code>.fa.gz</code>, <code>.fasta.gz</code>or <code>.fna.gz</code></p>
                     {% set fnote_tab = fnote_tab + 1 %}
                 </div>
                 <div class="tabx tab2">
                     {% set fnote_tab = fnote %}
-                    <p class="afterworlff"><sup id="fn{{ fnote_tab }}"><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup> In PAF or MAF format.</p>
+                    <p class="afterworlff"><sup id="fn{{ fnote_tab }}"><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup> In PAF or MAF format. Must end with <code>.paf</code>, <code>.maf</code></p>
                     {% set fnote_tab = fnote_tab + 1 %}
-                    <p class="afterworlff"><sup id="fn{{ fnote_tab }}"><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup> Fasta file or index built by <a href="https://raw.githubusercontent.com/genotoul-bioinfo/dgenies/v{{version}}/src/dgenies/bin/index.py" download="index.py">our tool</a>.</p>
+                    <p class="afterworlff"><sup id="fn{{ fnote_tab }}"><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup> Fasta file or index built by <a href="https://raw.githubusercontent.com/genotoul-bioinfo/dgenies/v{{version}}/src/dgenies/bin/index.py" download="index.py">our tool</a>. Must end with <code>.fa</code>, <code>.fasta</code>, <code>.fna</code>, <code>.fa.gz</code>, <code>.fasta.gz</code>, <code>.fna.gz</code> or <code>.idx</code>.</p>
                     {% set fnote_tab = fnote_tab + 1 %}
-                    <p class="afterworlff"><sup id="fn{{ fnote_tab }}"><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup> From a previous run or built following <a href="/documentation/formats#backup-file"> this documentation</a>. Must be a .tar or .tar.gz file.</p>
+                    <p class="afterworlff"><sup id="fn{{ fnote_tab }}"><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup> TAR file from a previous run or built following <a href="/documentation/formats#backup-file"> this documentation</a>. Must ends with <code>.tar</code> or <code>.tar.gz</code>.</p>
                     {% set fnote_tab = fnote_tab + 1 %}
                 </div>
             </div>
