@@ -12,3 +12,5 @@ application.properties.local
 dist
 docs/_build
 docs/javascript
+venv
+.venv
