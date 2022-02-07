@@ -8,16 +8,39 @@ config = AppConfigReader()
 
 if MODE == "webserver":
     from peewee import SqliteDatabase, Model, CharField, IntegerField, DateTimeField, BooleanField, MySQLDatabase, \
-        OperationalError, ForeignKeyField
+    OperationalError, ForeignKeyField, __exception_wrapper__
 
     db_url = config.database_url
     db_type = config.database_type
 
+    # restore RetryOperationalError from peewee 2.10.x
+    # https://github.com/coleifer/peewee/issues/1472
+    class RetryOperationalError(object):
+
+        def execute_sql(self, sql, params=None, commit=True):
+            try:
+                cursor = super(RetryOperationalError, self).execute_sql(
+                    sql, params, commit)
+            except OperationalError:
+                if not self.is_closed():
+                    self.close()
+                with __exception_wrapper__:
+                    cursor = self.cursor()
+                    cursor.execute(sql, params or ())
+                    if commit and not self.in_transaction():
+                        self.commit()
+            return cursor
+
+
+    class MyRetryDB(RetryOperationalError, MySQLDatabase):
+        pass
+
+
     if db_type == "sqlite":
         db = SqliteDatabase(db_url)
     elif db_type == "mysql":
-        db = MySQLDatabase(host=config.database_url, port=config.database_port, user=config.database_user,
-                           passwd=config.database_password, database=config.database_db)
+        db = MyRetryDB(host=config.database_url, port=config.database_port, user=config.database_user,
+                       passwd=config.database_password, database=config.database_db)
     else:
         raise Exception("Unsupported database type: " + db_type)
 
