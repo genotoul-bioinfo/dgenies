@@ -10,7 +10,7 @@ from dgenies.lib import parsers
 
 class Tool:
 
-    def __init__(self, name, exec, command_line, all_vs_all, max_memory, threads=1, exec_cluster=None,
+    def __init__(self, name, exec, command_line, all_vs_all, max_memory, label=None, threads=1, exec_cluster=None,
                  threads_cluster=None, parser=None, split_before=False, help=None, order=None, options=None):
         """
         Create a new tool
@@ -18,15 +18,23 @@ class Tool:
         :param command_line: command line to launch the tool
         :param all_vs_all: command line in all_vs_all mode (None if not available for the tool)
         :param max_memory: max memory the tool is supposed to use (ex: 40G) - for cluster submissions
+        :param label: Name to display for user
         :param parser: name of the function in dgenies.lib.functions to launch after mapping to have a correct PAF out
             file
         :param split_before: True to split contigs before mapping
         :type split_before: bool
         :param help: help message to show in run form
         :param order: order to show in run mode
+        :param options: list of options for the tool
         """
         # Name
         self.name = name
+
+        # Label
+        if label:
+            self.label = label
+        else:
+            self.label = name
 
         # Exec
         if exec == "default":

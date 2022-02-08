@@ -1,5 +1,6 @@
 minimap2:
   exec: default
+  label: "Minimap2 v2.24"
   command_line: "{exe} -t {threads} {options} -o {out} {target} {query}"
   all_vs_all: "{exe} -t {threads} {options} -o {out} -X {target} {target}"
   max_memory: 40
@@ -30,6 +31,7 @@ minimap2:
 
 mashmap:
   exec: default
+  label: "Mashmap v2.0"
   command_line: "{exe} -t {threads} -r {target} -q {query} -o {out}"
   all_vs_all: !!null
   max_memory: 20

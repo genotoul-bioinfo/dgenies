@@ -139,7 +139,7 @@
                                         <label style="vertical-align: bottom; line-height: 35px;" class="radio-inline">
                                             <input type="radio" id="tool-{{ tool }}" name="tool" value="{{ tool }}"
                                             {% if loop.index0 == 0 %}checked{% endif %} style="vertical-align: top;"/>
-                                            {{ tool | capitalize }}
+                                            {{ tools[tool].label | capitalize }}
                                             <span class="glyphicon glyphicon-question-sign" style="color: #2aabd2"
                                                   title="{{ tools[tool].help }}"></span>
                                         </label>
