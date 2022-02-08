@@ -401,6 +401,12 @@ Required.
 
 Always set tool binary path in the `exec` property. If it differs for cluster execution, set it in the `exec_cluster` property.
 
+#### Executable path
+
+Optional.
+
+String displayed in aligner section in the run page for the given tool.
+
 #### Command line skeleton
 
 Required.
