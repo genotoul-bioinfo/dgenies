@@ -355,9 +355,11 @@ class Paf:
         max_len = lines[0][-1]
         i = 0
 
-        # Select sample of tested lines:
+        # Select samples of tested lines such that:
+        # - a selected line is at least 10% of the longest line
+        # - and a selected line is at least 1% of the length of contig or the length of chrom
         while i < len(lines) and lines[i][-1] > max_len * 0.1 \
-                and lines[i][-1] >= 0.05 * min(self.q_contigs[contig], self.t_contigs[chrom]):
+                and lines[i][-1] >= 0.01 * min(self.q_contigs[contig], self.t_contigs[chrom]):
             i += 1
         selected_lines = lines[:i]
 
