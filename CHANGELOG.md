@@ -13,13 +13,14 @@
 - Check if PAF file is correctly formatted
 - Performance improvement 
 - Expose `mx_nb_lines` parameter
+- Tools can have a label now.
+- Ability to set Legal stuff pages in webserver mode.
 - Speedup compressed file operations by using [`xopen` library](https://github.com/pycompression/xopen)
 - Fix upload form. Form is now correctly reset when a field is missing or erroneous.
 - Fix filename collision. Uploading a query file and a target file with the same filename now works correctly
 - Fix wrong RAM usage displayed in gallery
 - Correct default `slurm` parameters to match last version of [slurm-drmaa](https://github.com/natefoo/slurm-drmaa) (1.1.3)
-- Remove local scheduler pid file when stopping it 
-- Ability to set Legal stuff pages in webserver mode.
+- Remove local scheduler pid file when stopping it.
 - Update documentation:
   - Explain how similarity/identity measure is computed
   - Add link in D-Genies to what is expected in backup archive
