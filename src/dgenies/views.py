@@ -38,6 +38,7 @@ def global_templates_variables():
         "title": app_title,
         "mode": MODE,
         "all_jobs": Functions.get_list_all_jobs(MODE),
+        "legal_pages": config_reader.legal,
         "debug": DEBUG
     }
 
@@ -535,6 +536,23 @@ def contact():
     return render_template("contact.html", menu="contact")
 
 
+@app.route("/legal/<page>", methods=['GET'])
+def legal(page):
+    """
+    Display legal things
+    """
+    if page not in config_reader.legal:
+        abort(404)
+    with open(config_reader.legal[page], "r", encoding='utf-8') as md_page:
+        content = md_page.read()
+    env = Environment()
+    template = env.from_string(content)
+    content = template.render()
+    md = Markdown()
+    content = Markup(md.convert(content))
+    return render_template("simple.html", menu="legal", content=content)
+
+
 @app.route("/paf/<id_res>", methods=['GET'])
 def download_paf(id_res):
     """
@@ -578,7 +596,7 @@ def get_graph():
 @app.route('/sort/<id_res>', methods=['POST'])
 def sort_graph(id_res):
     """
-    Sort dot plot to referene
+    Sort dot plot to reference
 
     :param id_res: job id
     :type id_res: str

@@ -361,6 +361,16 @@ If at least target is filled, a button "Load example" will be shown in the run f
 
 Set `enable_logging_runs` to True will enable storage of analytics data. It stores for each job creation date, user mail, size of query and target, and batch type.
 
+### Legal (optional)
+
+In webserver mode, you may need to describe some legal stuff in dedicated pages.
+
+Use following format associate the `legal/<page name>` address to the related Markdown file:
+
+    <page name> = /path/to/my/page.md
+
+You can set as many pages you want.
+
 ## Customize your installation
 
 You can make easily make some changes to the application, described below. To do so, you must first clone the D-Genies repository (except if changes can be done in the current installation, see below):

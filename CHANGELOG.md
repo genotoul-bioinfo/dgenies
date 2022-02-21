@@ -19,6 +19,7 @@
 - Fix wrong RAM usage displayed in gallery
 - Correct default `slurm` parameters to match last version of [slurm-drmaa](https://github.com/natefoo/slurm-drmaa) (1.1.3)
 - Remove local scheduler pid file when stopping it 
+- Ability to set Legal stuff pages in webserver mode.
 - Update documentation:
   - Explain how similarity/identity measure is computed
   - Add link in D-Genies to what is expected in backup archive

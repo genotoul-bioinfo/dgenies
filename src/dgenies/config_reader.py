@@ -402,3 +402,9 @@ class AppConfigReader:
             return self.reader.get("analytics", "enable_logging_runs").lower() == "true"
         except (NoOptionError, NoSectionError):
             return False
+
+    def _get_legal(self):
+        try:
+            return {option: self.reader.get("legal", option) for option in self.reader.options("legal")}
+        except (NoOptionError, NoSectionError):
+            return []

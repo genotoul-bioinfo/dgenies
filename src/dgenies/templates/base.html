@@ -69,6 +69,17 @@
                         </li>
                         <li class="{% if(menu == 'install') %}active{% endif %}"><a href="/install">Install</a></li>
                         <li class="{% if(menu == 'contact') %}active{% endif %}"><a href="/contact">Contact</a></li>
+                        {% if mode == "webserver" and legal_pages %}
+                            <li class="dropdown legal {% if(menu == 'legal') %}active{% endif %}">
+                                <a href="#" class="dropdown-toggle" data-toggle="dropdown">Legal<span
+                                        class="caret"></span></a>
+                                <ul class="dropdown-menu" role="menu">
+                                    {% for page in legal_pages %}
+                                        <li><a href="/legal/{{ page }}">{{ page | capitalize }}</a></li>
+                                    {% endfor %}
+                                </ul>
+                            </li>
+                        {% endif %}
                     </ul>
                 </div><!--/.nav-collapse -->
             </div>
@@ -86,8 +97,8 @@
             <footer>
                 <hr>
                 <div class="container" style="text-align: center;">
-                    <p>Copyright © 2017, INRA | Designed by <a target="_blank" href="http://bioinfo.genotoul.fr/">GenoToul
-                        Bioinfo platform</a>.</p>
+                    <p>Copyright © 2020-2022 — INRAe | Copyright © 2017-2019 — INRA |
+                        Designed by <a target="_blank" href="http://bioinfo.genotoul.fr/">GenoToul Bioinfo platform</a>.</p>
                 </div>
             </footer>
 

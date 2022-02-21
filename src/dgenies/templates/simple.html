@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block scripts %}
+    {{ super() }}
+{% endblock %}
+{% block onload %}
+    {{ super() }}
+{% endblock %}
+{% block content %}
+    <div id="body">
+        {{ content | safe }}
+    </div>
+{% endblock %}
