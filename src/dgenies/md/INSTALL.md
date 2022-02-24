@@ -361,15 +361,24 @@ If at least target is filled, a button "Load example" will be shown in the run f
 
 Set `enable_logging_runs` to True will enable storage of analytics data. It stores for each job creation date, user mail, size of query and target, and batch type.
 
-### Legal (optional)
+### Legal
 
-In webserver mode, you may need to describe some legal stuff in dedicated pages.
+GDPR like laws ask to warn people about how privacy data are collected and used.
+In webserver mode, you can use:
 
-Use following format associate the `legal/<page name>` address to the related Markdown file:
+- `cookie_wall`: Set the message that will display by D-Genies in order to warn about cookies. If not set, nothing will be displayed.
+As D-Genies only uses essential cookies, there is no way to refuse those cookies.
+- `<page name> = /path/to/my/page.md`: Associate the `legal/<page name>` address to the related Markdown file. You can set as many pages you want.
 
-    <page name> = /path/to/my/page.md
+**Example**
 
-You can set as many pages you want.
+```
+[legal]
+cookie_wall = D-Genies uses essential cookies in order to work, as described in <a href='/legal/cookies'>Cookies section from Terms of use</a>.
+Cookies = src/dgenies/md/cookies.md
+```
+
+You can use the `src/dgenies/md/cookies.md` file as a model.
 
 ## Customize your installation
 
