@@ -403,8 +403,15 @@ class AppConfigReader:
         except (NoOptionError, NoSectionError):
             return False
 
+    def _get_cookie_wall(self):
+        try:
+            return self.reader.get("legal", "cookie_wall")
+        except (NoOptionError, NoSectionError):
+            return None
+
     def _get_legal(self):
         try:
-            return {option: self.reader.get("legal", option) for option in self.reader.options("legal")}
+            return {option: self.reader.get("legal", option) for option in self.reader.options("legal")
+                    if option not in ["cookie_wall"]}
         except (NoOptionError, NoSectionError):
             return []

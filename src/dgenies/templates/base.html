@@ -10,6 +10,7 @@
         <script src="{{ url_for('static', filename='js/bootstrap-notify.min.js') }}" type="text/JavaScript"></script>
         <script src="{{ url_for('static', filename='js/jquery-ui.min.js') }}" type="text/JavaScript"></script>
         <script src="{{ url_for('static', filename='js/jquery.cookie-1.4.1.min.js') }}" type="text/JavaScript"></script>
+        <script src="{{ url_for('static', filename='js/jquery.modal.min.js') }}" type="text/JavaScript"></script>
         {% if debug %}
             <script src="{{ url_for('static', filename='js/dgenies.js') }}" type="text/JavaScript"></script>
             <script src="{{ url_for('static', filename='js/dgenies.prototypes.js') }}" type="text/JavaScript"></script>
@@ -21,6 +22,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/jquery-ui.min.css') }}" type="text/css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}" type="text/css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-theme.min.css') }}" type="text/css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/jquery.modal.min.css') }}" type="text/css"/>
     {% if debug %}
         <link rel="stylesheet" href="{{ url_for('static', filename='css/dgenies.css') }}" type="text/css">
     {% else %}
@@ -29,6 +31,14 @@
     <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
 </head>
 <body role="document" onload="{% block onload %}dgenies.init({{ all_jobs}}, '{{ mode }}');{% endblock %}">
+    {% if cookie_wall %}
+    <div id="cookie-wall" class="modal">
+        <p> {{ cookie_wall | safe }} </p>
+        <p style="text-align:right;">
+            <a id="cookie-wall-accept" href="#" rel="modal:close" onclick="dgenies.accept_cookie_wall()" ><b>I understand</b></a>
+        </p>
+    </div>
+    {% endif %}
 {% block body %}
     <div id="main-wrapper">
         <!-- Fixed navbar -->
@@ -97,7 +107,7 @@
             <footer>
                 <hr>
                 <div class="container" style="text-align: center;">
-                    <p>Copyright © 2020-2022 — INRAe | Copyright © 2017-2019 — INRA |
+                    <p>Copyright © 2020-2022 — INRAE | Copyright © 2017-2019 — INRA |
                         Designed by <a target="_blank" href="http://bioinfo.genotoul.fr/">GenoToul Bioinfo platform</a>.</p>
                 </div>
             </footer>

@@ -12,7 +12,15 @@ dgenies.mode = "webserver";
 dgenies.init = function(all_jobs, mode) {
     dgenies.mode = mode;
     let cookies = $.cookie("results");
+    let cookie_wall = $.cookie("wall");
     if (mode === "webserver") {
+        if (cookie_wall === undefined) {
+            $("#cookie-wall").modal({
+              escapeClose: false,
+              clickClose: false,
+              showClose: false
+            });
+        }
         cookies = (cookies !== undefined && cookies.length > 0) ? cookies.split("|") : [];
     }
     else {
@@ -29,6 +37,10 @@ dgenies.init = function(all_jobs, mode) {
 dgenies.save_cookies = function(cookies) {
     $.cookie("results", cookies.join("|"), {path: '/'});
 };
+
+dgenies.accept_cookie_wall = function(){
+    $.cookie("wall", '', { expires: 180, path: '/' });
+}
 
 /**
  * Update list of jobs

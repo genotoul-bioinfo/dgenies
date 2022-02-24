@@ -38,6 +38,7 @@ def global_templates_variables():
         "title": app_title,
         "mode": MODE,
         "all_jobs": Functions.get_list_all_jobs(MODE),
+        "cookie_wall": config_reader.cookie_wall,
         "legal_pages": config_reader.legal,
         "debug": DEBUG
     }
