@@ -1,0 +1,2 @@
+biopython>=1.70
+xopen>=1.0
