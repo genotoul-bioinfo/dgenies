@@ -573,6 +573,12 @@ The `dgenies` command can be used to do some maintenance staff.
 
 `--max-age` (opt): set the max age of jobs to delete (default: 0, for all)
 
+**Clear all jobs from analytics:**
+
+    dgenies clear -a [--max-age <age>]
+
+`--max-age` (opt): set the max age of jobs to delete (default: 0, for all)
+
 **Clear all log:**
 
     dgenies clear -l
