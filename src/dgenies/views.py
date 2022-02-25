@@ -549,7 +549,7 @@ def legal(page):
     env = Environment()
     template = env.from_string(content)
     content = template.render()
-    md = Markdown()
+    md = Markdown(extensions=['extra', 'toc'])
     content = Markup(md.convert(content))
     return render_template("simple.html", menu="legal", content=content)
 
