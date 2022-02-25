@@ -372,11 +372,11 @@ As D-Genies only uses essential cookies, there is no way to refuse those cookies
 
 **Example**
 
-```
-[legal]
-cookie_wall = D-Genies uses essential cookies in order to work, as described in <a href='/legal/cookies'>Cookies section from Terms of use</a>.
-Cookies = src/dgenies/md/cookies.md
-```
+
+    [legal]
+    cookie_wall = D-Genies uses essential cookies in order to work, as described in <a href='/legal/cookies'>Cookies section from Terms of use</a>.
+    Cookies = src/dgenies/md/cookies.md
+
 
 You can use the `src/dgenies/md/cookies.md` file as a model.
 
