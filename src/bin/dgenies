@@ -15,6 +15,7 @@ import threading
 import json
 from glob import glob
 import time
+import datetime
 from dgenies.config_reader import AppConfigReader
 from dgenies.bin.clean_jobs import parse_data_folders, parse_database, parse_upload_folders
 import requests
@@ -60,10 +61,12 @@ def parse_args():
                        default=False)
     clear.add_argument("-j", "--jobs", help="Clear jobs", type=bool, const=True, nargs="?", required=False,
                        default=False)
+    clear.add_argument("-a", "--analytics", help="Clear analytics", type=bool, const=True, nargs="?", required=False,
+                       default=False)
     clear.add_argument("-m", "--max-age", help="Max age for job to delete (0 for all)", type=int, required=False,
                        default=0)
     clear.add_argument("-w", "--web", help="Add this option with -j option, if you use the webserver mode", type=bool,
-                     const=True, nargs="?", required=False, default=False)
+                       const=True, nargs="?", required=False, default=False)
 
     # Gallery:
     gallery = subparsers.add_parser("gallery", help="Manage gallery")
@@ -103,7 +106,7 @@ def parse_args():
     if args.subparser_name == "run":
         return "run", [args.mode, args.debug, args.host, args.port, args.no_crons, args.no_browser]
     if args.subparser_name == "clear":
-        if args.crons is False and args.logs is False and args.jobs is False:
+        if args.crons is False and args.logs is False and args.jobs is False and args.analytics is False:
             print("Nothing to do.")
             return "clear", None
         return "clear", args
@@ -255,6 +258,18 @@ def clear_jobs(max_data_age=7, web=False):
     print("")
 
 
+def clear_analytics(max_data_age=390):
+    """
+    Clear analytics
+    :param max_data_age: max age for jobs before removing them
+    """
+    from dgenies.database import Analytics, Job
+    items = Analytics.select().where(Analytics.date_created <= datetime.date.today() - datetime.timedelta(days=max_data_age))
+    for item in items:
+        item.delete_instance()
+    print("Removed number of jobs: %i" % len(items))
+
+
 def add_to_gallery(id_job, name, picture, query, target):
     """
     Add a job to the gallery
@@ -350,6 +365,12 @@ if __name__ == "__main__":
             if args.jobs:
                 print("Cleaning jobs...")
                 clear_jobs(args.max_age, args.web)
+            if args.analytics:
+                if config.analytics_enabled:
+                    print("Cleaning analytics...")
+                    clear_analytics(args.max_age)
+                else:
+                    print("Analytics if disabled, cannot clean!")
     elif command == "gallery_add":
         add_to_gallery(args.id_job, args.name, args.pict, args.query, args.target)
     elif command == "gallery_del":
