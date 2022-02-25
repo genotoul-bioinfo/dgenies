@@ -370,7 +370,7 @@ if __name__ == "__main__":
                     print("Cleaning analytics...")
                     clear_analytics(args.max_age)
                 else:
-                    print("Analytics if disabled, cannot clean!")
+                    print("Analytics is disabled, cannot clear it!")
     elif command == "gallery_add":
         add_to_gallery(args.id_job, args.name, args.pict, args.query, args.target)
     elif command == "gallery_del":
