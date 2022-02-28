@@ -5,9 +5,9 @@ Latest available version: **{{version}}**
 {% endif %}
 
 D-Genies is designed to run on Linux and Windows.
-It may works on macOS, but this case is not tested.
+It may work on macOS, but this case is not tested.
 
-D-Genies can be run in 2 modes. Depending the mode you will run it, installation must be adapted :
+D-Genies can be run in 2 modes. According to the mode you will run it, installation must be adapted :
 
 - Standalone mode, for a single user on his own computer
 - Webserver mode, for multiple users through a webserver, can be connected to a HPC for computation
@@ -23,7 +23,7 @@ D-Genies requires a 64 bits system with python >= 3.5, < 3.10 to run.
 D-Genies uses Minimap2 and MashMap (v2.0) for mapping. A x86_64 binary of each of them is shipped with it.
 Alternatively, you can install your own binaries from [Minimap2](https://github.com/lh3/minimap2) and [MashMap](https://github.com/marbl/MashMap/) repositories and tell D-Genies to use them by [editing executable paths in the `tools.yaml` file](#add-or-change-alignment-tools).
 
-At the moment, all python modules listed below, with the exception of `mysqlclient`, are automatically installed by D-Genies regardless to the mode it will be runned.
+At the moment, all python modules listed below, except `mysqlclient`, are automatically installed by D-Genies regardless to the mode it will be runned.
 We list them for information purposes
 
 #### Standalone mode
@@ -51,7 +51,7 @@ Webserver mode uses some additional python modules:
     python-crontab>=2.2.*
 
 D-Genies uses by default `sqlite` to store job states. In webserver mode, you may want to use a more performant RDBM engine.
-D-Genies allows to use `mysql` or `mariadb` as alternative to `sqlite`.
+D-Genies allows using `mysql` or `mariadb` as alternative to `sqlite`.
 In this case you must install `mysqlclient` python module (that will not be installed automatically).
 
 Webserver mode also requires the `time` executable located at `/usr/bin/time` to be installed (package `time` on debian or redhat based distributions).
@@ -59,9 +59,9 @@ Webserver mode also requires the `time` executable located at `/usr/bin/time` to
 #### Connection to a cluster (HPC)
 
 D-Genies, in webserver mode, can use [`slurm`](https://slurm.schedmd.com/) job scheduler with [drmaa](https://github.com/natefoo/slurm-drmaa) capacities to compute heavy jobs.
-It also works with `SGE`, but this later is not intensivelly tested.
+It also works with `SGE`, but this later is not intensively tested.
 
-If you like to connect D-Genies to a cluster, an additionnal module is required:
+If you like to connect D-Genies to a cluster, an additional module is required:
 
     drmaa==0.7.*
 
@@ -72,7 +72,7 @@ The [*Running with a cluster with* section](#running-with-a-cluster) will help y
 D-Genies can be installed in many ways:
 
 - if you aim to run D-Genies in standalone mode, the installation with [conda](#install-with-conda) or with [pip as user](#install-with-pip) are recommended methods;
-- if you aim to run D-Genies in webserver mode, the install with [pip as root](#install-with-pip) or [from source](#install-from-source) may be more adapted.
+- if you aim to run D-Genies in webserver mode, the installation with [pip as root](#install-with-pip) or [from source](#install-from-source) may be more adapted.
 
 #### Install with conda
 
@@ -174,7 +174,7 @@ You can launch D-Genies from Start menu, or double-click on the launcher present
 #### Recommended method
 
 Flask webserver (which is used in standalone mode) is not recommended in production servers.
-So, we recommend using the WSGY module of Apache (or µWSGI + nginx, not documented here).
+So, we recommend using the WSGI module of Apache (or µWSGI + nginx, not documented here).
 
 Once D-Genies is installed, you just need to use the `/var/www/dgenies/dgenies.wsgi` file into your apache
 virtualhost file.
@@ -245,7 +245,7 @@ Configuration file location:
   - `/etc/dgenies/application.properties` if installed with root access  
   - `~/.dgenies/application.properties` else  
 - Windows:
-  - `application.properties` file of the install folder
+  - `application.properties` file of the installation folder
 
 A good practice, when editing the D-Genies configuration, is to copy `application.properties` to `application.properties.local` (at the same location), and modify `application.properties.local`. It avoids to erase of the file on upgrades.
 
@@ -323,7 +323,7 @@ If type is mysql, some other parameters must be filled:
 
 This section concerns only the webserver mode.
 
-At the end of the job, a mail is send to the user to advise him of the end of the job.
+At the end of the job, a mail is sent to the user to advise him of the end of the job.
 
 - `status`: mail to use for status mail.
 - `reply`: mail to use as reply to.
@@ -359,7 +359,26 @@ If at least target is filled, a button "Load example" will be shown in the run f
 
 ### Analytics
 
-Set `enable_logging_runs` to True will enable storage of analytics data. It stores for each job creation date, user mail, size of query and target, and batch type.
+Set `enable_logging_runs` to True will enable storage of analytics data. It stores for each job creation date, user email, size of query and target, batch type, and tool used.
+
+Since version 1.3.0, user email is anonymized by matching patterns defined in the `[analytics_groups]` section. If no match is found, the email is replaced by an empty string.
+
+Set `disable_anonymous_analytics` to True will enable storage of email without anonymization like in previous versions.
+
+### Analytics_groups
+
+Groups for user email anonymization are defined by using the following syntax
+
+- `<group name> = <regex pattern>`
+
+You can set as many group you want. The entry order is important. A user email can be only part of one group.
+The first matched pattern will be used to assign the group. Groups are case-insensitive, whereas pattern are case-sensitive
+
+**Example**
+
+    [analytics_groups]
+    INRAE = ^.*@inrae?\.fr$
+    Other = ^.*$
 
 ### Legal
 
@@ -374,7 +393,7 @@ As D-Genies only uses essential cookies, there is no way to refuse those cookies
 
 
     [legal]
-    cookie_wall = D-Genies uses essential cookies in order to work, as described in <a href='/legal/cookies'>Cookies section from Terms of use</a>.
+    cookie_wall = D-Genies uses essential cookies in order to work, as described in <a href='/legal/cookies'>Cookies policy page</a>.
     Cookies = src/dgenies/md/cookies.md
 
 
@@ -406,7 +425,7 @@ Tools definition YAML file:
   - `/etc/dgenies/tools.yaml` if installed with root access  
   - `~/.dgenies/tools.yaml` else  
 - Windows:
-  - `tools.yaml` file of the install folder
+  - `tools.yaml` file of the installation folder
 
 To change this file, please copy it into `tools.yaml.local` (at the same location) to avoid to erase the file on upgrades.
 
@@ -446,7 +465,7 @@ If your program is able to use all-vs-all mode (target versus itself), define th
 
 Required.
 
-Defines how much threads to use for this tool. Set it in the `threads` property for local executions, and the `threads_cluster` property for cluster execution (if different from the local one).
+Defines how many threads to use for this tool. Set it in the `threads` property for local executions, and the `threads_cluster` property for cluster execution (if different from the local one).
 
 #### Max memory
 

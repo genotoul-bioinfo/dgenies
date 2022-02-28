@@ -403,6 +403,18 @@ class AppConfigReader:
         except (NoOptionError, NoSectionError):
             return False
 
+    def _get_anonymous_analytics(self):
+        try:
+            return not self.reader.get("analytics", "disable_anonymous_analytics").lower() == "true"
+        except (NoOptionError, NoSectionError):
+            return True
+
+    def _get_analytics_groups(self):
+        try:
+            return [(option, self.reader.get("analytics_groups", option)) for option in self.reader.options("analytics_groups")]
+        except (NoOptionError, NoSectionError):
+            return []
+
     def _get_cookie_wall(self):
         try:
             return self.reader.get("legal", "cookie_wall")
@@ -414,4 +426,4 @@ class AppConfigReader:
             return {option: self.reader.get("legal", option) for option in self.reader.options("legal")
                     if option not in ["cookie_wall"]}
         except (NoOptionError, NoSectionError):
-            return []
+            return {}

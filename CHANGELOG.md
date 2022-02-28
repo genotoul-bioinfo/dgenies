@@ -1,26 +1,31 @@
 # Changelog
 
-## 1.3 (2022-0?-??)
+## 1.3.0 (2022-0?-??)
 
 ### Major changes
 
-- Add `repeatedness` option with minimap2. This option needs to upgrade the database schema.
-- Backup archive is now a `tar.gz` file. Old `tar` backup archive are still supported.
+- Add `repeatedness` option with minimap2. This option needs to upgrade the database schema
+- Backup archive is now a `tar.gz` file. Old `tar` backup archive are still supported
 - Upgrade embedded minimap2 to the latest available version (2.24)
+- GDPR compliant (webserver mode):
+  - Cookie wall option
+  - Ability to set legal stuff pages
+  - Analytics is now anonymous, an option allows to restore the previous behavior
 
 ### Other changes
 
+- Python 3.10 compatibility
+- Add a command to clean analytics DB from dgenies (`dgenies clear -a [--max-age <age>]`)
 - Check if PAF file is correctly formatted
-- Performance improvement 
-- Expose `mx_nb_lines` parameter
-- Tools can have a label now.
-- Ability to set Legal stuff pages in webserver mode.
+- Performance improvement
+- Expose `mx_nb_lines` parameter in configuration file.
+- Tools can have a label now in `tools.yaml`.
 - Speedup compressed file operations by using [`xopen` library](https://github.com/pycompression/xopen)
 - Fix upload form. Form is now correctly reset when a field is missing or erroneous.
 - Fix filename collision. Uploading a query file and a target file with the same filename now works correctly
 - Fix wrong RAM usage displayed in gallery
 - Correct default `slurm` parameters to match last version of [slurm-drmaa](https://github.com/natefoo/slurm-drmaa) (1.1.3)
-- Remove local scheduler pid file when stopping it.
+- Remove local scheduler pid file when stopping it
 - Update documentation:
   - Explain how similarity/identity measure is computed
   - Add link in D-Genies to what is expected in backup archive

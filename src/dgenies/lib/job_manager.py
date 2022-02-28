@@ -1422,6 +1422,21 @@ class JobManager:
             if MODE == "webserver":
                 self._set_analytics_job_status("fail-map-after")
 
+    def _anonymize_mail_client(self, email):
+        """
+        Replace the email address with its group defined in config file if anonymization is enabled
+        :param email: email to anonymize
+        :type email: str
+        :return: email group if anonymization is enabled (empty string if no group matching), email else
+        :rtype: str
+        """
+        if not self.config.anonymous_analytics:
+            return email
+        for group, pattern in self.config.analytics_groups:
+            if re.match(pattern, email):
+                return group
+        return ''
+
     def _save_analytics_data(self):
         """
         Save analytics data into the database
@@ -1440,7 +1455,7 @@ class JobManager:
                 date_created=datetime.now(),
                 target_size=target_size,
                 query_size=query_size,
-                mail_client=job.email,
+                mail_client=self._anonymize_mail_client(job.email),
                 batch_type=job.batch_type,
                 job_type="new" if (self.align is None and self.backup is None) else "plot",
                 tool=self.tool_name if self.tool_name is not None else "unset")
