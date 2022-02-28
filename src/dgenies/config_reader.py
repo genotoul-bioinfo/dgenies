@@ -336,7 +336,7 @@ class AppConfigReader:
         try:
             return self._replace_vars(self.reader.get("cluster", "prepare_script"))
         except (NoOptionError, NoSectionError):
-            return self._replace_vars("###PROGRAM###/bin/prepare_data.sh")
+            return self._replace_vars("###PROGRAM###/bin/all_prepare.py")
 
     def _get_cluster_python_exec(self):
         try:

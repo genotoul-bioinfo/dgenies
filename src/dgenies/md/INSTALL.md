@@ -258,7 +258,6 @@ Main parameters are stored into this section:
 - `config_dir`: where configuration file will be stored.
 - `upload_folder`: where uploaded files will be stored.
 - `data_folder`: where data files will be stored (PAF files and other files used for the dotplot).
-- `threads_local`: number of threads to use for local jobs.
 - `web_url`: public URL of your website.
 - `max_upload_size`: max size allowed for query and target file (-1 to avoid the limit) - size uncompressed.
 - `max_upload_size_ava`: max size allowed for target file for all-vs-all mode (only target given, -1 to avoid the limit) - size uncompressed.
@@ -300,8 +299,7 @@ Other parameters:
 - `prepare_script`: absolute path to the all_prepare.py script downloaded in the section [above](#running-with-a-cluster).
 - `python3_exec`: path to python3 executable on the cluster.
 - `memory`: max memory to reserve on the cluster.
-- `memory_ava`: max memory to reserve on the cluster un all-vs-all mode (should be higher than memory).
-- `threads`: number of threads for launching jobs on the cluster (must be a divider of the memory).
+- `memory_ava`: max memory to reserve on the cluster in all-vs-all mode (should be higher than memory).
 
 ### Database
 
@@ -337,7 +335,7 @@ This section concerns only the webserver mode.
 We use crons to launch the local scheduler who start jobs, and some script that clean old jobs.
 
 - `clean_time`: time at which we launch the clean job (example: 1h00)
-- `clean_freq`: frequency of the clean job execution
+- `clean_freq`: frequency of the clean job execution in days
 
 ### Jobs
 
@@ -369,7 +367,7 @@ Set `disable_anonymous_analytics` to True will enable storage of email without a
 
 Groups for user email anonymization are defined by using the following syntax
 
-- `<group name> = <regex pattern>`
+- `<group> = <regex pattern>`
 
 You can set as many group you want. The entry order is important. A user email can be only part of one group.
 The first matched pattern will be used to assign the group. Groups are case-insensitive, whereas pattern are case-sensitive
