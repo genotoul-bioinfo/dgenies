@@ -15,7 +15,7 @@ dgenies.init = function(all_jobs, mode) {
     let cookie_wall = $.cookie("wall");
     if (mode === "webserver") {
         if (cookie_wall === undefined) {
-            $("#cookie-wall").modal({
+            $("#cwall").modal({
               escapeClose: false,
               clickClose: false,
               showClose: false

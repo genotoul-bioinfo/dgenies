@@ -32,7 +32,7 @@
 </head>
 <body role="document" onload="{% block onload %}dgenies.init({{ all_jobs}}, '{{ mode }}');{% endblock %}">
     {% if cookie_wall %}
-    <div id="cookie-wall" class="modal">
+    <div id="cwall" class="modal">
         <p> {{ cookie_wall | safe }} </p>
         <p style="text-align:right;">
             <a id="cookie-wall-accept" href="#" rel="modal:close" onclick="dgenies.accept_cookie_wall()" ><b>I understand</b></a>
