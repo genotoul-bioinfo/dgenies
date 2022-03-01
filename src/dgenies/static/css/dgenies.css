@@ -844,3 +844,7 @@ ul.nav ul.dropdown-menu {
     overflow-y: auto;
 
 }
+
+.blocker {
+    z-index: 11;
+}
