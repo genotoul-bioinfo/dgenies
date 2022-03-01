@@ -18,12 +18,12 @@ Windows version of D-Genies is limited to standalone mode.
 
 ### Requirements
 
-D-Genies requires a 64 bits system with python >= 3.5, < 3.10 to run.
+D-Genies requires a 64 bits system with python >= 3.5 to run.
 
-D-Genies uses Minimap2 and MashMap (v2.0) for mapping. A x86_64 binary of each of them is shipped with it.
+D-Genies uses Minimap2 and MashMap (v2.0) for mapping. An x86_64 binary of each of them is shipped with it.
 Alternatively, you can install your own binaries from [Minimap2](https://github.com/lh3/minimap2) and [MashMap](https://github.com/marbl/MashMap/) repositories and tell D-Genies to use them by [editing executable paths in the `tools.yaml` file](#add-or-change-alignment-tools).
 
-At the moment, all python modules listed below, except `mysqlclient`, are automatically installed by D-Genies regardless to the mode it will be runned.
+At the moment, all python modules listed below, except `mysqlclient`, are automatically installed by D-Genies regardless to the mode it will be run.
 We list them for information purposes
 
 #### Standalone mode
@@ -359,7 +359,7 @@ If at least target is filled, a button "Load example" will be shown in the run f
 
 Set `enable_logging_runs` to True will enable storage of analytics data. It stores for each job creation date, user email, size of query and target, batch type, and tool used.
 
-Since version 1.3.0, user email is anonymized by matching patterns defined in the `[analytics_groups]` section. If no match is found, the email is replaced by an empty string.
+Since version 1.3.0, user email is anonymize by matching patterns defined in the `[analytics_groups]` section. If no match is found, the email is replaced by an empty string.
 
 Set `disable_anonymous_analytics` to True will enable storage of email without anonymization like in previous versions.
 
@@ -425,7 +425,7 @@ Tools definition YAML file:
 - Windows:
   - `tools.yaml` file of the installation folder
 
-To change this file, please copy it into `tools.yaml.local` (at the same location) to avoid to erase the file on upgrades.
+To change this file, please copy it into `tools.yaml.local` (at the same location) to avoid erasing the file on upgrades.
 
 Note: you can also edit the `tools.yaml` file of the D-Genies repository, which will be installed then (if you customize the installation). Edit it without renaming it.
 
@@ -499,7 +499,7 @@ Define in which order we show tools in the run form. Set it in the `order` prope
 
 Optional.
 
-Define options displayed in form. List of individual options where each element of the list is defined as follow. Displayed in list oreder.
+Define options displayed in form. List of individual options where each element of the list is defined as follows, displayed as they are ordered:
 
 **Example** :
 
@@ -578,7 +578,7 @@ In `Plot alignment` mode in run form ([see here](/documentation/run#plot-alignme
 Just define 2 functions:
 
 - Add the first one in the `src/dgenies/lib/validators.py` file of the D-Genies repository. It takes only one argument: the input file. It checks if the file format is correct and returns True in this case, else it returns False. The function name must be the same as the expected input file extension.  
-- Add the second one in the `src/dgenies/lib/parsers.py` file of the D-Genies repository. It takes two arguments: the input and the output file. It convert the input file into a valid PAF file. The function name must be same as the previous one.
+- Add the second one in the `src/dgenies/lib/parsers.py` file of the D-Genies repository. It takes two arguments: the input and the output file. It converts the input file into a valid PAF file. The function name must be same as the previous one.
 
 ## Maintenance
 
@@ -606,7 +606,7 @@ The `dgenies` command can be used to do some maintenance staff.
 
 **Display message on run form:**
 
-You can display a message at the top of the run form. It can be used to add extra informations for user, or for prevent him for problem or for a maintenance on your instance.
+You can display a message at the top of the run form. It can be used to add extra information for user, or for prevent him for problem or for a maintenance on your instance.
 
     dgenies inforun -m "message to display" -t [warn, critical, info, success]
 
