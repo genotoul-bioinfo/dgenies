@@ -1,10 +1,13 @@
 # Changelog
 
-## 1.3.0 (2022-0?-??)
+## 1.3.0 (2022-03-01)
 
 ### Major changes
 
-- Add `repeatedness` option with minimap2. This option needs to upgrade the database schema
+- Add `repeatedness` option with minimap2. This option needs to upgrade the database schema with following command:
+  ```sql
+  ALTER TABLE job ADD COLUMN options VARCHAR(127) NULL;
+  ```
 - Backup archive is now a `tar.gz` file. Old `tar` backup archive are still supported
 - Upgrade embedded minimap2 to the latest available version (2.24)
 - GDPR compliant (webserver mode):
@@ -18,8 +21,8 @@
 - Add a command to clean analytics DB from dgenies (`dgenies clear -a [--max-age <age>]`)
 - Check if PAF file is correctly formatted
 - Performance improvement
-- Expose `mx_nb_lines` parameter in configuration file.
-- Tools can have a label now in `tools.yaml`.
+- Expose `max_nb_lines` parameter in configuration file.
+- Tools can have a label now (in `tools.yaml`).
 - Speedup compressed file operations by using [`xopen` library](https://github.com/pycompression/xopen)
 - Fix upload form. Form is now correctly reset when a field is missing or erroneous.
 - Fix filename collision. Uploading a query file and a target file with the same filename now works correctly
