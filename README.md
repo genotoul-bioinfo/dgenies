@@ -26,4 +26,4 @@ Cabanettes F, Klopp C. (2018) D-GENIES: dot plot large genomes in an interactive
 Credits
 -------
 
-D-Genies is developed by the [Bioinfo team](http://bioinfo.genotoul.fr/index.php/about-us/) of the [Genotoul platform](http://www.genotoul.fr/) ([INRAe](http://www.inrae.fr/)).
+D-Genies is developed by the [Bioinfo team](http://bioinfo.genotoul.fr/index.php/about-us/) of the [Genotoul platform](http://www.genotoul.fr/) ([INRAE](http://www.inrae.fr/)).
