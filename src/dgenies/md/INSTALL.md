@@ -32,14 +32,14 @@ Following python modules are required in order to run D-Genies in standalone mod
 
     biopython>=1.70
     Flask==1.0.*
-    intervaltree==2.1.*
+    intervaltree==3.*
     Jinja2~=2.11.3
-    Markdown==2.6.*
+    Markdown>=2.6.*
     matplotlib>=2.1.*
     numpy
-    psutil~=5.6.6
-    pyyaml~=5.4.1
-    requests~=2.20.1
+    psutil>=5.6.6
+    pyyaml>=5.4.1
+    requests>=2.20.1
     tendo==0.2.*
 
 #### Webserver mode
@@ -47,7 +47,7 @@ Following python modules are required in order to run D-Genies in standalone mod
 Webserver mode uses some additional python modules:
 
     Flask-Mail==0.9.*
-    peewee==2.10.2
+    peewee==3.*
     python-crontab>=2.2.*
 
 D-Genies uses by default `sqlite` to store job states. In webserver mode, you may want to use a more performant RDBM engine.
