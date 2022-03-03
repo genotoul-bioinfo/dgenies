@@ -41,6 +41,7 @@ Following python modules are required in order to run D-Genies in standalone mod
     pyyaml>=5.4.1
     requests>=2.20.1
     tendo==0.2.*
+    xopen>=1.0
 
 #### Webserver mode
 
