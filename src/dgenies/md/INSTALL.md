@@ -360,7 +360,17 @@ If at least target is filled, a button "Load example" will be shown in the run f
 
 Set `enable_logging_runs` to True will enable storage of analytics data. It stores for each job creation date, user email, size of query and target, batch type, and tool used.
 
-Since version 1.3.0, user email is anonymize by matching patterns defined in the `[analytics_groups]` section. If no match is found, the email is replaced by an empty string.
+Set the `anonymous_analytics` strategy to `group`, `full_hash`, `left_hash` or `dual_hash`.
+Since version 1.3.0, `group` strategy anonymize user email by matching patterns defined in the `[analytics_groups]` section.
+If no match is found, the email is replaced by an empty string.
+
+`full_hash` email is replaced by its sha1 hash, the `left_hash` replace the left part, before the '@' by its sha1 hash,
+and `dual_hash` replace the left and right part, before and after the '@' by their sha1 hashes.
+
+The `group` strategy only allows group statistic with an 'a priori' definition of groups,
+whereas the `full_hash` strategy only allows unique user statistics.
+Then the `left_hash` strategy allows to make some unique user statistics while preserving groups statistics without 'a priori'
+Finally, `dual_hash` does the same as `left_hash` but you need some 'a priori' knowledge to create some groups.
 
 Set `disable_anonymous_analytics` to True will enable storage of email without anonymization like in previous versions.
 

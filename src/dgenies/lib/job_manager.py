@@ -31,6 +31,7 @@ from dgenies.lib.paf import Paf
 import gzip
 import io
 import binascii
+from hashlib import sha1
 from dgenies.database import Job
 
 if MODE == "webserver":
@@ -1430,11 +1431,18 @@ class JobManager:
         :return: email group if anonymization is enabled (empty string if no group matching), email else
         :rtype: str
         """
-        if not self.config.anonymous_analytics:
+        if not self.config.disable_anonymous_analytics:
             return email
-        for group, pattern in self.config.analytics_groups:
-            if re.match(pattern, email):
-                return group
+        if self.config.anonymous_analytics == "full_hash":
+            return sha1(email.encode('utf-8')).hexdigest()
+        if self.config.anonymous_analytics in ["dual_hash", "left_hash"]:
+            lpart, rpart = email.rsplit('@', 1)
+            return sha1(lpart.encode('utf-8')).hexdigest() + "@" + \
+                   (sha1(rpart.encode('utf-8')).hexdigest() if self.config.anonymous_analytics == "dual_hash" else rpart)
+        else:
+            for group, pattern in self.config.analytics_groups:
+                if re.match(pattern, email):
+                    return group
         return ''
 
     def _save_analytics_data(self):

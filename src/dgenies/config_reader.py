@@ -403,11 +403,17 @@ class AppConfigReader:
         except (NoOptionError, NoSectionError):
             return False
 
-    def _get_anonymous_analytics(self):
+    def _get_disable_anonymous_analytics(self):
         try:
             return not self.reader.get("analytics", "disable_anonymous_analytics").lower() == "true"
         except (NoOptionError, NoSectionError):
             return True
+
+    def _get_anonymous_analytics(self):
+        try:
+            return self.reader.get("analytics", "anonymous_analytics").strip().lower()
+        except (NoOptionError, NoSectionError):
+            return "groups"
 
     def _get_analytics_groups(self):
         try:
