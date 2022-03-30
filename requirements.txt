@@ -14,3 +14,6 @@ Flask-Mail==0.9.*
 peewee==3.*
 python-crontab>=2.2.*,==2.*
 drmaa==0.7.*
+itsdangerous<2.1.0
+markupsafe<2.1.0
+werkzeug<2.1.0
