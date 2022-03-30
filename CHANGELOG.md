@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.3.1 (2022-03-30)
+
+### Minor change
+
+- Add some anonymization strategies
+
+### Bugfix
+
+- Fix some Jinja2 requirement constraints
+
 ## 1.3.0 (2022-03-01)
 
 ### Major changes

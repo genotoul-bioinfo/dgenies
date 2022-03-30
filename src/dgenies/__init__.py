@@ -5,7 +5,7 @@ from flask import Flask
 from .config_reader import AppConfigReader
 from .lib.crons import Crons
 
-VERSION = "1.3.0"
+VERSION = "1.3.1"
 
 app = None
 app_title = None
