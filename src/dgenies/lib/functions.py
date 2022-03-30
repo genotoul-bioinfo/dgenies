@@ -179,7 +179,7 @@ class Functions:
                 while os.path.exists(compressed):
                     compressed = "%s/%d_%s" % (file_path, n, basename)
                     n += 1
-                with open(filename, "rb") as infile, xopen(compressed, "wb") as outfile:
+                with open(filename, "rb") as infile, xopen(compressed, mode="wb", format="gz") as outfile:
                     shutil.copyfileobj(infile, outfile)
                 os.remove(filename)
                 return compressed

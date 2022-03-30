@@ -125,7 +125,7 @@ dgenies.result.export.ask_export_fasta = function () {
             .css("margin", "12px 12px 20px 0");
         let body = $("<p>");
         body.append(icon);
-        body.append("Compression is recommanded on slow connections. Download Gzip file?");
+        body.append("Compression is recommended on slow connections. Download Gzip file?");
         dialog.append(body);
         dialog.dialog({
             resizable: false,
