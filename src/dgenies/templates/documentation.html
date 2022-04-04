@@ -1,6 +1,30 @@
 {% extends 'base.html' %}
 {% block scripts %}
     {{ super() }}
+    <!-- KaTeX requires the use of the HTML5 doctype. Without it, KaTeX may not render properly -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/katex.min.css') }}"  type="text/css">
+
+    <!-- The loading of KaTeX is deferred to speed up page rendering -->
+    <script defer src="{{ url_for('static', filename='js/katex.min.js') }}" type="text/JavaScript"></script>
+
+    <!-- To automatically render math in text elements, include the auto-render extension: -->
+    <script defer src="{{ url_for('static', filename='js/auto-render.min.js') }}" type="text/JavaScript"></script>
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        renderMathInElement(document.body, {
+          // customised options
+          // • auto-render specific keys, e.g.:
+          delimiters: [
+              {left: '$$', right: '$$', display: true},
+              {left: '$', right: '$', display: false},
+              {left: '\\(', right: '\\)', display: false},
+              {left: '\\[', right: '\\]', display: true}
+          ],
+          // • rendering keys, e.g.:
+          throwOnError : false
+        });
+    });
+    </script>
     {% if debug %}
         <script src="{{ url_for('static', filename='js/dgenies.documentation.js') }}" type="text/JavaScript"></script>
     {% else %}

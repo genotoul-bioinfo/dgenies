@@ -448,6 +448,10 @@ class Paf:
         Compute gravity for each contig on each chromosome (how many big matches they have).
         Will be used to find which chromosome has the highest value for each contig
 
+        Note: based on keywords and formulae, Floréal seems to have taken the gravity concept from Gravitational Search Algorithm (GSA)
+            https://pg.edu.pl/files/eti/2021-06/TS_lecture4.pdf
+        This hypothesis needs to be checked.
+
         :return:
 
             * [0] gravity for each contig and each chromosome:

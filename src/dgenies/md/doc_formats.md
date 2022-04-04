@@ -85,3 +85,24 @@ Backup file is a TAR archive that can be gzipped. It contains three files:
 * The query index, named `query.idx`.
 
 Names of files must be kept. Otherwise, the backup file will not be accepted by the run form.
+
+
+## Association table
+
+Association table is a tsv file with 9 fields:
+
+* `Query`: the contig id in query
+* `Target`: the chromosome id in target
+* `Strand`: the strand of the contig
+* `Q-len`: the length of the contig in query 
+* `Q-start`: the first position in contig an alignment starts
+* `Q-stop`: the last position in contig an alignment ends
+* `T-len`: the length of the chromosome in target
+* `T-start`: the first position in chromosome an alignment starts
+* `T-stop`: the last position in chromosome an alignment ends
+
+If no match exists for the *contig id*, the corresponding `Target` field will be set to "None"
+
+## No match queries / No match targets
+
+The *no match queries* file (resp. *no match targets* file) is a text file containing one query id (resp. one target id) per line.

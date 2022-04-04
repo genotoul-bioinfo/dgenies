@@ -469,6 +469,20 @@ def documentation_run():
     return render_template("documentation.html", menu="documentation", content=content, toc=toc)
 
 
+@app.route("/documentation/definitions", methods=['GET'])
+def documentation_definitions():
+    """
+    Documentation result page
+    """
+    with open(os.path.join(app_folder, "md", "doc_definitions.md"), "r",
+              encoding='utf-8') as install_instr:
+        content = install_instr.read()
+    md = Markdown(extensions=[TocExtension(baselevel=1)])
+    content = Markup(md.convert(content))
+    toc = Markup(md.toc)
+    return render_template("documentation.html", menu="documentation", content=content, toc=toc)
+
+
 @app.route("/documentation/result", methods=['GET'])
 def documentation_result():
     """
