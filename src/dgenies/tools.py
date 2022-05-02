@@ -1,5 +1,6 @@
 import os
 import sys
+import platform
 import re
 import inspect
 from pathlib import Path
@@ -38,8 +39,14 @@ class Tool:
 
         # Exec
         if exec == "default":
-            self.exec = os.path.join(os.path.dirname(inspect.getfile(self.__class__)), "bin", self.name)
+            if sys.platform.startswith('linux') and platform.machine() == 'x86_64':
+                # We only provide executable for linux x86_64
+                self.exec = os.path.join(os.path.dirname(inspect.getfile(self.__class__)), "bin", self.name)
+            else:
+                # For other platforms and architectures, we will rely on exec in PATH
+                self.exec = self.name
         else:
+            # For Windows version
             self.exec = exec.replace("###SYSEXEC###", os.path.dirname(sys.executable))
         if exec_cluster is None or exec_cluster == "default":
             self.exec_cluster = exec
