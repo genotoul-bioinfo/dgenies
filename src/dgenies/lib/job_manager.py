@@ -45,7 +45,7 @@ class JobManager:
     """
 
     def __init__(self, id_job, email=None, query: Fasta=None, target: Fasta=None, mailer=None,
-                 tool="minimap2", align: Fasta=None, backup: Fasta=None, options=None):
+                 tool="minimap2", align: Fasta=None, backup: Fasta=None, batch=None, options=None):
         """
         :param id_job: job id
         :type id_job: str
@@ -63,6 +63,8 @@ class JobManager:
         :type align: Fasta
         :param backup: backup TAR file
         :type backup: Fasta
+        :param batch: batch file
+        :type batch: str
         :param options: list of str containing options for the chosen tool
         :type options: list
         """
@@ -74,6 +76,7 @@ class JobManager:
         if align is not None:
             self.aln_format = os.path.splitext(align.get_path())[1][1:]
         self.backup = backup
+        self.batch = batch
         self.error = ""
         self.id_process = "-1"
         # Get configs:
@@ -178,6 +181,7 @@ class JobManager:
                     type_f="local"
                 )
                 self.aln_format = os.path.splitext(file_path)[1][1:]
+        batch_file = os.path.join(res_dir, ".batch")
 
     def check_job_success(self):
         """
@@ -1445,6 +1449,14 @@ class JobManager:
                     return group
         return ''
 
+    def _get_job_type(self):
+        """
+        Return job type based on the files used for the job.
+        :return: job type which is either "new" (for new align job), "plot" and "batch"
+        :rtype: str
+        """
+        return "new" if (self.align is None and self.backup is None) else "plot" if self.batch is None else "batch"
+
     def _save_analytics_data(self):
         """
         Save analytics data into the database
@@ -1465,7 +1477,7 @@ class JobManager:
                 query_size=query_size,
                 mail_client=self._anonymize_mail_client(job.email),
                 batch_type=job.batch_type,
-                job_type="new" if (self.align is None and self.backup is None) else "plot",
+                job_type=self._get_job_type(),
                 tool=self.tool_name if self.tool_name is not None else "unset")
             log.save()
 

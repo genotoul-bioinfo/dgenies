@@ -25,6 +25,9 @@
         .tab2 {
             display: none;
         }
+        .tab3 {
+            display: none;
+        }
     </style>
     {% if inforun is not none %}
         <div>
@@ -70,18 +73,20 @@
                             </tr>
                             {% endif %}
                             <tr>
-                                <td colspan="2">
+                                <td colspan="3">
                                     <div id="tabs">
                                         <div class="tab active" id="tab1">New alignment</div>
                                         <div class="tab" id="tab2">Plot alignment</div>
+                                        <div class="tab" id="tab3">Batch alignements</div>
                                     </div>
                                 </td>
                             </tr>
 
                             {# Tab 1 #}
                             <tr class="target tabx tab1">
+                                {% set fnote_tab = fnote %}
                                 <td>
-                                    <label for="file_target" class="file-target">Target fasta <sup><a href="#fn{{ fnote }}" id="ref{{ fnote }}">{{ fnote }}</a></sup></label>
+                                    <label for="file_target" class="file-target">Target fasta <sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup></label>
                                 </td>
                                 <td class="input-group">
                                     <select class="select-type-input target">
@@ -106,7 +111,7 @@
                             </tr>
                             <tr class="query tabx tab1">
                                 <td>
-                                    <label for="file_query" class="file-query">Query fasta <sup><a href="#fn{{ fnote }}" id="ref{{ fnote }}">{{ fnote }}</a></sup></label>
+                                    <label for="file_query" class="file-query">Query fasta <sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup></label>
                                 </td>
                                 <td class="input-group">
                                     <select class="select-type-input query">
@@ -158,7 +163,6 @@
                             {% endif %}
                             {% if tools | length > 1 %}
                                 {% for tool in tools_names %}
-                                    {% set tool_loop = loop %}
                                     <tr class="tabx tab1 optionx tool-options-{{tool}} {% if loop.index0 != 0 or not tools[tool].options %}hidden{% endif %}">
                                         <td colspan="2" style="vertical-align:top;">
                                             <div id="tool-options-{{tool}}">
@@ -167,8 +171,8 @@
                                         </td>
                                     </tr>
                                     {% if tools[tool].options %}
-                                        {% for opt in tools_options[tool] %}
-                                            <tr class="tabx tab1 optionx tool-options-{{tool}} {% if tool_loop.index0 != 0 %}hidden{% endif %}" >
+                                        <tr class="tabx tab1 optionx tool-options-{{tool}} {% if loop.index0 != 0 %}hidden{% endif %}" >
+                                            {% for opt in tools_options[tool] %}
                                                 {% set outer_loop = loop %}
                                                 <td style="vertical-align:top;">
                                                     {{ opt.label }}&nbsp<span class="glyphicon glyphicon-question-sign" style="color: #2aabd2"
@@ -190,8 +194,8 @@
                                                         </div>
                                                     {% endfor %}
                                                 </td>
-                                            </tr>
-                                        {% endfor %}
+                                            {% endfor %}
+                                        </tr>
                                     {% endif %}
                                 {% endfor %}
                             {% else %}
@@ -236,8 +240,9 @@
 
                             {# Tab 2 #}
                             <tr class="alignfile tabx tab2">
+                                {% set fnote_tab = fnote %}
                                 <td>
-                                    <label for="file_align" class="file-align">Alignment file <sup><a href="#fn{{ fnote }}" id="ref{{ fnote }}">{{ fnote }}</a></sup>{% set fnote = fnote + 1 %}</label>
+                                    <label for="file_align" class="file-align">Alignment file <sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup>{% set fnote_tab = fnote_tab + 1 %}</label>
                                 </td>
                                 <td class="input-group">
                                     <select class="select-type-input alignfile">
@@ -262,7 +267,7 @@
                             </tr>
                             <tr class="targetidx tabx tab2">
                                 <td>
-                                    <label for="file_targetidx" class="file-targetidx">Target file<sup><a href="#fn{{ fnote }}" id="ref{{ fnote }}">{{ fnote }}</a></sup></label>
+                                    <label for="file_targetidx" class="file-targetidx">Target file<sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup></label>
                                 </td>
                                 <td class="input-group">
                                     <select class="select-type-input targetidx">
@@ -287,7 +292,7 @@
                             </tr>
                             <tr class="queryidx tabx tab2">
                                 <td>
-                                    <label for="file_queryidx" class="file-queryidx">Query file<sup><a href="#fn{{ fnote }}" id="ref{{ fnote }}">{{ fnote }}</a></sup>{% set fnote = fnote + 1 %}</label>
+                                    <label for="file_queryidx" class="file-queryidx">Query file<sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup>{% set fnote_tab = fnote_tab + 1 %}</label>
                                 </td>
                                 <td class="input-group">
                                     <select class="select-type-input queryidx">
@@ -317,7 +322,7 @@
                             </tr>
                             <tr class="backup tabx tab2">
                                 <td>
-                                    <label for="file_backup" class="file-backup">Backup file<sup><a href="#fn{{ fnote }}" id="ref{{ fnote }}">{{ fnote }}</a></sup>{% set fnote = fnote + 1 %}</label>
+                                    <label for="file_backup" class="file-backup">Backup file<sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup>{% set fnote_tab = fnote_tab + 1 %}</label>
                                 </td>
                                 <td class="input-group">
                                     <select class="select-type-input backup">
@@ -340,6 +345,33 @@
                                     <div class="file-size backup"></div>
                                 </td>
                             </tr>
+                            {# Tab 3 #}
+                            <tr class="batch tabx tab3">
+                                {% set fnote_tab = fnote %}
+                                <td>
+                                    <label for="file_batch" class="file-batch">Batch file<sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup>{% set fnote_tab = fnote_tab + 1 %}</label>
+                                </td>
+                                <td class="input-group">
+                                    <select class="select-type-input batch">
+                                        <option value="0">Local</option>
+                                        <option value="1">Url</option>
+                                    </select>
+
+                                    <div class="batch-label in-label">
+                                        <div id="progress-batch" class="progress">
+                                            <div class="bar" style="width: 0%;"></div>
+                                        </div>
+                                        <input id="batch" name="batch" class="form-control show-file" type="text" value="" readonly/>
+                                    </div>
+
+                                    <button class="btn btn-file" type="button" id="button-batch" title="Select a file">
+                                        <span class="glyphicon glyphicon-folder-open"></span>&nbsp
+                                    </button>
+                                    <div class="loading-file batch" style="display: none"></div>
+                                    <div class="upload-success batch" style="display: none"></div>
+                                    <div class="file-size batch"></div>
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -358,16 +390,21 @@
                 {% endif %}
                 <div class="tabx tab1">
                     {% set fnote_tab = fnote %}
-                    <p class="afterworlff"><sup id="fn{{ fnote_tab }}"><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup> Can be gzipped. Must end with <code>.fa</code>, <code>.fasta</code>, <code>.fna</code>, <code>.fa.gz</code>, <code>.fasta.gz</code> or <code>.fna.gz</code></p>
+                    <p class="afterworlff"><sup id="fn{{ fnote_tab }}"><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup> Can be gzipped. Must end with <code>.fa</code>, <code>.fasta</code>, <code>.fna</code>, <code>.fa.gz</code>, <code>.fasta.gz</code>or <code>.fna.gz</code></p>
                     {% set fnote_tab = fnote_tab + 1 %}
                 </div>
                 <div class="tabx tab2">
                     {% set fnote_tab = fnote %}
-                    <p class="afterworlff"><sup id="fn{{ fnote_tab }}"><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup> In PAF or MAF format. Must end with <code>.paf</code> or <code>.maf</code></p>
+                    <p class="afterworlff"><sup id="fn{{ fnote_tab }}"><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup> In PAF or MAF format. Must end with <code>.paf</code>, <code>.maf</code></p>
                     {% set fnote_tab = fnote_tab + 1 %}
-                    <p class="afterworlff"><sup id="fn{{ fnote_tab }}"><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup> Fasta file or index built by <a href="https://raw.githubusercontent.com/genotoul-bioinfo/dgenies/v{{version}}/src/dgenies/bin/index.py" download="index.py">our tool</a>. Fasta must end with <code>.fa</code>, <code>.fasta</code>, <code>.fna</code>, <code>.fa.gz</code>, <code>.fasta.gz</code> or <code>.fna.gz</code>, index with <code>.idx</code>.</p>
+                    <p class="afterworlff"><sup id="fn{{ fnote_tab }}"><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup> Fasta file or index built by <a href="https://raw.githubusercontent.com/genotoul-bioinfo/dgenies/v{{version}}/src/dgenies/bin/index.py" download="index.py">our tool</a>. Must end with <code>.fa</code>, <code>.fasta</code>, <code>.fna</code>, <code>.fa.gz</code>, <code>.fasta.gz</code>, <code>.fna.gz</code> or <code>.idx</code>.</p>
                     {% set fnote_tab = fnote_tab + 1 %}
                     <p class="afterworlff"><sup id="fn{{ fnote_tab }}"><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup> TAR file from a previous run or built following <a href="/documentation/formats#backup-file"> this documentation</a>. Must ends with <code>.tar</code> or <code>.tar.gz</code>.</p>
+                    {% set fnote_tab = fnote_tab + 1 %}
+                </div>
+                <div class="tabx tab3">
+                    {% set fnote_tab = fnote %}
+                    <p class="afterworlff"><sup id="fn{{ fnote_tab }}"><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup> Text format. Must end with <code>.txt</code></p>
                     {% set fnote_tab = fnote_tab + 1 %}
                 </div>
             </div>
@@ -380,6 +417,7 @@
             <input type="file" name="file-targetidx" class="file-targetidx" data-url="/upload"/>
             <input type="file" name="file-queryidx" class="file-queryidx" data-url="/upload"/>
             <input type="file" name="file-backup" class="file-backup" data-url="/upload"/>
+            <input type="file" name="file-batch" class="file-batch" data-url="/upload"/>
         </div>
     </form>
 {% endblock %}

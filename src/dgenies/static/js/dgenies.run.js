@@ -7,14 +7,15 @@ dgenies.run = {};
 dgenies.run.s_id = null;
 dgenies.run.allowed_ext = [];
 dgenies.run.max_upload_file_size = -1
-dgenies.run.files = [undefined, undefined, undefined, undefined, undefined, undefined];
+dgenies.run.files = [undefined, undefined, undefined, undefined, undefined, undefined, undefined];
 dgenies.run.files_nb = {
     "query": 0,
     "target": 1,
     "queryidx": 2,
     "targetidx": 3,
     "alignfile": 4,
-    "backup": 5
+    "backup": 5,
+    "batch" : 6
 };
 dgenies.run.allow_upload = false;
 dgenies.run.ping_interval = null;
@@ -50,7 +51,7 @@ dgenies.run.init = function (s_id, allowed_ext, max_upload_file_size=1073741824,
  * Restore run form
  */
 dgenies.run.restore_form = function () {
-    let ftypes = ["query", "target", "queryidx", "targetidx", "alignfile", "backup"];
+    let ftypes = ["query", "target", "queryidx", "targetidx", "alignfile", "backup", "batch"];
     for (let f in ftypes) {
         let ftype = ftypes[f];
         dgenies.run.change_fasta_type(ftype, $(`select.${ftype}`).find(":selected").text().toLowerCase(), true);
@@ -168,7 +169,8 @@ dgenies.run.init_fileuploads = function () {
                   "queryidx": {"formats": ["fasta", "idx"]},
                   "targetidx": {"formats": ["fasta", "idx"]},
                   "alignfile": {"formats": ["map"]},
-                  "backup": {"formats": ["backup",]},};
+                  "backup": {"formats": ["backup"]},
+                  "batch": {"formats": ["batch"]},};
     $.each(ftypes, function(ftype, data) {
         let formats = data["formats"];
         let position = dgenies.run.files_nb[ftype];
@@ -288,7 +290,7 @@ dgenies.run.show_tool_options = function(tool) {
  * Initialise events
  */
 dgenies.run.set_events = function() {
-    let ftypes = ["query", "target", "alignfile", "queryidx", "targetidx", "backup"];
+    let ftypes = ["query", "target", "alignfile", "queryidx", "targetidx", "backup", "batch"];
     $.each(ftypes, function (i, ftype) {
         dgenies.run._set_file_event(ftype);
         dgenies.run._set_file_select_event(ftype);
@@ -364,13 +366,13 @@ dgenies.run.enable_form = function () {
     $("input, select, button").prop("disabled", false);
     $("div#uploading-loading").hide();
     $("button#submit").show();
-    let ftypes = ["query", "target", "targetidx", "queryidx", "alignfile", "backup"];
+    let ftypes = ["query", "target", "targetidx", "queryidx", "alignfile", "backup", "batch"];
     for (let f in ftypes) {
         let ftype = ftypes[f];
         dgenies.run.hide_loading(ftype);
         dgenies.run.hide_success(ftype);
     }
-    dgenies.run.files = [undefined, undefined, undefined, undefined, undefined, undefined];
+    dgenies.run.files = [undefined, undefined, undefined, undefined, undefined, undefined, undefined];
     dgenies.run.restore_form();
     dgenies.run.enabled = true;
 };
@@ -388,17 +390,20 @@ dgenies.run.reset_file_input = function(inp_name) {
 /**
  * Reset all inputs in the given tab
  *
- * @param {string} tab tab name
+ * @param {string}  tab name
  * @param {boolean} except_backup if true, don't reset backup input
  */
 dgenies.run.reset_file_form = function(tab, except_backup=false) {
     let ftypes = [];
     let i = 0;
-    if (tab === "tab2") {
+    if ("tab2" === tab) {
         ftypes = ["alignfile", "queryidx", "targetidx"];
         if (!except_backup) {
             ftypes.push("backup");
         }
+    }
+    else if ("tab3" === tab) {
+        ftypes = ["batch"];
     }
     else {
         ftypes = ["query", "target"];
@@ -432,7 +437,7 @@ dgenies.run.do_submit = function () {
                                   })
         });
     }
-    else {
+    else if (tab === "tab2") {
         data = Object.assign({}, data, {
             "alignfile": $("input#alignfile").val(),
             "alignfile_type": $("select.alignfile").find(":selected").text().toLowerCase(),
@@ -442,6 +447,11 @@ dgenies.run.do_submit = function () {
             "target_type": $("select.targetidx").find(":selected").text().toLowerCase(),
             "backup": $("input#backup").val(),
             "backup_type": $("select.backup").find(":selected").text().toLowerCase(),
+        });
+    }
+    else { // tab3
+        data = Object.assign({}, data, {
+            "batch": $("input#batch").val(),
         });
     }
     $("div#uploading-loading").html("Submitting form...");
@@ -530,7 +540,7 @@ dgenies.run.valid_form = function () {
     }
 
     /* TAB 2 */
-    else {
+    else if (tab === "tab2")  {
         if ($("input#backup").val().length !== 0) {
             dgenies.run.reset_file_form("tab2", true);
         }
@@ -545,6 +555,16 @@ dgenies.run.valid_form = function () {
                 dgenies.run.add_error("Alignment file is required!");
                 has_errors = true;
             }
+        }
+    }
+
+    /* TAB 3 */
+    else {
+        //Check input target:
+        if ($("input#batch").val().length === 0) {
+            $("label.file-batch").addClass("error");
+            dgenies.run.add_error("Batch file is required!");
+            has_errors = true;
         }
     }
 
@@ -686,11 +706,18 @@ dgenies.run.start_uploads = function() {
     let inputs = [];
     if (tab === "tab1") {
         dgenies.run.reset_file_form("tab2");
+        dgenies.run.reset_file_form("tab3");
         inputs = [["query", "Query"], ["target", "Target"]];
+    }
+    else if (tab === "tab2") {
+        dgenies.run.reset_file_form("tab1");
+        dgenies.run.reset_file_form("tab3");
+        inputs = [["queryidx", "Query"], ["targetidx", "Target"], ["alignfile", "Alignment"], ["backup", "Backup"]]
     }
     else {
         dgenies.run.reset_file_form("tab1");
-        inputs = [["queryidx", "Query"], ["targetidx", "Target"], ["alignfile", "Alignment"], ["backup", "Backup"]]
+        dgenies.run.reset_file_form("tab2");
+        inputs = [["batch", "Batch"]]
     }
     $.each(inputs, function(i, input) {
         let test_has_uploads = dgenies.run._start_upload(input[0], input[1]);

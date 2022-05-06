@@ -9,6 +9,7 @@ import re
 import threading
 import traceback
 import json
+from string import Template
 from flask import render_template, request, url_for, jsonify, Response, abort, send_file, Markup
 from pathlib import Path
 from dgenies.lib.paf import Paf
@@ -142,16 +143,17 @@ def launch_analysis():
 
     id_job = request.form["id_job"]
     email = request.form["email"]
-    file_query = request.form["query"]
-    file_query_type = request.form["query_type"]
-    file_target = request.form["target"]
-    file_target_type = request.form["target_type"]
+    file_query = request.form["query"] if "query" in request.form else ""
+    file_query_type = request.form["query_type"] if "query" in request.form else None
+    file_target = request.form["target"] if "target" in request.form else ""
+    file_target_type = request.form["target_type"] if "target" in request.form else None
     tool = request.form["tool"] if "tool" in request.form else None
     tool_options = request.form.getlist("tool_options[]")
     alignfile = request.form["alignfile"] if "alignfile" in request.form else None
     alignfile_type = request.form["alignfile_type"] if "alignfile_type" in request.form else None
     backup = request.form["backup"] if "backup" in request.form else None
     backup_type = request.form["backup_type"] if "backup_type" in request.form else None
+    batch = request.form["batch"] if "batch" in request.form else None
 
     # Check form:
     form_pass = True
@@ -166,6 +168,11 @@ def launch_analysis():
         form_pass = False
 
     if backup is not None and backup != "":
+        alignfile = ""
+        file_query = ""
+        file_target = ""
+    elif batch is not None:
+        backup = None
         alignfile = ""
         file_query = ""
         file_target = ""
@@ -296,6 +303,7 @@ def launch_analysis():
                              target=target,
                              align=align,
                              backup=bckp,
+                             batch=batch,
                              mailer=mailer,
                              tool=tool,
                              options=options)
@@ -1084,7 +1092,6 @@ def upload():
             folder = s_id
 
         files = request.files[list(request.files.keys())[0]]
-
         if files:
             filename = files.filename
             folder_files = os.path.join(app.config["UPLOAD_FOLDER"], folder)
