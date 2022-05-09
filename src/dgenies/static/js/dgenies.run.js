@@ -452,6 +452,7 @@ dgenies.run.do_submit = function () {
     else { // tab3
         data = Object.assign({}, data, {
             "batch": $("input#batch").val(),
+            "batch_type": $("select.batch").find(":selected").text().toLowerCase(),
         });
     }
     $("div#uploading-loading").html("Submitting form...");
@@ -670,7 +671,7 @@ dgenies.run.check_url = function (url) {
 };
 
 /**
- * Start upload staff
+ * Start upload stuff
  *
  * @param ftype type of file (query, target, ...)
  * @param fname fasta name
@@ -712,12 +713,12 @@ dgenies.run.start_uploads = function() {
     else if (tab === "tab2") {
         dgenies.run.reset_file_form("tab1");
         dgenies.run.reset_file_form("tab3");
-        inputs = [["queryidx", "Query"], ["targetidx", "Target"], ["alignfile", "Alignment"], ["backup", "Backup"]]
+        inputs = [["queryidx", "Query"], ["targetidx", "Target"], ["alignfile", "Alignment"], ["backup", "Backup"]];
     }
     else {
         dgenies.run.reset_file_form("tab1");
         dgenies.run.reset_file_form("tab2");
-        inputs = [["batch", "Batch"]]
+        inputs = [["batch", "Batch"]];
     }
     $.each(inputs, function(i, input) {
         let test_has_uploads = dgenies.run._start_upload(input[0], input[1]);

@@ -154,6 +154,7 @@ def launch_analysis():
     backup = request.form["backup"] if "backup" in request.form else None
     backup_type = request.form["backup_type"] if "backup_type" in request.form else None
     batch = request.form["batch"] if "batch" in request.form else None
+    batch_type = request.form["batch_type"] if "batch_type" in request.form else None
 
     # Check form:
     form_pass = True
@@ -295,6 +296,15 @@ def launch_analysis():
                 form_pass = False
             bckp = Fasta(name=backup_name, path=backup_path, type_f=backup_type)
 
+        batch_path = None
+        if batch is not None:
+            batch_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder, batch) \
+                if batch_type == "local" else batch
+            print(batch_path)
+            if batch_type == "local" and not os.path.exists(batch_path):
+                errors.append("Batch file not correct!")
+                form_pass = False
+
         if form_pass:
             # Launch job:
             job = JobManager(id_job=id_job,
@@ -303,7 +313,7 @@ def launch_analysis():
                              target=target,
                              align=align,
                              backup=bckp,
-                             batch=batch,
+                             batch=batch_path,
                              mailer=mailer,
                              tool=tool,
                              options=options)
@@ -1111,7 +1121,6 @@ def upload():
 
                 # get file size after saving
                 size = os.path.getsize(uploaded_file_path)
-
                 # return json for js call back
                 result = UploadFile(name=filename, type_f=mime_type, size=size)
 
