@@ -1293,6 +1293,14 @@ class JobManager:
 
         return self._end_of_prepare_dotplot()
 
+    def get_subjob_ids(self):
+        try:
+            with open(os.path.join(self.output_dir, ".jobs"), "rt") as jobs_file:
+                return jobs_file.read().strip().split()
+        except FileNotFoundError:
+            pass
+        return None
+
     def prepare_batch_standalone(self):
         # Put batch file in working directory
         if self.batch != ".batch":
@@ -1353,7 +1361,7 @@ class JobManager:
             print("run job " + subjob.id_job)
             subjob.launch_standalone(sync=True)
         self.set_job_status("success")
-        return True
+        #return True
 
     def prepare_batch_local(self):
         """
@@ -1549,13 +1557,14 @@ class JobManager:
                     return group
         return ''
 
-    def _get_job_type(self):
+    def get_job_type(self):
         """
         Return job type based on the files used for the job.
         :return: job type which is either "new" (for new align job), "plot" and "batch"
         :rtype: str
         """
-        return "new" if (self.align is None and self.backup is None) else "plot" if self.batch is None else "batch"
+        return "batch" if(self.batch is not None or os.path.exists(os.path.join(self.output_dir, ".jobs"))) \
+            else "new" if(self.align is None and self.backup is None) else "plot"
 
     def _save_analytics_data(self):
         """
@@ -1577,7 +1586,7 @@ class JobManager:
                 query_size=query_size,
                 mail_client=self._anonymize_mail_client(job.email),
                 batch_type=job.batch_type,
-                job_type=self._get_job_type(),
+                job_type=self.get_job_type(),
                 tool=self.tool_name if self.tool_name is not None else "unset")
             log.save()
 

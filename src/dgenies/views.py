@@ -326,16 +326,14 @@ def launch_analysis():
         return jsonify({"success": False, "errors": errors})
 
 
-# Status of a job
-@app.route('/status/<id_job>', methods=['GET'])
-def status(id_job):
+def get_status(job):
     """
-    Status page
-
-    :param id_job: job id
-    :type id_job: str
+    Return the needed information for displaying the status page or sending the status message
+    :param job: job
+    :type job: JobManager
+    :return: a dict containing describing the job status preparing the json answer. (TODO: describe each entry)
+    :rtype: dict
     """
-    job = JobManager(id_job)
     j_status = job.status()
     mem_peak = j_status["mem_peak"] if "mem_peak" in j_status else None
     if mem_peak is not None:
@@ -348,20 +346,39 @@ def status(id_job):
             minutes = time_e // 60
             seconds = time_e - minutes * 60
             time_e = "%d min %d secs" % (minutes, seconds)
-    format = request.args.get("format")
-    if format is not None and format == "json":
-        return jsonify({
-            "status": j_status["status"],
-            "error": j_status["error"].replace("#ID#", ""),
-            "id_job": id_job,
-            "mem_peak": mem_peak,
-            "time_elapsed": time_e
-        })
-    return render_template("status.html", status=j_status["status"],
-                           error=j_status["error"].replace("#ID#", ""),
-                           id_job=id_job, menu="results", mem_peak=mem_peak,
-                           time_elapsed=time_e, do_align=job.do_align(),
-                           query_filtered=job.is_query_filtered(), target_filtered=job.is_target_filtered())
+    return {
+        "status": j_status["status"],
+        "error": j_status["error"].replace("#ID#", ""),
+        "id_job": job.id_job,
+        "mem_peak": mem_peak,
+        "time_elapsed": time_e
+    }
+
+
+# Status of a job
+@app.route('/status/<id_job>', methods=['GET'])
+def status(id_job):
+    """
+    Status page
+
+    :param id_job: job id
+    :type id_job: str
+    """
+    job = JobManager(id_job)
+    print(job.get_job_type())
+    answer = get_status(job)
+    if job.get_job_type() == "batch":
+        answer["batch"] = [get_status(JobManager(subjob_id)) for subjob_id in job.get_subjob_ids()]
+
+    fmt = request.args.get("format")
+    if fmt is not None and fmt == "json":
+       return jsonify(answer)
+    return render_template("status.html", status=answer["status"],
+                           error=answer["error"],
+                           id_job=id_job, menu="results", mem_peak=answer["mem_peak"],
+                           time_elapsed=answer["time_elapsed"], do_align=job.do_align(),
+                           query_filtered=job.is_query_filtered(), target_filtered=job.is_target_filtered(),
+                           batch=answer["batch"] if "batch" in answer else None)
 
 
 # Results path
