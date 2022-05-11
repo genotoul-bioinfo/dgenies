@@ -28,6 +28,7 @@ from dgenies.bin.filter_contigs import Filter
 from dgenies.bin.merge_splitted_chrms import Merger
 from dgenies.bin.sort_paf import Sorter
 from dgenies.lib.paf import Paf
+from dgenies.lib.batch import read_batch_file
 import gzip
 import io
 import binascii
@@ -962,7 +963,7 @@ class JobManager:
 
         :return:
             * [0] True if getting files succeed, False else
-            * [1] If error happenned, True if error already saved for the job, False else (error will be saved later)
+            * [1] If error happened, True if error already saved for the job, False else (error will be saved later)
             * [2] True if no data must be downloaded (will be downloaded with pending if True)
         :rtype: tuple
         """
@@ -1292,11 +1293,96 @@ class JobManager:
 
         return self._end_of_prepare_dotplot()
 
+    def prepare_batch_standalone(self):
+        # Put batch file in working directory
+        if self.batch != ".batch":
+            # We move normalize the batch file name
+            shutil.move(os.path.join(self.output_dir, self.batch), os.path.join(self.output_dir, ".batch"))
+            self.batch = os.path.join(self.output_dir, ".batch")
+        # We get the job list from batch file
+        job_param_list, error_msgs = read_batch_file(self.batch)
+        if error_msgs:
+            return False
+        # We create a queue in order to run jobs sequentially in standalone mode.
+        self.set_job_status("preparing")
+        job_queue = []
+        with open(os.path.join(self.output_dir, ".jobs"), "wt") as jobs_file:
+            for job_type, params in job_param_list:
+                # We create a subjob id and the corresponding working directory
+                subjob_id = Functions.random_string(5) + "_" + datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S')
+                while os.path.exists(os.path.join(self.config.app_data, subjob_id)):
+                    subjob_id = Functions.random_string(5) + "_" + datetime.fromtimestamp(time.time()).strftime(
+                        '%Y%m%d%H%M%S')
+                folder_files = os.path.join(self.config.app_data, subjob_id)
+                os.makedirs(folder_files)
+
+                # We create the needed fasta files
+                query = params.get("query", None)
+                if query is not None:
+                    query = Fasta(name="query", path=query, type_f="URL")
+                target = params.get("target", None)
+                if target is not None:
+                    target = Fasta(name="target", path=target, type_f="URL")
+                align = params.get("align", None)
+                if align is not None:
+                    align = Fasta(name="align", path=align, type_f="URL")
+                backup = params.get("backup", None)
+                if backup is not None:
+                    backup = Fasta(name="backup", path=backup, type_f="URL")
+                tool = params.get("tool", None)
+                options = params.get("options", None)
+
+                # We create the subjob itself
+                subjob = JobManager(
+                    id_job=subjob_id,
+                    email=self.email,
+                    query=query,
+                    target=target,
+                    align=align,
+                    backup=backup,
+                    mailer=self.mailer,
+                    tool=tool,
+                    options=options)
+                job_queue.append(subjob)
+                jobs_file.write(subjob_id + "\n")
+        # self.set_job_status("prepared")
+
+        # We launch each job
+        self.set_job_status("started")
+        for subjob in job_queue:
+            print("run job " + subjob.id_job)
+            subjob.launch_standalone(sync=True)
+        self.set_job_status("success")
+        return True
+
+    def prepare_batch_local(self):
+        """
+        Prepare batch locally. On standalone mode, launch job after, if success.
+        :return: True if job succeed, else False
+        :rtype: bool
+        """
+        if self.batch != ".batch":
+            # We move normalize the batch file name
+            print(os.path.join(self.output_dir, self.batch))
+            shutil.move(os.path.join(self.output_dir, self.batch), os.path.join(self.output_dir, ".batch"))
+            self.batch = os.path.join(self.output_dir, ".batch")
+        # We extract the jobs from batch file and add them to a job queue
+
+        # In standalone mode, everything run locally directly
+        if MODE != "webserver":
+            for job in job_queue:
+                job.run_job("local")
+        return True
+
+    def prepare_data_cluster(self, batch_system_type):
+        pass
+
     def prepare_data(self):
         """
         Launch preparation of data
         """
-        if self.align is None:
+        if self.align is None and self.batch is None:
+        # new align mode
             if MODE == "webserver":
                 with Job.connect():
                     job = Job.get(Job.id_job == self.id_job)
@@ -1308,7 +1394,8 @@ class JobManager:
                         self._set_analytics_job_status("fail-prepare")
             else:
                 self.prepare_data_local()
-        else:
+        elif self.batch is None:
+            # plot mode
             if MODE == "webserver":
                 with Job.connect():
                     job = Job.get(Job.id_job == self.id_job)
@@ -1322,6 +1409,19 @@ class JobManager:
                         self._set_analytics_job_status("fail-all")
             else:
                 self.prepare_dotplot_local()
+        else:
+            # batch mode
+            if MODE == "webserver":
+                with Job.connect():
+                    job = Job.get(Job.id_job == self.id_job)
+                    if job.batch_type == "local":
+                        success = self.prepare_batch_local()
+                    else:
+                        success = self.prepare_batch_cluster(job.batch_type)
+                    if not success:
+                        self._set_analytics_job_status("fail-batch-prepare")
+            else:
+                self.prepare_batch_standalone()
 
     def run_job(self, batch_system_type):
         """
@@ -1584,6 +1684,7 @@ class JobManager:
         try:
             success, error_set, all_downloaded = self.getting_files()
             if not success or all_downloaded:
+                # The error managment is delegated into _after_start
                 self._after_start(success, error_set)
 
         except Exception:
@@ -1600,15 +1701,19 @@ class JobManager:
             else:
                 self.set_status_standalone("fail", error)
 
-    def launch_standalone(self):
+    def launch_standalone(self, sync=False):
         """
         Launch a job in standalone mode (asynchronously in a new thread)
+        :param sync: force sync
+        :type sync: bool
         """
         if not os.path.exists(self.output_dir):
             os.mkdir(self.output_dir)
         self.set_status_standalone("submitted")
         thread = threading.Timer(1, self.start_job)
         thread.start()
+        if sync:
+            thread.join()
 
     def launch(self):
         """

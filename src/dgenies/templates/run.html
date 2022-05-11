@@ -163,6 +163,7 @@
                             {% endif %}
                             {% if tools | length > 1 %}
                                 {% for tool in tools_names %}
+                                {% set tool_loop = loop %}
                                     <tr class="tabx tab1 optionx tool-options-{{tool}} {% if loop.index0 != 0 or not tools[tool].options %}hidden{% endif %}">
                                         <td colspan="2" style="vertical-align:top;">
                                             <div id="tool-options-{{tool}}">
@@ -171,8 +172,8 @@
                                         </td>
                                     </tr>
                                     {% if tools[tool].options %}
-                                        <tr class="tabx tab1 optionx tool-options-{{tool}} {% if loop.index0 != 0 %}hidden{% endif %}" >
-                                            {% for opt in tools_options[tool] %}
+                                        {% for opt in tools_options[tool] %}
+                                            <tr class="tabx tab1 optionx tool-options-{{tool}} {% if tool_loop.index0 != 0 %}hidden{% endif %}" >
                                                 {% set outer_loop = loop %}
                                                 <td style="vertical-align:top;">
                                                     {{ opt.label }}&nbsp<span class="glyphicon glyphicon-question-sign" style="color: #2aabd2"
@@ -194,8 +195,8 @@
                                                         </div>
                                                     {% endfor %}
                                                 </td>
-                                            {% endfor %}
-                                        </tr>
+                                            </tr>
+                                        {% endfor %}
                                     {% endif %}
                                 {% endfor %}
                             {% else %}
@@ -372,6 +373,35 @@
                                     <div class="file-size batch"></div>
                                 </td>
                             </tr>
+
+                            <tr class="batch tabx tab3">
+                                <td colspan="2" style="vertical-align:top;">
+                                    <label>Option ids for tools<sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup>{% set fnote_tab = fnote_tab + 1 %}</label>
+                                </td>
+                            </tr>
+
+
+
+                            {% for tool in tools_names %}
+                                {% if tools[tool].options %}
+                                    <tr class="batch tabx tab3">
+                                        <td style="vertical-align:top;">
+                                            {{ tool }} 
+                                        </td>
+                                        <td>
+                                            {% for opt in tools[tool].options %}
+                                                {% set outer_loop = loop %}
+                                                {{ opt.label }}{% if opt.type == "radio" %} (mutually exclusive){% endif %}:
+                                                <ul>
+                                                    {% for entry in opt['entries'] %}
+                                                       <li {% if entry.default %}style="font-weight: bold"{% endif %}> {{ entry.label }}: options={{ outer_loop.index0 }}-{{ loop.index0 }} </li>
+                                                    {% endfor %}
+                                                </ul>
+                                            {% endfor %}
+                                        </td>
+                                    </tr>
+                                {% endif %}
+                            {% endfor %}
                         </tbody>
                     </table>
                 </div>
@@ -405,6 +435,8 @@
                 <div class="tabx tab3">
                     {% set fnote_tab = fnote %}
                     <p class="afterworlff"><sup id="fn{{ fnote_tab }}"><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup> Text format. Must end with <code>.txt</code></p>
+                    {% set fnote_tab = fnote_tab + 1 %}
+                    <p class="afterworlff"><sup id="fn{{ fnote_tab }}"><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup> Look at the documentation page for full description. Default options appear in <b>bold</b></code></p>
                     {% set fnote_tab = fnote_tab + 1 %}
                 </div>
             </div>
