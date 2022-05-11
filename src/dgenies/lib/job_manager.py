@@ -1031,7 +1031,8 @@ class JobManager:
                                                      "should_be_local": should_be_local,
                                                      "max_upload_size_readable": max_upload_size_readable})
                     thread.start()  # Start the execution
-
+                    if MODE == "standalone":
+                        thread.join()
                 elif correct and MODE == "webserver" and job.batch_type != "local" and should_be_local \
                         and self.get_pending_local_number() < self.config.max_run_local:
                     job.batch_type = "local"
@@ -1061,6 +1062,8 @@ class JobManager:
         """
         thread = threading.Timer(1, self.run_job, kwargs={"batch_system_type": batch_system_type})
         thread.start()  # Start the execution
+        if MODE == "standalone":
+            thread.join()
 
     def prepare_data_in_thread(self):
         """
@@ -1068,6 +1071,8 @@ class JobManager:
         """
         thread = threading.Timer(1, self.prepare_data)
         thread.start()  # Start the execution
+        if MODE == "standalone":
+            thread.join()
 
     def prepare_data_cluster(self, batch_system_type):
         """
