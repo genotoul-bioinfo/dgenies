@@ -418,16 +418,10 @@ def get_tools_options(tool_name, chosen_options):
     tool_options = tool.options if tool is not None else None
     # We filter options for the chosen tool.
     tool_prefix = "tool-options-%s-" % tool_name
-    filtered_options = [s[len(tool_prefix):].split("-") for s in chosen_options if s.startswith(tool_prefix)]
-    valid = True
-    options_params = None
-    try:
-        options_params = [tool_options[int(o)]['entries'][int(e)]['value'] for o, e in filtered_options]
-    except KeyError:
-        valid = False
-    except IndexError:
-        valid = False
-    return True, " ".join(options_params)
+    # Option keys looks like 0-0, 0-1, ..., 1-0, ...
+    options_keys = [s[len(tool_prefix):] for s in chosen_options if s.startswith(tool_prefix)]
+    valid, options_params = tool.resolve_options_keys(options_keys)
+    return valid, " ".join(options_params)
 
 
 def get_file(file, gzip=False):  # pragma: no cover

@@ -110,9 +110,30 @@ class Tool:
         # Options
         if options is None or isinstance(options, list):
             self.options = options
+            if options is not None:
+                self._coord_to_option_value = [[e['value'] for e in o['entries']] for o in options]
         else:
             raise ValueError("Tools: options must be a yaml list")
 
+    def resolve_options_keys(self, keys):
+        """
+        Resolve/Translate options keys like 0-0, 0-1, ..., 1-0, ... to effective parameters
+        :param keys: list of key
+        :type keys: list of str
+        :return: list of associated parameters associated to options keys
+        :rtype: list of str
+        """
+        valid = True
+        options_params = []
+        try:
+            for k in keys:
+                o, e = tuple(k.split("-", maxsplit=1))
+                options_params.append(self._coord_to_option_value[int(o)][int(e)])
+        except KeyError:
+            valid = False
+        except IndexError:
+            valid = False
+        return valid, options_params if options_params else None
 
 
 @Singleton
