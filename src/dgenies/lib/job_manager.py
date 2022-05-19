@@ -65,7 +65,7 @@ class JobManager:
         :param backup: backup TAR file
         :type backup: Fasta
         :param batch: batch file
-        :type batch: str
+        :type batch: Fasta
         :param options: list of str containing options for the chosen tool
         :type options: list
         """
@@ -95,6 +95,9 @@ class JobManager:
         self.idx_q = os.path.join(self.output_dir, "query.idx")
         self.idx_t = os.path.join(self.output_dir, "target.idx")
         self.logs = os.path.join(self.output_dir, "logs.txt")
+        # We force to have a .batch file in ouputdir in order to identify the batch mode
+        #if self.batch is not None and self.batch.get_path() != os.path.join(self.output_dir, ".batch"):
+        #    Path(os.path.join(self.output_dir, ".batch")).touch()
         self.mailer = mailer
         self._filename_for_url = {}
 
@@ -183,6 +186,14 @@ class JobManager:
                 )
                 self.aln_format = os.path.splitext(file_path)[1][1:]
         batch_file = os.path.join(res_dir, ".batch")
+        if os.path.exists(batch_file):
+            with open(batch_file) as b_f:
+                file_path = b_f.readline()
+                self.batch = Fasta(
+                    name="batch",
+                    path=file_path,
+                    type_f="local"
+                )
 
     def check_job_success(self):
         """
@@ -1021,6 +1032,15 @@ class JobManager:
                     files_to_download.append([self.backup, "backup"])
                 else:
                     return False, True, True
+            if correct and self.batch is not None:
+                if self.batch.get_type() == "local":
+                    self.batch.set_path(self._getting_local_file(self.batch, "batch"))
+                    correct, error_set, should_be_local = self.check_file("batch", should_be_local,
+                                                                          max_upload_size_readable)
+                elif self._check_url(self.batch, ("batch",)):
+                    files_to_download.append([self.batch, "batch"])
+                else:
+                    return False, True, True
 
             all_downloaded = True
             if correct:
@@ -1109,6 +1129,7 @@ class JobManager:
         :return: True if job succeed, else False
         :rtype: bool
         """
+        print("prepare data")
         with open(self.preptime_file, "w") as ptime, Job.connect():
             self.set_job_status("preparing")
             ptime.write(str(round(time.time())) + "\n")
@@ -1303,17 +1324,11 @@ class JobManager:
             with open(os.path.join(self.output_dir, ".jobs"), "rt") as jobs_file:
                 return jobs_file.read().strip().split()
         except FileNotFoundError:
-            pass
-        return None
+            return []
 
     def prepare_batch_standalone(self):
-        # Put batch file in working directory
-        if self.batch != ".batch":
-            # We move normalize the batch file name
-            shutil.move(os.path.join(self.output_dir, self.batch), os.path.join(self.output_dir, ".batch"))
-            self.batch = os.path.join(self.output_dir, ".batch")
         # We get the job list from batch file
-        job_param_list, error_msgs = read_batch_file(self.batch)
+        job_param_list, error_msgs = read_batch_file(self.batch.get_path())
         if error_msgs:
             return False
         # We create a queue in order to run jobs sequentially in standalone mode.
@@ -1358,44 +1373,92 @@ class JobManager:
                     options=options)
                 job_queue.append(subjob)
                 jobs_file.write(subjob_id + "\n")
-        # self.set_job_status("prepared")
+        #self.set_job_status("prepared")
 
         # We launch each job
         self.set_job_status("started")
         for subjob in job_queue:
             print("run job " + subjob.id_job)
             subjob.launch_standalone(sync=True)
-        self.set_job_status("success")
+        is_success = all(s == "success" for s in map(lambda j: j.get_status_standalone(), job_queue))
+        self.set_job_status("success") if is_success else self.set_job_status("fail")
         #return True
 
-    def prepare_batch_local(self):
+    def prepare_batch(self):
         """
-        Prepare batch locally. On standalone mode, launch job after, if success.
-        :return: True if job succeed, else False
-        :rtype: bool
+        Prepare batch locally.
         """
-        if self.batch != ".batch":
-            # We move normalize the batch file name
-            print(os.path.join(self.output_dir, self.batch))
-            shutil.move(os.path.join(self.output_dir, self.batch), os.path.join(self.output_dir, ".batch"))
-            self.batch = os.path.join(self.output_dir, ".batch")
-        # We extract the jobs from batch file and add them to a job queue
+        print("prepare batch")
+        # We get the job list from batch file
+        job_param_list, error_msgs = read_batch_file(self.batch.get_path())
+        if error_msgs:
+            return False
+        # We create a queue in order to run jobs sequentially in standalone mode.
+        self.set_job_status("preparing")
+        job_queue = []
+        with open(os.path.join(self.output_dir, ".jobs"), "wt") as jobs_file:
+            for job_type, params in job_param_list:
+                # We create a subjob id and the corresponding working directory
+                subjob_id = Functions.random_string(5) + "_" + datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S')
+                while os.path.exists(os.path.join(self.config.app_data, subjob_id)):
+                    subjob_id = Functions.random_string(5) + "_" + datetime.fromtimestamp(time.time()).strftime(
+                        '%Y%m%d%H%M%S')
+                folder_files = os.path.join(self.config.app_data, subjob_id)
+                os.makedirs(folder_files)
 
-        # In standalone mode, everything run locally directly
-        if MODE != "webserver":
-            for job in job_queue:
-                job.run_job("local")
-        return True
+                # We create the needed fasta files
+                query = params.get("query", None)
+                if query is not None:
+                    query = Fasta(name="query", path=query, type_f="URL")
+                target = params.get("target", None)
+                if target is not None:
+                    target = Fasta(name="target", path=target, type_f="URL")
+                align = params.get("align", None)
+                if align is not None:
+                    align = Fasta(name="align", path=align, type_f="URL")
+                backup = params.get("backup", None)
+                if backup is not None:
+                    backup = Fasta(name="backup", path=backup, type_f="URL")
+                tool = params.get("tool", None)
+                options = params.get("options", None)
 
-    def prepare_data_cluster(self, batch_system_type):
-        pass
+                # We create the subjob itself
+                subjob = JobManager(
+                    id_job=subjob_id,
+                    email=self.email,
+                    query=query,
+                    target=target,
+                    align=align,
+                    backup=backup,
+                    mailer=self.mailer,
+                    tool=tool,
+                    options=options)
+                job_queue.append(subjob)
+                jobs_file.write(subjob_id + "\n")
+        #self.set_job_status("prepared")
+        self.set_job_status("started-batch")
+        for subjob in job_queue:
+            print("run job " + subjob.id_job)
+            subjob.launch()
 
     def prepare_data(self):
         """
         Launch preparation of data
         """
-        if self.align is None and self.batch is None:
-        # new align mode
+        if self.batch is not None:
+            # batch mode
+            print("batch")
+            if MODE == "webserver":
+                with Job.connect():
+                    job = Job.get(Job.id_job == self.id_job)
+                    success = self.prepare_batch()
+                    if not success:
+                        self._set_analytics_job_status("fail-batch-prepare")
+            else:
+                self.prepare_batch_standalone()
+        elif self.align is None:
+            # new align mode
+            print("new align")
             if MODE == "webserver":
                 with Job.connect():
                     job = Job.get(Job.id_job == self.id_job)
@@ -1407,8 +1470,9 @@ class JobManager:
                         self._set_analytics_job_status("fail-prepare")
             else:
                 self.prepare_data_local()
-        elif self.batch is None:
+        else:
             # plot mode
+            print("plot")
             if MODE == "webserver":
                 with Job.connect():
                     job = Job.get(Job.id_job == self.id_job)
@@ -1422,19 +1486,17 @@ class JobManager:
                         self._set_analytics_job_status("fail-all")
             else:
                 self.prepare_dotplot_local()
-        else:
-            # batch mode
-            if MODE == "webserver":
-                with Job.connect():
-                    job = Job.get(Job.id_job == self.id_job)
-                    if job.batch_type == "local":
-                        success = self.prepare_batch_local()
-                    else:
-                        success = self.prepare_batch_cluster(job.batch_type)
-                    if not success:
-                        self._set_analytics_job_status("fail-batch-prepare")
-            else:
-                self.prepare_batch_standalone()
+
+    def refresh_batch_status(self):
+        status_list = []
+        for i in self.get_subjob_ids():
+            job = JobManager(i)
+            status_list.append(job.status().get("status", "unkown"))
+        is_finished = all(s in ("success", "fail") for s in status_list)
+        is_success = all(s == "success" for s in status_list)
+        if is_finished:
+            return "success" if is_success else "fail"
+        return "started-batch"
 
     def run_job(self, batch_system_type):
         """
@@ -1444,92 +1506,95 @@ class JobManager:
         :type batch_system_type: str
         """
         try:
-            success = False
-            if batch_system_type == "local":
-                success = self._launch_local()
-            elif batch_system_type in ["slurm", "sge"]:
-                success = self._launch_drmaa(batch_system_type)
-            if success:
-                with Job.connect():
-                    if MODE == "webserver":
-                        job = Job.get(Job.id_job == self.id_job)
-                        with open(self.logs) as logs:
-                            measures = logs.readlines()[-1].strip("\n").split(" ")
-                            map_elapsed = round(float(measures[0]))
-                            job.mem_peak = int(measures[1])
-                        with open(self.preptime_file) as ptime:
-                            lines = ptime.readlines()
-                            start = int(lines[0].strip("\n"))
-                            end = int(lines[1].strip("\n"))
-                            prep_elapsed = end - start
-                            job.time_elapsed = prep_elapsed + map_elapsed
-                    else:
-                        job = None
-                    status = "merging"
-                    if MODE == "webserver":
-                        job.status = "merging"
-                        job.save()
-                    else:
-                        self.set_status_standalone(status)
-                    if self.tool.split_before and self.query is not None:
-                        start = time.time()
-                        paf_raw = self.paf_raw + ".split"
-                        os.remove(self.get_query_split())
-                        merger = Merger(self.paf_raw, paf_raw, self.query_index_split,
-                                        self.idx_q, debug=DEBUG)
-                        merger.merge()
-                        os.remove(self.paf_raw)
-                        os.remove(self.query_index_split)
-                        self.paf_raw = paf_raw
-                        end = time.time()
-                        if MODE == "webserver":
-                            job.time_elapsed += end - start
-                    elif self.query is None:
-                        shutil.copyfile(self.idx_t, self.idx_q)
-                        Path(os.path.join(self.output_dir, ".all-vs-all")).touch()
-                    if self.tool.parser is not None:
-                        paf_raw = self.paf_raw + ".parsed"
-                        getattr(parsers, self.tool.parser)(self.paf_raw, paf_raw)
-                        os.remove(self.paf_raw)
-                        self.paf_raw = paf_raw
-                    sorter = Sorter(self.paf_raw, self.paf)
-                    sorter.sort()
-                    os.remove(self.paf_raw)
-                    if self.target is not None and os.path.exists(self.target.get_path()):
-                        os.remove(self.target.get_path())
-                    if os.path.isfile(os.path.join(self.output_dir, ".do-sort")):
-                        paf = Paf(paf=self.paf,
-                                  idx_q=self.idx_q,
-                                  idx_t=self.idx_t,
-                                  auto_parse=False)
-                        paf.sort()
-                        if not paf.parsed:
-                            success = False
-                            status = "fail"
-                            error = "Error while sorting query. Please contact us to report the bug"
-                            if MODE == "webserver":
-                                job = Job.get(Job.id_job == self.id_job)
-                                job.status = status
-                                job.error = error
-                                self._set_analytics_job_status("fail-sort")
-                            else:
-                                self.set_status_standalone(status, error)
-                    if success:
-                        status = "success"
+            if self.batch is not None:
+                self.set_job_status(self.refresh_batch_status())
+            else:
+                success = False
+                if batch_system_type == "local":
+                    success = self._launch_local()
+                elif batch_system_type in ["slurm", "sge"]:
+                    success = self._launch_drmaa(batch_system_type)
+                if success:
+                    with Job.connect():
                         if MODE == "webserver":
                             job = Job.get(Job.id_job == self.id_job)
-                            job.status = "success"
+                            with open(self.logs) as logs:
+                                measures = logs.readlines()[-1].strip("\n").split(" ")
+                                map_elapsed = round(float(measures[0]))
+                                job.mem_peak = int(measures[1])
+                            with open(self.preptime_file) as ptime:
+                                lines = ptime.readlines()
+                                start = int(lines[0].strip("\n"))
+                                end = int(lines[1].strip("\n"))
+                                prep_elapsed = end - start
+                                job.time_elapsed = prep_elapsed + map_elapsed
+                        else:
+                            job = None
+                        status = "merging"
+                        if MODE == "webserver":
+                            job.status = "merging"
                             job.save()
-
-                            # Analytics:
-                            self._set_analytics_job_status("success")
-                            if self.config.send_mail_status:
-                                self.send_mail_post()
-
                         else:
                             self.set_status_standalone(status)
-            elif MODE == "webserver":
-                self._set_analytics_job_status("fail-map")
+                        if self.tool.split_before and self.query is not None:
+                            start = time.time()
+                            paf_raw = self.paf_raw + ".split"
+                            os.remove(self.get_query_split())
+                            merger = Merger(self.paf_raw, paf_raw, self.query_index_split,
+                                            self.idx_q, debug=DEBUG)
+                            merger.merge()
+                            os.remove(self.paf_raw)
+                            os.remove(self.query_index_split)
+                            self.paf_raw = paf_raw
+                            end = time.time()
+                            if MODE == "webserver":
+                                job.time_elapsed += end - start
+                        elif self.query is None:
+                            shutil.copyfile(self.idx_t, self.idx_q)
+                            Path(os.path.join(self.output_dir, ".all-vs-all")).touch()
+                        if self.tool.parser is not None:
+                            paf_raw = self.paf_raw + ".parsed"
+                            getattr(parsers, self.tool.parser)(self.paf_raw, paf_raw)
+                            os.remove(self.paf_raw)
+                            self.paf_raw = paf_raw
+                        sorter = Sorter(self.paf_raw, self.paf)
+                        sorter.sort()
+                        os.remove(self.paf_raw)
+                        if self.target is not None and os.path.exists(self.target.get_path()):
+                            os.remove(self.target.get_path())
+                        if os.path.isfile(os.path.join(self.output_dir, ".do-sort")):
+                            paf = Paf(paf=self.paf,
+                                      idx_q=self.idx_q,
+                                      idx_t=self.idx_t,
+                                      auto_parse=False)
+                            paf.sort()
+                            if not paf.parsed:
+                                success = False
+                                status = "fail"
+                                error = "Error while sorting query. Please contact us to report the bug"
+                                if MODE == "webserver":
+                                    job = Job.get(Job.id_job == self.id_job)
+                                    job.status = status
+                                    job.error = error
+                                    self._set_analytics_job_status("fail-sort")
+                                else:
+                                    self.set_status_standalone(status, error)
+                        if success:
+                            status = "success"
+                            if MODE == "webserver":
+                                job = Job.get(Job.id_job == self.id_job)
+                                job.status = "success"
+                                job.save()
+
+                                # Analytics:
+                                self._set_analytics_job_status("success")
+                                if self.config.send_mail_status:
+                                    self.send_mail_post()
+
+                            else:
+                                self.set_status_standalone(status)
+                elif MODE == "webserver":
+                    self._set_analytics_job_status("fail-map")
         except Exception as e:
             traceback.print_exc()
             with open(self.logs, 'a') as f:
@@ -1562,13 +1627,21 @@ class JobManager:
                     return group
         return ''
 
+    def is_batch(self):
+        """
+        Check is job is a batch job
+        :return: True if job is a batch job
+        :rtype: bool
+        """
+        return self.batch is not None or os.path.exists(os.path.join(self.output_dir, ".batch"))
+
     def get_job_type(self):
         """
         Return job type based on the files used for the job.
         :return: job type which is either "new" (for new align job), "plot" and "batch"
         :rtype: str
         """
-        return "batch" if(self.batch is not None or os.path.exists(os.path.join(self.output_dir, ".jobs"))) \
+        return "batch" if(self.batch is not None or os.path.exists(os.path.join(self.output_dir, ".batch"))) \
             else "new" if(self.align is None and self.backup is None) else "plot"
 
     def _save_analytics_data(self):
@@ -1584,6 +1657,7 @@ class JobManager:
             query_size = None
             if self.query is not None and self.query.get_type() == "local" and os.path.exists(self.query.get_path()):
                 query_size = os.path.getsize(self.query.get_path())
+            print(self.get_job_type())
             log = Analytics.create(
                 id_job=self.id_job,
                 date_created=datetime.now(),
@@ -1721,6 +1795,7 @@ class JobManager:
         :param sync: force sync
         :type sync: bool
         """
+        print(self.get_job_type())
         if not os.path.exists(self.output_dir):
             os.mkdir(self.output_dir)
         self.set_status_standalone("submitted")
@@ -1733,13 +1808,15 @@ class JobManager:
         """
         Launch a job in webserver mode (asynchronously in a new thread)
         """
+        print(self.get_job_type())
         with Job.connect():
             j1 = Job.select().where(Job.id_job == self.id_job)
             if len(j1) > 0:
                 print("Old job found without result dir existing: delete it from BDD!")
                 for j11 in j1:
                     j11.delete_instance()
-            if self.target is not None or self.backup is not None:
+            if self.target is not None or self.backup is not None or self.batch is not None:
+                print("create {} Job".format(self.get_job_type()))
                 job = Job.create(id_job=self.id_job, email=self.email, batch_type=self.config.batch_system_type,
                                  date_created=datetime.now(), tool=self.tool.name if self.tool is not None else None,
                                  options=self.options)

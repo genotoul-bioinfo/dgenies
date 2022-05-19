@@ -298,12 +298,13 @@ def launch_analysis():
 
         batch_path = None
         if batch is not None:
+            batch_name = os.path.splitext(batch)[0] if batch_type == "local" else None
             batch_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder, batch) \
                 if batch_type == "local" else batch
-            print(batch_path)
             if batch_type == "local" and not os.path.exists(batch_path):
                 errors.append("Batch file not correct!")
                 form_pass = False
+            batch = Fasta(name=batch_name, path=batch_path, type_f=batch_type)
 
         if form_pass:
             # Launch job:
@@ -313,11 +314,12 @@ def launch_analysis():
                              target=target,
                              align=align,
                              backup=bckp,
-                             batch=batch_path,
+                             batch=batch,
                              mailer=mailer,
                              tool=tool,
                              options=options)
             if MODE == "webserver":
+                print("launch job")
                 job.launch()
             else:
                 job.launch_standalone()
@@ -365,14 +367,13 @@ def status(id_job):
     :type id_job: str
     """
     job = JobManager(id_job)
-    print(job.get_job_type())
     answer = get_status(job)
     if job.get_job_type() == "batch":
         answer["batch"] = [get_status(JobManager(subjob_id)) for subjob_id in job.get_subjob_ids()]
 
     fmt = request.args.get("format")
     if fmt is not None and fmt == "json":
-       return jsonify(answer)
+        return jsonify(answer)
     return render_template("status.html", status=answer["status"],
                            error=answer["error"],
                            id_job=id_job, menu="results", mem_peak=answer["mem_peak"],
