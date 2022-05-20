@@ -15,7 +15,7 @@ def has_correct_arguments(job_type: str, job_params: dict):
         comparison = {"target", "query", "tool", "options"}.symmetric_difference(job_params.keys())
         return not comparison or comparison == {"options"}
     elif job_type == "plot":
-        return job_params.keys() == {"target", "query", "map"} or job_params.keys() == {"backup"}
+        return job_params.keys() == {"target", "query", "align"} or job_params.keys() == {"backup"}
     return False
 
 
