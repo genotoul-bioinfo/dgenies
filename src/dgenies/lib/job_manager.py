@@ -1334,6 +1334,7 @@ class JobManager:
         # We get the job list from batch file
         job_param_list, error_msgs = read_batch_file(self.batch.get_path())
         if error_msgs:
+            self.set_job_status("fail")
             return False
         # We create a queue in order to run jobs sequentially in standalone mode.
         self.set_job_status("preparing")
@@ -1392,7 +1393,7 @@ class JobManager:
             is_success = all(s == "success" for s in map(lambda j: j.get_status_standalone(), job_queue))
             # The batch job succeed if all subjobs succeed
             self.set_job_status("success") if is_success else self.set_job_status("fail")
-            # return True
+        return True
 
     def prepare_data(self):
         """
@@ -1829,7 +1830,7 @@ class JobManager:
                 return {"status": "unknown", "error": ""}
         else:
             try:
-                status, error = self.get_status_standalone(True)
+                status, error = self.get_status_standalone(with_error=True)
                 return {"status": status, "mem_peak": None, "time_elapsed": None, "error": error}
             except FileNotFoundError:
                 return {"status": "unknown", "error": ""}
