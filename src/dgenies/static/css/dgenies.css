@@ -758,7 +758,7 @@ h2.status {
     width: 35.2%;
 }
 
-.progress-status-bar.started {
+.progress-status-bar.started, .progress-status-bar.started-batch {
     width: 40.3%;
 }
 
