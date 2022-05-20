@@ -13,7 +13,7 @@ def has_correct_arguments(job_type: str, job_params: dict):
     """
     if job_type == "align":
         comparison = {"target", "query", "tool", "options"}.symmetric_difference(job_params.keys())
-        return not comparison or comparison == {"options"}
+        return comparison.issubset({"options", "query"})
     elif job_type == "plot":
         return job_params.keys() == {"target", "query", "align"} or job_params.keys() == {"backup"}
     return False
