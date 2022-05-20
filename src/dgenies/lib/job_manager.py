@@ -887,7 +887,7 @@ class JobManager:
                 if not getattr(validators, self.aln_format)(self.align.get_path()):
                     self.set_job_status("fail", "Alignment file is invalid. Please check your file.")
                     return False, True, None
-            elif input_type != "backup":
+            elif input_type not in ("backup", "batch"):
                 if my_input.get_path().endswith(".idx"):
                     if not validators.v_idx(my_input.get_path()):
                         self.set_job_status("fail",
