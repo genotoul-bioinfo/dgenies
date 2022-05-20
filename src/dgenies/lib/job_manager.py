@@ -1326,64 +1326,6 @@ class JobManager:
         except FileNotFoundError:
             return []
 
-    def prepare_batch_standalone(self):
-        # We get the job list from batch file
-        job_param_list, error_msgs = read_batch_file(self.batch.get_path())
-        if error_msgs:
-            return False
-        # We create a queue in order to run jobs sequentially in standalone mode.
-        self.set_job_status("preparing")
-        job_queue = []
-        with open(os.path.join(self.output_dir, ".jobs"), "wt") as jobs_file:
-            for job_type, params in job_param_list:
-                # We create a subjob id and the corresponding working directory
-                subjob_id = Functions.random_string(5) + "_" + datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S')
-                while os.path.exists(os.path.join(self.config.app_data, subjob_id)):
-                    subjob_id = Functions.random_string(5) + "_" + datetime.fromtimestamp(time.time()).strftime(
-                        '%Y%m%d%H%M%S')
-                folder_files = os.path.join(self.config.app_data, subjob_id)
-                os.makedirs(folder_files)
-
-                # We create the needed fasta files
-                query = params.get("query", None)
-                if query is not None:
-                    query = Fasta(name="query", path=query, type_f="URL")
-                target = params.get("target", None)
-                if target is not None:
-                    target = Fasta(name="target", path=target, type_f="URL")
-                align = params.get("align", None)
-                if align is not None:
-                    align = Fasta(name="align", path=align, type_f="URL")
-                backup = params.get("backup", None)
-                if backup is not None:
-                    backup = Fasta(name="backup", path=backup, type_f="URL")
-                tool = params.get("tool", None)
-                options = params.get("options", None)
-
-                # We create the subjob itself
-                subjob = JobManager(
-                    id_job=subjob_id,
-                    email=self.email,
-                    query=query,
-                    target=target,
-                    align=align,
-                    backup=backup,
-                    mailer=self.mailer,
-                    tool=tool,
-                    options=options)
-                job_queue.append(subjob)
-                jobs_file.write(subjob_id + "\n")
-        #self.set_job_status("prepared")
-
-        # We launch each job
-        self.set_job_status("started")
-        for subjob in job_queue:
-            print("run job " + subjob.id_job)
-            subjob.launch_standalone(sync=True)
-        is_success = all(s == "success" for s in map(lambda j: j.get_status_standalone(), job_queue))
-        self.set_job_status("success") if is_success else self.set_job_status("fail")
-        #return True
-
     def prepare_batch(self):
         """
         Prepare batch locally.
@@ -1436,10 +1378,21 @@ class JobManager:
                 job_queue.append(subjob)
                 jobs_file.write(subjob_id + "\n")
         #self.set_job_status("prepared")
-        self.set_job_status("started-batch")
-        for subjob in job_queue:
-            print("run job " + subjob.id_job)
-            subjob.launch()
+        if MODE == "webserver":
+            self.set_job_status("started-batch")
+            for subjob in job_queue:
+                print("run job " + subjob.id_job)
+                subjob.launch()
+        else:
+            self.set_job_status("started-batch")
+            for subjob in job_queue:
+                print("run job " + subjob.id_job)
+                subjob.launch_standalone(sync=True)
+            # We get end status for each subjob
+            is_success = all(s == "success" for s in map(lambda j: j.get_status_standalone(), job_queue))
+            # The batch job succeed if all subjobs succeed
+            self.set_job_status("success") if is_success else self.set_job_status("fail")
+            # return True
 
     def prepare_data(self):
         """
@@ -1455,7 +1408,7 @@ class JobManager:
                     if not success:
                         self._set_analytics_job_status("fail-batch-prepare")
             else:
-                self.prepare_batch_standalone()
+                self.prepare_batch()
         elif self.align is None:
             # new align mode
             print("new align")
