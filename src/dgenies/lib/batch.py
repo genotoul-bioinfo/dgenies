@@ -42,6 +42,7 @@ def read_batch_file(batch_file: str):
             params_line = line.strip()
             # We do not consider blank lines and comment lines
             if params_line and not params_line.startswith("#"):
+                no_error = True
                 params = params_line.split()
                 type = params[0]
                 param_dict = {}
@@ -51,7 +52,7 @@ def read_batch_file(batch_file: str):
                         if len(ps) > 1:
                             param_dict[ps[0].strip()] = ps[1].strip()
                         else:
-                            error_msg.append("Malformated parameter on line {:d}: key=value format expected".format(i+1))
+                            error_msg.append("Line {:d}: Malformed parameter - key=value format expected".format(i+1))
                     if has_correct_argument_keys(type, param_dict):
                         # We get the default options
                         tool = None
@@ -59,28 +60,46 @@ def read_batch_file(batch_file: str):
                         if "tool" in param_dict:
                             try:
                                 tool = tools[param_dict["tool"]]
-                                default_options = tool.get_default_options_keys()
+                                default_options = tool.get_default_option_keys()
                             except KeyError:
-                                error_msg.append("Tool {} do not exists on line {:d}".format(param_dict["tool"], i+1))
+                                no_error = False
+                                error_msg.append("Line {:d}: Tool {} does not exist".format(i+1, param_dict["tool"]))
                                 tool = None
                         # If options exists in job line, we split options value into a list of options
                         if "options" in param_dict:
                             if tool:
                                 # TODO: manage exclusive options
                                 # We transform option value ids (e.g. 0-0) into option strings
-                                user_options_keys = set(param_dict["options"].split(","))
-                                # We get the options to remove and the ones to effectively add
-                                options_keys_to_remove = [o[1:] for o in user_options_keys if o.startswith("!")]
-                                options_keys_to_add = [o for o in user_options_keys if not o.startswith("!")]
-                                # We override the default options with the given ones
-                                options = default_options.difference(options_keys_to_remove)
-                                options.update(options_keys_to_add)
-                                valid, param_list = tool.resolve_options_keys(options)
-                                param_dict["options"] = " ".join(param_list)
-                        # We add the job
-                        job_param_list.append((type, param_dict))
+                                user_option_keys = set(param_dict["options"].split(","))
+                                # We check that user options keys are valid
+                                invalid, valid = [], []
+                                for k in user_option_keys:
+                                    (invalid, valid)[tool.is_valid_option_key(k[1:]) if k.startswith("!") else tool.is_valid_option_key(k)].append(k)
+                                if not invalid:
+                                    # We get the options to remove and the ones to effectively add
+                                    option_keys_to_remove = [k[1:] for k in user_option_keys if k.startswith("!")]
+                                    option_keys_to_add = [k for k in user_option_keys if not k.startswith("!")]
+                                    # We override the default options with the given ones
+                                    exclusive_to_remove = set()
+                                    for k in option_keys_to_add:
+                                        exclusive_to_remove.update(tool.get_option_keys(k))
+                                    option_keys = default_options.difference(exclusive_to_remove).difference(option_keys_to_remove)
+                                    option_keys.update(option_keys_to_add)
+                                    print(option_keys)
+                                    valid, option_list = tool.resolve_option_keys(option_keys)
+                                    print(option_list)
+                                    # We manage the fact that no option can exist when using '!'
+                                    param_dict["options"] = " ".join(option_list) if option_list else None
+                                else:
+                                    no_error = False
+                                    error_msg.append("Line {:d}: Option key(s) {} is/are invalid".format(i + 1, ",".join(invalid)))
                     else:
-                        error_msg.append("Incorrect/missing argument key on line {:d}".format(i+1))
+                        no_error = False
+                        error_msg.append("Line {:d}: Incorrect/missing argument key".format(i+1))
                 else:
-                    error_msg.append("Unknown job type on line {:d}".format(i + 1))
+                    no_error = False
+                    error_msg.append("Line {:d}: Unknown job type".format(i + 1))
+                if no_error:
+                    # We add the job
+                    job_param_list.append((type, param_dict))
     return job_param_list, "; ".join(error_msg)

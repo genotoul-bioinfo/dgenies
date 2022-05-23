@@ -115,27 +115,71 @@ class Tool:
         else:
             raise ValueError("Tools: options must be a yaml list")
 
-    def get_default_options_keys(self):
+    def get_default_option_keys(self):
         """
         Get default options keys set for this tool
         :return: A set of options keys like 0-0, 0-1, ..., 1-0
         :rtype: set of str
         """
-        default_options_keys = set()
+        default_option_keys = set()
         if self.options is not None:
             for i, o in enumerate(self.options):
                 for j, e in enumerate(o['entries']):
                     if e.get("default", False):
-                        default_options_keys.add("{:d}-{:d}".format(i, j))
-        return default_options_keys
+                        default_option_keys.add("{:d}-{:d}".format(i, j))
+        return default_option_keys
 
-    def resolve_options_keys(self, keys):
+    def is_valid_option_key(self, key):
+        """
+        Get default options keys set for this tool
+        :param key: an option key
+        :type key: str
+        :return: True if the option exists for the given key, else False
+        :rtype: bool
+        """
+        try:
+            i, j = key.split("-", maxsplit=1)
+            i, j = int(i), int(j)
+            self.options[i]["entries"][j]
+        except Exception:
+            return False
+        return True
+
+    def get_option_keys(self, key=None):
+        """
+        Get options keys available for this tool.
+        :param key: an option key
+        :type key: str
+        :return: A list of all options keys if key = None, else the list of options keys at the same level than key
+        :rtype: set of str
+        """
+        option_key_list = []
+        if key is None:
+            option_key_list = ((i, j) for i, o in enumerate(self.options) for j, e in enumerate(o["entries"]))
+        else:
+            i = int(key.split("-", maxsplit=1)[0])
+            # We check the coordinates
+            if 0 <= i < len(self.options):
+                option_key_list = ((i, j) for j, e in enumerate(self.options[i]["entries"]))
+        return ["{:d}-{:d}".format(i, j) for i, j in option_key_list]
+
+    def is_an_exclusive_option_key(self, key: str):
+        """
+        Tells if an option-key (like 0-0, 0-1, ..., 1-0) is a part of an exclusive options
+        :return: True if a part of an exclusive option, else false
+        :rtype: bool
+        """
+        return self.options[int(key.split("-")[0])]["type"] == "radio"
+
+    def resolve_option_keys(self, keys):
         """
         Resolve/Translate options keys like 0-0, 0-1, ..., 1-0, ... to effective parameters
-        :param keys: list of key
-        :type keys: list of str
-        :return: list of associated parameters associated to options keys
-        :rtype: list of str
+        :param keys: list/set of key
+        :type keys: collection of str
+        :return: tuple:
+            * [0] True if all option keys in keys are valid, False else
+            * [1] list of str, associated parameters associated to options keys
+        :rtype: tuple
         """
         valid = True
         options_params = []
@@ -145,9 +189,11 @@ class Tool:
                 options_params.append(self._coord_to_option_value[int(o)][int(e)])
         except KeyError:
             valid = False
+            options_params = []
         except IndexError:
             valid = False
-        return valid, options_params if options_params else None
+            options_params = []
+        return valid, options_params
 
 
 @Singleton
