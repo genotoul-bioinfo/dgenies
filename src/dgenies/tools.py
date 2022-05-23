@@ -115,6 +115,20 @@ class Tool:
         else:
             raise ValueError("Tools: options must be a yaml list")
 
+    def get_default_options_keys(self):
+        """
+        Get default options keys set for this tool
+        :return: A set of options keys like 0-0, 0-1, ..., 1-0
+        :rtype: set of str
+        """
+        default_options_keys = set()
+        if self.options is not None:
+            for i, o in enumerate(self.options):
+                for j, e in enumerate(o['entries']):
+                    if e.get("default", False):
+                        default_options_keys.add("{:d}-{:d}".format(i, j))
+        return default_options_keys
+
     def resolve_options_keys(self, keys):
         """
         Resolve/Translate options keys like 0-0, 0-1, ..., 1-0, ... to effective parameters

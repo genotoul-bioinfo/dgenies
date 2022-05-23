@@ -1129,7 +1129,6 @@ class JobManager:
         :return: True if job succeed, else False
         :rtype: bool
         """
-        print("prepare data")
         with open(self.preptime_file, "w") as ptime, Job.connect():
             self.set_job_status("preparing")
             ptime.write(str(round(time.time())) + "\n")
@@ -1330,11 +1329,10 @@ class JobManager:
         """
         Prepare batch locally.
         """
-        print("prepare batch")
         # We get the job list from batch file
         job_param_list, error_msgs = read_batch_file(self.batch.get_path())
         if error_msgs:
-            self.set_job_status("fail")
+            self.set_job_status("fail", error_msgs)
             return False
         # We create a queue in order to run jobs sequentially in standalone mode.
         self.set_job_status("preparing")
@@ -1401,7 +1399,6 @@ class JobManager:
         """
         if self.batch is not None:
             # batch mode
-            print("batch")
             if MODE == "webserver":
                 with Job.connect():
                     job = Job.get(Job.id_job == self.id_job)
@@ -1412,7 +1409,6 @@ class JobManager:
                 self.prepare_batch()
         elif self.align is None:
             # new align mode
-            print("new align")
             if MODE == "webserver":
                 with Job.connect():
                     job = Job.get(Job.id_job == self.id_job)
@@ -1426,7 +1422,6 @@ class JobManager:
                 self.prepare_data_local()
         else:
             # plot mode
-            print("plot")
             if MODE == "webserver":
                 with Job.connect():
                     job = Job.get(Job.id_job == self.id_job)

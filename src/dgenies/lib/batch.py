@@ -1,7 +1,9 @@
 from dgenies.tools import Tools
 
+JOB_TYPES = ["align", "plot"]
 
-def has_correct_arguments(job_type: str, job_params: dict):
+
+def has_correct_argument_keys(job_type: str, job_params: dict):
     """
     Check if the parameters given for a job has correct argument keys
     :param job_type: file path
@@ -13,7 +15,10 @@ def has_correct_arguments(job_type: str, job_params: dict):
     """
     if job_type == "align":
         comparison = {"target", "query", "tool", "options"}.symmetric_difference(job_params.keys())
-        return comparison.issubset({"options", "query"})
+        optional = {"options", "query"}
+        # if result of comparison of given params with expected params is not a subset of optional params,
+        # then there is some unconsidered params in given params
+        return comparison.issubset(optional)
     elif job_type == "plot":
         return job_params.keys() == {"target", "query", "align"} or job_params.keys() == {"backup"}
     return False
@@ -40,27 +45,42 @@ def read_batch_file(batch_file: str):
                 params = params_line.split()
                 type = params[0]
                 param_dict = {}
-                if type in ("align", "plot"):
+                if type in JOB_TYPES:
                     for p in params[1:]:
-                        ps = p.split("=")
+                        ps = p.split("=", 1)
                         if len(ps) > 1:
-                            param_dict[ps[0].strip()] = "=".join(ps[1:]).strip()
+                            param_dict[ps[0].strip()] = ps[1].strip()
                         else:
-                            error_msg.append("Malformated parameter on line {:d}: key=value format expected".format(i))
-                            pass
+                            error_msg.append("Malformated parameter on line {:d}: key=value format expected".format(i+1))
+                    if has_correct_argument_keys(type, param_dict):
+                        # We get the default options
+                        tool = None
+                        default_options = set()
+                        if "tool" in param_dict:
+                            try:
+                                tool = tools[param_dict["tool"]]
+                                default_options = tool.get_default_options_keys()
+                            except KeyError:
+                                error_msg.append("Tool {} do not exists on line {:d}".format(param_dict["tool"], i+1))
+                                tool = None
+                        # If options exists in job line, we split options value into a list of options
+                        if "options" in param_dict:
+                            if tool:
+                                # TODO: manage exclusive options
+                                # We transform option value ids (e.g. 0-0) into option strings
+                                user_options_keys = set(param_dict["options"].split(","))
+                                # We get the options to remove and the ones to effectively add
+                                options_keys_to_remove = [o[1:] for o in user_options_keys if o.startswith("!")]
+                                options_keys_to_add = [o for o in user_options_keys if not o.startswith("!")]
+                                # We override the default options with the given ones
+                                options = default_options.difference(options_keys_to_remove)
+                                options.update(options_keys_to_add)
+                                valid, param_list = tool.resolve_options_keys(options)
+                                param_dict["options"] = " ".join(param_list)
+                        # We add the job
+                        job_param_list.append((type, param_dict))
+                    else:
+                        error_msg.append("Incorrect/missing argument key on line {:d}".format(i+1))
                 else:
-                    error_msg.append("Unkown job type on line {:d}".format(i))
-                    pass
-                if has_correct_arguments(type, param_dict):
-                    # if exists we split options value into a list of options
-                    # TODO: check tool key in Tools
-                    if "options" in param_dict:
-                        tool = tools[param_dict["tool"]]
-                    # We transform option value ids (e.g. 0-0) into option strings
-                        valid, param_list = tool.resolve_options_keys(param_dict["options"].split())
-                        param_dict["options"] = " ".join(param_list)
-                    # We add the job
-                    job_param_list.append((type, param_dict))
-                else:
-                    error_msg.append("Incorrect/missing argument key on line {:d}".format(i))
-    return job_param_list, error_msg
+                    error_msg.append("Unknown job type on line {:d}".format(i + 1))
+    return job_param_list, "; ".join(error_msg)
