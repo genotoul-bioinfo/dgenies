@@ -100,7 +100,91 @@
     </div>
     {% if batch is not none %}
         <h2 class="batch">Job list</h2>
-        {% for subjob in batch %}
+        <table class="mini-progress">
+            {% for subjob in batch %}
+                {% set status = subjob.status %}
+                <tr>
+                <td>{{ loop.index }}.</td>
+                <td>{{ subjob.id_job }}</td>
+                <td><div class="mini-progress-status">
+                    <div class="mini-progress-status-bar {{ status }}"><div class="inner"></div></div>
+                    <!--<div class="tick submitted">
+                        <p>Submitted</p>
+                    </div>
+                    <div class="tick prepared">
+                        <p>Prepared</p>
+                    </div>
+                    <div class="tick scheduled">
+                        <p>Scheduled</p>
+                    </div>
+                    <div class="tick started">
+                        <p>Started</p>
+                    </div>
+                    {% if do_align %}
+                    <div class="tick merging">
+                        <p>Merging</p>
+                    </div>
+                    {% endif %}
+                    <div class="tick success">
+                        <p>Done</p>
+                    </div>-->
+                </div></td>
+                <td>{% if status == "started" or status == "succeed" %}
+                    <p>Your job has started.</p>
+                {% elif status == "starting" %}
+                    <p>Your job is starting...</p>
+                {% elif status == "scheduled-cluster" %}
+                    <p>Your job has been scheduled on the cluster.</p>
+                {% elif status == "submitted" or status == "waiting" %}
+                    <p>Your job has been submitted.</p>
+                {% elif status == "getfiles" %}
+                    <p>Your job has been submitted. We are retrieving data...</p>
+                {% elif status == "getfiles-waiting" %}
+                    <p>Your job has been submitted. We are retrieving data... (waiting for download...)</p>
+                {% elif status == "merging" %}
+                    <p>Your map is done. We are preparing files for visualisation...</p>
+                {% elif status == "preparing" or status == "preparing-cluster" %}
+                    <p>We are preparing data...</p>
+                {% elif status == "prepare-scheduled" %}
+                    <p>We are preparing data... [scheduled]</p>
+                {% elif status == "prepared"%}
+                    <p>Your data are ready to be processed. Your job will be scheduled soon...</p>
+                {% elif status == "scheduled" %}
+                    <p>Your job has been shedulded. It will start soon...</p>
+                {% elif status == "success" %}
+                    <p>Please <a href="/result/{{ subjob.id_job }}">click here</a> to show results.</p>
+                    {% if time_elapsed is not none %}
+                        <p>Time elapsed: {{ subjob.time_elapsed }}</p>
+                    {% endif %}
+                    {% if target_filtered %}
+                        <p>Note: target fasta has been filtered because it contains too small contigs.<br/>
+                            To see which contigs has been removed from the analysis,
+                            <a href="/filter-out/{{ subjob.id_job }}/target">click here</a>.</p>
+                    {% endif %}
+                    {% if query_filtered %}
+                        <p>Note: query fasta has been filtered because it contains too small contigs.<br/>
+                            To see which contigs has been removed from the analysis,
+                            <a href="/filter-out/{{ subjob.id_job }}/query">click here</a>.</p>
+                    {% endif %}
+                {% elif status == "no-match" %}
+                    <p>Sorry, we didn't find any match between your query and your target.</p>
+                {% elif status == "fail" %}
+                    <p>{% if error == "" %}
+                            Your job has failed.
+                            Please try again.
+                            If the problem persists, please contact the support.
+                        {% else %}
+                        {{ error | safe }}
+                        {% endif %}</p>
+                {% else %}
+                    <p>This job does not exists!</p>
+                {% endif %}
+                </td>
+                </tr>
+            {% endfor %}
+        </table> 
+
+<!--        {% for subjob in batch %}
             <h3 class="status">{{ loop.index }}. {{ subjob.id_job }}</h3>
             {% set status = subjob.status %}
             <div class="status-body">
@@ -188,5 +272,6 @@
                 </div>
             </div>
         {% endfor %}
+-->
     {% endif %}
 {% endblock %}
