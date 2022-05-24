@@ -115,6 +115,41 @@ class Tool:
         else:
             raise ValueError("Tools: options must be a yaml list")
 
+    @staticmethod
+    def _option_key_to_tuple(key: str):
+        """
+        Transform an option key string into an option key tuple
+        :param key: an option key
+        :type key: str
+        :return: A couple of int (0,0), (0,1), ..., (1,0)
+        :rtype: tuple
+        """
+        i, j = key.split("-", maxsplit=1)
+        return int(i), int(j)
+
+    @staticmethod
+    def _option_tuple_to_key(t: tuple):
+        """
+        Transform an option key tuple into an option key string
+        :param t: an option key
+        :type t: tuple
+        :return: return an options keys string like '0-0', '0-1', ..., '1-0'
+        :rtype: str
+        """
+        return "{:d}-{:d}".format(t[0], t[1])
+
+    def get_option_group(self, key):
+        """
+        Transform an option key string into an option key tuple
+        :param key: an option key
+        :type key: str or tuple
+        :return: the option group coordinate
+        :rtype: int
+        """
+        if isinstance(key, str):
+            key = self._option_key_to_tuple(key)
+        return key[0]
+
     def get_default_option_keys(self):
         """
         Get default options keys set for this tool
@@ -126,7 +161,7 @@ class Tool:
             for i, o in enumerate(self.options):
                 for j, e in enumerate(o['entries']):
                     if e.get("default", False):
-                        default_option_keys.add("{:d}-{:d}".format(i, j))
+                        default_option_keys.add(self._option_tuple_to_key((i, j)))
         return default_option_keys
 
     def is_valid_option_key(self, key):
@@ -138,30 +173,39 @@ class Tool:
         :rtype: bool
         """
         try:
-            i, j = key.split("-", maxsplit=1)
-            i, j = int(i), int(j)
+            i, j = self._option_key_to_tuple(key)
             self.options[i]["entries"][j]
         except Exception:
             return False
         return True
 
-    def get_option_keys(self, key=None):
+    def get_option_tuples(self, key=None):
         """
-        Get options keys available for this tool.
+        Get option keys available for this tool.
         :param key: an option key
         :type key: str
         :return: A list of all options keys if key = None, else the list of options keys at the same level than key
-        :rtype: set of str
+        :rtype: set of tuple
         """
         option_key_list = []
         if key is None:
             option_key_list = ((i, j) for i, o in enumerate(self.options) for j, e in enumerate(o["entries"]))
         else:
-            i = int(key.split("-", maxsplit=1)[0])
+            i = self._option_key_to_tuple(key)[0]
             # We check the coordinates
             if 0 <= i < len(self.options):
                 option_key_list = ((i, j) for j, e in enumerate(self.options[i]["entries"]))
-        return ["{:d}-{:d}".format(i, j) for i, j in option_key_list]
+        return list(option_key_list)
+
+    def get_option_keys(self, key=None):
+        """
+        Get option keys available for this tool.
+        :param key: an option key
+        :type key: str
+        :return: A list of all options keys if key = None, else the list of options keys at the same level than key
+        :rtype: set of str
+        """
+        return [self._option_tuple_to_key(t) for t in self.get_option_tuples(key)]
 
     def is_an_exclusive_option_key(self, key: str):
         """
@@ -169,7 +213,8 @@ class Tool:
         :return: True if a part of an exclusive option, else false
         :rtype: bool
         """
-        return self.options[int(key.split("-")[0])]["type"] == "radio"
+        group = self.get_option_group(key)
+        return self.options[group]["type"] == "radio"
 
     def resolve_option_keys(self, keys):
         """
@@ -185,8 +230,8 @@ class Tool:
         options_params = []
         try:
             for k in keys:
-                o, e = tuple(k.split("-", maxsplit=1))
-                options_params.append(self._coord_to_option_value[int(o)][int(e)])
+                o, e = self._option_key_to_tuple(k)
+                options_params.append(self._coord_to_option_value[o][e])
         except KeyError:
             valid = False
             options_params = []

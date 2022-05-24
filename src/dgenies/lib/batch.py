@@ -69,30 +69,42 @@ def read_batch_file(batch_file: str):
                         if "options" in param_dict:
                             if tool:
                                 # TODO: manage exclusive options
-                                # We transform option value ids (e.g. 0-0) into option strings
+                                # We transform the user 'options' string into an option key list (e.g. 0-0)
                                 user_option_keys = set(param_dict["options"].split(","))
-                                # We check that user options keys are valid
-                                invalid, valid = [], []
+                                # We check that user option keys are valid
+                                invalid_keys = []
                                 for k in user_option_keys:
-                                    (invalid, valid)[tool.is_valid_option_key(k[1:]) if k.startswith("!") else tool.is_valid_option_key(k)].append(k)
-                                if not invalid:
+                                    valid_key = tool.is_valid_option_key(k[1:]) if k.startswith("!") else tool.is_valid_option_key(k)
+                                    if not valid_key:
+                                        invalid_keys.append(k)
+                                if not invalid_keys:
                                     # We get the options to remove and the ones to effectively add
                                     option_keys_to_remove = [k[1:] for k in user_option_keys if k.startswith("!")]
                                     option_keys_to_add = [k for k in user_option_keys if not k.startswith("!")]
                                     # We override the default options with the given ones
                                     exclusive_to_remove = set()
                                     for k in option_keys_to_add:
-                                        exclusive_to_remove.update(tool.get_option_keys(k))
+                                        if tool.is_an_exclusive_option_key(k):
+                                            exclusive_to_remove.update(tool.get_option_keys(k))
                                     option_keys = default_options.difference(exclusive_to_remove).difference(option_keys_to_remove)
                                     option_keys.update(option_keys_to_add)
-                                    print(option_keys)
-                                    valid, option_list = tool.resolve_option_keys(option_keys)
-                                    print(option_list)
-                                    # We manage the fact that no option can exist when using '!'
-                                    param_dict["options"] = " ".join(option_list) if option_list else None
+                                    # We check if it remains incompatible (exclusive) options in user options
+                                    # by counting chosen options per exclusive groups. Count must be at most 1.
+                                    groups = [tool.get_option_group(k) for k in option_keys]
+                                    count_exclusives = {}
+                                    for g in groups:
+                                        count_exclusives[g] = count_exclusives.get(g, 0) + 1
+                                    exclusive_violation = any((v > 1 for v in count_exclusives.values()))
+                                    if not exclusive_violation:
+                                        valid, option_list = tool.resolve_option_keys(option_keys)
+                                        # We manage the fact that no option can exist when using '!'
+                                        param_dict["options"] = " ".join(option_list) if option_list else None
+                                    else:
+                                        no_error = False
+                                        error_msg.append("Line {:d}: Exclusive options were used together".format(i + 1, ",".join(invalid_keys)))
                                 else:
                                     no_error = False
-                                    error_msg.append("Line {:d}: Option key(s) {} is/are invalid".format(i + 1, ",".join(invalid)))
+                                    error_msg.append("Line {:d}: Option key(s) {} is/are invalid".format(i + 1, ",".join(invalid_keys)))
                     else:
                         no_error = False
                         error_msg.append("Line {:d}: Incorrect/missing argument key".format(i+1))
