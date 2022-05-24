@@ -89,7 +89,7 @@
         <div class="tick started">
             <p>Started</p>
         </div>
-        {% if do_align %}
+        {% if do_align and not batch %}
         <div class="tick merging">
             <p>Merging</p>
         </div>
@@ -108,26 +108,14 @@
                 <td>{{ subjob.id_job }}</td>
                 <td><div class="mini-progress-status">
                     <div class="mini-progress-status-bar {{ status }}"><div class="inner"></div></div>
-                    <!--<div class="tick submitted">
-                        <p>Submitted</p>
-                    </div>
-                    <div class="tick prepared">
-                        <p>Prepared</p>
-                    </div>
-                    <div class="tick scheduled">
-                        <p>Scheduled</p>
-                    </div>
-                    <div class="tick started">
-                        <p>Started</p>
-                    </div>
+                    <div class="tick submitted"></div>
+                    <div class="tick prepared"></div>
+                    <div class="tick scheduled"></div>
+                    <div class="tick started"></div>
                     {% if do_align %}
-                    <div class="tick merging">
-                        <p>Merging</p>
-                    </div>
+                    <div class="tick merging"></div>
                     {% endif %}
-                    <div class="tick success">
-                        <p>Done</p>
-                    </div>-->
+                    <div class="tick success"></div>
                 </div></td>
                 <td>{% if status == "started" or status == "succeed" %}
                     <p>Your job has started.</p>
@@ -182,96 +170,6 @@
                 </td>
                 </tr>
             {% endfor %}
-        </table> 
-
-<!--        {% for subjob in batch %}
-            <h3 class="status">{{ loop.index }}. {{ subjob.id_job }}</h3>
-            {% set status = subjob.status %}
-            <div class="status-body">
-                {% if status == "started" or status == "succeed" %}
-                    <p>Your job has started.<br/>
-                {% elif status == "starting" %}
-                    <p>Your job is starting...<br/>
-                {% elif status == "scheduled-cluster" %}
-                    <p>Your job has been scheduled on the cluster.<br/>
-                {% elif status == "submitted" or status == "waiting" %}
-                    <p>Your job has been submitted.<br/>
-                {% elif status == "getfiles" %}
-                    <p>Your job has been submitted. We are retrieving data...<br/>
-                {% elif status == "getfiles-waiting" %}
-                    <p>Your job has been submitted. We are retrieving data... (waiting for download...)<br/>
-                {% elif status == "merging" %}
-                    <p>Your map is done. We are preparing files for visualisation...<br/>
-                {% elif status == "preparing" or status == "preparing-cluster" %}
-                    <p>We are preparing data...<br/>
-                {% elif status == "prepare-scheduled" %}
-                    <p>We are preparing data... [scheduled]<br/>
-                {% elif status == "prepared"%}
-                    <p>Your data are ready to be processed. Your job will be scheduled soon...<br/>
-                {% elif status == "scheduled" %}
-                    <p>Your job has been shedulded. It will start soon...<br/>
-                {% elif status == "success" %}
-                    <p>Your job was completed successfully.<br/>
-                        Please <a href="/result/{{ subjob.id_job }}">click here</a> to show results.</p>
-                    {% if time_elapsed is not none %}
-                        <p>Time elapsed: {{ subjob.time_elapsed }}</p>
-                    {% endif %}
-                    {% if target_filtered %}
-                        <p>Note: target fasta has been filtered because it contains too small contigs.<br/>
-                            To see which contigs has been removed from the analysis,
-                            <a href="/filter-out/{{ subjob.id_job }}/target">click here</a>.</p>
-                    {% endif %}
-                    {% if query_filtered %}
-                        <p>Note: query fasta has been filtered because it contains too small contigs.<br/>
-                            To see which contigs has been removed from the analysis,
-                            <a href="/filter-out/{{ subjob.id_job }}/query">click here</a>.</p>
-                    {% endif %}
-                {% elif status == "no-match" %}
-                    <p>Your job is done.<br/>
-                    Sorry, we did not find any match between your query and your target.</p>
-                {% elif status == "fail" %}
-                    <p>{% if error == "" %}
-                            Your job has failed.
-                            Please try again.<br/>
-                            If the problem persists, please contact the support.
-                        {% else %}
-                        {{ error | safe }}
-                        {% endif %}</p>
-                {% else %}
-                    <p>This job does not exists!</p>
-                {% endif %}
-                {% if status not in ["success", "no-match", "fail"] %}
-                    {% if mode == "webserver" %}
-                        You will receive an email when it will be finished.<br/>
-                    {% else %}
-                        This page will refresh automatically.</p>
-                    {% endif %}
-                {% endif %}
-            </div>
-            <div class="progress-status">
-                <div class="progress-status-bar {{ status }}"><div class="inner"></div></div>
-                <div class="tick submitted">
-                    <p>Submitted</p>
-                </div>
-                <div class="tick prepared">
-                    <p>Prepared</p>
-                </div>
-                <div class="tick scheduled">
-                    <p>Scheduled</p>
-                </div>
-                <div class="tick started">
-                    <p>Started</p>
-                </div>
-                {% if do_align %}
-                <div class="tick merging">
-                    <p>Merging</p>
-                </div>
-                {% endif %}
-                <div class="tick success">
-                    <p>Done</p>
-                </div>
-            </div>
-        {% endfor %}
--->
+        </table>
     {% endif %}
 {% endblock %}

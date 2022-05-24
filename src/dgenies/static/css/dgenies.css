@@ -897,9 +897,9 @@ h2.status, h2.batch {
 
 .mini-progress-status .tick {
     position: absolute;
-    top:29px;
-    width: 1px;
-    height: 10px;
+    top:13px;
+    width: 0px;
+    height: 5px;
     border: solid 1px black;
 }
 
