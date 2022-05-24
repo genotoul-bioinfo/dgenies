@@ -4,6 +4,7 @@ import os
 from dgenies.config_reader import AppConfigReader
 from datetime import datetime
 
+ID_JOB_LENGTH = 50
 config = AppConfigReader()
 
 if MODE == "webserver":
@@ -76,7 +77,7 @@ if MODE == "webserver":
 
 
     class Job(BaseModel):
-        id_job = CharField(max_length=50, unique=True)
+        id_job = CharField(max_length=ID_JOB_LENGTH, unique=True)
         email = CharField()
         id_process = IntegerField(null=True)
         batch_type = CharField(max_length=20, default="local")

@@ -33,7 +33,7 @@ import gzip
 import io
 import binascii
 from hashlib import sha1
-from dgenies.database import Job
+from dgenies.database import Job, ID_JOB_LENGTH
 
 if MODE == "webserver":
     from dgenies.database import Session, Gallery
@@ -1340,10 +1340,11 @@ class JobManager:
         with open(os.path.join(self.output_dir, ".jobs"), "wt") as jobs_file:
             for job_type, params in job_param_list:
                 # We create a subjob id and the corresponding working directory
-                subjob_id = Functions.random_string(5) + "_" + datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S')
+                random_length = 5
+                job_id_prefix = self.id_job[0:min(len(self.id_job), ID_JOB_LENGTH - random_length - 1)]
+                subjob_id = job_id_prefix + "_" + Functions.random_string(random_length)
                 while os.path.exists(os.path.join(self.config.app_data, subjob_id)):
-                    subjob_id = Functions.random_string(5) + "_" + datetime.fromtimestamp(time.time()).strftime(
-                        '%Y%m%d%H%M%S')
+                    subjob_id = job_id_prefix + "_" + Functions.random_string(random_length)
                 folder_files = os.path.join(self.config.app_data, subjob_id)
                 os.makedirs(folder_files)
 
