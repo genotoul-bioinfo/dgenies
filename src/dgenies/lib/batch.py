@@ -1,6 +1,8 @@
 from dgenies.tools import Tools
+from dgenies.config_reader import AppConfigReader
 
 JOB_TYPES = ["align", "plot"]
+config = AppConfigReader()
 
 
 def has_correct_argument_keys(job_type: str, job_params: dict):
@@ -38,10 +40,14 @@ def read_batch_file(batch_file: str):
     error_msg = []
     tools = Tools().tools
     with open(batch_file, 'rt') as instream:
+        nb_lines = 0
         for i, line in enumerate(instream.readlines()):
             params_line = line.strip()
             # We do not consider blank lines and comment lines
             if params_line and not params_line.startswith("#"):
+                nb_lines += 1
+                if nb_lines > config.max_nb_jobs_in_batch_mode:
+                    break
                 no_error = True
                 params = params_line.split()
                 type = params[0]

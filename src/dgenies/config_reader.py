@@ -145,6 +145,12 @@ class AppConfigReader:
         except NoOptionError:
             return 100000
 
+    def _get_max_nb_jobs_in_batch_mode(self):
+        try:
+            return int(self._replace_vars(self.reader.get("global", "max_nb_jobs_in_batch_mode")))
+        except NoOptionError:
+            return 10
+
     def _get_database_type(self):
         try:
             return self.reader.get("database", "type")

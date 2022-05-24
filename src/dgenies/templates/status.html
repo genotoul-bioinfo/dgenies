@@ -101,7 +101,7 @@
     {% if batch is not none %}
         <h2 class="batch">Job list</h2>
         {% for subjob in batch %}
-            <h3 class="status">{{ subjob.id_job }}</h3>
+            <h3 class="status">{{ loop.index }}. {{ subjob.id_job }}</h3>
             {% set status = subjob.status %}
             <div class="status-body">
                 {% if status == "started" or status == "succeed" %}
