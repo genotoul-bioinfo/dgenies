@@ -95,9 +95,6 @@ class JobManager:
         self.idx_q = os.path.join(self.output_dir, "query.idx")
         self.idx_t = os.path.join(self.output_dir, "target.idx")
         self.logs = os.path.join(self.output_dir, "logs.txt")
-        # We force to have a .batch file in ouputdir in order to identify the batch mode
-        #if self.batch is not None and self.batch.get_path() != os.path.join(self.output_dir, ".batch"):
-        #    Path(os.path.join(self.output_dir, ".batch")).touch()
         self.mailer = mailer
         self._filename_for_url = {}
 
@@ -308,34 +305,58 @@ class JobManager:
         else:
             return "DGenies - Job failed: %s" % self.id_job
 
+    def set_send_mail(self, activate):
+        """
+        Set or unset the ability to send mail for the current job
+
+        :param activate: activate send mail if true, deactivate if false
+        :type activate: bool
+        """
+        no_mail_file = os.path.join(self.output_dir, ".no_mail")
+        if activate:
+            if os.path.exists(no_mail_file):
+                os.remove(no_mail_file)
+        else:
+            Path(no_mail_file).touch()
+
+    def is_send_mail_allowed(self):
+        """
+        Set or unset the ability to send mail for the current job
+
+        :return: True is sending a mail is allowed, False else
+        :rtype: bool
+        """
+        return not os.path.exists(os.path.join(self.output_dir, ".no_mail"))
+
     def send_mail(self):
         """
         Send mail
         """
-        # Retrieve infos:
-        with Job.connect():
-            job = Job.get(Job.id_job == self.id_job)
-            if self.email is None:
-                self.email = job.email
-            status = job.status
-            self.error = job.error
+        if self.is_send_mail_allowed():
+            # Retrieve infos:
+            with Job.connect():
+                job = Job.get(Job.id_job == self.id_job)
+                if self.email is None:
+                    self.email = job.email
+                status = job.status
+                self.error = job.error
 
-            target_name = None
-            if os.path.exists(self.idx_t):
-                with open(self.idx_t, "r") as idxt:
-                    target_name = idxt.readline().rstrip()
-            query_name = None
-            if os.path.exists(self.idx_q):
-                with open(self.idx_q, "r") as idxq:
-                    query_name = idxq.readline().rstrip()
-                    if query_name == target_name:
-                        query_name = None
+                target_name = None
+                if os.path.exists(self.idx_t):
+                    with open(self.idx_t, "r") as idxt:
+                        target_name = idxt.readline().rstrip()
+                query_name = None
+                if os.path.exists(self.idx_q):
+                    with open(self.idx_q, "r") as idxq:
+                        query_name = idxq.readline().rstrip()
+                        if query_name == target_name:
+                            query_name = None
 
-            # Send:
-            self.mailer.send_mail(recipients=[self.email],
-                                  subject=self.get_mail_subject(status),
-                                  message=self.get_mail_content(status, target_name, query_name),
-                                  message_html=self.get_mail_content_html(status, target_name, query_name))
+                # Send:
+                self.mailer.send_mail(recipients=[self.email],
+                                      subject=self.get_mail_subject(status),
+                                      message=self.get_mail_content(status, target_name, query_name),
+                                      message_html=self.get_mail_content_html(status, target_name, query_name))
 
     def search_error(self):
         """
@@ -1332,7 +1353,9 @@ class JobManager:
         # We get the job list from batch file
         job_param_list, error_msgs = read_batch_file(self.batch.get_path())
         if error_msgs:
-            self.set_job_status("fail", error_msgs)
+            self.set_job_status("fail", "Malformed batch file; " + error_msgs)
+            if MODE == "webserver" and self.config.send_mail_status:
+                self.send_mail_post()
             return False
         # We create a queue in order to run jobs sequentially in standalone mode.
         self.set_job_status("preparing")
@@ -1382,6 +1405,7 @@ class JobManager:
             self.set_job_status("started-batch")
             for subjob in job_queue:
                 print("run job " + subjob.id_job)
+                subjob.set_send_mail(False)
                 subjob.launch()
         else:
             self.set_job_status("started-batch")
