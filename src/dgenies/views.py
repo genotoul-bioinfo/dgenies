@@ -319,7 +319,6 @@ def launch_analysis():
                              tool=tool,
                              options=options)
             if MODE == "webserver":
-                print("launch job")
                 job.launch()
             else:
                 job.launch_standalone()

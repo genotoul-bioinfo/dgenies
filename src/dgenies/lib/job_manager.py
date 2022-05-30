@@ -211,6 +211,7 @@ class JobManager:
         Check if query has been filtered
 
         :return: True if filtered, else False
+        :rtype: bool
         """
         return os.path.exists(os.path.join(self.output_dir, ".filter-query"))
 
@@ -219,13 +220,34 @@ class JobManager:
         Check if target has been filtered
 
         :return: True if filtered, else False
-        :return:
+        :rtype: bool
         """
         return os.path.exists(os.path.join(self.output_dir, ".filter-target"))
 
-    def get_mail_content(self, status, target_name, query_name=None):
+    def _get_query_target_names(self):
         """
-        Build mail content for status mail
+        Get the query and target names
+
+        :return:
+            * [0] The query name if exists, else None
+            * [1] The target name if exists, else None
+        :rtype: tuples
+        """
+        target_name = None
+        if os.path.exists(self.idx_t):
+            with open(self.idx_t, "r") as idxt:
+                target_name = idxt.readline().rstrip()
+        query_name = None
+        if os.path.exists(self.idx_q):
+            with open(self.idx_q, "r") as idxq:
+                query_name = idxq.readline().rstrip()
+                if query_name == target_name:
+                    query_name = None
+        return query_name, target_name
+
+    def get_job_mail_part(self, status, target_name, query_name=None):
+        """
+        Build mail content part for status mail for standard job
 
         :param status: job status
         :type status: str
@@ -233,16 +255,15 @@ class JobManager:
         :type target_name: str
         :param query_name:  name of query
         :type query_name: str
-        :return: mail content
+        :return: mail content part
         :rtype: str
         """
-        message = "D-Genies\n\n"
         if status == "success":
-            message += "Your job %s was completed successfully!\n\n" % self.id_job
-            message += str("Your job {0} is finished. You can see  the results by clicking on the link below:\n"
+            message = "Your job %s was completed successfully!\n\n" % self.id_job
+            message += str("Your job {0} is finished. You can see the results by clicking on the link below:\n"
                            "{1}/result/{0}\n\n").format(self.id_job, self.config.web_url)
         else:
-            message += "Your job %s has failed!\n\n" % self.id_job
+            message = "Your job %s has failed!\n\n" % self.id_job
             if self.error != "":
                 message += self.error.replace("#ID#", self.id_job).replace("<br/>", "\n")
                 message += "\n\n"
@@ -264,6 +285,53 @@ class JobManager:
                 message += str("Note: query fasta has been filtered because it contains too small contigs."
                                "To see which contigs has been removed from the analysis, click on the link below:\n"
                                "{1}/filter-out/{0}/query\n\n").format(self.id_job, self.config.web_url)
+        return message
+
+    def get_batch_mail_part(self, status):
+        """
+        Build mail content part for status mail for batch job
+
+        :param status: job status
+        :type status: str
+        :return: mail content part
+        :rtype: str
+        """
+        if status == "success":
+            message = "Your batch job %s was completed successfully!\n\n" % self.id_job
+        else:
+            message = "Your batch job %s has failed!\n\n" % self.id_job
+            if self.error != "":
+                message += self.error.replace("#ID#", self.id_job).replace("<br/>", "\n")
+                message += "\n\n"
+            else:
+                message += "Your job %s has failed. You can try again. " \
+                           "If the problem persists, please contact the support.\n\n" % self.id_job
+        message += "Here the detail of each job:\n\n"
+        subjobs = (JobManager(i) for i in self.get_subjob_ids())
+        for sj in subjobs:
+            message += sj.id_job + "\n" + "-"*len(sj.id_job) + "\n\n"
+            query_name, target_name = sj._get_query_target_names()
+            message += sj.get_job_mail_part(sj.status().get("status", "unknown"), target_name, query_name)
+        return message
+
+    def get_mail_content(self, status, target_name, query_name=None):
+        """
+        Build mail content for status mail
+
+        :param status: job status
+        :type status: str
+        :param target_name: name of target
+        :type target_name: str
+        :param query_name:  name of query
+        :type query_name: str
+        :return: mail content
+        :rtype: str
+        """
+        message = "D-Genies\n\n"
+        if self.is_batch():
+            message += self.get_batch_mail_part(status)
+        else:
+            message += self.get_job_mail_part(status, target_name, query_name)
         message += "See you soon on D-Genies,\n"
         message += "The team"
         return message
@@ -281,14 +349,34 @@ class JobManager:
         :return: mail content (html)
         :rtype: str
         """
-        with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "mail_templates", "job_notification.html"))\
-                as t_file:
-            template = Template(t_file.read())
-            return template.render(job_name=self.id_job, status=status, url_base=self.config.web_url,
-                                   query_name=query_name if query_name is not None else "",
-                                   target_name=target_name if target_name is not None else "",
-                                   error=self.error,
-                                   target_filtered=self.is_target_filtered(), query_filtered=self.is_query_filtered())
+        if self.is_batch():
+            with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "mail_templates", "batch_job_notification.html"))\
+                    as t_file:
+                template = Template(t_file.read())
+                subjobs = (JobManager(i) for i in self.get_subjob_ids())
+                subjob_list = []
+                for sj in subjobs:
+                    query_name, target_name = sj._get_query_target_names()
+                    subjob_list.append({
+                        "job_name": sj.id_job,
+                        "status": sj.status().get("status", "unknown"),
+                        "query_name": query_name if query_name is not None else "",
+                        "target_name": target_name if target_name is not None else "",
+                        "error": sj.error,
+                        "target_filtered": sj.is_target_filtered(),
+                        "query_filtered": sj.is_query_filtered()
+                    })
+                return template.render(job_name=self.id_job, status=status, url_base=self.config.web_url,
+                                       error=self.error, subjobs=subjob_list)
+        else:
+            with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "mail_templates", "job_notification.html"))\
+                    as t_file:
+                template = Template(t_file.read())
+                return template.render(job_name=self.id_job, status=status, url_base=self.config.web_url,
+                                       query_name=query_name if query_name is not None else "",
+                                       target_name=target_name if target_name is not None else "",
+                                       error=self.error,
+                                       target_filtered=self.is_target_filtered(), query_filtered=self.is_query_filtered())
 
     def get_mail_subject(self, status):
         """
@@ -1353,7 +1441,7 @@ class JobManager:
         # We get the job list from batch file
         job_param_list, error_msgs = read_batch_file(self.batch.get_path())
         if error_msgs:
-            self.set_job_status("fail", "Malformed batch file; " + error_msgs)
+            self.set_job_status("fail", "You provided a malformed batch file; " + error_msgs)
             if MODE == "webserver" and self.config.send_mail_status:
                 self.send_mail_post()
             return False
@@ -1465,11 +1553,11 @@ class JobManager:
         status_list = []
         for i in self.get_subjob_ids():
             job = JobManager(i)
-            status_list.append(job.status().get("status", "unkown"))
-        is_finished = all(s in ("success", "fail") for s in status_list)
-        is_success = all(s == "success" for s in status_list)
+            status_list.append(job.status())
+        is_finished = all(s["status"] in ("success", "fail") for s in status_list)
+        is_successfull = all(s["status"] == "success" for s in status_list)
         if is_finished:
-            return "success" if is_success else "fail"
+            return "success" if is_successfull else "fail"
         return "started-batch"
 
     def run_job(self, batch_system_type):
@@ -1631,7 +1719,6 @@ class JobManager:
             query_size = None
             if self.query is not None and self.query.get_type() == "local" and os.path.exists(self.query.get_path()):
                 query_size = os.path.getsize(self.query.get_path())
-            print(self.get_job_type())
             log = Analytics.create(
                 id_job=self.id_job,
                 date_created=datetime.now(),
@@ -1790,7 +1877,6 @@ class JobManager:
                 for j11 in j1:
                     j11.delete_instance()
             if self.target is not None or self.backup is not None or self.batch is not None:
-                print("create {} Job".format(self.get_job_type()))
                 job = Job.create(id_job=self.id_job, email=self.email, batch_type=self.config.batch_system_type,
                                  date_created=datetime.now(), tool=self.tool.name if self.tool is not None else None,
                                  options=self.options)

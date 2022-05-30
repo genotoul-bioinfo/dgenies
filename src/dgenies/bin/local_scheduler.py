@@ -163,8 +163,13 @@ def update_batch_status():
         for job in batch_jobs:
             # We refresh the batch job status
             j = JobManager(id_job=job.id_job)
-            job.status = j.refresh_batch_status()
+            status = j.refresh_batch_status()
+            job.status = status
+            if job.status == "failed":
+                job.error = "<p>One of your job has failed.</p>"
             job.save()
+            if status in {"success", "succeed", "failed"} and config_reader.send_mail_status:
+                j.send_mail_post()
 
 
 def parse_started_jobs():
