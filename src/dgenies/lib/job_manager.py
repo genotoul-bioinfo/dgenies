@@ -1452,7 +1452,11 @@ class JobManager:
             for job_type, params in job_param_list:
                 # We create a subjob id and the corresponding working directory
                 random_length = 5
-                job_id_prefix = self.id_job[0:min(len(self.id_job), ID_JOB_LENGTH - random_length - 1)]
+                job_id_prefix = params.get(
+                    "job_id_prefix",
+                    self.id_job
+                )
+                job_id_prefix = job_id_prefix[0: min(len(job_id_prefix), ID_JOB_LENGTH - random_length - 1)]
                 subjob_id = job_id_prefix + "_" + Functions.random_string(random_length)
                 while os.path.exists(os.path.join(self.config.app_data, subjob_id)):
                     subjob_id = job_id_prefix + "_" + Functions.random_string(random_length)

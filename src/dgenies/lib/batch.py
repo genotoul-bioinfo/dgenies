@@ -15,15 +15,26 @@ def has_correct_argument_keys(job_type: str, job_params: dict):
     :return: True if the job_params match what is expected for the given job_type
     :rtype: bool
     """
+    result = False
     if job_type == "align":
         comparison = {"target", "query", "tool", "options"}.symmetric_difference(job_params.keys())
-        optional = {"options", "query"}
+        optional = {"options", "query", "job_id_prefix"}
         # if result of comparison of given params with expected params is not a subset of optional params,
         # then there is some unconsidered params in given params
-        return comparison.issubset(optional)
+        result = comparison.issubset(optional)
     elif job_type == "plot":
-        return job_params.keys() == {"target", "query", "align"} or job_params.keys() == {"backup"}
-    return False
+        #if ({"target", "query", "align"}.issubset(job_params.keys()) and "backup" not in job_params.keys()) \
+        #        or ("backup" in job_params.keys() and not job_params.keys().issubset({"target", "query", "align"})):
+        #    comparison = job_params.keys().difference({"target", "query", "align", "backup"})
+        # plot job must contain keys ("target", "query", "align") xor ("backup")
+        if "backup" in job_params.keys():
+            comparison = {"backup"}.symmetric_difference(job_params.keys())
+        else:
+            comparison = {"target", "query", "align"}.symmetric_difference(job_params.keys())
+        optional = {"job_id_prefix"}
+        result = comparison.issubset(optional)
+    print(job_params, result)
+    return result
 
 
 def read_batch_file(batch_file: str):
