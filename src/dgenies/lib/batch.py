@@ -33,7 +33,6 @@ def has_correct_argument_keys(job_type: str, job_params: dict):
             comparison = {"target", "query", "align"}.symmetric_difference(job_params.keys())
         optional = {"job_id_prefix"}
         result = comparison.issubset(optional)
-    print(job_params, result)
     return result
 
 
@@ -85,7 +84,6 @@ def read_batch_file(batch_file: str):
                         # If options exists in job line, we split options value into a list of options
                         if "options" in param_dict:
                             if tool:
-                                # TODO: manage exclusive options
                                 # We transform the user 'options' string into an option key list (e.g. 0-0)
                                 user_option_keys = set(param_dict["options"].split(","))
                                 # We check that user option keys are valid
