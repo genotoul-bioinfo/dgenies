@@ -1466,10 +1466,16 @@ class JobManager:
                 # We create the needed fasta files
                 query = params.get("query", None)
                 if query is not None:
-                    query = Fasta(name="query", path=query, type_f="URL")
+                    if query.startswith("example://") and self.config.example_query:
+                        query = Fasta(name=os.path.basename(self.config.example_query), path=self.config.example_query, type_f="local", example=True)
+                    else:
+                        query = Fasta(name="query", path=query, type_f="URL")
                 target = params.get("target", None)
                 if target is not None:
-                    target = Fasta(name="target", path=target, type_f="URL")
+                    if target.startswith("example://") and self.config.example_target:
+                        target = Fasta(name=os.path.basename(self.config.example_target), path=self.config.example_target, type_f="local", example=True)
+                    else:
+                        target = Fasta(name="target", path=target, type_f="URL")
                 align = params.get("align", None)
                 if align is not None:
                     align = Fasta(name="align", path=align, type_f="URL")
