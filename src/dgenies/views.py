@@ -103,9 +103,12 @@ def run():
     return render_template("run.html", id_job=id_job, email=email,
                            menu="run", allowed_ext=ALLOWED_EXTENSIONS, s_id=s_id,
                            max_upload_file_size=config_reader.max_upload_file_size,
-                           example=config_reader.example_target != "",
+                           example_align=config_reader.example_target != "",
                            target=os.path.basename(config_reader.example_target),
-                           query=os.path.basename(config_reader.example_query), tools_names=tools_names, tools=tools,
+                           query=os.path.basename(config_reader.example_query),
+                           example_batch=config_reader.example_batch != "",
+                           batch=os.path.basename(config_reader.example_batch),
+                           tools_names=tools_names, tools=tools,
                            tools_ava=tools_ava, tools_options=tools_options, version=VERSION, inforun=inforun)
 
 
@@ -297,14 +300,21 @@ def launch_analysis():
             bckp = Fasta(name=backup_name, path=backup_path, type_f=backup_type)
 
         batch_path = None
+
         if batch is not None:
-            batch_name = os.path.splitext(batch)[0] if batch_type == "local" else None
-            batch_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder, batch) \
-                if batch_type == "local" else batch
-            if batch_type == "local" and not os.path.exists(batch_path):
-                errors.append("Batch file not correct!")
-                form_pass = False
-            batch = Fasta(name=batch_name, path=batch_path, type_f=batch_type)
+            example = batch.startswith("example://")
+            if example:
+                batch_path = config_reader.example_batch
+                batch_name = os.path.basename(batch_path)
+                batch_type = "local"
+            else:
+                batch_name = os.path.splitext(batch)[0] if batch_type == "local" else None
+                batch_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder, batch) \
+                    if batch_type == "local" else batch
+                if batch_type == "local" and not os.path.exists(batch_path):
+                    errors.append("Batch file not correct!")
+                    form_pass = False
+            batch = Fasta(name=batch_name, path=batch_path, type_f=batch_type, example=example)
 
         if form_pass:
             # Launch job:

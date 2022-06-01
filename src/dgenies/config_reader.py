@@ -403,6 +403,12 @@ class AppConfigReader:
         except (NoOptionError, NoSectionError):
             return ""
 
+    def _get_example_batch(self):
+        try:
+            return self.reader.get("example", "batch")
+        except (NoOptionError, NoSectionError):
+            return ""
+
     def _get_analytics_enabled(self):
         try:
             return self.reader.get("analytics", "enable_logging_runs").lower() == "true"

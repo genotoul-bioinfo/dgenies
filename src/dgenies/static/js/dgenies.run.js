@@ -21,6 +21,7 @@ dgenies.run.allow_upload = false;
 dgenies.run.ping_interval = null;
 dgenies.run.target_example = "";
 dgenies.run.query_example = "";
+dgenies.run.batch_example = "";
 dgenies.run.tool_has_ava = {};
 dgenies.run.enabled = true;
 dgenies.run.valid = true;
@@ -32,15 +33,17 @@ dgenies.run.valid = true;
  * @param {int} max_upload_file_size maximum upload file size
  * @param {string} target_example target example pseudo path
  * @param {string} query_example query example pseudo path
+ * @param {string} batch_example query example pseudo path
  * @param {object} tool_has_ava defines if each available tool has an all-vs-all mode
  */
 dgenies.run.init = function (s_id, allowed_ext, max_upload_file_size=1073741824, target_example="", query_example="",
-                             tool_has_ava={}) {
+                             batch_example="", tool_has_ava={}) {
     dgenies.run.s_id = s_id;
     dgenies.run.allowed_ext = allowed_ext;
     dgenies.run.max_upload_file_size = max_upload_file_size;
     dgenies.run.target_example = target_example;
     dgenies.run.query_example = query_example;
+    dgenies.run.batch_example = batch_example;
     dgenies.run.tool_has_ava = tool_has_ava;
     dgenies.run.restore_form();
     dgenies.run.set_events();
@@ -204,13 +207,21 @@ dgenies.run.get_file_size_str = function(size) {
 /**
  * Fill inputs with example data
  */
-dgenies.run.fill_examples = function () {
-    dgenies.run.show_tab("tab1");
-    $("select.target").val("1").trigger("change");
-    $("input#target").val("example://" + dgenies.run.target_example);
-    if (dgenies.run.query_example !== "") {
-        $("select.query").val("1").trigger("change");
-        $("input#query").val("example://" + dgenies.run.query_example);
+dgenies.run.fill_examples = function (tab) {
+    dgenies.run.show_tab(tab);
+    if (tab == "tab1") {
+        $("select.target").val("1").trigger("change");
+        $("input#target").val("example://" + dgenies.run.target_example);
+        if (dgenies.run.query_example !== "") {
+            $("select.query").val("1").trigger("change");
+            $("input#query").val("example://" + dgenies.run.query_example);
+        }
+    }
+    if (tab == "tab3") {
+        if (dgenies.run.batch_example !== "") {
+            $("select.batch").val("1").trigger("change");
+            $("input#batch").val("example://" + dgenies.run.batch_example);
+        }
     }
 };
 
@@ -299,8 +310,11 @@ dgenies.run.set_events = function() {
     $("button#submit").click(function () {
         dgenies.run.submit();
     });
-    $("button#example").click(function() {
-        dgenies.run.fill_examples();
+    $("button#example_align").click(function() {
+        dgenies.run.fill_examples("tab1");
+    });
+    $("button#example_batch").click(function() {
+        dgenies.run.fill_examples("tab3");
     });
     $("#tabs .tab").click(function() {
         dgenies.run.show_tab($(this).attr("id"));
@@ -743,7 +757,7 @@ dgenies.run.start_uploads = function() {
  */
 dgenies.run.show_global_loading = function () {
     $("button#submit").hide();
-    $("button#example").hide();
+    $('button[id^="example"]').hide();
     $("div#uploading-loading").show();
 };
 

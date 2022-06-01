@@ -16,7 +16,7 @@
 {% endblock %}
 {% block onload %}
     {{ super() }}
-    dgenies.run.init('{{ s_id }}',{{ allowed_ext }}, {{ max_upload_file_size }}, '{{ target }}', '{{ query }}',
+    dgenies.run.init('{{ s_id }}',{{ allowed_ext }}, {{ max_upload_file_size }}, '{{ target }}', '{{ query }}', '{{ batch }}',
     {{ tools_ava }});
 {% endblock %}
 {% block content %}
@@ -376,7 +376,7 @@
 
                             <tr class="batch tabx tab3">
                                 <td colspan="2" style="vertical-align:top;">
-                                    <label>Option ids for tools<sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup>{% set fnote_tab = fnote_tab + 1 %}</label>
+                                    <label>Option ids for tools (to use with <em>option=</em>)<sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup>{% set fnote_tab = fnote_tab + 1 %}</label>
                                 </td>
                             </tr>
 
@@ -394,7 +394,8 @@
                                                 {{ opt.label }}{% if opt.type == "radio" %} (mutually exclusive){% endif %}:
                                                 <ul>
                                                     {% for entry in opt['entries'] %}
-                                                       <li {% if entry.default %}style="font-weight: bold"{% endif %}> {{ entry.label }}: options={{ outer_loop.index0 }}-{{ loop.index0 }} </li>
+                                                       <li {% if entry.default %}style="font-weight: bold"{% endif %}>{{ outer_loop.index0 }}-{{ loop.index0 }}: {{ entry.label }}&nbsp<span class="glyphicon glyphicon-question-sign" style="color: #2aabd2"
+                                                        title="{{ entry.help }}"></span></li>
                                                     {% endfor %}
                                                 </ul>
                                             {% endfor %}
@@ -408,8 +409,11 @@
             </fieldset>
             <div class="buttons">
                 <button type="button" id="submit">Submit</button>
-                {% if example %}
-                <button type="button" id="example">Load example</button>
+                {% if example_align %}
+                    <button class="tab1 tabx" type="button" id="example_align">Load example</button>
+                {% endif %}
+                {% if example_batch %}
+                    <button class="tab3 tabx" type="button" id="example_batch">Load example</button>
                 {% endif %}
             </div>
             <div class="footnotes">
@@ -434,9 +438,9 @@
                 </div>
                 <div class="tabx tab3">
                     {% set fnote_tab = fnote %}
-                    <p class="afterworlff"><sup id="fn{{ fnote_tab }}"><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup> Text format. Must end with <code>.txt</code></p>
+                    <p class="afterworlff"><sup id="fn{{ fnote_tab }}"><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup> Text file following <a href="/documentation/formats#batch-file">batch format</a>. Must end with <code>.txt</code></p>
                     {% set fnote_tab = fnote_tab + 1 %}
-                    <p class="afterworlff"><sup id="fn{{ fnote_tab }}"><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup> Look at the documentation page for full description. Default options appear in <b>bold</b></code></p>
+                    <p class="afterworlff"><sup id="fn{{ fnote_tab }}"><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup> Look at the <a href="/documentation/formats#batch-file">batch format</a> page for full description. Default options appear in <b>bold</b></code></p>
                     {% set fnote_tab = fnote_tab + 1 %}
                 </div>
             </div>

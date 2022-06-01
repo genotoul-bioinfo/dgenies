@@ -350,11 +350,20 @@ Several parameters for jobs:
 
 ### Example
 
-Here, you can fill example data. At least target is required to enable example data.
+Here, you can fill example data. Path of example data will not be shown to the client. Only the file name will be shown.
 
-Fill for target and query the absolute local path of the file. This path will not be shown to the client. Only the file name will be shown.
+When example data is set for on kind of job, a button "Load example" will be shown in the associated tab of the run form. Click on it will load example data in the form.
 
-If at least target is filled, a button "Load example" will be shown in the run form. Click on it will load example data in the form.
+#### for new align job
+
+At least `target` is required to enable example data.
+
+Fill for `target` and `query` the absolute local path of the file. 
+If at least `target` is filled, a button "Load example" will be shown in the tab *New alignement* of the run form.
+
+#### for new align job
+
+Fill `batch` with the absolute local path of the file to enable example data. When `batch` is filled, a button "Load example" will be shown in the tab *Batch alignements* of the run form.
 
 ### Analytics
 
