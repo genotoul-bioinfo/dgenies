@@ -437,7 +437,7 @@ def get_tools_options(tool_name, chosen_options):
     tool_prefix = "tool-options-%s-" % tool_name
     # Option keys looks like 0-0, 0-1, ..., 1-0, ...
     options_keys = [s[len(tool_prefix):] for s in chosen_options if s.startswith(tool_prefix)]
-    valid, options_params = tool.resolve_options_keys(options_keys)
+    valid, options_params = tool.resolve_option_keys(options_keys)
     return valid, " ".join(options_params)
 
 
