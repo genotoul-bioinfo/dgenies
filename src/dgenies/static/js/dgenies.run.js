@@ -26,6 +26,7 @@ dgenies.run.batch_example = "";
 dgenies.run.tool_has_ava = {};
 dgenies.run.enabled = true;
 dgenies.run.valid = true;
+
 /**
  * Initialise app for run page
  *
@@ -321,8 +322,14 @@ dgenies.run.set_events = function() {
     $("button#example_backup").click(function() {
         dgenies.run.fill_examples("tab2");
     });
+    $("button#dl_backup").click(function() {
+        window.location = "/example/backup"
+    });
     $("button#example_batch").click(function() {
         dgenies.run.fill_examples("tab3");
+    });
+    $("button#dl_batch").click(function() {
+        window.location = "/example/batch"
     });
     $("#tabs .tab").click(function() {
         dgenies.run.show_tab($(this).attr("id"));

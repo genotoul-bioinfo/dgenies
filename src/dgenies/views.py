@@ -1204,3 +1204,28 @@ def delete_job(id_res):
         "success": success,
         "error": error
     })
+
+
+@app.route("/example/backup", methods=['GET'])
+def download_example_backup():
+    """
+    Download example batch file
+    """
+    example_file = config_reader.example_backup
+    print(example_file)
+    if not os.path.exists(example_file):
+        abort(404)
+    return send_file(example_file, as_attachment=True,
+                     attachment_filename=os.path.basename(example_file))
+
+
+@app.route("/example/batch", methods=['GET'])
+def download_example_batch():
+    """
+    Download example batch file
+    """
+    example_file = config_reader.example_batch
+    if not os.path.exists(example_file):
+        abort(404)
+    content = get_file(example_file)
+    return Response(content, mimetype="text/plain")
