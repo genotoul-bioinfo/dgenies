@@ -403,6 +403,12 @@ class AppConfigReader:
         except (NoOptionError, NoSectionError):
             return ""
 
+    def _get_example_backup(self):
+        try:
+            return self.reader.get("example", "backup")
+        except (NoOptionError, NoSectionError):
+            return ""
+
     def _get_example_batch(self):
         try:
             return self.reader.get("example", "batch")

@@ -1481,7 +1481,10 @@ class JobManager:
                     align = Fasta(name="align", path=align, type_f="URL")
                 backup = params.get("backup", None)
                 if backup is not None:
-                    backup = Fasta(name="backup", path=backup, type_f="URL")
+                    if backup.startswith("example://") and self.config.example_backup:
+                        backup = Fasta(name=os.path.basename(self.config.example_backup), path=self.config.example_backup, type_f="local", example=True)
+                    else:
+                        backup = Fasta(name="backup", path=backup, type_f="URL")
                 tool = params.get("tool", None)
                 options = params.get("options", None)
 

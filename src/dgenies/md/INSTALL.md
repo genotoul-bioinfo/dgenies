@@ -361,6 +361,10 @@ At least `target` is required to enable example data.
 Fill for `target` and `query` the absolute local path of the file. 
 If at least `target` is filled, a button "Load example" will be shown in the tab *New alignement* of the run form.
 
+#### for plot job
+
+Fill `backup` with the absolute local path of the file to enable example data. When `backup` is filled, a button "Load example" will be shown in the tab *Plot alignement* of the run form.
+
 #### for batch job
 
 Fill `batch` with the absolute local path of the file to enable example data. When `batch` is filled, a button "Load example" will be shown in the tab *Batch alignements* of the run form.

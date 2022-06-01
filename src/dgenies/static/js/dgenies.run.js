@@ -21,6 +21,7 @@ dgenies.run.allow_upload = false;
 dgenies.run.ping_interval = null;
 dgenies.run.target_example = "";
 dgenies.run.query_example = "";
+dgenies.run.backup_example = "";
 dgenies.run.batch_example = "";
 dgenies.run.tool_has_ava = {};
 dgenies.run.enabled = true;
@@ -33,17 +34,19 @@ dgenies.run.valid = true;
  * @param {int} max_upload_file_size maximum upload file size
  * @param {string} target_example target example pseudo path
  * @param {string} query_example query example pseudo path
- * @param {string} batch_example query example pseudo path
+ * @param {string} backup_example backup example pseudo path
+ * @param {string} batch_example batch example pseudo path
  * @param {object} tool_has_ava defines if each available tool has an all-vs-all mode
  */
 dgenies.run.init = function (s_id, allowed_ext, max_upload_file_size=1073741824, target_example="", query_example="",
-                             batch_example="", tool_has_ava={}) {
+                             backup_example="", batch_example="", tool_has_ava={}) {
     dgenies.run.s_id = s_id;
     dgenies.run.allowed_ext = allowed_ext;
     dgenies.run.max_upload_file_size = max_upload_file_size;
     dgenies.run.target_example = target_example;
     dgenies.run.query_example = query_example;
     dgenies.run.batch_example = batch_example;
+    dgenies.run.backup_example = backup_example;
     dgenies.run.tool_has_ava = tool_has_ava;
     dgenies.run.restore_form();
     dgenies.run.set_events();
@@ -217,11 +220,13 @@ dgenies.run.fill_examples = function (tab) {
             $("input#query").val("example://" + dgenies.run.query_example);
         }
     }
+    if (tab == "tab2") {
+        $("select.backup").val("1").trigger("change");
+        $("input#backup").val("example://" + dgenies.run.backup_example);
+    }
     if (tab == "tab3") {
-        if (dgenies.run.batch_example !== "") {
-            $("select.batch").val("1").trigger("change");
-            $("input#batch").val("example://" + dgenies.run.batch_example);
-        }
+        $("select.batch").val("1").trigger("change");
+        $("input#batch").val("example://" + dgenies.run.batch_example);
     }
 };
 
@@ -312,6 +317,9 @@ dgenies.run.set_events = function() {
     });
     $("button#example_align").click(function() {
         dgenies.run.fill_examples("tab1");
+    });
+    $("button#example_backup").click(function() {
+        dgenies.run.fill_examples("tab2");
     });
     $("button#example_batch").click(function() {
         dgenies.run.fill_examples("tab3");

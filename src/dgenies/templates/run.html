@@ -16,8 +16,8 @@
 {% endblock %}
 {% block onload %}
     {{ super() }}
-    dgenies.run.init('{{ s_id }}',{{ allowed_ext }}, {{ max_upload_file_size }}, '{{ target }}', '{{ query }}', '{{ batch }}',
-    {{ tools_ava }});
+    dgenies.run.init('{{ s_id }}',{{ allowed_ext }}, {{ max_upload_file_size }}, '{{ target }}', '{{ query }}',
+    '{{ backup }}', '{{ batch }}', {{ tools_ava }});
 {% endblock %}
 {% block content %}
     {% set fnote = 1 %}
@@ -411,6 +411,9 @@
                 <button type="button" id="submit">Submit</button>
                 {% if example_align %}
                     <button class="tab1 tabx" type="button" id="example_align">Load example</button>
+                {% endif %}
+                {% if example_backup %}
+                    <button class="tab2 tabx" type="button" id="example_backup">Load example</button>
                 {% endif %}
                 {% if example_batch %}
                     <button class="tab3 tabx" type="button" id="example_batch">Load example</button>

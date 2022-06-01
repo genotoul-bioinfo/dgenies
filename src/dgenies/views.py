@@ -106,6 +106,8 @@ def run():
                            example_align=config_reader.example_target != "",
                            target=os.path.basename(config_reader.example_target),
                            query=os.path.basename(config_reader.example_query),
+                           example_backup=config_reader.example_backup != "",
+                           backup=os.path.basename(config_reader.example_batch),
                            example_batch=config_reader.example_batch != "",
                            batch=os.path.basename(config_reader.example_batch),
                            tools_names=tools_names, tools=tools,
@@ -291,13 +293,19 @@ def launch_analysis():
 
         bckp = None
         if backup is not None:
-            backup_name = os.path.splitext(backup)[0] if backup_type == "local" else None
-            backup_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder, backup) \
-                if backup_type == "local" else backup
-            if backup_type == "local" and not os.path.exists(backup_path):
-                errors.append("Backup file not correct!")
-                form_pass = False
-            bckp = Fasta(name=backup_name, path=backup_path, type_f=backup_type)
+            example = backup.startswith("example://")
+            if example:
+                backup_path = config_reader.example_backup
+                backup_name = os.path.basename(backup_path)
+                backup_type = "local"
+            else:
+                backup_name = os.path.splitext(backup)[0] if backup_type == "local" else None
+                backup_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder, backup) \
+                    if backup_type == "local" else backup
+                if backup_type == "local" and not os.path.exists(backup_path):
+                    errors.append("Backup file not correct!")
+                    form_pass = False
+            bckp = Fasta(name=backup_name, path=backup_path, type_f=backup_type, example=example)
 
         batch_path = None
 
