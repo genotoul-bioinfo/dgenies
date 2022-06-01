@@ -86,6 +86,50 @@ Backup file is a TAR archive that can be gzipped. It contains three files:
 
 Names of files must be kept. Otherwise, the backup file will not be accepted by the run form.
 
+## Batch file
+
+Batch file is a text file. Each line in the batch describe a job.
+
+Each job parameter is described by a `key=value` syntax. Parameters must be separated by one or many whitespaces. Order of parameters has no importance.
+
+Job type is defined by the key `type`. It can be either an new align job or a plot job. The key takes value respectively `align` or `plot`.
+
+### New align job
+
+    type=align target=<target_url> query=<query_url> tool=<tool_id> options=<option_id1>,<option_id2> ...
+
+Mandatory:
+
+- `type=align`
+- `target`
+
+Optional:
+
+- `job_id_prefix`
+- `query`
+- `options`
+
+For `options` part, `option_id` are separate by coma. The `option_id` to option mapping is presented on batch page. They look like `0-0` for 1st choice of 1st option, `0-1` for 2nd choice of 1st option, ..., `1-0` for 1nd choice of 2nd option, ... If options are not precised, default ones will be use. In case of checkbox, the `option_id`  can be negate by using this syntax `!option_id`
+
+The mapping between `option_id` and its meaning will be displayed on batch page.
+
+### Plot job
+
+Two possible patterns:
+
+    type=plot align=<paf_url> target=<target_url> query=<query_url>
+    type=plot backup="<backup_url>"
+
+Mandatory:
+
+- `type=plot`
+- exclusive:
+    - `backup`
+    - `align`, `target` and `query`
+
+Optional:
+
+- `job_id_prefix`
 
 ## Association table
 
