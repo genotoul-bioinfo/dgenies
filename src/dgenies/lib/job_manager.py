@@ -1570,7 +1570,9 @@ class JobManager:
         is_finished = all(s["status"] in ("success", "fail") for s in status_list)
         is_successfull = all(s["status"] == "success" for s in status_list)
         if is_finished:
-            return "success" if is_successfull else "fail"
+            status = "success" if is_successfull else "fail"
+            self._set_analytics_job_status(status)
+            return status
         return "started-batch"
 
     def run_job(self, batch_system_type):
