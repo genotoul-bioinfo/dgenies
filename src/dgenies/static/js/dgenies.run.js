@@ -328,9 +328,27 @@ dgenies.run.set_events = function() {
     $("button#example_batch").click(function() {
         dgenies.run.fill_examples("tab3");
     });
+
+    $("button#view_batch").click(function() {
+        $(this).find('a').click()
+    });
+    $("button#view_batch").find('a').click(function() {
+        $(this).modal({
+            showClose: false,
+        });
+        return false;
+    });
+    $("a#view_batch").click(function() {
+        $(this).modal({
+            showClose: false,
+        });
+        return false;
+    });
+
     $("button#dl_batch").click(function() {
         window.location = "/example/batch"
     });
+
     $("#tabs .tab").click(function() {
         dgenies.run.show_tab($(this).attr("id"));
     });

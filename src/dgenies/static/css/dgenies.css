@@ -667,7 +667,7 @@ div.submit-form table input[type=text], div.submit-form table input[type=email] 
     border-image: none;
 }
 
-div.submit-form table input, div.submit-form button, div.submit-form select {
+div.submit-form table input, div.submit-form button, div.submit-form a.btn, div.submit-form select {
     border-radius: 5px 5px 5px 5px !important;
     -moz-border-radius: 5px 5px 5px 5px !important;
     -webkit-border-radius: 5px 5px 5px 5px !important;
@@ -831,8 +831,6 @@ h2.status, h2.batch {
     height: 14px;
     border: solid 1px black;
     vertical-align: middle;
-/*    margin-left: 55px;
-    margin-bottom: 10px;*/
 }
 
 .mini-progress-status-bar .inner {
@@ -969,4 +967,9 @@ ul.nav ul.dropdown-menu {
 
 .blocker {
     z-index: 11;
+}
+
+div.jquery-modal div.modal {
+    /*white-space: nowrap;*/
+    max-width: 100%;
 }
