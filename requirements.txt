@@ -1,5 +1,5 @@
-Flask==1.0.*
-Jinja2~=2.11.3
+Flask
+Jinja2
 numpy
 requests>=2.20.1
 biopython>=1.70
@@ -14,6 +14,3 @@ Flask-Mail==0.9.*
 peewee==3.*
 python-crontab>=2.2.*,==2.*
 drmaa==0.7.*
-itsdangerous<2.1.0
-markupsafe<2.1.0
-werkzeug<2.1.0
