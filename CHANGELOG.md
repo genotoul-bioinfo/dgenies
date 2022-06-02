@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.4.0 (2022-06-??)
+
+### Major changes
+
+- Add batch mode. This early version only allows to use urls as file inputs. #28
+
+### Minor change
+
+- Add definition page to explain how some things like *Identity*, *Best matching chromosomes* are computed.
+- Relax Jinja and Falsk requirements up to last versions
+
+### Bugfix
+
+- Some options were display to right side of page
+
 ## 1.3.1 (2022-03-30)
 
 ### Minor change
