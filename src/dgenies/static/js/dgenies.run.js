@@ -338,12 +338,6 @@ dgenies.run.set_events = function() {
         });
         return false;
     });
-    $("a#view_batch").click(function() {
-        $(this).modal({
-            showClose: false,
-        });
-        return false;
-    });
 
     $("button#dl_batch").click(function() {
         window.location = "/example/batch"
