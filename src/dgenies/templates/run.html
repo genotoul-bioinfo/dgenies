@@ -376,32 +376,40 @@
 
                             <tr class="batch tabx tab3">
                                 <td colspan="2" style="vertical-align:top;">
-                                    <label>Option ids for tools (to use with <em>option=</em>)<sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup>{% set fnote_tab = fnote_tab + 1 %}</label>
+                                    Possible values for <em>tool</em> and <em>options</em> keys
                                 </td>
                             </tr>
 
-
-
+                            <tr class="batch tabx tab3">
+                                <th>Tool</th>
+                                <th>Option ids (to use with <em>options=</em>)<sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup>{% set fnote_tab = fnote_tab + 1 %}</th>
+                            </tr>
                             {% for tool in tools_names %}
-                                {% if tools[tool].options %}
-                                    <tr class="batch tabx tab3">
-                                        <td style="vertical-align:top;">
-                                            {{ tool }} 
-                                        </td>
+                                <tr class="batch tabx tab3" style="border-top:1px solid black">
+                                    <td style="vertical-align:top;">
+                                        {{ tools[tool].label | capitalize }}
+                                            <span class="glyphicon glyphicon-question-sign" style="color: #2aabd2"
+                                                  title="{{ tools[tool].help }}"></span><br>({% if loop.index0 == 0 %}<span style="font-weight: bold">{% endif %}tool={{ tool }}</span>)
+                                    </td>
+                                    {% if tools[tool].options %}
                                         <td>
+                                            <ul>
                                             {% for opt in tools[tool].options %}
                                                 {% set outer_loop = loop %}
-                                                {{ opt.label }}{% if opt.type == "radio" %} (mutually exclusive){% endif %}:
+                                                <li>{{ opt.label }}{% if opt.type == "radio" %} (mutually exclusive){% endif %}:</li>
                                                 <ul>
-                                                    {% for entry in opt['entries'] %}
-                                                       <li {% if entry.default %}style="font-weight: bold"{% endif %}>{{ outer_loop.index0 }}-{{ loop.index0 }}: {{ entry.label }}&nbsp<span class="glyphicon glyphicon-question-sign" style="color: #2aabd2"
+                                                {% for entry in opt['entries'] %}
+                                                    <li {% if entry.default %}style="font-weight: bold"{% endif %}>{{ outer_loop.index0 }}-{{ loop.index0 }}: {{ entry.label }}&nbsp<span class="glyphicon glyphicon-question-sign" style="color: #2aabd2"
                                                         title="{{ entry.help }}"></span></li>
-                                                    {% endfor %}
+                                                {% endfor %}
                                                 </ul>
                                             {% endfor %}
+                                            </ul>
                                         </td>
-                                    </tr>
-                                {% endif %}
+                                    {% else %}
+                                        <td style="vertical-align:top; text-align: center;">No option</td>
+                                    {% endif %}
+                                </tr>
                             {% endfor %}
                         </tbody>
                     </table>
