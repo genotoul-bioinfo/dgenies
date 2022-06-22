@@ -107,7 +107,7 @@ def run():
                            target=os.path.basename(config_reader.example_target),
                            query=os.path.basename(config_reader.example_query),
                            example_backup=config_reader.example_backup != "",
-                           backup=os.path.basename(config_reader.example_batch),
+                           backup=os.path.basename(config_reader.example_backup),
                            example_batch=config_reader.example_batch != "",
                            batch=os.path.basename(config_reader.example_batch),
                            tools_names=tools_names, tools=tools,
