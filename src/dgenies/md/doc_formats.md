@@ -88,7 +88,7 @@ Names of files must be kept. Otherwise, the backup file will not be accepted by 
 
 ## Batch file
 
-Batch file is a text file. Each line in the batch describe a job.
+Batch file is a text file. Each line in the batch file describes a job.
 
 Each job parameter is described by a `key=value` syntax. Parameters must be separated by one or many whitespaces. Order of parameters has no importance.
 
@@ -96,40 +96,46 @@ Job type is defined by the key `type`. It can be either an new align job or a pl
 
 ### New align job
 
+A new align job is descibed with the following template.
+
     type=align target=<target_url> query=<query_url> tool=<tool_id> options=<option_id1>,<option_id2> ...
 
-Mandatory:
+*Mandatory parameters*:
 
-- `type=align`
-- `target`
+- `type=align`: we set the job type to align job
+- `target`: an align job needs at least a target
 
-Optional:
+*Optional parameters*:
 
-- `job_id_prefix`
-- `query`
-- `options`
+- `job_id_prefix`: we can set a name prefix to the job. A random part will be added at the end. If not set, the batch job name will be used as a prefix
+- `query`: the query file against which we will align the target. If not set, target will be aligned against itself
+- `tool`: the tool use as aligner
+- `options`: some options given to the aligner, see below for details
 
-For `options` part, `option_id` are separate by coma. The `option_id` to option mapping is presented on batch page. They look like `0-0` for 1st choice of 1st option, `0-1` for 2nd choice of 1st option, ..., `1-0` for 1nd choice of 2nd option, ... If options are not precised, default ones will be use. In case of checkbox, the `option_id`  can be negate by using this syntax `!option_id`
+For `options` key, `option_id` values must be separated by a coma. The values of `option_id` are presented on batch page. They mirror options in run page. They look like `0-0` for 1st choice of 1st option, `0-1` for 2nd choice of 1st option, ..., `1-0` for 1st choice of 2nd option, ... If options are not precised, default ones will be use. In case of checkbox, the `option_id` can be negate by using this syntax `!option_id`
 
-The mapping between `option_id` and its meaning will be displayed on batch page.
+The mapping between `option_id` and its meaning is displayed on batch page.
 
 ### Plot job
 
-Two possible patterns:
+A plot job can use two possible patterns:
 
-    type=plot align=<paf_url> target=<target_url> query=<query_url>
-    type=plot backup="<backup_url>"
+    type=plot align=<paf_url> target=<target_url> query=<query_url> ...
 
-Mandatory:
+or
 
-- `type=plot`
+    type=plot backup="<backup_url>" ...
+
+*Mandatory parameters*:
+
+- `type=plot`: we set the job type to plot job
 - exclusive:
-    - `backup`
-    - `align`, `target` and `query`
+    - `align`, `target` and `query`: respectively an alignment file in [paf format](paf-pairwise-mapping-format), a [target index](#index-file), and a [query index](#index-file)
+    - `backup`: a [backup file](#backup-file) 
 
-Optional:
+*Optional parameters*:
 
-- `job_id_prefix`
+- `job_id_prefix`: we can set a name prefix to the job. A random part will be added at the end. If not set, the batch job name will be used as a prefix
 
 ## Association table
 
