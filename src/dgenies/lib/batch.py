@@ -20,7 +20,7 @@ def has_correct_argument_keys(job_type: str, job_params: dict):
     result = False, None
     if job_type == "align":
         comparison = {"target", "query", "tool", "options"}.symmetric_difference(job_params.keys())
-        optional = {"options", "query", "job_id_prefix"}
+        optional = {"options", "query", "tool", "job_id_prefix"}
         # if result of comparison of given params with expected params is not a subset of optional params,
         # then there is some unconsidered params in given params
         result = comparison.issubset(optional), comparison - optional
@@ -50,7 +50,7 @@ def read_batch_file(batch_file: str):
     """
     job_param_list = []
     error_msg = []
-    tools = Tools().tools
+    tools = Tools()
     with open(batch_file, 'rt') as instream:
         nb_lines = 0
         for i, line in enumerate(instream.readlines()):
@@ -75,19 +75,22 @@ def read_batch_file(batch_file: str):
                     if type in JOB_TYPES:
                         is_correct, prob_keys = has_correct_argument_keys(type, param_dict)  # We get the default options
                         if is_correct:
-                            tool = None
+                            toolname = tools.get_default()
                             default_options = set()
                             if "tool" in param_dict:
-                                try:
-                                    tool = tools[param_dict["tool"]]
-                                    default_options = tool.get_default_option_keys()
-                                except KeyError:
-                                    no_error = False
-                                    error_msg.append("Line {:d}: Tool {} does not exist".format(i+1, param_dict["tool"]))
-                                    tool = None
+                                toolname = param_dict["tool"]
+                            else:
+                                param_dict["tool"] = toolname
+                            try:
+                                tool = tools.tools[toolname]
+                                default_options = tool.get_default_option_keys()
+                            except KeyError:
+                                no_error = False
+                                error_msg.append("Line {:d}: Tool {} does not exist".format(i+1, toolname))
+                                tool = None
                             # If options exists in job line, we split options value into a list of options
-                            if "options" in param_dict:
-                                if tool:
+                            if tool:
+                                if "options" in param_dict:
                                     # We transform the user 'options' string into an option key list (e.g. 0-0)
                                     user_option_keys = set(param_dict["options"].split(","))
                                     # We check that user option keys are valid
@@ -124,6 +127,9 @@ def read_batch_file(batch_file: str):
                                     else:
                                         no_error = False
                                         error_msg.append("Line {:d}: Option key(s) {} is/are invalid".format(i + 1, ",".join(invalid_keys)))
+                                else:
+                                    valid, option_list = tool.resolve_option_keys(default_options)
+                                    param_dict["options"] = " ".join(option_list) if option_list else None
                         else:
                             no_error = False
                             error_msg.append("Line {:d}: Incorrect/missing argument key: {}".format(i+1, prob_keys))

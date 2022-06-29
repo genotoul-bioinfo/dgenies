@@ -249,7 +249,17 @@ class Tools:
 
     def __init__(self):
         self.tools = {}
+        self.default = None
         self.load_yaml(trusted=True)
+
+    def get_default(self):
+        max_order = sys.maxsize
+        if self.default is None:
+            for n, t in self.tools.items():
+                if t.order < max_order:
+                    max_order = t.order
+                    self.default = n
+        return self.default
 
     def load_yaml(self, trusted=False):
         app_dir = os.path.dirname(inspect.getfile(self.__class__))
