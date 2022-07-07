@@ -1519,7 +1519,7 @@ class JobManager:
                 print("run job " + subjob.id_job)
                 subjob.launch_standalone(sync=True)
             # We get end status for each subjob
-            is_success = all(s == "success" for s in map(lambda j: j.get_status_standalone(), job_queue))
+            is_success = all(s in ("success", "no-match") for s in map(lambda j: j.get_status_standalone(), job_queue))
             # The batch job succeed if all subjobs succeed
             self.set_job_status("success") if is_success else self.set_job_status("fail")
         return True
@@ -1572,8 +1572,9 @@ class JobManager:
         for i in self.get_subjob_ids():
             job = JobManager(i)
             status_list.append(job.status())
-        is_finished = all(s["status"] in ("success", "fail") for s in status_list)
-        is_successfull = all(s["status"] == "success" for s in status_list)
+        print(status_list)
+        is_finished = all(s["status"] in ("success", "fail", "no-match") for s in status_list)
+        is_successfull = all(s["status"] in ("success", "no-match") for s in status_list)
         if is_finished:
             status = "success" if is_successfull else "fail"
             self._set_analytics_job_status(status)
