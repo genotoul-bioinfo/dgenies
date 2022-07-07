@@ -50,33 +50,33 @@
                 Job {{ subjob.job_name }} has failed.
             {% endif %}
         </h4>
-        {% if status == "success" %}
+        {% if subjob.status == "success" %}
             <p>You can <a href="{{ url_base }}/result/{{ subjob.job_name }}">click here</a> to see results.</p>
-        {% elif status == "no-match" %}
+        {% elif subjob.status == "no-match" %}
             <p>Sorry, we did not find any match between your query and your target.</p>
         {% else %}
-            {% if error != "" %}
+            {% if subjob.error != "" %}
                 <p>{{ subjob.error | replace("#ID#",subjob.job_name) }}</p>
             {% else %}
                 <p>Your job {{ subjob.job_name }} has failed. You can try again.<br/>
                 If the problem persists, please contact the support.</p>
             {% endif %}
         {% endif %}
-        {% if target_name != "" %}
+        {% if subjob.target_name != "" %}
             <p>Sequences compared in this analysis:</p>
             <p><em>Target:</em> {{ subjob.target_name }}
-            {% if query_name != "" %}
+            {% if subjob.query_name != "" %}
                 <br/><em>Query:</em> {{ subjob.query_name }}
             {% endif %}
             </p>
         {% endif %}
-        {% if status == "success" %}
-            {% if target_filtered %}
+        {% if subjob.status == "success" %}
+            {% if subjob.target_filtered %}
                 <p>Note: target fasta has been filtered because it contains too small contigs.<br/>
                     To see which contigs has been removed from the analysis,
                     <a href="{{ url_base }}/filter-out/{{ subjob.job_name }}/target">click here</a>.</p>
             {% endif %}
-            {% if query_filtered %}
+            {% if subjob.query_filtered %}
                 <p>Note: query fasta has been filtered because it contains too small contigs.<br/>
                     To see which contigs has been removed from the analysis,
                     <a href="{{ url_base }}/filter-out/{{ subjob.job_name }}/query">click here</a>.</p>
