@@ -785,7 +785,11 @@ class JobManager:
             if url.startswith("ftp://"):
                 self._filename_for_url[url] = url.split("/")[-1]
             elif url.startswith("http://") or url.startswith("https://"):
-                self._filename_for_url[url] = requests.head(url, allow_redirects=True).url.split("/")[-1]
+                r = requests.head(url, allow_redirects=True)
+                if 'content-disposition' in r.headers:
+                    self._filename_for_url[url] = re.findall(r'filename="(.+)"', r.headers['content-disposition'])[0]
+                else:
+                    self._filename_for_url[url] = r.url.split("/")[-1]
             else:
                 return None
         return self._filename_for_url[url]
