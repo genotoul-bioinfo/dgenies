@@ -786,10 +786,11 @@ class JobManager:
                 self._filename_for_url[url] = url.split("/")[-1]
             elif url.startswith("http://") or url.startswith("https://"):
                 r = requests.head(url, allow_redirects=True)
+                self._filename_for_url[url] = r.url.split("/")[-1]
                 if 'content-disposition' in r.headers:
-                    self._filename_for_url[url] = re.findall(r'filename="(.+)"', r.headers['content-disposition'])[0]
-                else:
-                    self._filename_for_url[url] = r.url.split("/")[-1]
+                    fnames = re.findall(r'filename="(.+)"', r.headers['content-disposition'])
+                    if fnames:
+                        self._filename_for_url[url] = fnames[0]
             else:
                 return None
         return self._filename_for_url[url]
