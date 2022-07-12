@@ -1,15 +1,15 @@
 # Changelog
 
-## 1.4.0 (2022-06-??)
+## 1.4.0 (2022-07-12)
 
-### Major changes
+### Major change
 
 - Add batch mode. This early version only allows to use urls as file inputs. #28
 
-### Minor change
+### Minor changes
 
 - Add definition page to explain how some things like *Identity*, *Best matching chromosomes* are computed.
-- Relax Jinja and Falsk requirements up to last versions
+- Relax Jinja and Flask requirements up to last versions
 
 ### Bugfix
 

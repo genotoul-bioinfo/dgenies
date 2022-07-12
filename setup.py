@@ -5,7 +5,7 @@ from pathlib import Path
 
 with open('requirements.txt') as f:
     install_reqs = f.read().strip().split('\n')
-version = '1.3.1'
+version = '1.4.0'
 
 if os.name == "posix":
 
