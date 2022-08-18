@@ -1216,7 +1216,7 @@ def download_example_backup():
     if not os.path.exists(example_file):
         abort(404)
     return send_file(example_file, as_attachment=True,
-                     attachment_filename=os.path.basename(example_file))
+                     download_name=os.path.basename(example_file))
 
 
 @app.route("/example/batch", methods=['GET'])
