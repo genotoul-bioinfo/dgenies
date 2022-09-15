@@ -1,6 +1,18 @@
 {% extends 'base.html' %}
 {% block scripts %}
     {{ super() }}
+    <script src="{{ url_for('static', filename = 'js/tmpl.min.js') }}"></script>
+    <script type="text/x-tmpl" id="tmpl-listing">
+        [% for (var i=0; i<o.length; i++) { %]
+        <tr class="[%=o[i].state%]-file" data-index="[%=i%]">
+            <td><input type="checkbox"></td>
+            <td>[%=o[i].name%]</td>
+            <td>[%=o[i].size%]</td>
+            <td>[%=o[i].state%]</td>
+            <td><button id="delete-btn-[%=i%]" type="button" class="btn btn-danger delete delete-btn"><i class="glyphicon glyphicon-trash"></i></button></td>
+        </tr>
+        [% } %]
+    </script>
     {% if debug %}
         <!-- The basic File Upload plugin -->
         <script src="{{ url_for('static', filename='js/jquery.fileupload.js') }}"></script>
@@ -17,7 +29,7 @@
 {% block onload %}
     {{ super() }}
     dgenies.run.init('{{ s_id }}',{{ allowed_ext }}, {{ max_upload_file_size }}, '{{ target }}', '{{ query }}',
-    '{{ backup }}', '{{ batch }}', {{ tools_ava }});
+    '{{ backup }}', '{{ batch }}', {{ tools_ava }}, {{max_batch_jobs}});
 {% endblock %}
 {% block content %}
     {% set fnote = 1 %}
@@ -349,6 +361,7 @@
                             {# Tab 3 #}
                             <tr class="batch tabx tab3">
                                 {% set fnote_tab = fnote %}
+                                <!--
                                 <td>
                                     <label for="file_batch" class="file-batch">Batch file<sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup>{% set fnote_tab = fnote_tab + 1 %}</label>
                                 </td>
@@ -371,6 +384,74 @@
                                     <div class="loading-file batch" style="display: none"></div>
                                     <div class="upload-success batch" style="display: none"></div>
                                     <div class="file-size batch"></div>
+                                </td>
+                            </tr>
+                            
+                            <tr class="batch tabx tab3">
+                                -->
+                                <td style="vertical-align: top">
+                                    <label for="bname">Batch file</label>
+                                </td>
+                                <td>
+                                    <input type="file" id="bname" name="bname">
+                                </td>
+                            </tr>
+                            <tr class="batch tabx tab3">
+                                <td colspan="2">
+                                    <textarea id="batch_content" rows="10">
+                                        No batch file loaded
+                                    </textarea>
+                                </td>
+                            </tr>
+                            <tr class="batch tabx tab3">
+                                <td  style="vertical-align: top">
+                                    <label id="listing-desc" for="batch-file-upload">User files</label>
+                                </td>
+                                <td>
+                                    <div class="input-container">
+                                        <div class="row fileupload-buttonbar">
+                                            <div class="left-wrapper">
+                                                <button type="button" id="multiple-files-btn" class="btn btn-success fileinput-button">
+                                                    <i class="glyphicon glyphicon-plus"></i>
+                                                    <span>Add files...</span>
+                                                    <!-- <input id="batch-file-upload" type="file" name="files[]" data-url="/upload" multiple/> -->
+                                                </span>
+                                            </div>
+                                            <div class="right-wrapper">
+                                                <button type="button" id="delete-unused-btn" class="btn btn-warning cancel delete-btn">
+                                                    <i class="glyphicon glyphicon-trash"></i>
+                                                    <span>Remove unused</span>
+                                                </button>
+                                                <!-- <button type="button" id="delete-selected-btn" class="btn btn-warning cancel delete-btn">
+                                                    <i class="glyphicon glyphicon-trash"></i>
+                                                    <span>Remove selected</span>
+                                                </button> -->
+                                                <button type="button" id="delete-all-btn" class="btn btn-danger delete delete-btn">
+                                                    <i class="glyphicon glyphicon-trash"></i>
+                                                    <span>Clear All</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr class="batch tabx tab3">
+                                    <td colspan="2">
+                                        <div id="input-dropzone">
+                                            <table id="listing" aria-describedby="listing-desc">
+                                                <thead>
+                                                    <tr>
+                                                        <th scope="col"></th>
+                                                        <th scope="col">File</th>
+                                                        <th scope="col">Size</th>
+                                                        <th scope="col">State</th>
+                                                        <th scope="col">Actions</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                </tbody>
+                                            </table>            
+                                        </div>
+                                    </div> 
                                 </td>
                             </tr>
 
@@ -470,6 +551,7 @@
             <input type="file" name="file-queryidx" class="file-queryidx" data-url="/upload"/>
             <input type="file" name="file-backup" class="file-backup" data-url="/upload"/>
             <input type="file" name="file-batch" class="file-batch" data-url="/upload"/>
+            <input id="batch-multiple-files-upload" type="file" name="multiple-files" class="multiple-files" data-url="/upload" multiple/>
         </div>
     </form>
 {% endblock %}

@@ -110,6 +110,7 @@ def run():
                            backup=os.path.basename(config_reader.example_backup),
                            example_batch=config_reader.example_batch != "",
                            batch=os.path.basename(config_reader.example_batch),
+                           max_batch_jobs=config_reader.max_nb_jobs_in_batch_mode,
                            tools_names=tools_names, tools=tools,
                            tools_ava=tools_ava, tools_options=tools_options, version=VERSION, inforun=inforun)
 

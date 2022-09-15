@@ -462,6 +462,139 @@ form#export {
     text-align: center;
 }
 
+/**
+ * Fileupload listing
+ */
+
+textarea {
+	resize: none;
+	margin: 0;
+	padding: 0;
+	width: 100%;
+	white-space: pre;
+	overflow-wrap: normal;
+	overflow-x: scroll;
+	border : 1px solid;
+}
+
+.file-uneeded {
+	color: #888888;
+	text-decoration: line-through;
+}
+
+.file-duplicate {
+	color: red;
+}
+
+.file-invalid-type {
+	color: red;
+	text-decoration: line-through;
+}
+
+.file-missing{
+	color: purple;
+}
+
+.file-unkown {
+	color: #888888;
+}
+
+.file-error {
+	color: red;
+}
+
+.file-warning {
+	color: orange;
+}
+
+.file-valid {
+	color: green;
+}
+
+.input-container {
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#input-dropzone {
+    -moz-border-radius: 10px;
+    -webkit-border-radius: 10px;
+    border-radius: 10px;
+	max-width: 800px;
+	min-height: 100px;
+	margin: 0 auto;
+	background-color: #e3f2ff;
+	overflow-x: auto;
+}
+
+.fileupload-buttonbar.row {
+	margin-left: 0;
+	margin-right: 0;
+	padding-bottom: 5px;
+}
+.fileupload-buttonbar.row::after, .fileupload-buttonbar.row::before {
+	content: none;
+}
+
+#batch-file-upload {
+
+}
+
+#listing {
+	width: 100%;
+}
+
+#listing th {
+	padding-left: 5px;
+	padding-right: 5px;
+	padding-top: 5px;
+}
+
+#listing td {
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#listing td:first-child, #listing th:first-child {
+	text-align: center;
+	width: 32px;
+}
+
+#listing td:nth-child(2), #listing th:nth-child(2) {
+	text-align: left;
+}
+
+#listing td:nth-child(3), #listing th:nth-child(3) {
+	text-align: right;
+	width: 100px;
+}
+
+#listing td:nth-child(4), #listing th:nth-child(4) {
+	text-align: center;
+	width: 60px;
+}
+
+#listing td:nth-child(5),#listing th:nth-child(4) {
+	text-align: center;
+	width: 60px;
+}
+
+.fileupload-buttonbar {
+	display: flex;
+	justify-content: space-between;
+}
+
+.delete-btn {
+	display: inline-block;
+}
+
+.left-wrapper,
+.right-wrapper {
+	display: inline-block;
+}
+
+
 /* Tooltip*/
 
 span.tip {

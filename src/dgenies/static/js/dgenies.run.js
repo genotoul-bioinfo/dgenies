@@ -3,6 +3,9 @@ if (!dgenies) {
 }
 dgenies.run = {};
 
+// We change tmpl.regexp to [% syntax instead of {% in order to avoid conflit with jinja2 templates
+tmpl.regexp = /([\s'\\])(?!(?:[^[]|\[(?!%))*%\])|(?:\[%(=|#)([\s\S]+?)%\])|(\[%)|(%\])/g
+
 // Init global variables:
 dgenies.run.s_id = null;
 dgenies.run.allowed_ext = [];
@@ -24,8 +27,23 @@ dgenies.run.query_example = "";
 dgenies.run.backup_example = "";
 dgenies.run.batch_example = "";
 dgenies.run.tool_has_ava = {};
+dgenies.run.max_jobs = 1
 dgenies.run.enabled = true;
 dgenies.run.valid = true;
+
+// Keys in batch file that will use files
+dgenies.run.KEYS_FOR_FILES = ["align", "backup", "query", "target"]
+//dgenies.run.FILE_STATES = ["available", "duplicated", "missing", "unused"]
+
+// list of files in batch file: array of strings
+dgenies.run.files_in_batch = new Array()
+// list of to be uploaded files: array of fileupload objects
+dgenies.run.file_listing = new Array()
+// states for files: dict of str: array of strings
+dgenies.run.file_states = []
+dgenies.run.missing_files = []
+// Job list that will be send to server
+dgenies.run.job_list = []
 
 /**
  * Initialise app for run page
@@ -38,9 +56,10 @@ dgenies.run.valid = true;
  * @param {string} backup_example backup example pseudo path
  * @param {string} batch_example batch example pseudo path
  * @param {object} tool_has_ava defines if each available tool has an all-vs-all mode
+ * @param {int} max_jobs maximum number of jobs in batch file
  */
 dgenies.run.init = function (s_id, allowed_ext, max_upload_file_size=1073741824, target_example="", query_example="",
-                             backup_example="", batch_example="", tool_has_ava={}) {
+                             backup_example="", batch_example="", tool_has_ava={}, max_jobs = 1) {
     dgenies.run.s_id = s_id;
     dgenies.run.allowed_ext = allowed_ext;
     dgenies.run.max_upload_file_size = max_upload_file_size;
@@ -49,10 +68,198 @@ dgenies.run.init = function (s_id, allowed_ext, max_upload_file_size=1073741824,
     dgenies.run.batch_example = batch_example;
     dgenies.run.backup_example = backup_example;
     dgenies.run.tool_has_ava = tool_has_ava;
+    dgenies.run.max_jobs = max_jobs;
     dgenies.run.restore_form();
     dgenies.run.set_events();
     dgenies.run.init_fileuploads();
 };
+
+/**
+ * Remove some files from listing
+ * @param {*} jq_selection Element selection from jquery
+ */
+dgenies.run.jq_remove_from_listing = function(jq_selection) {
+    // We get selection index
+    let selection_idx = Array.from(jq_selection, e => $(e).data("index"))
+    // We update the list of file
+    let new_file_list = new Array()
+    for (let i = 0; i < dgenies.run.file_listing.length; i++){
+        if (! selection_idx.includes(i)){
+            new_file_list.push(dgenies.run.file_listing[i])
+        }
+    }
+    dgenies.run.file_listing = new_file_list
+    // We refresh the listing
+    dgenies.run.check_files()
+    dgenies.run.refresh_listing()
+}
+
+/**
+ * Regenerate the html file listing
+ */
+ dgenies.run.refresh_listing = function() {
+    
+    let list = []
+    for (let i=0; i<dgenies.run.file_listing.length; i++){
+        let data = {
+            "name": dgenies.run.file_listing[i].files[0].name,
+            "size": dgenies.run.file_listing[i].files[0].size,
+            "state": dgenies.run.file_states[i],
+        }
+        list.push(data)
+    }
+    
+    // We update the html part
+    $('#listing').find('tbody:first').html(tmpl('tmpl-listing', list))
+            // We reset the delete button events
+            $(":button[id^='delete-btn']").click(function() {
+                let i = $(this).parents("tr").data("index")
+                console.log(i)
+                dgenies.run.file_listing.splice(i, 1)
+                dgenies.run.check_files()
+                dgenies.run.refresh_listing()
+            })
+}
+
+/**
+ * Check the state of uploaded files
+ *
+ * @param {array} needed_files list of filenames from batch file needed to upload
+ * @param {array} uploaded_files list of filenames in upload field
+ * @returns {array} a list of string with the same length than @uploaded_files
+ **/
+ dgenies.run.check_uploaded_files = function(needed_files, uploaded_files){
+    // list of states (following the order of list of files)
+    let states = []
+
+    // We count filename occurences
+    let count = new Map();
+    for (let f of uploaded_files.flat()) {
+        if (count.has(f)) {
+            count.set(f, count.get(f) + 1)
+        } else {
+            count.set(f, 1);
+        }
+    }
+
+    // We only check duplication for available files
+    for (let f of uploaded_files.flat()){
+        if (needed_files.includes(f)){
+            if (count.get(f) > 1) {
+                states.push("duplicated")
+            } else {
+                states.push("available")
+            }
+        } else {
+            states.push("unused")
+        }
+    }
+    return states
+}
+
+/**
+ * Check which files are missing in batch files
+ *
+ * @param {array} needed_files list of filenames from batch file needed to upload
+ * @param {array} uploaded_files list of filenames in upload field
+ * @returns {array} a list of string with the same length than @uploaded_files
+ **/
+ dgenies.run.check_missing_files = function(needed_files, uploaded_files){
+    return needed_files.filter(
+        function(x) { return uploaded_files.indexOf(x) < 0 }
+    );
+}
+
+/**
+ * Compute states of files
+ **/
+ dgenies.run.check_files = function(){
+    let file_list = Array.from(dgenies.run.file_listing, elem => elem.files[0].name)
+    dgenies.run.file_states = dgenies.run.check_uploaded_files(dgenies.run.files_in_batch, file_list)
+    dgenies.run.missing_files = dgenies.run.check_missing_files(dgenies.run.files_in_batch, file_list)
+}
+
+/**
+ * Generate the list of filenames used in the list of jobs
+ * @param {array} job_list list of jobs
+ * @returns {array} a list of string
+ **/
+dgenies.run.get_nedeed_files = function(job_list){
+    let needed_files = new Set();
+    for (let j of job_list){
+        for (let k of dgenies.run.KEYS_FOR_FILES) {
+            // We check if file isn't an url
+            if (k in j &&
+                j[k].match(/^(?:https?|ftp):\/\//i) === null){
+                needed_files.add(j[k])
+            }
+        }
+    }
+    return Array.from(needed_files);
+};
+
+
+
+/**
+ * Transform the string describing a job into a Job object
+ * TODO: malformed part of the line to be stored in an error list (position + substr)
+ * @param {string} str a line describing a job
+ * @returns {object} a dictionnary
+ **/
+dgenies.run.line_to_job_list = function(str){
+    let result = {}
+    let array = str.trim().split(/[ \t]+/).map(
+        // each line is transformed in list of key=value
+        kv => kv.match(/\b(?<key>[^ \t=]+)=(?<value>[^ \t]+)\b/)
+    );
+    // We extract the key: value from matches.
+    for(let e of array) {
+        if(e !== null) {
+            result[e.groups.key] = e.groups.value
+        }
+    }
+    return result
+}
+
+
+/**
+ * Parse a batch file and add it in html
+ **/
+dgenies.run.read_batch = function() {
+    console.log("Change batch file");
+    const [f] = this.files;
+    const reader = new FileReader();
+    // resulting job list
+    if (f) {
+        reader.onload = function(e) {
+            let job_array = e.target.result.replace(/[ \t]+/g, "\t")
+                                           .split(/[\n\r]+/);
+            if (job_array.length > dgenies.run.max_jobs) {
+                dgenies.notify(`Batch file too long, only ${dgenies.run.max_jobs} first jobs were considered!`, "danger", 3000);
+            }
+            job_array = job_array.slice(0, dgenies.run.max_jobs);
+                                           
+            let text = job_array.join("\n")
+            $("#batch_content").text(text);
+            // We generate job list from job_array
+            dgenies.run.job_list = job_array.map(dgenies.run.line_to_job_list).filter(
+                obj => !(obj && Object.keys(obj).length === 0 && obj.constructor === Object));
+            dgenies.run.files_in_batch = dgenies.run.get_nedeed_files(dgenies.run.job_list)
+            dgenies.run.check_files();
+            dgenies.run.refresh_listing();
+          };
+        reader.onerror = function(e) {
+            $("#batch_content").text(e.target.error);
+            console.log(e.target.error);
+        };
+
+        reader.readAsText(f);
+    } else {
+        $("#batch_content").text("No batch file loaded")
+    }
+  }
+
+
 
 /**
  * Restore run form
@@ -167,6 +374,45 @@ dgenies.run._init_fileupload = function(ftype, formats, position) {
     });
 };
 
+dgenies.run._init_multiple_fileupload = function(formats) {
+    // batch file upload
+    $('#batch-multiple-files-upload').fileupload({
+        dataType: 'json',
+        formData: {
+            "s_id": dgenies.run.s_id,
+            "formats": formats
+        },
+        maxNumberOfFiles: 1, // max_files_for_a_job * number_of_jobs * 1.1 = 3 * 10 * 1.1
+        dropZone: $('#input-dropzone'),
+        add: function (e, data) {
+            console.log(data)
+            // We add the file
+            dgenies.run.file_listing.push(data);
+
+            console.log(data)
+            // We check the against the batch file
+            dgenies.run.check_files();
+            // We refresh the file listing
+            dgenies.run.refresh_listing();
+        },
+        done: function (e, data) {
+            console.log('Upload finished.');
+        },
+        success: function (data, success) {
+            console.log(data["response"]);
+        },
+        drop: function (e, data) {
+            $.each(data.files, function (index, file) {
+                console.log('Dropped file: ' + file.name);
+            });
+        },
+        change: function (e, data) {
+            $.each(data.files, function (index, file) {
+                console.log('Selected file: ' + file.name);
+            });
+        }
+    });
+};
 /**
  * Init file upload forms
  */
@@ -187,6 +433,34 @@ dgenies.run.init_fileuploads = function () {
             $(`input.file-${ftype}`).trigger("click");
         });
     });
+
+    // We set add buuton from multiple upload behavior
+    dgenies.run._init_multiple_fileupload(["fasta", "idx", "map", "backup"]);
+    $(":button[id='multiple-files-btn']").click(function() 
+    {
+        $("#batch-multiple-files-upload").trigger("click")
+    })
+
+    // We set behavior of 'remove unused' button
+    $(":button[id='delete-unused-btn']").click(function() {
+        dgenies.run.jq_remove_from_listing($('#listing').find('tr.unused-file'))
+    })
+
+    // We set behavior of 'remove selected' button
+    $(":button[id='delete-selected-btn']").click(function() {
+        // We select index of checked boxes
+        dgenies.run.jq_remove_from_listing($('#listing').find('input[type="checkbox"]:checked').parents("tr"))
+    })
+
+    // We set behavior of 'clear all' button
+    $(":button[id='delete-all-btn']").click(function() {
+        dgenies.run.file_listing = new Array()
+        dgenies.run.refresh_listing()
+    })
+
+    // We set bname behavior on change
+    $("#bname").on("change", dgenies.run.read_batch);
+
 };
 
 /**
