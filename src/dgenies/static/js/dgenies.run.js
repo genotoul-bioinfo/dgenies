@@ -332,6 +332,7 @@ dgenies.run.allowed_file = function (filename, formats) {
 dgenies.run._init_fileupload = function(ftype, formats, position) {
     $(`input.file-${ftype}`).fileupload({
         dataType: 'json',
+        dropZone: $(`#dropzone-${ftype}`),
         formData: {
             "s_id": dgenies.run.s_id,
             "formats": formats
