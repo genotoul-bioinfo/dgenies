@@ -128,6 +128,210 @@ def run_test():
             return Session.new()
     return abort(500)
 
+JOB_TYPE_REQUIREMENTS = {
+    "align": [{"target", "query", "alignfile"}],
+    "plot": [{"target", "query", "align"}, {"backup"}]
+}
+def check_job(j: dict) -> (bool, list):
+    """
+    Check and normalize the given job parameters.
+    Job syntax and parameters constraints must have been verified on the client side.
+    :param j: job parameters
+    :type j: dict
+    :return: (True, []) if everything is alright, (False, list of errors) else
+    :rtype: (bool, list)
+    """
+    form_pass = True
+    errors = []
+    # We guess the job type from 'input' files
+    guess = {k: any((e.issubset(j.keys()) for e in v)) for k, v in JOB_TYPE_REQUIREMENTS.items()}
+    guess = {k: v for k, v in guess.items() if v}
+    if j["alignfile"] is not None and j["alignfile_type"] is None:
+        errors.append("Server error: no alignfile_type in form. Please contact the support")
+        form_pass = False
+
+    if j["backup"] is not None and j["backup"] != "" and (j["backup_type"] is None or j["backup_type"] == ""):
+        errors.append("Server error: no backup_type in form. Please contact the support")
+        form_pass = False
+
+    if j["backup"] is not None and j["backup"] != "":
+        j["alignfile"] = ""
+        j["file_query"] = ""
+        j["file_target"] = ""
+    elif j["file_target"] == "":
+            errors.append("No target fasta selected")
+            form_pass = False
+
+    if j["tool"] is not None and j["tool"] not in Tools().tools:
+        errors.append("Tool unavailable: %s" % j["tool"])
+        form_pass = False
+
+    valid_options, options = get_tools_options(j["tool"], j["tool_options"])
+    if not valid_options:
+        errors.append("Chosen tool options unavailable")
+        form_pass = False
+
+    return form_pass, errors
+
+def check_file_type(j: dict) -> (bool, list):
+    form_pass = True
+    errors = []
+    for k in ["alignfile", "backup"]:
+        if j[k] and not j["{k}_type".format(k=k)]:
+            errors.append("Server error: no {k}_type in form. Please contact the support".foramt(k=k))
+            form_pass = False
+    return form_pass, errors
+
+
+def save_files(j: dict, upload_folder: str) -> (bool, list):
+    # We extract the file listing
+    # We create the related Fasta objects
+    form_pass = True
+    errors = []
+    fasta_file_set = {} # It is not fasta file but Fasta object that is any kind of file
+    file_keys = ["query", "target", "alignfile", "backup"]
+    # We need to check if example are configured for server.
+    keys_with_example = {"query", "target", "backup"}
+
+    for k in file_keys:
+        f = j[k]
+        if f:
+            example = False
+            if f.startswith("example://") and f in keys_with_example:
+                f_example = config_reader.getattr("example_" + f)
+                if f == f_example:
+                    example = True
+                    f_path = f_example
+                    f_name = os.path.basename(f_path)
+                    f_type = "local"
+                else:
+                    errors.append("{} example file not correct!".format(f))
+                    form_pass = False
+            else:
+                f_name = os.path.splitext(f.replace(".gz", ""))[0] if j["file_" + f + "_type"] == "local" else None
+                if j["file_" + f + "_type"] == "local":
+                    f_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder, f)
+                    if os.path.exists(f_path):
+                        # We replace spaces by _ in filename
+                        if " " in f:
+                            new_f_path = os.path.join(app.config["UPLOAD_FOLDER"],
+                                                      upload_folder,
+                                                      f.replace(" ", "_"))
+                            shutil.move(f_path, new_f_path)
+                            f_path = new_f_path
+
+                    else:
+                        errors.append("Query file not correct!")
+                        form_pass = False
+                else:
+                    f_path = f
+
+            j[f] = Fasta(name=f_name, path=f_path, type_f=j["file_" + f + "_type"], example=example)
+
+    return form_pass, errors
+
+
+
+    if file_query != "":
+        example = False
+        if file_query.startswith("example://"):
+            if file_query == config_reader.example_query:
+                example = True
+                query_path = config_reader.example_query
+                query_name = os.path.basename(query_path)
+                file_query_type = "local"
+            else:
+                errors.append("Query example file not correct!")
+                form_pass = False
+        else:
+            query_name = os.path.splitext(file_query.replace(".gz", ""))[0] if file_query_type == "local" else None
+            if file_query_type == "local":
+                query_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder, file_query)
+                if os.path.exists(query_path):
+                    if " " in file_query:
+                        new_query_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder,
+                                                      file_query.replace(" ", "_"))
+                        shutil.move(query_path, new_query_path)
+                        query_path = new_query_path
+                else:
+                    errors.append("Query file not correct!")
+                    form_pass = False
+            else:
+                query_path = file_query
+        query = Fasta(name=query_name, path=query_path, type_f=file_query_type, example=example)
+    example = False
+    target = None
+    if file_target != "":
+        if file_target.startswith("example://"):
+            if file_target == config_reader.example_target:
+                example = True
+                target_path = config_reader.example_target
+                target_name = os.path.basename(target_path)
+                file_target_type = "local"
+            else:
+                errors.append("Target example file not correct!")
+                form_pass = False
+        else:
+            target_name = os.path.splitext(file_target.replace(".gz", ""))[0] if file_target_type == "local" \
+                else None
+            if file_target_type == "local":
+                target_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder, file_target)
+                if os.path.exists(target_path):
+                    if " " in target_path:
+                        new_target_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder,
+                                                       file_target.replace(" ", "_"))
+                        shutil.move(target_path, new_target_path)
+                        target_path = new_target_path
+                else:
+                    errors.append("Target file not correct!")
+                    form_pass = False
+            else:
+                target_path = file_target
+        target = Fasta(name=target_name, path=target_path, type_f=file_target_type, example=example)
+
+    # Only if an alignfile is given (side effect that backup was set to "" if alignfile exists)
+    if alignfile is not None and alignfile != "" and backup is not None:
+        Path(os.path.join(folder_files, ".align")).touch()
+
+    align = None
+    if alignfile is not None and alignfile != "":
+        alignfile_name = os.path.splitext(alignfile)[0] if alignfile_type == "local" else None
+        alignfile_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder, alignfile) \
+            if alignfile_type == "local" else alignfile
+        if alignfile_type == "local" and not os.path.exists(alignfile_path):
+            errors.append("Alignment file not correct!")
+            form_pass = False
+        align = Fasta(name=alignfile_name, path=alignfile_path, type_f=alignfile_type)
+
+    bckp = None
+    if backup is not None:
+        example = backup.startswith("example://")
+        if example:
+            backup_path = config_reader.example_backup
+            backup_name = os.path.basename(backup_path)
+            backup_type = "local"
+        else:
+            backup_name = os.path.splitext(backup)[0] if backup_type == "local" else None
+            backup_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder, backup) \
+                if backup_type == "local" else backup
+            if backup_type == "local" and not os.path.exists(backup_path):
+                errors.append("Backup file not correct!")
+                form_pass = False
+        bckp = Fasta(name=backup_name, path=backup_path, type_f=backup_type, example=example)
+
+    for j in job_list:
+        pass
+    pass
+
+def create_batch_file(job_list: list, upload_folder: str) -> Fasta:
+    # We create the batch file in tmpdir
+    batch_name = "batch.txt"
+    batch_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder, batch_name)
+    with open(batch_path) as outfile:
+        outfile.write("\n".join(["\t".join(["{k}={v}".format(k=k, v=" ".join(v)) for k, v in j if v]) for j in job_list]))
+    # We transform it into a Fasta object
+    # We must avoid that a file has the same name than batch_file
+    return Fasta(name=batch_name, path=batch_path, type_f="local")
 
 # Launch analysis
 @app.route("/launch_analysis", methods=['POST'])
@@ -149,55 +353,45 @@ def launch_analysis():
 
     id_job = request.form["id_job"]
     email = request.form["email"]
-    file_query = request.form["query"] if "query" in request.form else ""
-    file_query_type = request.form["query_type"] if "query" in request.form else None
-    file_target = request.form["target"] if "target" in request.form else ""
-    file_target_type = request.form["target_type"] if "target" in request.form else None
-    tool = request.form["tool"] if "tool" in request.form else None
-    tool_options = request.form.getlist("tool_options[]")
-    alignfile = request.form["alignfile"] if "alignfile" in request.form else None
-    alignfile_type = request.form["alignfile_type"] if "alignfile_type" in request.form else None
-    backup = request.form["backup"] if "backup" in request.form else None
-    backup_type = request.form["backup_type"] if "backup_type" in request.form else None
-    batch = request.form["batch"] if "batch" in request.form else None
-    batch_type = request.form["batch_type"] if "batch_type" in request.form else None
+    nb_jobs = int(request.form["nb_jobs"]) if "nb_jobs" in request.form else 0
+    jobs = list()
+    for i in range(0, nb_jobs):
+        jt = Template("jobs[$i][$attr]") # job template
+        k = jt.safe_substitute(i=i, attr="job_id_prefix")
+        id_sub_job = request.form[k] if k in request.form else id_job
+        # subjob
+        j = {"id_job": id_sub_job,
+             "email": email}
+        # k: key in j, attr: key in jt
+        for k, attr in (
+            ("type", "type"), # does not appear when not using batch mode
+            ("file_query", "query"),
+            ("file_query_type", "query_type"),
+            ("file_target", "target"),
+            ("file_target_type", "target_type"),
+            ("tool", "tool"),
+            ("alignfile", "alignfile"),
+            ("alignfile_type", "alignfile_type"),
+            ("backup", "backup"),
+            ("backup_type", "backup_type"),
+            ("batch", "batch"),
+            ("batch_type", "batch_type")):
+            j[k] = request.form[jt.safe_substitute(i=i, attr=attr)] if jt.safe_substitute(i=i, attr=attr) in request.form else None
+        tool_options = jt.safe_substitute(i=i, attr="tool_options][")
+        j["tool_options"] = request.form.getlist(tool_options) if tool_options in request.form else []
+        jobs.append(j)
+
+    print(request.form.to_dict())
+    print(jobs)
+
 
     # Check form:
     form_pass = True
     errors = []
 
-    if alignfile is not None and alignfile_type is None:
-        errors.append("Server error: no alignfile_type in form. Please contact the support")
-        form_pass = False
+    batch_mode = nb_jobs > 1
 
-    if backup is not None and backup != "" and (backup_type is None or backup_type == ""):
-        errors.append("Server error: no backup_type in form. Please contact the support")
-        form_pass = False
-
-    if backup is not None and backup != "":
-        alignfile = ""
-        file_query = ""
-        file_target = ""
-    elif batch is not None:
-        backup = None
-        alignfile = ""
-        file_query = ""
-        file_target = ""
-    else:
-        backup = None
-        if file_target == "":
-            errors.append("No target fasta selected")
-            form_pass = False
-
-    if tool is not None and tool not in Tools().tools:
-        errors.append("Tool unavailable: %s" % tool)
-        form_pass = False
-
-    valid_options, options = get_tools_options(tool, tool_options)
-    if not valid_options:
-        errors.append("Chosen options unavailable")
-        form_pass = False
-
+    # We check job header (id + email)
     if id_job == "":
         errors.append("Id of job not given")
         form_pass = False
@@ -209,11 +403,16 @@ def launch_analysis():
         elif not re.match(r"^.+@.+\..+$", email):
             # The email regex is simple because checking email address is not simple (RFC3696).
             # Sending an email to the address is the most reliable way to check if the email address is correct.
-            # The only constrains we set on the email address are:
+            # The only constraint we set on the email address are:
             # - to have at least one @ in it, with something before and something after
             # - to have something.tdl syntax for email server, as it will be used over Internet (not mandatory in RFC)
             errors.append("Email is invalid")
             form_pass = False
+
+    # We check each job parameters
+    form_pass_tmp, errors_tmp = (check_job(j) for j in jobs)
+    form_pass = form_pass and form_pass_tmp
+    errors.extend(errors_tmp)
 
     # Form pass
     if form_pass:
@@ -229,6 +428,7 @@ def launch_analysis():
         os.makedirs(folder_files)
 
         # Save files:
+        save_files(jobs)
         query = None
         if file_query != "":
             example = False
@@ -308,8 +508,10 @@ def launch_analysis():
                     form_pass = False
             bckp = Fasta(name=backup_name, path=backup_path, type_f=backup_type, example=example)
 
+        # if batch mode, we create a batch file
         batch_path = None
 
+        # Batch file is not and url anymore.
         if batch is not None:
             example = batch.startswith("example://")
             if example:
@@ -335,7 +537,7 @@ def launch_analysis():
                              backup=bckp,
                              batch=batch,
                              mailer=mailer,
-                             tool=tool,
+                             tool=j["tool"],
                              options=options)
             if MODE == "webserver":
                 job.launch()
