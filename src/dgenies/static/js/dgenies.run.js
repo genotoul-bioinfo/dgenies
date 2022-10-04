@@ -32,18 +32,21 @@ dgenies.run.enabled = true;
 dgenies.run.valid = true;
 
 // Keys in batch file that will use files
-dgenies.run.KEYS_FOR_FILES = ["align", "backup", "query", "target"]
+dgenies.run.KEYS_FOR_FILES = ["alignfile", "backup", "query", "target"]
 //dgenies.run.FILE_STATES = ["available", "duplicated", "missing", "unused"]
 
 // list of files in batch file: array of strings
 dgenies.run.files_in_batch = new Array()
 // list of to be uploaded files: array of fileupload objects
-dgenies.run.file_listing = new Array()
+dgenies.run.files_for_batch = new Array()
 // states for files: dict of str: array of strings
 dgenies.run.file_states = []
 dgenies.run.missing_files = []
 // Job list that will be send to server
 dgenies.run.job_list = []
+
+// list of fileupload that will be uploaded
+dgenies.run.files_to_upload = []
 
 /**
  * Initialise app for run page
@@ -83,12 +86,12 @@ dgenies.run.jq_remove_from_listing = function(jq_selection) {
     let selection_idx = Array.from(jq_selection, e => $(e).data("index"))
     // We update the list of file
     let new_file_list = new Array()
-    for (let i = 0; i < dgenies.run.file_listing.length; i++){
+    for (let i = 0; i < dgenies.run.files_for_batch.length; i++){
         if (! selection_idx.includes(i)){
-            new_file_list.push(dgenies.run.file_listing[i])
+            new_file_list.push(dgenies.run.files_for_batch[i])
         }
     }
-    dgenies.run.file_listing = new_file_list
+    dgenies.run.files_for_batch = new_file_list
     // We refresh the listing
     dgenies.run.check_files()
     dgenies.run.refresh_listing()
@@ -100,10 +103,10 @@ dgenies.run.jq_remove_from_listing = function(jq_selection) {
  dgenies.run.refresh_listing = function() {
     
     let list = []
-    for (let i=0; i<dgenies.run.file_listing.length; i++){
+    for (let i=0; i<dgenies.run.files_for_batch.length; i++){
         let data = {
-            "name": dgenies.run.file_listing[i].files[0].name,
-            "size": dgenies.run.file_listing[i].files[0].size,
+            "name": dgenies.run.files_for_batch[i].files[0].name,
+            "size": dgenies.run.files_for_batch[i].files[0].size,
             "state": dgenies.run.file_states[i],
         }
         list.push(data)
@@ -114,8 +117,7 @@ dgenies.run.jq_remove_from_listing = function(jq_selection) {
             // We reset the delete button events
             $(":button[id^='delete-btn']").click(function() {
                 let i = $(this).parents("tr").data("index")
-                console.log(i)
-                dgenies.run.file_listing.splice(i, 1)
+                dgenies.run.files_for_batch.splice(i, 1)
                 dgenies.run.check_files()
                 dgenies.run.refresh_listing()
             })
@@ -174,7 +176,7 @@ dgenies.run.jq_remove_from_listing = function(jq_selection) {
  * Compute states of files
  **/
  dgenies.run.check_files = function(){
-    let file_list = Array.from(dgenies.run.file_listing, elem => elem.files[0].name)
+    let file_list = Array.from(dgenies.run.files_for_batch, elem => elem.files[0].name)
     dgenies.run.file_states = dgenies.run.check_uploaded_files(dgenies.run.files_in_batch, file_list)
     dgenies.run.missing_files = dgenies.run.check_missing_files(dgenies.run.files_in_batch, file_list)
 }
@@ -184,13 +186,12 @@ dgenies.run.jq_remove_from_listing = function(jq_selection) {
  * @param {array} job_list list of jobs
  * @returns {array} a list of string
  **/
-dgenies.run.get_nedeed_files = function(job_list){
+dgenies.run.get_local_files = function(job_list){
     let needed_files = new Set();
     for (let j of job_list){
         for (let k of dgenies.run.KEYS_FOR_FILES) {
             // We check if file isn't an url
-            if (k in j &&
-                j[k].match(/^(?:https?|ftp):\/\//i) === null){
+            if (`${k}_type` in j && j[`${k}_type`] === "local"){
                 needed_files.add(j[k])
             }
         }
@@ -199,14 +200,13 @@ dgenies.run.get_nedeed_files = function(job_list){
 };
 
 
-
 /**
  * Transform the string describing a job into a Job object
  * TODO: malformed part of the line to be stored in an error list (position + substr)
  * @param {string} str a line describing a job
  * @returns {object} a dictionnary
  **/
-dgenies.run.line_to_job_list = function(str){
+dgenies.run.line_to_job = function(str){
     let result = {}
     let array = str.trim().split(/[ \t]+/).map(
         // each line is transformed in list of key=value
@@ -216,6 +216,21 @@ dgenies.run.line_to_job_list = function(str){
     for(let e of array) {
         if(e !== null) {
             result[e.groups.key] = e.groups.value
+        }
+    }
+    // adjust align to alignfile key used as entry
+    if ("align" in result){
+        result["alignfile"] = result["align"]
+        delete result["align"];
+    }
+    // add the file type (url or local)
+    for (let k of dgenies.run.KEYS_FOR_FILES){
+        if (`${k}` in result){
+            if(dgenies.run.check_url(result[`${k}`])){
+                result[`${k}_type`] = "url"
+            } else {
+                result[`${k}_type`] = "local"
+            }
         }
     }
     return result
@@ -232,19 +247,21 @@ dgenies.run.read_batch = function() {
     // resulting job list
     if (f) {
         reader.onload = function(e) {
-            let job_array = e.target.result.replace(/[ \t]+/g, "\t")
+            // We normalize seperators and blank lines
+            let job_array = e.target.result.trim()
+                                           .replace(/[ \t]+/g, "\t")
                                            .split(/[\n\r]+/);
+            // We limit the number of jobs
             if (job_array.length > dgenies.run.max_jobs) {
                 dgenies.notify(`Batch file too long, only ${dgenies.run.max_jobs} first jobs were considered!`, "danger", 3000);
+                job_array = job_array.slice(0, dgenies.run.max_jobs);
             }
-            job_array = job_array.slice(0, dgenies.run.max_jobs);
-                                           
-            let text = job_array.join("\n")
-            $("#batch_content").text(text);
+            // We fill the html field with processed file content
+            $("#batch_content").text(job_array.join("\n"));
             // We generate job list from job_array
-            dgenies.run.job_list = job_array.map(dgenies.run.line_to_job_list).filter(
+            dgenies.run.job_list = job_array.map(dgenies.run.line_to_job).filter(
                 obj => !(obj && Object.keys(obj).length === 0 && obj.constructor === Object));
-            dgenies.run.files_in_batch = dgenies.run.get_nedeed_files(dgenies.run.job_list)
+            dgenies.run.files_in_batch = dgenies.run.get_local_files(dgenies.run.job_list)
             dgenies.run.check_files();
             dgenies.run.refresh_listing();
           };
@@ -278,9 +295,10 @@ dgenies.run.restore_form = function () {
  * @returns {boolean} true if there is a next upload, else false and run submit
  */
 dgenies.run.upload_next = function () {
-    let next = dgenies.run.files.pop();
-    while (next === undefined && dgenies.run.files.length > 0) {
-        next = dgenies.run.files.pop();
+    let next = dgenies.run.files_to_upload.pop();
+    console.log(next)
+    while (next === undefined && dgenies.run.files_to_upload.length > 0) {
+        next = dgenies.run.files_to_upload.pop();
     }
     if (next !== undefined) {
         next.submit();
@@ -322,7 +340,7 @@ dgenies.run.allowed_file = function (filename, formats) {
 };
 
 /**
- * Init file upload forms staff
+ * Init file upload forms stuff
  *
  * @param {string} ftype type of file (query, target, ...)
  * @param {array} formats valid formats
@@ -388,19 +406,13 @@ dgenies.run._init_multiple_fileupload = function(formats) {
         add: function (e, data) {
             console.log(data)
             // We add the file
-            dgenies.run.file_listing.push(data);
+            dgenies.run.files_for_batch.push(data);
 
             console.log(data)
             // We check the against the batch file
             dgenies.run.check_files();
             // We refresh the file listing
             dgenies.run.refresh_listing();
-        },
-        done: function (e, data) {
-            console.log('Upload finished.');
-        },
-        success: function (data, success) {
-            console.log(data["response"]);
         },
         drop: function (e, data) {
             $.each(data.files, function (index, file) {
@@ -411,6 +423,29 @@ dgenies.run._init_multiple_fileupload = function(formats) {
             $.each(data.files, function (index, file) {
                 console.log('Selected file: ' + file.name);
             });
+        },
+        done: function (e, data) {
+            console.log('Upload finished.');
+        },
+        success: function (data, success) {
+            console.log(data)
+            if (data["success"] !== "OK") {
+                dgenies.notify("message" in data ? data["message"]: `An error has occured when uploading multiple file. Please contact us to report the bug!`,
+            "danger");
+                dgenies.run.enable_form();
+            }
+            else if ("error" in data["files"][0]) {
+                dgenies.run.add_error("Query file: " + data["files"][0]["error"], "error");
+                dgenies.run.enable_form();
+            }
+            else {
+                dgenies.run.upload_next();
+            }
+        },
+        error: function (data, success) {
+            dgenies.notify("message" in data ? data["message"]: `An error has occured when uploading multiple files. Please contact us to report the bug!`,
+                    "danger");
+            dgenies.run.enable_form();
         }
     });
 };
@@ -447,15 +482,9 @@ dgenies.run.init_fileuploads = function () {
         dgenies.run.jq_remove_from_listing($('#listing').find('tr.unused-file'))
     })
 
-    // We set behavior of 'remove selected' button
-    $(":button[id='delete-selected-btn']").click(function() {
-        // We select index of checked boxes
-        dgenies.run.jq_remove_from_listing($('#listing').find('input[type="checkbox"]:checked').parents("tr"))
-    })
-
     // We set behavior of 'clear all' button
     $(":button[id='delete-all-btn']").click(function() {
-        dgenies.run.file_listing = new Array()
+        dgenies.run.files_for_batch = new Array()
         dgenies.run.refresh_listing()
     })
 
@@ -729,6 +758,7 @@ dgenies.run.reset_file_form = function(tab, except_backup=false) {
     });
 };
 
+
 /**
  * Do form submit staff (done once all uploads are done successfully)
  */
@@ -738,10 +768,12 @@ dgenies.run.do_submit = function () {
         "email": dgenies.mode === "webserver" ? $("input#email").val() : "",
         "s_id": dgenies.run.s_id
     };
+    let jobs = [];
     let tab = $("#tabs .tab.active").attr("id");
     if (tab === "tab1") {
+        data["type"] = "align";
         tool = $("input[name=tool]:checked").val()
-        data = Object.assign({}, data, {
+        jobs.push(Object.assign({}, data, {
             "query": $("input#query").val(),
             "query_type": $("select.query").find(":selected").text().toLowerCase(),
             "target": $("input#target").val(),
@@ -751,10 +783,11 @@ dgenies.run.do_submit = function () {
                                   function(element) {
                                       return $(element).val();
                                   })
-        });
+        }));
     }
     else if (tab === "tab2") {
-        data = Object.assign({}, data, {
+        data["type"] = "plot";
+        jobs.push(Object.assign({}, data, {
             "alignfile": $("input#alignfile").val(),
             "alignfile_type": $("select.alignfile").find(":selected").text().toLowerCase(),
             "query": $("input#queryidx").val(),
@@ -763,15 +796,19 @@ dgenies.run.do_submit = function () {
             "target_type": $("select.targetidx").find(":selected").text().toLowerCase(),
             "backup": $("input#backup").val(),
             "backup_type": $("select.backup").find(":selected").text().toLowerCase(),
-        });
+        }));
     }
     else { // tab3
-        data = Object.assign({}, data, {
-            "batch": $("input#batch").val(),
-            "batch_type": $("select.batch").find(":selected").text().toLowerCase(),
-        });
+        data["type"] = "batch";
+        jobs = dgenies.run.job_list
     }
+    console.log(jobs)
+    data = Object.assign({}, data, {
+            "jobs": jobs,
+            "nb_jobs" : jobs.length
+        });
     $("div#uploading-loading").html("Submitting form...");
+    console.log(data);
     dgenies.post("/launch_analysis",
         data,
         function (data, status) {
@@ -878,9 +915,19 @@ dgenies.run.valid_form = function () {
     /* TAB 3 */
     else {
         //Check input target:
-        if ($("input#batch").val().length === 0) {
+        if ($("input#bname").val().length === 0) {
             $("label.file-batch").addClass("error");
             dgenies.run.add_error("Batch file is required!");
+            has_errors = true;
+        }
+        // Check that no file in batch file is missing
+        if (dgenies.run.missing_files.length > 0) {
+            dgenies.run.add_error("Some input files in batch file are missing!");
+            has_errors = true;
+        }
+        // Check that no file in multiple upload field is duplicated
+        if (dgenies.run.file_states.some((element) => element === "duplicated")) {
+            dgenies.run.add_error("Some input files are duplicated!");
             has_errors = true;
         }
     }
@@ -987,28 +1034,38 @@ dgenies.run.check_url = function (url) {
 };
 
 /**
- * Start upload stuff
+ * Check upload stuff
  *
  * @param ftype type of file (query, target, ...)
  * @param fname fasta name
- * @returns {boolean} true if has uploads
+ * @param from_batch if file is from batch tab (true), else false
  * @private
  */
-dgenies.run._start_upload = function(ftype, fname) {
+dgenies.run._has_upload = function(ftype, fname, is_multiple = false) {
     let has_uploads = false;
-    let fasta_type = parseInt($(`select.${ftype}`).val());
-    let fasta_val = $(`input#${ftype}`).val();
-    if (fasta_type === 0 && fasta_val.length > 0) {
-        $(`button#button-${ftype}`).hide();
-        dgenies.run.show_loading(ftype);
-        has_uploads = true;
-    }
-    else {
-        dgenies.run.files[dgenies.run.files_nb[ftype]] = undefined;
-        if (fasta_val !== "" && !dgenies.run.check_url(fasta_val)) {
-            dgenies.run.add_error(`${fname} file: invalid URL`, "error");
-            dgenies.run.enable_form();
-            return false;
+    if (! is_multiple) {
+        let fasta_type = parseInt($(`select.${ftype}`).val());
+        let fasta_val = $(`input#${ftype}`).val();
+        if (fasta_type === 0 && fasta_val.length > 0) {
+            $(`button#button-${ftype}`).hide();
+            dgenies.run.show_loading(ftype);
+            has_uploads = true;
+        }
+        else {
+            dgenies.run.files[dgenies.run.files_nb[ftype]] = undefined;
+            if (fasta_val !== "" && !dgenies.run.check_url(fasta_val)) {
+                dgenies.run.add_error(`${fname} file: invalid URL`, "error");
+                dgenies.run.enable_form();
+                return false;
+            }
+        }
+    } else {
+        // missing and duplicated files were checked before
+        if (dgenies.run.file_states.some((element) => element === "available")){
+            has_uploads = true;
+            // TODO: hide/deactivate delete buttons?
+    
+            // TODO: show progress bar.
         }
     }
     return has_uploads;
@@ -1018,26 +1075,44 @@ dgenies.run._start_upload = function(ftype, fname) {
  * Launch upload of files
  */
 dgenies.run.start_uploads = function() {
+    /* The upload logic is the following:
+        - First, depending to the current active tab, we set the input field that will be used as upload sources
+        - Second, we check if each entry and is either a file or an url. On failure of one, the upload is aborded.
+          If everything is an url, nothing needs to be uploaded
+        - Thrid, we ask for upload. The server will validate if upload is possible. It will manage the parallel upload.
+          Client side will use Timers to reiterate upload demands. When no more files are needed to upload, the form will be submitted.
+     */
     let has_uploads = false;
     let tab = $("#tabs .tab.active").attr("id");
     let inputs = [];
     if (tab === "tab1") {
         dgenies.run.reset_file_form("tab2");
         dgenies.run.reset_file_form("tab3");
-        inputs = [["query", "Query"], ["target", "Target"]];
+        inputs = [["query", "Query", false], ["target", "Target", false]];
+        dgenies.run.files_to_upload = dgenies.run.files;
     }
     else if (tab === "tab2") {
         dgenies.run.reset_file_form("tab1");
         dgenies.run.reset_file_form("tab3");
-        inputs = [["queryidx", "Query"], ["targetidx", "Target"], ["alignfile", "Alignment"], ["backup", "Backup"]];
+        inputs = [["queryidx", "Query", false], ["targetidx", "Target", false], ["alignfile", "Alignment", false], ["backup", "Backup", false]];
+        dgenies.run.files_to_upload = dgenies.run.files;
     }
     else {
         dgenies.run.reset_file_form("tab1");
         dgenies.run.reset_file_form("tab2");
-        inputs = [["batch", "Batch"]];
+        // TODO add url checking?
+        inputs = [["batch-multiple-files-upload", `File listing`, true]];
+        dgenies.run.files_to_upload = []
+        for (let i=0; i<dgenies.run.files_for_batch.length; i++){
+            if (dgenies.run.file_states[i] === "available") {
+                dgenies.run.files_to_upload.push(dgenies.run.files_for_batch[i])
+            }
+        } 
     }
+    // We check if there is some files to upload
+    console.log(dgenies.run.files_to_upload)
     $.each(inputs, function(i, input) {
-        let test_has_uploads = dgenies.run._start_upload(input[0], input[1]);
+        let test_has_uploads = dgenies.run._has_upload(input[0], input[1], input[2]);
         has_uploads = has_uploads || test_has_uploads;
     });
     if (dgenies.run.valid) {

@@ -5,7 +5,6 @@
     <script type="text/x-tmpl" id="tmpl-listing">
         [% for (var i=0; i<o.length; i++) { %]
         <tr class="[%=o[i].state%]-file" data-index="[%=i%]">
-            <td><input type="checkbox"></td>
             <td>[%=o[i].name%]</td>
             <td>[%=o[i].size%]</td>
             <td>[%=o[i].state%]</td>
@@ -361,34 +360,7 @@
                             {# Tab 3 #}
                             <tr class="batch tabx tab3">
                                 {% set fnote_tab = fnote %}
-                                <!--
-                                <td>
-                                    <label for="file_batch" class="file-batch">Batch file<sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup>{% set fnote_tab = fnote_tab + 1 %}</label>
-                                </td>
-                                <td class="input-group">
-                                    <select class="select-type-input batch">
-                                        <option value="0">Local</option>
-                                        <option value="1">Url</option>
-                                    </select>
 
-                                    <div class="batch-label in-label" id="dropzone-batch">
-                                        <div id="progress-batch" class="progress">
-                                            <div class="bar" style="width: 0%;"></div>
-                                        </div>
-                                        <input id="batch" name="batch" class="form-control show-file" type="text" value="" readonly/>
-                                    </div>
-
-                                    <button class="btn btn-file" type="button" id="button-batch" title="Select a file">
-                                        <span class="glyphicon glyphicon-folder-open"></span>&nbsp
-                                    </button>
-                                    <div class="loading-file batch" style="display: none"></div>
-                                    <div class="upload-success batch" style="display: none"></div>
-                                    <div class="file-size batch"></div>
-                                </td>
-                            </tr>
-                            
-                            <tr class="batch tabx tab3">
-                                -->
                                 <td style="vertical-align: top">
                                     <label for="bname">Batch file</label>
                                 </td>
@@ -414,7 +386,6 @@
                                                 <button type="button" id="multiple-files-btn" class="btn btn-success fileinput-button">
                                                     <i class="glyphicon glyphicon-plus"></i>
                                                     <span>Add files...</span>
-                                                    <!-- <input id="batch-file-upload" type="file" name="files[]" data-url="/upload" multiple/> -->
                                                 </span>
                                             </div>
                                             <div class="right-wrapper">
@@ -422,10 +393,6 @@
                                                     <i class="glyphicon glyphicon-trash"></i>
                                                     <span>Remove unused</span>
                                                 </button>
-                                                <!-- <button type="button" id="delete-selected-btn" class="btn btn-warning cancel delete-btn">
-                                                    <i class="glyphicon glyphicon-trash"></i>
-                                                    <span>Remove selected</span>
-                                                </button> -->
                                                 <button type="button" id="delete-all-btn" class="btn btn-danger delete delete-btn">
                                                     <i class="glyphicon glyphicon-trash"></i>
                                                     <span>Clear All</span>
@@ -440,7 +407,6 @@
                                             <table id="listing" aria-describedby="listing-desc">
                                                 <thead>
                                                     <tr>
-                                                        <th scope="col"></th>
                                                         <th scope="col">File</th>
                                                         <th scope="col">Size</th>
                                                         <th scope="col">State</th>
@@ -510,7 +476,6 @@
                     <button class="tab3 tabx" type="button" id="view_batch">
                         <a href="/example/batch" rel="modal:open" style="text-decoration: none; color: inherit;">View example</a>
                     </button>
-                    <!-- <button class="tab3 tabx" type="button" id="dl_batch">Download example</button> -->
                 {% endif %}
             </div>
             <div class="footnotes">
@@ -550,7 +515,7 @@
             <input type="file" name="file-targetidx" class="file-targetidx" data-url="/upload"/>
             <input type="file" name="file-queryidx" class="file-queryidx" data-url="/upload"/>
             <input type="file" name="file-backup" class="file-backup" data-url="/upload"/>
-            <input type="file" name="file-batch" class="file-batch" data-url="/upload"/>
+            <!-- <input type="file" name="file-batch" class="file-batch" data-url="/upload"/> -->
             <input id="batch-multiple-files-upload" type="file" name="multiple-files" class="multiple-files" data-url="/upload" multiple/>
         </div>
     </form>

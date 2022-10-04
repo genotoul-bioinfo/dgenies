@@ -556,26 +556,21 @@ textarea {
   padding-right: 5px;
 }
 
-#listing td:first-child, #listing th:first-child {
-	text-align: center;
-	width: 32px;
-}
-
-#listing td:nth-child(2), #listing th:nth-child(2) {
+#listing td:nth-child(1), #listing th:nth-child(1) {
 	text-align: left;
 }
 
-#listing td:nth-child(3), #listing th:nth-child(3) {
+#listing td:nth-child(2), #listing th:nth-child(2) {
 	text-align: right;
 	width: 100px;
 }
 
-#listing td:nth-child(4), #listing th:nth-child(4) {
+#listing td:nth-child(3), #listing th:nth-child(3) {
 	text-align: center;
 	width: 60px;
 }
 
-#listing td:nth-child(5),#listing th:nth-child(4) {
+#listing td:nth-child(4),#listing th:nth-child(4) {
 	text-align: center;
 	width: 60px;
 }
