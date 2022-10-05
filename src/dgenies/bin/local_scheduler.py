@@ -27,9 +27,8 @@ if config_reader.drmaa_lib_path is not None and config_reader.batch_system_type 
     except ImportError:
         pass
 
-NB_RUN = config_reader.local_nb_runs
-NB_PREPARE = config_reader.nb_data_prepare
-
+NB_RUN = config_reader.local_nb_runs  # Max number of jobs running locally
+NB_PREPARE = config_reader.nb_data_prepare  # Max number of data preparing jobs launched locally
 DEBUG = config_reader.debug
 
 LOG_FILE = "stdout"
@@ -126,7 +125,7 @@ def get_prep_scheduled_jobs():
     """
     Get list of jobs ready to be prepared (all data is downloaded and parsed)
 
-    :return: list of jobs
+    :return: list of (job id, batch type)
     :rtype: list
     """
     with Job.connect():
@@ -331,42 +330,63 @@ if __name__ == '__main__':
         parse_uploads_asks()
         _printer("")
         _printer("Checking jobs...")
+        # jobs ready to be run locally
         scheduled_jobs_local = get_scheduled_local_jobs()
+        # jobs ready to be run on cluster
         scheduled_jobs_cluster = get_scheduled_cluster_jobs()
+        # jobs ready to be prepared
         prep_scheduled_jobs = get_prep_scheduled_jobs()
         _printer("Waiting for preparing:", len(prep_scheduled_jobs))
+        # number of jobs in preparation for local run
         nb_preparing_jobs = get_preparing_jobs_nb()
+        # number of jobs in preparation for cluster run
         nb_preparing_jobs_cluster = get_preparing_jobs_cluster_nb()
         _printer("Preparing:", nb_preparing_jobs, "(local)", "".join([str(nb_preparing_jobs_cluster[0]),
                  "[", str(nb_preparing_jobs_cluster[1]), "]"]), "(cluster)")
         _printer("Scheduled:", len(scheduled_jobs_local), "(local),", len(scheduled_jobs_cluster), "(cluster)")
+        # started jobs locally and on cluster
         started_jobs, cluster_started_jobs = parse_started_jobs()
         nb_started = len(started_jobs)
         _printer("Started:", nb_started, "(local),", len(cluster_started_jobs), "(cluster)")
+
+        # Managing preparing jobs
         nj = 0
+        # Local waiting list
         local_waiting_jobs = []
+        # We scan the list of 'waiting to prepare' jobs for launching them until limits are reached
         while nj < len(prep_scheduled_jobs):
             job_batch_type = prep_scheduled_jobs[nj][1]
+            # We launch local ones util the local limit is reach and all cluster ones
             if nb_preparing_jobs < NB_PREPARE or job_batch_type != "local":
                 prepare_job(prep_scheduled_jobs[nj][0])
                 if job_batch_type == "local":
                     nb_preparing_jobs += 1
                 del prep_scheduled_jobs[nj]
             else:
+                # We add remaining local ones into local waiting list
                 if job_batch_type == "local":
                     local_waiting_jobs.append(prep_scheduled_jobs[nj][0])
                 nj += 1
+        # If local waiting limit is reached, switch waiting jobs to cluster
         if config_reader.batch_system_type != "local" and len(local_waiting_jobs) > config_reader.max_wait_local:
             for id_job in local_waiting_jobs[config_reader.max_wait_local:]:
                 move_job_to_cluster(id_job)
+
+        # Managing scheduled jobs
+        # We start local scheduled jobs until limit of number running jobs is reached
         while len(scheduled_jobs_local) > 0 and nb_started < NB_RUN:
             start_job(scheduled_jobs_local.pop(0))
             nb_started += 1
+
+        # If local running limit is reached, switch jobs to cluster
         if config_reader.batch_system_type != "local" and len(scheduled_jobs_local) > config_reader.max_wait_local:
             for id_job in scheduled_jobs_local[config_reader.max_wait_local:]:
                 move_job_to_cluster(id_job)
+
+        # Start scheduled jobs
         for job in scheduled_jobs_cluster:
             start_job(job["job_id"], job["batch_type"])
+
         # Wait before return
         _printer("Sleeping...")
         time.sleep(15)

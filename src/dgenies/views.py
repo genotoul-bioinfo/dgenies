@@ -52,6 +52,7 @@ def main():
     Index page
     """
     if MODE == "webserver":
+        # We get the first picture in gallery if exists
         pict = Gallery.select().order_by("id")
         if len(pict) > 0:
             pict = pict[0].picture
@@ -67,6 +68,7 @@ def run():
     """
     Run page
     """
+    # Message banner part
     inforun = None
     inforun_file = os.path.join(config_reader.config_dir, ".inforun")
     if os.path.exists(inforun_file):
@@ -76,6 +78,8 @@ def run():
         except json.JSONDecodeError:
             print("Unable to parse inforun file. Ignoring it.", file=sys.stderr)
             pass
+
+    # We get the list of tools and their options
     tools = Tools().tools
     tools_names = sorted(list(tools.keys()), key=lambda x: (tools[x].order, tools[x].name))
     tools_ava = {}
@@ -83,6 +87,8 @@ def run():
     for tool_name, tool in tools.items():
         tools_ava[tool_name] = 1 if tool.all_vs_all is not None else 0
         tools_options[tool_name] = tool.options
+
+    # We create working dirs
     if MODE == "webserver":
         with Session.connect():
             s_id = Session.new()
@@ -146,6 +152,7 @@ def launch_analysis():
     else:
         upload_folder = request.form["s_id"]
 
+    # We get the distinct client's message elements
     id_job = request.form["id_job"]
     email = request.form["email"]
     file_query = request.form["query"] if "query" in request.form else ""
@@ -161,46 +168,60 @@ def launch_analysis():
     batch = request.form["batch"] if "batch" in request.form else None
     batch_type = request.form["batch_type"] if "batch_type" in request.form else None
 
-    # Check form:
+    # Check form
+    # Client side must have sent correct message depending on the job type.
+    # Here we check that everything was correctly transmitted.
+    # Convention:
+    # - an element set to None is not checked
+    # - an element set to "" is checked but empty.
     form_pass = True
     errors = []
 
+    # No alignfile_type given for alignfile
     if alignfile is not None and alignfile_type is None:
         errors.append("Server error: no alignfile_type in form. Please contact the support")
         form_pass = False
 
+    # No backup_type given for backup
     if backup is not None and backup != "" and (backup_type is None or backup_type == ""):
         errors.append("Server error: no backup_type in form. Please contact the support")
         form_pass = False
 
     if backup is not None and backup != "":
+        # if a backup file is given, this is a plot job. Exclusive plot entries from plot form are erased.
         alignfile = ""
         file_query = ""
         file_target = ""
-    elif batch is not None:
-        backup = None
+    elif batch is not None and batch != "":
+        # if a batch file is given, this is a batch job. All entries from other forms are erased.
+        backup = None # Set to None instead of ""
         alignfile = ""
         file_query = ""
         file_target = ""
     else:
+        # the last choice is and new alignment
         backup = None
         if file_target == "":
             errors.append("No target fasta selected")
             form_pass = False
 
+    # We look that the chosen tool is available.
     if tool is not None and tool not in Tools().tools:
         errors.append("Tool unavailable: %s" % tool)
         form_pass = False
 
+    # We check that the tool options are always available.
     valid_options, options = get_tools_options(tool, tool_options)
     if not valid_options:
         errors.append("Chosen options unavailable")
         form_pass = False
 
+    # A job must have an id.
     if id_job == "":
         errors.append("Id of job not given")
         form_pass = False
 
+    # An email is required in webserver mode
     if MODE == "webserver":
         if email == "":
             errors.append("Email not given")
@@ -208,7 +229,7 @@ def launch_analysis():
         elif not re.match(r"^.+@.+\..+$", email):
             # The email regex is simple because checking email address is not simple (RFC3696).
             # Sending an email to the address is the most reliable way to check if the email address is correct.
-            # The only constrains we set on the email address are:
+            # The only constraints we set on the email address are:
             # - to have at least one @ in it, with something before and something after
             # - to have something.tdl syntax for email server, as it will be used over Internet (not mandatory in RFC)
             errors.append("Email is invalid")
@@ -216,7 +237,7 @@ def launch_analysis():
 
     # Form pass
     if form_pass:
-        # Get final job id:
+        # Get final job id (sanitize and avoid collision):
         id_job = re.sub('[^A-Za-z0-9_\-]+', '', id_job.replace(" ", "_"))
         id_job_orig = id_job
         i = 2
@@ -227,11 +248,13 @@ def launch_analysis():
         folder_files = os.path.join(APP_DATA, id_job)
         os.makedirs(folder_files)
 
-        # Save files:
+        # Generate Fasta objects:
+        # - Query file
         query = None
         if file_query != "":
             example = False
             if file_query.startswith("example://"):
+                # File path is local example file
                 example = True
                 query_path = config_reader.example_query
                 query_name = os.path.basename(query_path)
@@ -239,6 +262,8 @@ def launch_analysis():
             else:
                 query_name = os.path.splitext(file_query.replace(".gz", ""))[0] if file_query_type == "local" else None
                 if file_query_type == "local":
+                    # Sanitize filename
+                    # TODO: use secure_filename instead
                     query_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder, file_query)
                     if os.path.exists(query_path):
                         if " " in file_query:
@@ -250,8 +275,11 @@ def launch_analysis():
                         errors.append("Query file not correct!")
                         form_pass = False
                 else:
+                    # File path is file url
                     query_path = file_query
             query = Fasta(name=query_name, path=query_path, type_f=file_query_type, example=example)
+
+        # - Target file
         example = False
         target = None
         if file_target != "":
@@ -266,6 +294,7 @@ def launch_analysis():
                 if file_target_type == "local":
                     target_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder, file_target)
                     if os.path.exists(target_path):
+                        # Sanitize file name
                         if " " in target_path:
                             new_target_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder,
                                                            file_target.replace(" ", "_"))
@@ -278,9 +307,13 @@ def launch_analysis():
                     target_path = file_target
             target = Fasta(name=target_name, path=target_path, type_f=file_target_type, example=example)
 
+        # An alignment will be done if ".align" file exists (i.e. align job)
+        # Append when no alignfile nor backup file is given (side effect that backup was set to None if not used)
+        # TODO: move this part outside fasta file creation
         if alignfile is not None and alignfile != "" and backup is not None:
             Path(os.path.join(folder_files, ".align")).touch()
 
+        # - Align file
         align = None
         if alignfile is not None and alignfile != "":
             alignfile_name = os.path.splitext(alignfile)[0] if alignfile_type == "local" else None
@@ -291,6 +324,7 @@ def launch_analysis():
                 form_pass = False
             align = Fasta(name=alignfile_name, path=alignfile_path, type_f=alignfile_type)
 
+        # - Backup file
         bckp = None
         if backup is not None:
             example = backup.startswith("example://")
@@ -309,6 +343,7 @@ def launch_analysis():
 
         batch_path = None
 
+        # - Batch file
         if batch is not None:
             example = batch.startswith("example://")
             if example:
