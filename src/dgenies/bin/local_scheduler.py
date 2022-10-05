@@ -224,6 +224,8 @@ def parse_started_jobs():
                             cluster_jobs_started.append(job.id_job)
                 else:
                     cluster_jobs_started.append(job.id_job)
+    # We update batch jobs status as state of individual jobs was just updated
+    update_batch_status()
     return jobs_started, cluster_jobs_started
 
 
@@ -339,7 +341,6 @@ if __name__ == '__main__':
                  "[", str(nb_preparing_jobs_cluster[1]), "]"]), "(cluster)")
         _printer("Scheduled:", len(scheduled_jobs_local), "(local),", len(scheduled_jobs_cluster), "(cluster)")
         started_jobs, cluster_started_jobs = parse_started_jobs()
-        update_batch_status()
         nb_started = len(started_jobs)
         _printer("Started:", nb_started, "(local),", len(cluster_started_jobs), "(cluster)")
         nj = 0
