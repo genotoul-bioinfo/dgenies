@@ -167,8 +167,8 @@ def update_batch_status():
             if job.status == "failed":
                 job.error = "<p>One of your job has failed.</p>"
             job.save()
-            if status in {"success", "succeed", "failed"} and config_reader.send_mail_status:
-                j.send_mail_post()
+            if status in {"success", "succeed", "failed"}:
+                j.send_mail_post_if_allowed()
 
 
 def parse_started_jobs():

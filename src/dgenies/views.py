@@ -1219,7 +1219,7 @@ def send_mail(id_res):
         os.remove(key_file)
         job_mng = JobManager(id_job=id_res, mailer=mailer)
         job_mng.set_inputs_from_res_dir()
-        job_mng.send_mail()
+        job_mng.send_mail_if_allowed()
         return "OK"
     else:
         abort(403)

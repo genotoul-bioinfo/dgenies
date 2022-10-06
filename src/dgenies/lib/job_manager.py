@@ -414,9 +414,10 @@ class JobManager:
         :return: True is sending a mail is allowed, False else
         :rtype: bool
         """
-        return not os.path.exists(os.path.join(self.output_dir, ".no_mail"))
+        return MODE == "webserver" and self.config.send_mail_status \
+            and not os.path.exists(os.path.join(self.output_dir, ".no_mail"))
 
-    def send_mail(self):
+    def send_mail_if_allowed(self):
         """
         Send mail
         """
@@ -445,6 +446,21 @@ class JobManager:
                                       subject=self.get_mail_subject(status),
                                       message=self.get_mail_content(status, target_name, query_name),
                                       message_html=self.get_mail_content_html(status, target_name, query_name))
+
+    def send_mail_post_if_allowed(self):
+        """
+        Send mail using POST url (if there is no access to mailer like on cluster nodes)
+        """
+        if self.is_send_mail_allowed():
+            key = Functions.random_string(15)
+            key_file = os.path.join(self.config.app_data, self.id_job, ".key")
+            with open(key_file, "w") as k_f:
+                k_f.write(key)
+            data = parse.urlencode({"key": key}).encode()
+            req = request.Request(self.config.web_url + "/send-mail/" + self.id_job, data=data)
+            resp = request.urlopen(req)
+            if resp.getcode() != 200:
+                print("Job %s: Send mail failed!" % self.id_job)
 
     def search_error(self):
         """
@@ -1173,20 +1189,6 @@ class JobManager:
                     job.save()
         return correct, error_set, all_downloaded
 
-    def send_mail_post(self):
-        """
-        Send mail using POST url (if there is no access to mailer)
-        """
-        key = Functions.random_string(15)
-        key_file = os.path.join(self.config.app_data, self.id_job, ".key")
-        with open(key_file, "w") as k_f:
-            k_f.write(key)
-        data = parse.urlencode({"key": key}).encode()
-        req = request.Request(self.config.web_url + "/send-mail/" + self.id_job, data=data)
-        resp = request.urlopen(req)
-        if resp.getcode() != 200:
-            print("Job %s: Send mail failed!" % self.id_job)
-
     def run_job_in_thread(self, batch_system_type="local"):
         """
         Run a job asynchronously into a new thread
@@ -1233,8 +1235,7 @@ class JobManager:
                                          args=args,
                                          log_out=self.logs,
                                          log_err=self.logs)
-        if not success and MODE == "webserver" and self.config.send_mail_status:
-            self.send_mail_post()
+        self.send_mail_post_if_allowed()
         return success
 
     def prepare_data_local(self):
@@ -1279,8 +1280,7 @@ class JobManager:
                     filter_f.filter()
                 else:
                     self.set_job_status("fail", "<br/>".join(["Query fasta file is not valid:", error, error_tail]))
-                    if self.config.send_mail_status:
-                        self.send_mail_post()
+                    self.send_mail_post_if_allowed()
                     return False
             uncompressed = None
             if self.target.get_path().endswith(".gz"):
@@ -1314,8 +1314,7 @@ class JobManager:
                     except FileNotFoundError:
                         pass
                 self.set_job_status("fail", "<br/>".join(["Target fasta file is not valid:", error, error_tail]))
-                if self.config.send_mail_status:
-                    self.send_mail_post()
+                self.send_mail_post_if_allowed()
                 return False
             ptime.write(str(round(time.time())) + "\n")
             self.set_job_status("prepared")
@@ -1348,12 +1347,8 @@ class JobManager:
             os.remove(self.target.get_path())
 
         self.align.set_path(self.paf)
-
         self.set_job_status("success")
-
-        if MODE == "webserver" and self.config.send_mail_status:
-            self.send_mail_post()
-
+        self.send_mail_post_if_allowed()
         return True
 
     def prepare_dotplot_cluster(self, batch_system_type):
@@ -1400,9 +1395,8 @@ class JobManager:
             if self.query is None:
                 shutil.copy(self.idx_t, self.idx_q)
             return self._end_of_prepare_dotplot()
-        elif MODE == "webserver" and self.config.send_mail_status:
-            self.send_mail_post()
 
+        self.send_mail_post_if_allowed()
         return False
 
     def prepare_dotplot_local(self):
@@ -1447,8 +1441,7 @@ class JobManager:
         job_param_list, error_msgs = read_batch_file(self.batch.get_path())
         if error_msgs:
             self.set_job_status("fail", "You provided a malformed batch file; " + error_msgs)
-            if MODE == "webserver" and self.config.send_mail_status:
-                self.send_mail_post()
+            self.send_mail_post_if_allowed()
             return False
         # We create a queue in order to run jobs sequentially in standalone mode.
         self.set_job_status("preparing")
@@ -1671,8 +1664,7 @@ class JobManager:
 
                                 # Analytics:
                                 self._set_analytics_job_status("success")
-                                if self.config.send_mail_status:
-                                    self.send_mail_post()
+                                self.send_mail_post_if_allowed()
 
                             else:
                                 self.set_status_standalone(status)
@@ -1821,8 +1813,7 @@ class JobManager:
                     if not success:
                         self.set_job_status("fail", "Backup file is not valid. If it is unattended, please contact the "
                                                     "support.")
-                        if MODE == "webserver" and self.config.send_mail_status:
-                            self.send_mail()
+                        self.send_mail_if_allowed()
                         return False
                 status = "waiting"
                 if MODE == "webserver":
@@ -1844,8 +1835,7 @@ class JobManager:
                         job.save()
                     else:
                         self.set_status_standalone(status, error)
-                if MODE == "webserver" and self.config.send_mail_status:
-                    self.send_mail()
+                self.send_mail_if_allowed()
 
     def start_job(self):
         """
@@ -1866,8 +1856,7 @@ class JobManager:
                     job.status = "fail"
                     job.error = error
                     job.save()
-                    if self.config.send_mail_status:
-                        self.send_mail()
+                    self.send_mail_if_allowed()
             else:
                 self.set_status_standalone("fail", error)
 
@@ -1974,6 +1963,7 @@ class JobManager:
         if not os.path.exists(self.output_dir) or not os.path.isdir(self.output_dir):
             return False, "Job does not exists"
         if MODE == "webserver":
+            # Forbid to delete job existing in gallery
             try:
                 job = Job.get(id_job=self.id_job)
             except DoesNotExist:
