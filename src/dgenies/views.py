@@ -16,7 +16,7 @@ from dgenies.lib.paf import Paf
 from dgenies.lib.job_manager import JobManager
 from dgenies.lib.functions import Functions, ALLOWED_EXTENSIONS
 from dgenies.lib.upload_file import UploadFile
-from dgenies.lib.fasta import Fasta
+from dgenies.lib.datafile import DataFile
 from dgenies.lib.latest import Latest
 from dgenies.tools import Tools
 from markdown import Markdown
@@ -248,7 +248,7 @@ def launch_analysis():
         folder_files = os.path.join(APP_DATA, id_job)
         os.makedirs(folder_files)
 
-        # Generate Fasta objects:
+        # Generate DataFile objects:
         # - Query file
         query = None
         if file_query != "":
@@ -277,7 +277,7 @@ def launch_analysis():
                 else:
                     # File path is file url
                     query_path = file_query
-            query = Fasta(name=query_name, path=query_path, type_f=file_query_type, example=example)
+            query = DataFile(name=query_name, path=query_path, type_f=file_query_type, example=example)
 
         # - Target file
         example = False
@@ -305,7 +305,7 @@ def launch_analysis():
                         form_pass = False
                 else:
                     target_path = file_target
-            target = Fasta(name=target_name, path=target_path, type_f=file_target_type, example=example)
+            target = DataFile(name=target_name, path=target_path, type_f=file_target_type, example=example)
 
         # An alignment will be done if ".align" file exists (i.e. align job)
         # Append when no alignfile nor backup file is given (side effect that backup was set to None if not used)
@@ -322,7 +322,7 @@ def launch_analysis():
             if alignfile_type == "local" and not os.path.exists(alignfile_path):
                 errors.append("Alignment file not correct!")
                 form_pass = False
-            align = Fasta(name=alignfile_name, path=alignfile_path, type_f=alignfile_type)
+            align = DataFile(name=alignfile_name, path=alignfile_path, type_f=alignfile_type)
 
         # - Backup file
         bckp = None
@@ -339,7 +339,7 @@ def launch_analysis():
                 if backup_type == "local" and not os.path.exists(backup_path):
                     errors.append("Backup file not correct!")
                     form_pass = False
-            bckp = Fasta(name=backup_name, path=backup_path, type_f=backup_type, example=example)
+            bckp = DataFile(name=backup_name, path=backup_path, type_f=backup_type, example=example)
 
         batch_path = None
 
@@ -357,7 +357,7 @@ def launch_analysis():
                 if batch_type == "local" and not os.path.exists(batch_path):
                     errors.append("Batch file not correct!")
                     form_pass = False
-            batch = Fasta(name=batch_name, path=batch_path, type_f=batch_type, example=example)
+            batch = DataFile(name=batch_name, path=batch_path, type_f=batch_type, example=example)
 
         if form_pass:
             # Launch job:

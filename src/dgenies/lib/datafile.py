@@ -1,6 +1,6 @@
-class Fasta:
+class DataFile:
     """
-    Defines a fasta file: name of the sample, path to the fasta file, type of file (URL or local file), ...
+    Defines a data file: name of the sample, path to the data file, type of file (URL or local file), ...
     """
 
     def __init__(self, name, path, type_f, example=False):
@@ -8,7 +8,7 @@ class Fasta:
 
         :param name: sample name
         :type name: str
-        :param path: fasta file path
+        :param path: data file path
         :type path: str
         :param type_f: type of file (local file or URL)
         :type type_f: str
@@ -22,7 +22,7 @@ class Fasta:
 
     def set_path(self, path):
         """
-        Set path to the fasta file
+        Set path to the data file
 
         :param path: new path
         :type path: str
@@ -31,9 +31,9 @@ class Fasta:
 
     def get_path(self):
         """
-        Get path of the fasta file
+        Get path of the data file
 
-        :return: fasta path
+        :return: data path
         :rtype: str
         """
         return self._path

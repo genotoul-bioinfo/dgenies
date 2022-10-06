@@ -11,7 +11,7 @@ from dgenies.config_reader import AppConfigReader
 from dgenies.tools import Tools
 import dgenies.lib.validators as validators
 import dgenies.lib.parsers as parsers
-from .fasta import Fasta
+from .datafile import DataFile
 from .functions import Functions
 import requests
 from requests.exceptions import ConnectionError
@@ -45,27 +45,27 @@ class JobManager:
     Jobs management
     """
 
-    def __init__(self, id_job, email=None, query: Fasta=None, target: Fasta=None, mailer=None,
-                 tool="minimap2", align: Fasta=None, backup: Fasta=None, batch=None, options=None):
+    def __init__(self, id_job, email=None, query: DataFile=None, target: DataFile=None, mailer=None,
+                 tool="minimap2", align: DataFile=None, backup: DataFile=None, batch=None, options=None):
         """
         :param id_job: job id
         :type id_job: str
         :param email: email from user
         :type email: str
         :param query: query fasta
-        :type query: Fasta
+        :type query: DataFile
         :param target: target fasta
-        :type target: Fasta
+        :type target: DataFile
         :param mailer: mailer object (to send mail throw flask app)
         :type mailer: Mailer
         :param tool: tool to use for mapping (choice from tools config)
         :type tool: str
         :param align: alignment file (PAF, MAF, ...) as a fasta object
-        :type align: Fasta
+        :type align: DataFile
         :param backup: backup TAR file
-        :type backup: Fasta
+        :type backup: DataFile
         :param batch: batch file
-        :type batch: Fasta
+        :type batch: DataFile
         :param options: list of str containing options for the chosen tool
         :type options: list
         """
@@ -156,7 +156,7 @@ class JobManager:
         if os.path.exists(query_file):
             with open(query_file) as q_f:
                 file_path = q_f.readline()
-                self.query = Fasta(
+                self.query = DataFile(
                     name="target" if file_path.endswith(".idx") else
                          os.path.splitext(os.path.basename(file_path.replace(".gz", "")).split("_", 1)[1])[0],
                     path=file_path,
@@ -166,7 +166,7 @@ class JobManager:
         if os.path.exists(target_file):
             with open(target_file) as t_f:
                 file_path = t_f.readline()
-                self.target = Fasta(
+                self.target = DataFile(
                     name="query" if file_path.endswith(".idx") else
                          os.path.splitext(os.path.basename(file_path.replace(".gz", "")).split("_", 1)[1])[0],
                     path=file_path,
@@ -176,7 +176,7 @@ class JobManager:
         if os.path.exists(align_file):
             with open(align_file) as a_f:
                 file_path = a_f.readline()
-                self.align = Fasta(
+                self.align = DataFile(
                     name="map",
                     path=file_path,
                     type_f="local"
@@ -186,7 +186,7 @@ class JobManager:
         if os.path.exists(batch_file):
             with open(batch_file) as b_f:
                 file_path = b_f.readline()
-                self.batch = Fasta(
+                self.batch = DataFile(
                     name="batch",
                     path=file_path,
                     type_f="local"
@@ -584,12 +584,29 @@ class JobManager:
 
         return status == "0"
 
+    def set_job_status(self, status, error=""):
+        """
+        Change status of a job
+
+        :param status: new job status
+        :type status: str
+        :param error: error description (if any)
+        :type error: str
+        """
+        if MODE == "webserver":
+            job = Job.get(Job.id_job == self.id_job)
+            job.status = status
+            job.error = error
+            job.save()
+        else:
+            self.set_status_standalone(status, error)
+
     def update_job_status(self, status, id_process=None):
         """
         Update job status
 
         :param status: new status
-        :param id_process: system process id
+        :param id_process: system process id or jobid on cluster scheduler
         """
         if MODE == "webserver":
             with Job.connect():
@@ -742,31 +759,31 @@ class JobManager:
                                       log_out=out_file,
                                       log_err=self.logs)
 
-    def _getting_local_file(self, fasta, type_f):
+    def _getting_local_file(self, datafile, type_f):
         """
         Copy temp file to its final location
 
-        :param fasta: fasta file Object
-        :type fasta: Fasta
+        :param datafile: data file Object
+        :type datafile: DataFile
         :param type_f: query or target
         :type type_f: str
         :return: final full path of the file
         :rtype: str
         """
-        finale_path = os.path.join(self.output_dir, type_f + "_" + os.path.basename(fasta.get_path()))
-        if fasta.is_example():
-            shutil.copy(fasta.get_path(), finale_path)
+        finale_path = os.path.join(self.output_dir, type_f + "_" + os.path.basename(datafile.get_path()))
+        if datafile.is_example():
+            shutil.copy(datafile.get_path(), finale_path)
         else:
-            if os.path.exists(fasta.get_path()):
-                shutil.move(fasta.get_path(), finale_path)
+            if os.path.exists(datafile.get_path()):
+                shutil.move(datafile.get_path(), finale_path)
             else:
                 other_file = os.path.join(self.output_dir, ("query" if type_f == "target" else "query") + "_" +
-                                          os.path.basename(fasta.get_path()))
+                                          os.path.basename(datafile.get_path()))
                 if os.path.exists(other_file):
                     shutil.copy(other_file, finale_path)
                 else:
                     raise Exception("Unable to copy %s file from temp to finale path: %s file does not exists" %
-                                    (type_f, fasta.get_path()))
+                                    (type_f, datafile.get_path()))
 
         with open(os.path.join(self.output_dir, "." + type_f), "w") as save_file:
             save_file.write(finale_path)
@@ -817,12 +834,12 @@ class JobManager:
                         # f.flush() commented by recommendation from J.F.Sebastian
         return local_filename
 
-    def _getting_file_from_url(self, fasta, type_f):
+    def _getting_file_from_url(self, datafile, type_f):
         """
         Download file from URL
 
-        :param fasta: Fasta object describing the input file
-        :type fasta: Fasta
+        :param datafile: input file description
+        :type datafile: DataFile
         :param type_f: type of the file (query or target)
         :type type_f: str
         :return:
@@ -833,11 +850,11 @@ class JobManager:
         :rtype: tuple
         """
         try:
-            dl_path = self._download_file(fasta.get_path())
+            dl_path = self._download_file(datafile.get_path())
         except (ConnectionError, URLError):
             status = "fail"
             error = "<p>Url <b>%s</b> is not valid!</p>" \
-                    "<p>If this is unattended, please contact the support.</p>" % fasta.get_path()
+                    "<p>If this is unattended, please contact the support.</p>" % datafile.get_path()
             if MODE == "webserver":
                 with Job.connect():
                     job = Job.get(Job.id_job == self.id_job)
@@ -855,24 +872,24 @@ class JobManager:
             save_file.write(finale_path)
         return True, False, finale_path, name
 
-    def _check_url(self, fasta, formats):
+    def _check_url(self, datafile, formats):
         """
         Check if an URL is valid, and if the file is valid too
 
-        :param fasta: fasta file object
-        :type fasta: Fasta
+        :param datafile: datafile file object
+        :type datafile: DataFile
         :param formats: allowed file formats
         :type formats: tuple
         :return: True if URL and file are valid, else False
         :rtype: bool
         """
-        url = fasta.get_path()
+        url = datafile.get_path()
         try:
             filename = self._get_filename_from_url(url)
         except (ConnectionError, URLError):
             status = "fail"
             error = "<p>Url <b>%s</b> is not valid!</p>" \
-                    "<p>If this is unattended, please contact the support.</p>" % fasta.get_path()
+                    "<p>If this is unattended, please contact the support.</p>" % datafile.get_path()
             if MODE == "webserver":
                 with Job.connect():
                     job = Job.get(Job.id_job == self.id_job)
@@ -949,23 +966,6 @@ class JobManager:
         else:
             return 0
 
-    def set_job_status(self, status, error=""):
-        """
-        Change status of a job
-
-        :param status: new job status
-        :type status: str
-        :param error: error description (if any)
-        :type error: str
-        """
-        if MODE == "webserver":
-            job = Job.get(Job.id_job == self.id_job)
-            job.status = status
-            job.error = error
-            job.save()
-        else:
-            self.set_status_standalone(status, error)
-
     def check_file(self, input_type, should_be_local, max_upload_size_readable):
         """
         Check if file is correct: format, size, valid gzip
@@ -1019,7 +1019,7 @@ class JobManager:
         Download files from URLs, with pending (according to the max number of concurrent downloads)
 
         :param files_to_download: files to download. For each item of the list, it's a list with 2 elements: first one
-            is the Fasta object, second one the input type (query or target)
+            is the DataFile object, second one the input type (query or target)
         :type files_to_download: list of list
         :param should_be_local: True if the job should be run locally (according to input file sizes), else False
         :type should_be_local: bool
@@ -1468,28 +1468,28 @@ class JobManager:
                 folder_files = os.path.join(self.config.app_data, subjob_id)
                 os.makedirs(folder_files)
 
-                # We create the needed fasta files
+                # We create the needed data files
                 query = params.get("query", None)
                 if query is not None:
                     if query.startswith("example://") and self.config.example_query:
-                        query = Fasta(name=os.path.basename(self.config.example_query), path=self.config.example_query, type_f="local", example=True)
+                        query = DataFile(name=os.path.basename(self.config.example_query), path=self.config.example_query, type_f="local", example=True)
                     else:
-                        query = Fasta(name="query", path=query, type_f="URL")
+                        query = DataFile(name="query", path=query, type_f="URL")
                 target = params.get("target", None)
                 if target is not None:
                     if target.startswith("example://") and self.config.example_target:
-                        target = Fasta(name=os.path.basename(self.config.example_target), path=self.config.example_target, type_f="local", example=True)
+                        target = DataFile(name=os.path.basename(self.config.example_target), path=self.config.example_target, type_f="local", example=True)
                     else:
-                        target = Fasta(name="target", path=target, type_f="URL")
+                        target = DataFile(name="target", path=target, type_f="URL")
                 align = params.get("align", None)
                 if align is not None:
-                    align = Fasta(name="align", path=align, type_f="URL")
+                    align = DataFile(name="align", path=align, type_f="URL")
                 backup = params.get("backup", None)
                 if backup is not None:
                     if backup.startswith("example://") and self.config.example_backup:
-                        backup = Fasta(name=os.path.basename(self.config.example_backup), path=self.config.example_backup, type_f="local", example=True)
+                        backup = DataFile(name=os.path.basename(self.config.example_backup), path=self.config.example_backup, type_f="local", example=True)
                     else:
-                        backup = Fasta(name="backup", path=backup, type_f="URL")
+                        backup = DataFile(name="backup", path=backup, type_f="URL")
                 tool = params.get("tool", None)
                 options = params.get("options", None)
 
@@ -1786,14 +1786,14 @@ class JobManager:
                 query_path = os.path.join(self.output_dir, "query.idx")
                 if not validators.v_idx(target_path) or not validators.v_idx(query_path):
                     return False
-                self.align = Fasta(name="map", path=self.paf_raw, type_f="local")
+                self.align = DataFile(name="map", path=self.paf_raw, type_f="local")
                 self.aln_format = "paf"
                 with open(os.path.join(self.output_dir, ".align"), "w") as aln:
                     aln.write(self.paf_raw)
-                self.target = Fasta(name="target", path=target_path, type_f="local")
+                self.target = DataFile(name="target", path=target_path, type_f="local")
                 with open(os.path.join(self.output_dir, ".target"), "w") as trgt:
                     trgt.write(target_path)
-                self.query = Fasta(name="query", path=query_path, type_f="local")
+                self.query = DataFile(name="query", path=query_path, type_f="local")
                 with open(os.path.join(self.output_dir, ".query"), "w") as qr:
                     qr.write(query_path)
             os.remove(self.backup.get_path())
