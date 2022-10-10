@@ -575,7 +575,7 @@ class JobManager:
         end = None
         mem_peak = None
         acct = subprocess.check_output("qacct -d 1 -j %s" % self.id_process,
-                                         shell=True).decode("utf-8")
+                                       shell=True).decode("utf-8")
         lines = acct.split("\n")
         for line in lines:
             if line.startswith("failed"):
@@ -632,6 +632,7 @@ class JobManager:
                     job.id_process = id_process
                 job.save()
         else:
+            # unreachable code, update_job_status is only used in launch_to_cluster which is not used in standalone mode
             self.set_status_standalone(status)
 
     @staticmethod
@@ -1181,7 +1182,7 @@ class JobManager:
                                                      "should_be_local": should_be_local,
                                                      "max_upload_size_readable": max_upload_size_readable})
                     thread.start()  # Start the execution
-                    if MODE == "standalone":
+                    if MODE != "webserver":
                         thread.join()
                 elif correct and MODE == "webserver" and job.batch_type != "local" and should_be_local \
                         and self.get_pending_local_number() < self.config.max_run_local:
@@ -1198,7 +1199,7 @@ class JobManager:
         """
         thread = threading.Timer(1, self.run_job, kwargs={"batch_system_type": batch_system_type})
         thread.start()  # Start the execution
-        if MODE == "standalone":
+        if MODE != "webserver":
             thread.join()
 
     def prepare_data_in_thread(self):
@@ -1207,7 +1208,7 @@ class JobManager:
         """
         thread = threading.Timer(1, self.prepare_data)
         thread.start()  # Start the execution
-        if MODE == "standalone":
+        if MODE != "webserver":
             thread.join()
 
     def prepare_data_cluster(self, batch_system_type):
@@ -1583,8 +1584,10 @@ class JobManager:
         """
         try:
             if self.batch is not None:
+                # A batch job does nothing but refresh it state until it ends
                 self.set_job_status(self.refresh_batch_status())
             else:
+                # We start the 'align' job
                 success = False
                 if batch_system_type == "local":
                     success = self._launch_local()
@@ -1592,6 +1595,7 @@ class JobManager:
                     success = self._launch_drmaa(batch_system_type)
                 if success:
                     with Job.connect():
+                        # We get the stats of the job
                         if MODE == "webserver":
                             job = Job.get(Job.id_job == self.id_job)
                             with open(self.logs) as logs:
@@ -1606,6 +1610,7 @@ class JobManager:
                                 job.time_elapsed = prep_elapsed + map_elapsed
                         else:
                             job = None
+                        # We do the post processes
                         status = "merging"
                         if MODE == "webserver":
                             job.status = "merging"
@@ -1613,6 +1618,7 @@ class JobManager:
                         else:
                             self.set_status_standalone(status)
                         if self.tool.split_before and self.query is not None:
+                            # If split and not ava, we merge back files
                             start = time.time()
                             paf_raw = self.paf_raw + ".split"
                             os.remove(self.get_query_split())
@@ -1626,18 +1632,23 @@ class JobManager:
                             if MODE == "webserver":
                                 job.time_elapsed += end - start
                         elif self.query is None:
+                            # If ava, we copy target index to query index
                             shutil.copyfile(self.idx_t, self.idx_q)
                             Path(os.path.join(self.output_dir, ".all-vs-all")).touch()
                         if self.tool.parser is not None:
+                            # The align file needs to be transformed to paf
                             paf_raw = self.paf_raw + ".parsed"
                             getattr(parsers, self.tool.parser)(self.paf_raw, paf_raw)
                             os.remove(self.paf_raw)
                             self.paf_raw = paf_raw
+                        # Matches form paf file are sorted by desc. matching size
                         sorter = Sorter(self.paf_raw, self.paf)
                         sorter.sort()
                         os.remove(self.paf_raw)
+                        # Cleanup target
                         if self.target is not None and os.path.exists(self.target.get_path()):
                             os.remove(self.target.get_path())
+                        # The job ask to do a sort of contig
                         if os.path.isfile(os.path.join(self.output_dir, ".do-sort")):
                             paf = Paf(paf=self.paf,
                                       idx_q=self.idx_q,

@@ -33,7 +33,7 @@ class Sorter:
 
     def _sort_lines(self, lines):
         """
-        Sort lines staff
+        Sort lines stuff
 
         :param lines: lines of PAF file to be sorted
         :type lines: _io.TextIO
@@ -45,23 +45,33 @@ class Sorter:
         min_len = 0
         for line in lines:
             parts = line.strip("\n").split("\t")
+            # len_line is length (euclidean distance) x similarity score
             len_line = sqrt(pow(int(parts[3]) - int(parts[2]), 2) +
                             pow(int(parts[8]) - int(parts[7]), 2)) * (int(parts[9]) / int(parts[10]))
+            # len_line is "added" as a new column
             parts.append(len_line)
             nb_lines += 1
+            # We add the first 1_000_000 lines
             if nb_lines <= 1000000:
                 paf_lines.append(parts)
                 if nb_lines == 1000000:
+                    # When line limit is reached, we switch to the most representative strategy
+                    # We will drop the smallest ones from current selection and only add long ones
                     print("Sorting lines...")
+                    # We sort them by len_line in desc. order
                     paf_lines.sort(key=lambda x: -x[-1])
+                    # We look at the input file in order to know the proportion of lines in % to keep
                     with open(self.input_f, 'r') as paf:
                         num_lines = sum(1 for line in paf)
                     pct_to_keep = 2000000 / num_lines
+                    # We remove small lines
                     limit = int(nb_lines * pct_to_keep)
                     paf_lines = paf_lines[:limit]
+                    # We set a min length for next lines
                     min_len = paf_lines[-1][-1]
                     print("Sorting done!")
             elif len_line >= min_len:
+                # We only keep long enough lines
                 print("Processing line %d..." % nb_lines)
                 paf_lines.append(parts)
         paf_lines.sort(key=lambda x: -x[-1])
