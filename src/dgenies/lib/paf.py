@@ -717,7 +717,11 @@ class Paf:
 
     def _remove_overlaps(self, position_idy, percents):
         """
-        Remove overlaps between matches on the diagonal
+        Remove overlaps between matches on the diagonal.
+        In position_idy:
+        - When intervals from same identity category overlap, they are merged
+        - When intervals from distinct identity categories overlap, the overlapping parts are removed from the
+          intervals of lower identity categories (some intervals can be split in many intervals)
 
         :param position_idy: matches intervals with associated identity category
         :type position_idy: IntervalTree
@@ -731,6 +735,7 @@ class Paf:
             start = item.begin
             end = item.end
             cat = item.data
+            # We get overlap with current interval
             overlaps = position_idy.overlap(start, end)
             if len(overlaps) > 0:
                 has_overlap = False
@@ -747,6 +752,7 @@ class Paf:
                             # cccccccccccccc*******
                             # *****ooooooooo[ooooooo]
                             if o_cat < cat:
+                                # The current interval category is the best
                                 if end < o_end:
                                     # No overlap with the current item, we stay has_overlap as False
                                     position_idy.discard(overlap)
@@ -754,6 +760,7 @@ class Paf:
                                 else:
                                     position_idy.discard(overlap)  # No kept overlap
                             elif o_cat == cat:
+                                # Same category, we merge intervals
                                 if end < o_end:
                                     has_overlap = True
                                     position_idy.discard(overlap)
@@ -761,6 +768,7 @@ class Paf:
                                 else:
                                     position_idy.discard(overlap)  # No kept overlap
                             else:
+                                # The overlap part is set to best category
                                 has_overlap = True
                                 position_idy.discard(overlap)
                                 position_idy[start:o_start] = cat
@@ -815,7 +823,7 @@ class Paf:
                             # ******ccccccccc*******
                             # ooooooooooooooo[ooooooo]
                             if o_cat < cat:
-                                has_overlap=True
+                                has_overlap = True
                                 position_idy.discard(overlap)
                                 position_idy[o_start:start] = o_cat
                                 position_idy[start:end] = cat
