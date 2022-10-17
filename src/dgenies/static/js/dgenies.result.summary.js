@@ -27,13 +27,13 @@ dgenies.result.summary.show = function(percents) {
             .attr("width", percent_value + "%")
             .attr("height", "50px")
             .attr("stroke", "none")
-            .attr("fill", d3.boxplot.color_idy[d3.boxplot.color_idy_theme][percent]);
+            .attr("fill", d3.dgenies.color_idy[d3.dgenies.color_idy_theme][percent]);
         container.append("rect")
             .attr("x", 5)
             .attr("y", 70 + (i * 30))
             .attr("width", "10px")
             .attr("height", "10px")
-            .attr("fill", d3.boxplot.color_idy[d3.boxplot.color_idy_theme][percent])
+            .attr("fill", d3.dgenies.color_idy[d3.dgenies.color_idy_theme][percent])
             .style("stroke", "#000")
             .style("stroke-width", "1px");
         container.append("text")
@@ -120,7 +120,7 @@ dgenies.result.summary.get_svg = function () {
  * @param {string} format file format
  */
 dgenies.result.summary.save_file = function (blob, format) {
-    saveAs(blob, `summary_${d3.boxplot.name_y}_to_${d3.boxplot.name_x}.${format}`);
+    saveAs(blob, `summary_${d3.dgenies.name_y}_to_${d3.dgenies.name_x}.${format}`);
 };
 
 /**

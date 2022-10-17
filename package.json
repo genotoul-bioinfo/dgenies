@@ -1,0 +1,22 @@
+{
+  "name": "dgenies",
+  "description": "Dot plot large genomes in an interactive, efficient and simple way",
+  "scripts": {
+    "minify:dgenies": "cd src/dgenies/static/js/ && babel -o dgenies.min.js --compact --minified dgenies.js dgenies.prototypes.js",
+    "minify:dgenies:result": "cd src/dgenies/static/js/ && babel -o dgenies.result.min.js --compact --minified dgenies.result.js dgenies.result.controls.js dgenies.result.export.js dgenies.result.summary.js d3.dgenies.js d3.dgenies.events.js d3.dgenies.mousetip.js d3.dgenies.zoom.js",
+    "minify:jquery:fileupload": "cd src/dgenies/static/js/ && babel -o jquery.fileupload.min.js --compact --minified jquery.fileupload.js jquery.fileupload-process.js jquery.fileupload-validate.js",
+    "minify:dgenies:run": "cd src/dgenies/static/js/ && babel -o dgenies.run.min.js --compact --minified dgenies.run.js",
+    "minify:dgenies:status": "cd src/dgenies/static/js/ && babel -o dgenies.status.min.js --compact --minified dgenies.status.js",
+    "minify:dgenies:doc": "cd src/dgenies/static/js/ && babel -o dgenies.documentation.min.js --compact --minified dgenies.documentation.js",
+    "minify:dgenies:offline": "cd src/dgenies/static/js/ && babel -o dgenies-offline-result.min.js --compact --minified jquery-3.2.1.min.js popper.min.js bootstrap.min.js bootstrap-notify.min.js jquery-ui.min.js jquery.cookie-1.4.1.min.js dgenies.min.js chosen.jquery.min.js FileSaver.min.js canvg.min.js d3.min.js dgenies.result.min.js BootstrapMenu.min.js",
+    "minify:js": "npm run minify:dgenies && npm run minify:dgenies:result && npm run minify:jquery:fileupload && npm run minify:dgenies:run && npm run minify:dgenies:status && npm run minify:dgenies:doc && npm run minify:dgenies:offline"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/genotoul-bioinfo/dgenies.git"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.19.3",
+    "@babel/core": "^7.19.3"
+  }
+}

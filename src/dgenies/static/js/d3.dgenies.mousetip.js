@@ -1,7 +1,7 @@
-if (!d3 || !d3.boxplot) {
-    throw "d3.boxplot wasn't included!"
+if (!d3 || !d3.dgenies) {
+    throw "d3.dgenies wasn't included!"
 }
-d3.boxplot.mousetip = {};
+d3.dgenies.mousetip = {};
 
 /**
  * Get color (black/white) depending on bgColor so it would be clearly seen.
@@ -9,7 +9,7 @@ d3.boxplot.mousetip = {};
  * @param bgColor
  * @returns {string}
  */
-d3.boxplot.mousetip.getColorByBgColor = function(bgColor) {
+d3.dgenies.mousetip.getColorByBgColor = function(bgColor) {
     if (!bgColor) { return ''; }
     return (parseInt(bgColor.replace('#', ''), 16) > 0xffffff / 2) ? '#000' : '#fff';
 }
@@ -58,22 +58,22 @@ $.fn.mousetip = function(my_tip, relative_to=null, x=20, y=20) {
                     posY_g = rect_g.top + window.scrollY,
                     width_c = rect_g.width,
                     height_c = rect_g.height;
-                let x_g = (e.pageX - posX_g) / width_c * d3.boxplot.scale,
-                    y_g = d3.boxplot.scale - ((e.pageY - posY_g) / height_c * d3.boxplot.scale);
+                let x_g = (e.pageX - posX_g) / width_c * d3.dgenies.scale,
+                    y_g = d3.dgenies.scale - ((e.pageY - posY_g) / height_c * d3.dgenies.scale);
 
-                let match = d3.boxplot.mousetip.get_match(e);
+                let match = d3.dgenies.mousetip.get_match(e);
 
                 let x_zone = "unknown";
-                for (let zone in d3.boxplot.x_zones) {
-                    if (d3.boxplot.x_zones[zone][0] < x_g && x_g <= d3.boxplot.x_zones[zone][1]) {
-                        x_zone = d3.boxplot.mousetip.get_label(zone);
+                for (let zone in d3.dgenies.x_zones) {
+                    if (d3.dgenies.x_zones[zone][0] < x_g && x_g <= d3.dgenies.x_zones[zone][1]) {
+                        x_zone = d3.dgenies.mousetip.get_label(zone);
                         break;
                     }
                 }
                 let y_zone = "unknown";
-                for (let zone in d3.boxplot.y_zones) {
-                    if (d3.boxplot.y_zones[zone][0] < y_g && y_g <= d3.boxplot.y_zones[zone][1]) {
-                        y_zone = d3.boxplot.mousetip.get_label(zone);
+                for (let zone in d3.dgenies.y_zones) {
+                    if (d3.dgenies.y_zones[zone][0] < y_g && y_g <= d3.dgenies.y_zones[zone][1]) {
+                        y_zone = d3.dgenies.mousetip.get_label(zone);
                         break;
                     }
                 }
@@ -121,11 +121,11 @@ $.fn.mousetip = function(my_tip, relative_to=null, x=20, y=20) {
                     else {
                         idy_class = "-1"
                     }
-                    css.background = d3.boxplot.color_idy[d3.boxplot.color_idy_theme][idy_class];
-                    css.color = d3.boxplot.mousetip.getColorByBgColor(css.background)
+                    css.background = d3.dgenies.color_idy[d3.dgenies.color_idy_theme][idy_class];
+                    css.color = d3.dgenies.mousetip.getColorByBgColor(css.background)
                 }
 
-                if (!hidden && ((!e.ctrlKey && !d3.boxplot.zone_selected) || match !== null)) {
+                if (!hidden && ((!e.ctrlKey && !d3.dgenies.zone_selected) || match !== null)) {
                     tip.show().css(css);
                 }
 
@@ -136,7 +136,7 @@ $.fn.mousetip = function(my_tip, relative_to=null, x=20, y=20) {
 /**
  * Initialise tooltip
  */
-d3.boxplot.mousetip.init = function () {
+d3.dgenies.mousetip.init = function () {
     $("#draw").append($("<span>").attr("class", "tip"));
     $("g.container").mousetip(".tip", "#draw");
 };
@@ -144,7 +144,7 @@ d3.boxplot.mousetip.init = function () {
 /**
  * Hide tooltip
  */
-d3.boxplot.mousetip.hide = function () {
+d3.dgenies.mousetip.hide = function () {
     $(".tip", "#draw").hide();
 }
 
@@ -154,7 +154,7 @@ d3.boxplot.mousetip.hide = function () {
  * @param {string} label initial label
  * @returns {string} new label
  */
-d3.boxplot.mousetip.get_label = function (label) {
+d3.dgenies.mousetip.get_label = function (label) {
     if (label.startsWith("###MIX###")) {
         let parts = label.substr(10).split("###");
         label = "Mix:&nbsp;" + parts.slice(0, 3).join(",&nbsp;");
@@ -171,26 +171,26 @@ d3.boxplot.mousetip.get_label = function (label) {
  * @param e mouse event
  * @returns {{x_zone: string, y_zone: string, x_match: float[], y_match: float[], idy: float}}
  */
-d3.boxplot.mousetip.get_match = function(e) {
+d3.dgenies.mousetip.get_match = function(e) {
     let rect = $("g.container")[0].getBoundingClientRect();
     let posX = rect.left + window.scrollX,
         posY = rect.top + window.scrollY,
         width_c = rect.width,
         height_c = rect.height;
-    let c_x = (e.pageX - posX) / width_c * d3.boxplot.scale,
-        c_y = d3.boxplot.scale - ((e.pageY - posY) / height_c * d3.boxplot.scale);
-    c_x = c_x / d3.boxplot.scale * d3.boxplot.x_len;
-    c_y = c_y / d3.boxplot.scale * d3.boxplot.y_len;
-    let error_x = d3.boxplot.content_lines_width / d3.boxplot.scale * d3.boxplot.x_len;
-    let error_y = d3.boxplot.content_lines_width / d3.boxplot.scale * d3.boxplot.y_len;
+    let c_x = (e.pageX - posX) / width_c * d3.dgenies.scale,
+        c_y = d3.dgenies.scale - ((e.pageY - posY) / height_c * d3.dgenies.scale);
+    c_x = c_x / d3.dgenies.scale * d3.dgenies.x_len;
+    c_y = c_y / d3.dgenies.scale * d3.dgenies.y_len;
+    let error_x = d3.dgenies.content_lines_width / d3.dgenies.scale * d3.dgenies.x_len;
+    let error_y = d3.dgenies.content_lines_width / d3.dgenies.scale * d3.dgenies.y_len;
     // let error_x = 0,
     //     error_y = 0;
     let match = null;
     let found = false;
     for (let i=3; i>=0; i--) {
         let j = 0;
-        while(!found && j < d3.boxplot.lines[i].length) {
-            let line = d3.boxplot.lines[i][j];
+        while(!found && j < d3.dgenies.lines[i].length) {
+            let line = d3.dgenies.lines[i][j];
             let x_a = Math.min(line[0], line[1]);
             let x_b = Math.max(line[0], line[1]);
             let y_a = Math.min(line[2], line[3]);
@@ -212,17 +212,17 @@ d3.boxplot.mousetip.get_match = function(e) {
         let x_zone = match[6];
         let y_min = null;
         let y_max = null;
-        if (y_zone in d3.boxplot.y_zones) {
-            let cy_min = d3.boxplot.y_zones[y_zone][0] / d3.boxplot.scale * d3.boxplot.y_len;
-            y_min = d3.boxplot.get_human_readable_size(match[2] - cy_min, 3, "&nbsp;");
-            y_max = d3.boxplot.get_human_readable_size(match[3] - cy_min, 3, "&nbsp;");
+        if (y_zone in d3.dgenies.y_zones) {
+            let cy_min = d3.dgenies.y_zones[y_zone][0] / d3.dgenies.scale * d3.dgenies.y_len;
+            y_min = d3.dgenies.get_human_readable_size(match[2] - cy_min, 3, "&nbsp;");
+            y_max = d3.dgenies.get_human_readable_size(match[3] - cy_min, 3, "&nbsp;");
         }
         let x_min = null;
         let x_max = null;
-        if (x_zone in d3.boxplot.x_zones) {
-            let cx_min = d3.boxplot.x_zones[x_zone][0] / d3.boxplot.scale * d3.boxplot.x_len;
-            x_min = d3.boxplot.get_human_readable_size(match[0] - cx_min, 3, "&nbsp;");
-            x_max = d3.boxplot.get_human_readable_size(match[1] - cx_min, 3, "&nbsp;");
+        if (x_zone in d3.dgenies.x_zones) {
+            let cx_min = d3.dgenies.x_zones[x_zone][0] / d3.dgenies.scale * d3.dgenies.x_len;
+            x_min = d3.dgenies.get_human_readable_size(match[0] - cx_min, 3, "&nbsp;");
+            x_max = d3.dgenies.get_human_readable_size(match[1] - cx_min, 3, "&nbsp;");
         }
         return {
             x_zone: x_zone,

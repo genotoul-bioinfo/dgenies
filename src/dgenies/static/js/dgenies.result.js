@@ -14,7 +14,7 @@ dgenies.result.id_res = null;
 dgenies.result.init = function(id_res) {
     dgenies.result.id_res = id_res;
     dgenies.result.add_to_list();
-    d3.boxplot.init();
+    d3.dgenies.init();
 };
 
 /**

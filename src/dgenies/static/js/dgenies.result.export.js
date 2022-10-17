@@ -20,7 +20,7 @@ dgenies.result.export.get_svg = function (width="5000px") {
  */
 dgenies.result.export.save_file = function(blob, format) {
     dgenies.hide_loading();
-    saveAs(blob, `map_${d3.boxplot.name_y}_to_${d3.boxplot.name_x}.${format}`);
+    saveAs(blob, `map_${d3.dgenies.name_y}_to_${d3.dgenies.name_x}.${format}`);
 };
 
 /**
@@ -50,7 +50,7 @@ dgenies.result.export.export_svg = function () {
                   "\"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">";
         svg += dgenies.result.export.get_svg("1000px");
         let blob = new Blob([svg], {type: "image/svg+xml"});
-        //d3.boxplot.zoom.restore_scale(transform);
+        //d3.dgenies.zoom.restore_scale(transform);
         dgenies.result.export.save_file(blob, "svg");
     }, 0);
 };
@@ -62,7 +62,7 @@ dgenies.result.export.export_paf = function () {
     let export_div = $("div#export-pict");
     export_div.html("");
     export_div.append($("<a>").attr("href", `/paf/${dgenies.result.id_res}`)
-        .attr("download", `map_${d3.boxplot.name_y}_to_${d3.boxplot.name_x}.paf`).attr("id", "my-download").text("download"));
+        .attr("download", `map_${d3.dgenies.name_y}_to_${d3.dgenies.name_x}.paf`).attr("id", "my-download").text("download"));
     dgenies.hide_loading();
     document.getElementById('my-download').click();
 };
@@ -75,7 +75,7 @@ dgenies.result.export.dl_fasta = function (gzip=false) {
     let export_div = $("div#export-pict");
     export_div.html("");
     export_div.append($("<a>").attr("href", `/fasta-query/${dgenies.result.id_res}`)
-        .attr("download", d3.boxplot.name_y + (gzip ? ".fasta.gz" : ".fasta")).attr("id", "my-download").text("download"));
+        .attr("download", d3.dgenies.name_y + (gzip ? ".fasta.gz" : ".fasta")).attr("id", "my-download").text("download"));
     dgenies.hide_loading();
     document.getElementById('my-download').click();
 };
@@ -159,7 +159,7 @@ dgenies.result.export.export_association_table = function () {
     let export_div = $("div#export-pict");
     export_div.html("");
     export_div.append($("<a>").attr("href", `/qt-assoc/${dgenies.result.id_res}`)
-        .attr("download", d3.boxplot.name_y + "_" + d3.boxplot.name_x + "_assoc.tsv").attr("id", "my-download")
+        .attr("download", d3.dgenies.name_y + "_" + d3.dgenies.name_x + "_assoc.tsv").attr("id", "my-download")
         .text("download"));
     dgenies.hide_loading();
     document.getElementById('my-download').click();
@@ -174,7 +174,7 @@ dgenies.result.export.export_backup_file = function() {
         let export_div = $("div#export-pict");
         export_div.html("");
         export_div.append($("<a>").attr("href", `/backup/${dgenies.result.id_res}`)
-            .attr("download", d3.boxplot.name_y + "_" + d3.boxplot.name_x + "_" + dgenies.result.id_res + ".tar.gz").attr("id", "my-download")
+            .attr("download", d3.dgenies.name_y + "_" + d3.dgenies.name_x + "_" + dgenies.result.id_res + ".tar.gz").attr("id", "my-download")
             .text("download"));
         dgenies.hide_loading();
         document.getElementById('my-download').click();
@@ -195,7 +195,7 @@ dgenies.result.export.export_no_association_file = function (to) {
             dgenies.hide_loading();
                 if (!data["empty"]) {
                     let blob = new Blob([data["file_content"]], {type: "text/plain"});
-                    saveAs(blob, `no_${to}_matches_${d3.boxplot.name_y}_to_${d3.boxplot.name_x}.txt`);
+                    saveAs(blob, `no_${to}_matches_${d3.dgenies.name_y}_to_${d3.dgenies.name_x}.txt`);
                 }
                 else {
                     dgenies.notify(`No contigs in ${to} have None match with any ${on}!`, "success")
@@ -233,7 +233,7 @@ dgenies.result.export.export_query_as_reference_fasta_standalone = function () {
                 let export_div = $("div#export-pict");
                 export_div.html("");
                 export_div.append($("<a>").attr("href", `/get-query-as-reference/${dgenies.result.id_res}`)
-                    .attr("download", `as_reference_${d3.boxplot.name_y}.fasta`)
+                    .attr("download", `as_reference_${d3.dgenies.name_y}.fasta`)
                     .attr("id", "my-download").text("download"));
                 document.getElementById('my-download').click();
                 dgenies.hide_loading();
@@ -260,7 +260,7 @@ dgenies.result.export.export_offline_viewer = function() {
                         let export_div = $("div#export-pict");
                         export_div.html("");
                         export_div.append($("<a>").attr("href", `/viewer/${dgenies.result.id_res}`)
-                            .attr("download", d3.boxplot.name_y + "_" + d3.boxplot.name_x + "_" +
+                            .attr("download", d3.dgenies.name_y + "_" + d3.dgenies.name_x + "_" +
                                 dgenies.result.id_res + ".html").attr("id", "my-download")
                             .text("download"));
                         dgenies.hide_loading();

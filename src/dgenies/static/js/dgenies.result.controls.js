@@ -44,7 +44,7 @@ dgenies.result.controls.summary = function () {
  * Build contigs sort
  */
 dgenies.result.controls.launch_sort_contigs = function () {
-    d3.boxplot.zoom.reset_scale();
+    d3.dgenies.zoom.reset_scale();
     window.setTimeout(() => {
         dgenies.show_loading("Building...");
         window.setTimeout(() => {
@@ -54,7 +54,7 @@ dgenies.result.controls.launch_sort_contigs = function () {
                     if (data["success"]) {
                         dgenies.reset_loading_message();
                         window.setTimeout(() => {
-                            d3.boxplot.launch(data, true);
+                            d3.dgenies.launch(data, true);
                         }, 0);
                     }
                     else {
@@ -71,18 +71,18 @@ dgenies.result.controls.launch_sort_contigs = function () {
  * Build reverse of a contig
  */
 dgenies.result.controls.launch_reverse_contig = function () {
-    if (d3.boxplot.query_selected !== null) {
-        d3.boxplot.zoom.reset_scale();
+    if (d3.dgenies.query_selected !== null) {
+        d3.dgenies.zoom.reset_scale();
         window.setTimeout(() => {
             dgenies.show_loading("Building...");
             window.setTimeout(() => {
                 dgenies.post(`/reverse-contig/${dgenies.result.id_res}`,
-                    {"contig": d3.boxplot.query_selected},
+                    {"contig": d3.dgenies.query_selected},
                     function (data) {
                         if (data["success"]) {
                             dgenies.reset_loading_message();
                             window.setTimeout(() => {
-                                d3.boxplot.launch(data, true);
+                                d3.dgenies.launch(data, true);
                             }, 0);
                         }
                         else {
@@ -103,7 +103,7 @@ dgenies.result.controls.launch_reverse_contig = function () {
  * Hide noise
  */
 dgenies.result.controls.launch_hide_noise = function () {
-    d3.boxplot.zoom.reset_scale();
+    d3.dgenies.zoom.reset_scale();
     window.setTimeout(() => {
         dgenies.show_loading("Building...");
         window.setTimeout(() => {
@@ -114,7 +114,7 @@ dgenies.result.controls.launch_hide_noise = function () {
                         dgenies.noise = !dgenies.noise;
                         dgenies.reset_loading_message();
                         window.setTimeout(() => {
-                            d3.boxplot.launch(data, true, true);
+                            d3.dgenies.launch(data, true, true);
                         }, 0);
                     }
                     else {
@@ -134,7 +134,7 @@ dgenies.result.controls.select_zone = function() {
     let contig_select = $("#select-contig").find(":selected");
     let target_select = $("#select-target").find(":selected");
     if (contig_select.val() !== "###NONE###" && target_select.val() !== "###NONE###") {
-        d3.boxplot.select_zone(null, null, target_select.val(), contig_select.val(), true);
+        d3.dgenies.select_zone(null, null, target_select.val(), contig_select.val(), true);
     }
     else {
         dgenies.notify("Please select zones into zoom!", "danger", 2000);

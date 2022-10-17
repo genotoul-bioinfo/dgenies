@@ -14,3 +14,4 @@ docs/_build
 docs/javascript
 venv
 .venv
+node_modules
