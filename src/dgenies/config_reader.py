@@ -79,9 +79,9 @@ class AppConfigReader:
         except NoOptionError:
             raise Exception("No data folder found in application.properties (global section)")
 
-    def _get_batch_system_type(self):
+    def _get_runner_type(self):
         try:
-            return self.reader.get("global", "batch_system_type")
+            return self.reader.get("global", "runner_type")
         except NoOptionError:
             return "local"
 
@@ -288,8 +288,8 @@ class AppConfigReader:
                 return path
             return None
         except (NoOptionError, NoSectionError):
-            if self._get_batch_system_type() != "local":
-                raise Exception("No drmaa library set. It is required if the batch system type is not 'local'")
+            if self._get_runner_type() != "local":
+                raise Exception("No drmaa library set. It is required if the runner type is not 'local'")
             return None
 
     def _get_drmaa_native_specs(self):

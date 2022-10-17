@@ -652,14 +652,14 @@ class JobManager:
                     break
         return error
 
-    def launch_to_cluster(self, step, batch_system_type, command, args, log_out, log_err):
+    def launch_to_cluster(self, step, runner_type, command, args, log_out, log_err):
         """
         Launch a program to the cluster
 
         :param step: step (prepare, start)
         :type step: str
-        :param batch_system_type: slurm or sge
-        :type batch_system_type: str
+        :param runner_type: slurm or sge
+        :type runner_type: str
         :param command: program to launch (without arguments)
         :type command: str
         :param args: arguments to use for the program
@@ -701,7 +701,7 @@ class JobManager:
             memory = 8000
 
         native_specs = self.config.drmaa_native_specs
-        if batch_system_type == "slurm":
+        if runner_type == "slurm":
             if native_specs == "###DEFAULT###":
                 native_specs = "--mem-per-cpu={0} --mincpus={1} --time={2}"
             if step == "prepare":
@@ -709,7 +709,7 @@ class JobManager:
             elif step == "start":
                 jt.nativeSpecification = native_specs.format(memory // self.tool.threads_cluster * 1000,
                                                              self.tool.threads_cluster, "02:00:00")
-        elif batch_system_type == "sge":
+        elif runner_type == "sge":
             if native_specs == "###DEFAULT###":
                 native_specs = "-l mem={0},h_vmem={0} -pe parallel_smp {1}"
             if step == "prepare":
@@ -724,7 +724,7 @@ class JobManager:
         self.update_job_status("scheduled-cluster" if step == "start" else "prepare-scheduled", jobid)
 
         retval = s.wait(jobid, drmaa.Session.TIMEOUT_WAIT_FOREVER)
-        if retval.hasExited and (self.check_job_status_slurm() if batch_system_type == "slurm" else
+        if retval.hasExited and (self.check_job_status_slurm() if runner_type == "slurm" else
         self.check_job_status_sge()):
             if step == "start":
                 status = self.check_job_success()
@@ -746,11 +746,11 @@ class JobManager:
         s.deleteJobTemplate(jt)
         return False
 
-    def _launch_drmaa(self, batch_system_type):
+    def _launch_drmaa(self, runner_type):
         """
         Launch the mapping step to a cluster
 
-        :param batch_system_type: slurm or sge
+        :param runner_type: slurm or sge
         :return: True if job succeed, else False
         """
 
@@ -770,7 +770,7 @@ class JobManager:
         args = args.split(" ")
 
         return self.launch_to_cluster(step="start",
-                                      batch_system_type=batch_system_type,
+                                      runner_type=runner_type,
                                       command=self.tool.exec,
                                       args=args,
                                       log_out=out_file,
@@ -971,14 +971,14 @@ class JobManager:
     @staticmethod
     def get_pending_local_number():
         """
-        Get number of of jobs running or waiting for a run
+        Get number of jobs running or waiting for a run
 
         :return: number of jobs
         :rtype: int
         """
         if MODE == "webserver":
             with Job.connect():
-                return len(Job.select().where((Job.batch_type == "local") & (Job.status != "success") &
+                return len(Job.select().where((Job.runner_type == "local") & (Job.status != "success") &
                                               (Job.status != "fail") & (Job.status != "no-match")))
         else:
             return 0
@@ -1025,8 +1025,7 @@ class JobManager:
                                             "%s index file is invalid. Please check your file." %
                                             input_type.capitalize())
                         return False, True, None
-                if self.config.batch_system_type != "local" and file_size >= getattr(self.config,
-                                                                                     "min_%s_size" % input_type):
+                if self.config.runner_type != "local" and file_size >= getattr(self.config, "min_%s_size" % input_type):
                     should_be_local = False
 
         return True, False, should_be_local
@@ -1085,9 +1084,9 @@ class JobManager:
                         if not correct:
                             break
 
-                    if correct and MODE == "webserver" and job.batch_type != "local" and should_be_local \
+                    if correct and MODE == "webserver" and job.runner_type != "local" and should_be_local \
                             and self.get_pending_local_number() < self.config.max_run_local:
-                        job.batch_type = "local"
+                        job.runner_type = "local"
                         job.save()
                 else:
                     correct = False
@@ -1184,20 +1183,20 @@ class JobManager:
                     thread.start()  # Start the execution
                     if MODE != "webserver":
                         thread.join()
-                elif correct and MODE == "webserver" and job.batch_type != "local" and should_be_local \
+                elif correct and MODE == "webserver" and job.runner_type != "local" and should_be_local \
                         and self.get_pending_local_number() < self.config.max_run_local:
-                    job.batch_type = "local"
+                    job.runner_type = "local"
                     job.save()
         return correct, error_set, all_downloaded
 
-    def run_job_in_thread(self, batch_system_type="local"):
+    def run_job_in_thread(self, runner_type="local"):
         """
         Run a job asynchronously into a new thread
 
-        :param batch_system_type: slurm or sge
-        :type batch_system_type: str
+        :param runner_type: slurm or sge
+        :type runner_type: str
         """
-        thread = threading.Timer(1, self.run_job, kwargs={"batch_system_type": batch_system_type})
+        thread = threading.Timer(1, self.run_job, kwargs={"runner_type": runner_type})
         thread.start()  # Start the execution
         if MODE != "webserver":
             thread.join()
@@ -1211,12 +1210,12 @@ class JobManager:
         if MODE != "webserver":
             thread.join()
 
-    def prepare_data_cluster(self, batch_system_type):
+    def prepare_data_cluster(self, runner_type):
         """
         Launch of prepare data on a cluster
 
-        :param batch_system_type: slurm or sge
-        :type batch_system_type: str
+        :param runner_type: slurm or sge
+        :type runner_type: str
         :return: True if succeed, else False
         :rtype: bool
         """
@@ -1231,7 +1230,7 @@ class JobManager:
             if self.tool.split_before:
                 args.append("--split")
         success = self.launch_to_cluster(step="prepare",
-                                         batch_system_type=batch_system_type,
+                                         runner_type=runner_type,
                                          command=self.config.cluster_python_exec,
                                          args=args,
                                          log_out=self.logs,
@@ -1352,12 +1351,12 @@ class JobManager:
         self.send_mail_post_if_allowed()
         return True
 
-    def prepare_dotplot_cluster(self, batch_system_type):
+    def prepare_dotplot_cluster(self, runner_type):
         """
         Prepare data if alignment already done: just index the fasta (if index not given), then parse the alignment
 
-        :param batch_system_type: type of cluster (slurm or sge)
-        :type batch_system_type: str
+        :param runner_type: type of cluster (slurm or sge)
+        :type runner_type: str
         """
 
         args = [self.config.cluster_prepare_script,
@@ -1386,7 +1385,7 @@ class JobManager:
         success = True
         if has_index:
             success = self.launch_to_cluster(step="prepare",
-                                             batch_system_type=batch_system_type,
+                                             runner_type=runner_type,
                                              command=self.config.cluster_python_exec,
                                              args=args,
                                              log_out=self.logs,
@@ -1537,10 +1536,10 @@ class JobManager:
             if MODE == "webserver":
                 with Job.connect():
                     job = Job.get(Job.id_job == self.id_job)
-                    if job.batch_type == "local":
+                    if job.runner_type == "local":
                         success = self.prepare_data_local()
                     else:
-                        success = self.prepare_data_cluster(job.batch_type)
+                        success = self.prepare_data_cluster(job.runner_type)
                     if not success:
                         self._set_analytics_job_status("fail-prepare")
             else:
@@ -1550,10 +1549,10 @@ class JobManager:
             if MODE == "webserver":
                 with Job.connect():
                     job = Job.get(Job.id_job == self.id_job)
-                    if job.batch_type == "local":
+                    if job.runner_type == "local":
                         success = self.prepare_dotplot_local()
                     else:
-                        success = self.prepare_dotplot_cluster(job.batch_type)
+                        success = self.prepare_dotplot_cluster(job.runner_type)
                     if success:
                         self._set_analytics_job_status("success")
                     else:
@@ -1575,12 +1574,12 @@ class JobManager:
             return status
         return "started-batch"
 
-    def run_job(self, batch_system_type):
+    def run_job(self, runner_type):
         """
         Run of a job (mapping step)
 
-        :param batch_system_type: type of cluster (slurm or sge)
-        :type batch_system_type: str
+        :param runner_type: type of cluster (slurm or sge)
+        :type runner_type: str
         """
         try:
             if self.batch is not None:
@@ -1589,10 +1588,10 @@ class JobManager:
             else:
                 # We start the 'align' job
                 success = False
-                if batch_system_type == "local":
+                if runner_type == "local":
                     success = self._launch_local()
-                elif batch_system_type in ["slurm", "sge"]:
-                    success = self._launch_drmaa(batch_system_type)
+                elif runner_type in ["slurm", "sge"]:
+                    success = self._launch_drmaa(runner_type)
                 if success:
                     with Job.connect():
                         # We get the stats of the job
@@ -1749,7 +1748,7 @@ class JobManager:
                 target_size=target_size,
                 query_size=query_size,
                 mail_client=self._anonymize_mail_client(job.email),
-                batch_type=job.batch_type,
+                runner_type=job.runner_type,
                 job_type=self.get_job_type(),
                 tool=self.tool_name if self.tool_name is not None else "unset")
             log.save()
@@ -1892,13 +1891,15 @@ class JobManager:
         """
         print(self.get_job_type())
         with Job.connect():
+            # Cleanup
             j1 = Job.select().where(Job.id_job == self.id_job)
             if len(j1) > 0:
                 print("Old job found without result dir existing: delete it from BDD!")
                 for j11 in j1:
                     j11.delete_instance()
             if self.target is not None or self.backup is not None or self.batch is not None:
-                job = Job.create(id_job=self.id_job, email=self.email, batch_type=self.config.batch_system_type,
+                # We create the job if everything is correct
+                job = Job.create(id_job=self.id_job, email=self.email, runner_type=self.config.runner_type,
                                  date_created=datetime.now(), tool=self.tool.name if self.tool is not None else None,
                                  options=self.options)
                 job.save()
@@ -1907,7 +1908,8 @@ class JobManager:
                 thread = threading.Timer(1, self.start_job)
                 thread.start()
             else:
-                job = Job.create(id_job=self.id_job, email=self.email, batch_type=self.config.batch_system_type,
+                # Something missing in job description
+                job = Job.create(id_job=self.id_job, email=self.email, runner_type=self.config.runner_type,
                                  date_created=datetime.now(), tool=self.tool.name if self.tool is not None else None,
                                  options=self.options, status="fail")
                 job.save()

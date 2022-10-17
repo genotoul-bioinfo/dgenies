@@ -267,7 +267,7 @@ Main parameters are stored into this section:
 
 For webserver mode only (ignored in standalone mode):
 
-- `batch_system_type`: local for run all jobs locally, sge or slurm to use a cluster scheduler.
+- `runner_type`: local for run all jobs locally, sge or slurm to use a cluster scheduler.
 
 ### Debug
 
@@ -278,14 +278,14 @@ Some parameters for debug:
 
 ### Cluster
 
-This section concerns only the webserver mode with *batch_system_type* not set to *local*.
+This section concerns only the webserver mode with *runner_type* not set to *local*.
 
 D-Genies is tested with [slurm-drmaa](https://github.com/natefoo/slurm-drmaa).
 
 - `drmaa_lib_path`: absolute path to the drmaa library. Required as we use the DRMAA library to submit jobs to the cluster.
 - `native_specs`: how to set memory, time and number of CPU on the cluster (should be kept as default).
 
-By default, small jobs are still launched locally even if *batch_system_type* is not set to *local*, and if not too much of these jobs are running or waiting. This limit can be customized:
+By default, small jobs are still launched locally even if *runner_type* is not set to *local*, and if not too much of these jobs are running or waiting. This limit can be customized:
 
 - `max_run_local`: max number of jobs running locally (if this number is reached, future jobs will be submitted to the cluster regardless of their size). Set to 0 to run all jobs on the cluster.
 - `max_wait_local`; max number of jobs waiting for a local run (if this number is reached, future jobs will be submitted to the cluster regardless of their size). Set to 0 to run all jobs on the cluster.

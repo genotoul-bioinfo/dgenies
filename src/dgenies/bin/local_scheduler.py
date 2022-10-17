@@ -18,7 +18,7 @@ me = singleton.SingleInstance()
 config_reader = AppConfigReader()
 
 # Add DRMAA lib in env:
-if config_reader.drmaa_lib_path is not None and config_reader.batch_system_type != "local":
+if config_reader.drmaa_lib_path is not None and config_reader.runner_type != "local":
     os.environ["DRMAA_LIBRARY_PATH"] = config_reader.drmaa_lib_path
     try:
         import drmaa
@@ -48,14 +48,14 @@ def _printer(*messages):
                 print(*messages, file=log_f)
 
 
-def start_job(id_job, batch_system_type="local"):
+def start_job(id_job, runner_type="local"):
     """
     Start a job (mapping step)
 
     :param id_job: job id
     :type id_job: str
-    :param batch_system_type: local, slurm or sge
-    :type batch_system_type: str
+    :param runner_type: local, slurm or sge
+    :type runner_type: str
     """
     _printer("Start job", id_job)
     with Job.connect():
@@ -64,7 +64,7 @@ def start_job(id_job, batch_system_type="local"):
         job.save()
         job_mng = JobManager(id_job=id_job, email=job.email, tool=job.tool, options=job.options)
         job_mng.set_inputs_from_res_dir()
-        job_mng.run_job_in_thread(batch_system_type)
+        job_mng.run_job_in_thread(runner_type)
 
 
 def get_scheduled_local_jobs():
@@ -76,7 +76,7 @@ def get_scheduled_local_jobs():
     """
     all_jobs = []
     with Job.connect():
-        jobs = Job.select().where((Job.batch_type == "local") & ((Job.status == "prepared") | (Job.status == "scheduled"))).\
+        jobs = Job.select().where((Job.runner_type == "local") & ((Job.status == "prepared") | (Job.status == "scheduled"))).\
             order_by(Job.date_created)
         for job in jobs:
             all_jobs.append(job.id_job)
@@ -94,10 +94,10 @@ def get_scheduled_cluster_jobs():
     """
     all_jobs = []
     with Job.connect():
-        jobs = Job.select().where((Job.batch_type != "local") & ((Job.status == "prepared") | (Job.status == "scheduled"))).\
+        jobs = Job.select().where((Job.runner_type != "local") & ((Job.status == "prepared") | (Job.status == "scheduled"))).\
             order_by(Job.date_created)
         for job in jobs:
-            all_jobs.append({"job_id": job.id_job, "batch_type": job.batch_type})
+            all_jobs.append({"job_id": job.id_job, "runner_type": job.runner_type})
             job.status = "scheduled"
             job.save()
     return all_jobs
@@ -130,7 +130,7 @@ def get_prep_scheduled_jobs():
     """
     with Job.connect():
         jobs = Job.select().where(Job.status == "waiting").order_by(Job.date_created)
-        return [(j.id_job, j.batch_type) for j in jobs]
+        return [(j.id_job, j.runner_type) for j in jobs]
 
 
 def get_preparing_jobs_nb():
@@ -186,7 +186,7 @@ def parse_started_jobs():
                                   (Job.status == "prepare-scheduled") | (Job.status == "prepare-cluster"))
         for job in jobs:
             pid = job.id_process
-            if job.batch_type == "local":
+            if job.runner_type == "local":
                 if job.status != "started" or psutil.pid_exists(pid):
                     jobs_started.append(job.id_job)
                 else:
@@ -202,9 +202,9 @@ def parse_started_jobs():
                     if status not in [drmaa.JobState.RUNNING, drmaa.JobState.DONE, drmaa.JobState.QUEUED_ACTIVE,
                                       drmaa.JobState.SYSTEM_ON_HOLD, drmaa.JobState.USER_ON_HOLD,
                                       drmaa.JobState.USER_SYSTEM_ON_HOLD]:
-                        if job.batch_type == "slurm":
+                        if job.runner_type == "slurm":
                             os.system("scancel %s" % job.id_process)
-                        elif job.batch_type == "sge":
+                        elif job.runner_type == "sge":
                             os.system("qdel %s" % job.id_process)
                         print("Job %s (id on cluster: %d) has died!" % (job.id_job, job.id_process))
                         job.status = "fail"
@@ -286,7 +286,7 @@ def move_job_to_cluster(id_job):
     """
     with Job.connect():
         job = Job.get(Job.id_job == id_job)
-        job.batch_type = config_reader.batch_system_type
+        job.runner_type = config_reader.runner_type
         job.save()
 
 
@@ -355,20 +355,20 @@ if __name__ == '__main__':
         local_waiting_jobs = []
         # We scan the list of 'waiting to prepare' jobs for launching them until limits are reached
         while nj < len(prep_scheduled_jobs):
-            job_batch_type = prep_scheduled_jobs[nj][1]
+            job_runner_type = prep_scheduled_jobs[nj][1]
             # We launch local ones util the local limit is reach and all cluster ones
-            if nb_preparing_jobs < NB_PREPARE or job_batch_type != "local":
+            if nb_preparing_jobs < NB_PREPARE or job_runner_type != "local":
                 prepare_job(prep_scheduled_jobs[nj][0])
-                if job_batch_type == "local":
+                if job_runner_type == "local":
                     nb_preparing_jobs += 1
                 del prep_scheduled_jobs[nj]
             else:
                 # We add remaining local ones into local waiting list
-                if job_batch_type == "local":
+                if job_runner_type == "local":
                     local_waiting_jobs.append(prep_scheduled_jobs[nj][0])
                 nj += 1
         # If local waiting limit is reached, switch waiting jobs to cluster
-        if config_reader.batch_system_type != "local" and len(local_waiting_jobs) > config_reader.max_wait_local:
+        if config_reader.runner_type != "local" and len(local_waiting_jobs) > config_reader.max_wait_local:
             for id_job in local_waiting_jobs[config_reader.max_wait_local:]:
                 move_job_to_cluster(id_job)
 
@@ -379,13 +379,13 @@ if __name__ == '__main__':
             nb_started += 1
 
         # If local running limit is reached, switch jobs to cluster
-        if config_reader.batch_system_type != "local" and len(scheduled_jobs_local) > config_reader.max_wait_local:
+        if config_reader.runner_type != "local" and len(scheduled_jobs_local) > config_reader.max_wait_local:
             for id_job in scheduled_jobs_local[config_reader.max_wait_local:]:
                 move_job_to_cluster(id_job)
 
         # Start scheduled jobs
         for job in scheduled_jobs_cluster:
-            start_job(job["job_id"], job["batch_type"])
+            start_job(job["job_id"], job["runner_type"])
 
         # Wait before return
         _printer("Sleeping...")
