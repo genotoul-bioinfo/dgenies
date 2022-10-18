@@ -118,7 +118,7 @@ def prepare_job(id_job):
         job_mng = JobManager(id_job=id_job, email=job.email, tool=job.tool)
 #        job_mng = JobManager(id_job=id_job, email=job.email, tool=job.tool, options=job.options)
         job_mng.set_inputs_from_res_dir()
-        job_mng.prepare_data_in_thread()
+        job_mng.prepare_job_in_thread()
 
 
 def get_prep_scheduled_jobs():

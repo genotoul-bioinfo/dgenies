@@ -1201,9 +1201,9 @@ class JobManager:
         if MODE != "webserver":
             thread.join()
 
-    def prepare_data_in_thread(self):
+    def prepare_job_in_thread(self):
         """
-        Prepare data in a new thread
+        Prepare job, like getting data, in a new thread
         """
         thread = threading.Timer(1, self.prepare_data)
         thread.start()  # Start the execution
@@ -1832,7 +1832,7 @@ class JobManager:
                     job.save()
                 else:
                     self.set_status_standalone(status)
-                    self.prepare_data_in_thread()
+                    self.prepare_job_in_thread()
             else:
                 self._set_analytics_job_status("fail-getfiles")
                 if not error_set:
