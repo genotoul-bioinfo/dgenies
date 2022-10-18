@@ -1196,7 +1196,7 @@ class JobManager:
         :param runner_type: slurm or sge
         :type runner_type: str
         """
-        thread = threading.Timer(1, self.run_job, kwargs={"runner_type": runner_type})
+        thread = threading.Timer(1, self.run_align, kwargs={"runner_type": runner_type})
         thread.start()  # Start the execution
         if MODE != "webserver":
             thread.join()
@@ -1319,7 +1319,7 @@ class JobManager:
             ptime.write(str(round(time.time())) + "\n")
             self.set_job_status("prepared")
             if MODE != "webserver":
-                self.run_job("local")
+                self.run_align("local")
             return True
 
     def _end_of_prepare_dotplot(self):
@@ -1574,7 +1574,7 @@ class JobManager:
             return status
         return "started-batch"
 
-    def run_job(self, runner_type):
+    def run_align(self, runner_type):
         """
         Run of a job (mapping step)
 
