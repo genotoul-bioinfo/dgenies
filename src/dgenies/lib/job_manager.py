@@ -1205,7 +1205,7 @@ class JobManager:
         """
         Prepare job, like getting data, in a new thread
         """
-        thread = threading.Timer(1, self.prepare_data)
+        thread = threading.Timer(1, self.prepare_job)
         thread.start()  # Start the execution
         if MODE != "webserver":
             thread.join()
@@ -1517,9 +1517,9 @@ class JobManager:
             self.set_job_status("success") if is_success else self.set_job_status("fail")
         return True
 
-    def prepare_data(self):
+    def prepare_job(self):
         """
-        Launch preparation of data
+        Launch job preparation (in particular preparing data) according to the job type
         """
         if self.batch is not None:
             # batch mode
