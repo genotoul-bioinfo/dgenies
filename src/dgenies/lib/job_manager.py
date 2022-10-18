@@ -1768,19 +1768,34 @@ class JobManager:
                     analytic.status = status
                     analytic.save()
 
+    @staticmethod
+    def allowed_backup_files(members, allowed_files=[]):
+        """
+        Generator filter files to be extracted from tar file
+
+        :param members: elements in tarfile
+        :type members: list of TarInfo
+        :param allowed_files: list of allows files
+        :type allowed_files: list of str
+        """
+        for tarinfo in members:
+            if tarinfo.name in allowed_files:
+               yield tarinfo
+
     def unpack_backup(self):
         """
         Untar backup file
         """
+        allowed_files = {"map.paf", "query.idx", "target.idx"}
         try:
             with tarfile.open(self.backup.get_path(), "r:*") as tar:
-                names = tar.getnames()
-                if len(names) != 3:
+                members = tar.getmembers()
+                if len(members) != 3:
                     return False
-                for name in ["map.paf", "query.idx", "target.idx"]:
-                    if name not in names:
+                for m in members:
+                    if m.name not in allowed_files or not m.isfile():
                         return False
-                tar.extractall(self.output_dir)
+                tar.extractall(path=self.output_dir, members=self.allowed_backup_files(tar, allowed_files))
                 shutil.move(self.paf, self.paf_raw)
                 if not validators.paf(self.paf_raw):
                     return False
