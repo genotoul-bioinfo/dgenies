@@ -1210,9 +1210,9 @@ class JobManager:
         if MODE != "webserver":
             thread.join()
 
-    def prepare_data_cluster(self, runner_type):
+    def prepare_align_cluster(self, runner_type):
         """
-        Launch of prepare data on a cluster
+        Launch of prepare align data on a cluster
 
         :param runner_type: slurm or sge
         :type runner_type: str
@@ -1238,9 +1238,9 @@ class JobManager:
         self.send_mail_post_if_allowed()
         return success
 
-    def prepare_data_local(self):
+    def prepare_align_local(self):
         """
-        Prepare data locally. On standalone mode, launch job after, if success.
+        Prepare align data locally. On standalone mode, launch job after, if success.
         :return: True if job succeed, else False
         :rtype: bool
         """
@@ -1537,13 +1537,13 @@ class JobManager:
                 with Job.connect():
                     job = Job.get(Job.id_job == self.id_job)
                     if job.runner_type == "local":
-                        success = self.prepare_data_local()
+                        success = self.prepare_align_local()
                     else:
-                        success = self.prepare_data_cluster(job.runner_type)
+                        success = self.prepare_align_cluster(job.runner_type)
                     if not success:
                         self._set_analytics_job_status("fail-prepare")
             else:
-                self.prepare_data_local()
+                self.prepare_align_local()
         else:
             # plot mode
             if MODE == "webserver":
