@@ -48,9 +48,9 @@ def _printer(*messages):
                 print(*messages, file=log_f)
 
 
-def start_job(id_job, runner_type="local"):
+def start_align(id_job, runner_type="local"):
     """
-    Start a job (mapping step)
+    Start an align job (mapping step)
 
     :param id_job: job id
     :type id_job: str
@@ -375,7 +375,7 @@ if __name__ == '__main__':
         # Managing scheduled jobs
         # We start local scheduled jobs until limit of number running jobs is reached
         while len(scheduled_jobs_local) > 0 and nb_started < NB_RUN:
-            start_job(scheduled_jobs_local.pop(0))
+            start_align(scheduled_jobs_local.pop(0))
             nb_started += 1
 
         # If local running limit is reached, switch jobs to cluster
@@ -385,7 +385,7 @@ if __name__ == '__main__':
 
         # Start scheduled jobs
         for job in scheduled_jobs_cluster:
-            start_job(job["job_id"], job["runner_type"])
+            start_align(job["job_id"], job["runner_type"])
 
         # Wait before return
         _printer("Sleeping...")
