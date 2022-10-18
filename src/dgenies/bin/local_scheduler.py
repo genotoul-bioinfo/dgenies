@@ -64,7 +64,7 @@ def start_align(id_job, runner_type="local"):
         job.save()
         job_mng = JobManager(id_job=id_job, email=job.email, tool=job.tool, options=job.options)
         job_mng.set_inputs_from_res_dir()
-        job_mng.run_job_in_thread(runner_type)
+        job_mng.run_align_in_thread(runner_type)
 
 
 def get_scheduled_local_jobs():

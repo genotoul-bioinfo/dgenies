@@ -1189,7 +1189,7 @@ class JobManager:
                     job.save()
         return correct, error_set, all_downloaded
 
-    def run_job_in_thread(self, runner_type="local"):
+    def run_align_in_thread(self, runner_type="local"):
         """
         Run a job asynchronously into a new thread
 
