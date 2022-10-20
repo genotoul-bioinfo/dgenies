@@ -151,6 +151,12 @@ class AppConfigReader:
         except NoOptionError:
             return 10
 
+    def _get_max_download_sessions(self):
+        try:
+            return int(self._replace_vars(self.reader.get("global", "_get_max_download_sessions")))
+        except NoOptionError:
+            return 5
+
     def _get_database_type(self):
         try:
             return self.reader.get("database", "type")

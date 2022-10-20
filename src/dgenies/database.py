@@ -130,7 +130,7 @@ if MODE == "webserver":
                 change_status = False
 
             status = "pending"
-            if self.status == "active" or (change_status and nb_asked < 5):
+            if self.status == "active" or (change_status and nb_asked < config.max_download_sessions):
                 status = "active"
 
             self.status = status

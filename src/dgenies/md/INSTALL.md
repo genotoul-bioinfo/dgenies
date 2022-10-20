@@ -264,6 +264,8 @@ Main parameters are stored into this section:
 - `max_upload_size_ava`: max size allowed for target file for all-vs-all mode (only target given, -1 to avoid the limit) - size uncompressed.
 - `max_upload_file_size`: max size of the uploaded size (real size of the file, compressed or not, -1 to avoid the limit).
 - `max_nb_lines`: Maximum number of lines displayed for paf file (default: 100000).
+- `max_nb_jobs_in_batch_mode`: Maximum number of jobs allowed for batch mode
+- `max_download_sessions`: Maximum number of download sessions (one session per job) for downloading distant data (if user gives url as input).
 
 For webserver mode only (ignored in standalone mode):
 
