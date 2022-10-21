@@ -5,21 +5,12 @@ import shutil
 import sys
 import re
 import traceback
-from inspect import getmembers, isfunction
 from collections import OrderedDict
 from Bio import SeqIO
 from jinja2 import Template
 from xopen import xopen
 from dgenies.config_reader import AppConfigReader
-import dgenies.lib.validators as validators
-
-ALLOWED_EXTENSIONS = {"fasta": ['fa', 'fasta', 'fna', 'fa.gz', 'fasta.gz', 'fna.gz'],
-                      "idx": ['idx'],
-                      "map": [o[0] for o in getmembers(validators) if isfunction(o[1]) and not o[0].startswith("_") and
-                              not o[0].startswith("v_")],
-                      "backup": ['tar', 'tar.gz'],
-                      "batch": ['txt', 'tab', 'tsv']}
-# map: all functions of validators which does not starts with an underscore.
+from dgenies.allowed_extensions import ALLOWED_GROUPED_EXTENSIONS
 
 
 class Functions:
@@ -41,8 +32,8 @@ class Functions:
         """
         for file_format in file_formats:
             if '.' in filename and \
-                   (filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS[file_format]
-                    or ".".join(filename.rsplit('.', 2)[1:]).lower() in ALLOWED_EXTENSIONS[file_format]):
+                   (filename.rsplit('.', 1)[1].lower() in ALLOWED_GROUPED_EXTENSIONS[file_format]
+                    or ".".join(filename.rsplit('.', 2)[1:]).lower() in ALLOWED_GROUPED_EXTENSIONS[file_format]):
                 return True
         return False
 

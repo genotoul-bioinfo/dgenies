@@ -14,7 +14,8 @@ from flask import render_template, request, url_for, jsonify, Response, abort, s
 from pathlib import Path
 from dgenies.lib.paf import Paf
 from dgenies.lib.job_manager import JobManager
-from dgenies.lib.functions import Functions, ALLOWED_EXTENSIONS
+from dgenies.lib.functions import Functions
+from dgenies.allowed_extensions import ALLOWED_GROUPED_EXTENSIONS
 from dgenies.lib.upload_file import UploadFile
 from dgenies.lib.datafile import DataFile
 from dgenies.lib.latest import Latest
@@ -107,7 +108,7 @@ def run():
     if "email" in request.args:
         email = request.args["email"]
     return render_template("run.html", id_job=id_job, email=email,
-                           menu="run", allowed_ext=ALLOWED_EXTENSIONS, s_id=s_id,
+                           menu="run", allowed_ext=ALLOWED_GROUPED_EXTENSIONS, s_id=s_id,
                            max_upload_file_size=config_reader.max_upload_file_size,
                            example_align=config_reader.example_target != "",
                            target=os.path.basename(config_reader.example_target),
@@ -420,7 +421,7 @@ def status(id_job):
     """
     job = JobManager(id_job)
     answer = get_status(job)
-    if job.get_job_type() == "batch":
+    if job.is_batch():
         answer["batch"] = [get_status(JobManager(subjob_id)) for subjob_id in job.get_subjob_ids()]
 
     fmt = request.args.get("format")

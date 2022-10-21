@@ -34,6 +34,7 @@ import io
 import binascii
 from hashlib import sha1
 from dgenies.database import Job, ID_JOB_LENGTH
+from dgenies.allowed_extensions import ALLOWED_FILE_EXTENSIONS
 
 if MODE == "webserver":
     from dgenies.database import Session, Gallery
@@ -802,6 +803,7 @@ class JobManager:
                     raise Exception("Unable to copy %s file from temp to finale path: %s file does not exists" %
                                     (type_f, datafile.get_path()))
 
+        # We create a "dot file" to store the file name for cluster
         with open(os.path.join(self.output_dir, "." + type_f), "w") as save_file:
             save_file.write(finale_path)
         return finale_path
@@ -989,8 +991,8 @@ class JobManager:
 
         :param input_type: query or target
         :param should_be_local: True if job should be treated locally
-        :param max_upload_size_readable: max upload size human readable
-        :return: (True if correct, True if error set [for fail], True if should be local)
+        :param max_upload_size_readable: max upload size human-readable
+        :return: (True if correct, True if error set [for fail - always the negation of correct], True if should be local)
         """
         if input_type == "target" and self.query is None:
             max_upload_size_readable = self.config.max_upload_size_ava / 1024 / 1024
@@ -1122,72 +1124,43 @@ class JobManager:
             should_be_local = True
             max_upload_size_readable = self.config.max_upload_size / 1024 / 1024  # Set it in Mb
             files_to_download = []
-            if self.query is not None:
-                if self.query.get_type() == "local":
-                    self.query.set_path(self._getting_local_file(self.query, "query"))
-                    correct, error_set, should_be_local = self.check_file("query", should_be_local,
-                                                                          max_upload_size_readable)
-                    if not correct:
-                        return False, error_set, True
-                elif self._check_url(self.query, ("fasta",) if self.align is None else ("fasta", "idx")):
-                    files_to_download.append([self.query, "query"])
-                else:
-                    return False, True, True
-            if correct and self.target is not None:
-                if self.target.get_type() == "local":
-                    self.target.set_path(self._getting_local_file(self.target, "target"))
-                    correct, error_set, should_be_local = self.check_file("target", should_be_local,
-                                                                          max_upload_size_readable)
-                    if not correct:
-                        return False, error_set, True
-                elif self._check_url(self.target, ("fasta",) if self.align is None else ("fasta", "idx")):
-                    files_to_download.append([self.target, "target"])
-                else:
-                    return False, True, True
-            if correct and self.align is not None:
-                if self.align.get_type() == "local":
-                    self.align.set_path(self._getting_local_file(self.align, "align"))
-                    correct, error_set, should_be_local = self.check_file("align", should_be_local,
-                                                                          max_upload_size_readable)
-                elif self._check_url(self.align, ("map",)):
-                    files_to_download.append([self.align, "align"])
-                else:
-                    return False, True, True
-            if correct and self.backup is not None:
-                if self.backup.get_type() == "local":
-                    self.backup.set_path(self._getting_local_file(self.backup, "backup"))
-                    correct, error_set, should_be_local = self.check_file("backup", should_be_local,
-                                                                          max_upload_size_readable)
-                elif self._check_url(self.backup, ("backup",)):
-                    files_to_download.append([self.backup, "backup"])
-                else:
-                    return False, True, True
-            if correct and self.batch is not None:
-                if self.batch.get_type() == "local":
-                    self.batch.set_path(self._getting_local_file(self.batch, "batch"))
-                    correct, error_set, should_be_local = self.check_file("batch", should_be_local,
-                                                                          max_upload_size_readable)
-                elif self._check_url(self.batch, ("batch",)):
-                    files_to_download.append([self.batch, "batch"])
-                else:
-                    return False, True, True
 
-            all_downloaded = True
+            for f_type, f_ext in ALLOWED_FILE_EXTENSIONS.get(self.get_job_type()).items():
+                f_attr = self.__getattribute__(f_type)
+                if correct and f_attr is not None:
+                    if f_attr.get_type() == "local":
+                        # Move local files from tmp and check them
+                        f_attr.set_path(self._getting_local_file(f_attr, f_type))
+                        correct, error_set, should_be_local = self.check_file(f_type, should_be_local,
+                                                                              max_upload_size_readable)
+                        if not correct:
+                            return False, error_set, True
+                    elif self._check_url(f_attr, f_ext):
+                        files_to_download.append([f_attr, f_type])
+                    else:
+                        return False, True, True
+
+            are_all_local_files = True
             if correct:
                 if len(files_to_download) > 0:
-                    all_downloaded = False
-                    thread = threading.Timer(0, self.download_files_with_pending,
-                                             kwargs={"files_to_download": files_to_download,
-                                                     "should_be_local": should_be_local,
-                                                     "max_upload_size_readable": max_upload_size_readable})
-                    thread.start()  # Start the execution
-                    if MODE != "webserver":
-                        thread.join()
+                    are_all_local_files = False
+
+                    #thread = threading.Timer(0, self.download_files_with_pending,
+                    #                         kwargs={"files_to_download": files_to_download,
+                    #                                 "should_be_local": should_be_local,
+                    #                                 "max_upload_size_readable": max_upload_size_readable})
+                    #thread.start()  # Start the execution
+
+                    self.download_files_with_pending(files_to_download,
+                                                     should_be_local,
+                                                     max_upload_size_readable)
+                    #if MODE != "webserver":
+                    #    thread.join()
                 elif correct and MODE == "webserver" and job.runner_type != "local" and should_be_local \
                         and self.get_pending_local_number() < self.config.max_run_local:
                     job.runner_type = "local"
                     job.save()
-        return correct, error_set, all_downloaded
+        return correct, error_set, are_all_local_files
 
     def run_align_in_thread(self, runner_type="local"):
         """
@@ -1714,11 +1687,30 @@ class JobManager:
 
     def is_batch(self):
         """
-        Check is job is a batch job
+        Check if job is a batch job
         :return: True if job is a batch job
         :rtype: bool
         """
         return self.batch is not None or os.path.exists(os.path.join(self.output_dir, ".batch"))
+
+    def is_plot(self):
+        """
+        Check if job is a plot job
+        :return: True if job is a plot job
+        :rtype: bool
+        """
+        return self.align is not None \
+               or os.path.exists(self.paf) \
+               or self.backup is None
+
+
+    def is_align(self):
+        """
+        Check if job is an align job
+        :return: True if job is a plot job
+        :rtype: bool
+        """
+        return not self.is_plot() is None and not self.is_batch()
 
     def get_job_type(self):
         """
@@ -1726,7 +1718,7 @@ class JobManager:
         :return: job type which is either "new" (for new align job), "plot" and "batch"
         :rtype: str
         """
-        return "batch" if(self.batch is not None or os.path.exists(os.path.join(self.output_dir, ".batch"))) \
+        return "batch" if self.is_batch() \
             else "new" if(self.align is None and self.backup is None) else "plot"
 
     def _save_analytics_data(self):
@@ -1867,9 +1859,13 @@ class JobManager:
         Start job: download, check and parse input files
         """
         try:
-            success, error_set, all_downloaded = self.getting_files()
-            if not success or all_downloaded:
-                # The error managment is delegated into _after_start
+            # success: all local files are correct
+            # error_set: always equal to 'not success' here
+            # are_all_local_files: all files are local (always True when success = False)
+            success, error_set, are_all_local_files = self.getting_files()
+            if not success or are_all_local_files:
+                # Only go there if no download was needed
+                # Else _after_start is called in download_files_with_pending() subfunction called in getting_files()
                 self._after_start(success, error_set)
 
         except Exception:
