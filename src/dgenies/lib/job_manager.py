@@ -29,6 +29,9 @@ from dgenies.bin.merge_splitted_chrms import Merger
 from dgenies.bin.sort_paf import Sorter
 from dgenies.lib.paf import Paf
 from dgenies.lib.batch import read_batch_file
+from dgenies.lib.exceptions import DGeniesFileCheckError, DGeniesNotGzipFileError, DGeniesUploadedFileSizeLimitError,\
+    DGeniesAlignmentFileUnsupported, DGeniesAlignmentFileInvalid, DGeniesIndexFileInvalid,\
+    DGeniesURLError, DGeniesURLInvalid, DGeniesDistantFileTypeUnsupported
 import gzip
 import io
 import binascii
@@ -871,25 +874,14 @@ class JobManager:
         try:
             dl_path = self._download_file(datafile.get_path())
         except (ConnectionError, URLError):
-            status = "fail"
-            error = "<p>Url <b>%s</b> is not valid!</p>" \
-                    "<p>If this is unattended, please contact the support.</p>" % datafile.get_path()
-            if MODE == "webserver":
-                with Job.connect():
-                    job = Job.get(Job.id_job == self.id_job)
-                    job.status = status
-                    job.error = error
-                    job.save()
-            else:
-                self.set_status_standalone(status, error)
-            return False, True, None, None
+            raise DGeniesURLInvalid(datafile.get_path())
         filename = os.path.basename(dl_path)
         name = os.path.splitext(filename.replace(".gz", ""))[0]
         finale_path = os.path.join(self.output_dir, type_f + "_" + filename)
         shutil.move(dl_path, finale_path)
         with open(os.path.join(self.output_dir, "." + type_f), "w") as save_file:
             save_file.write(finale_path)
-        return True, False, finale_path, name
+        return finale_path, name
 
     def _check_url(self, datafile, formats):
         """
@@ -906,18 +898,7 @@ class JobManager:
         try:
             filename = self._get_filename_from_url(url)
         except (ConnectionError, URLError):
-            status = "fail"
-            error = "<p>Url <b>%s</b> is not valid!</p>" \
-                    "<p>If this is unattended, please contact the support.</p>" % datafile.get_path()
-            if MODE == "webserver":
-                with Job.connect():
-                    job = Job.get(Job.id_job == self.id_job)
-                    job.status = status
-                    job.error = error
-                    job.save()
-            else:
-                self.set_status_standalone(status, error)
-            return False
+            raise DGeniesURLInvalid(url)
         if filename is not None:
             allowed = Functions.allowed_file(filename, formats)
             if not allowed:
@@ -939,29 +920,10 @@ class JobManager:
                         format_txt = "a Fasta file or an index file"
                     else:
                         format_txt = "a valid file"
-                error = "<p>File <b>%s</b> downloaded from <b>%s</b> is not %s!</p>" \
-                        "<p>If this is unattended, please contact the support.</p>" % (filename, url, format_txt)
-                if MODE == "webserver":
-                    with Job.connect():
-                        job = Job.get(Job.id_job == self.id_job)
-                        job.status = status
-                        job.error = error
-                        job.save()
-                else:
-                    self.set_status_standalone(status, error)
+                raise DGeniesDistantFileTypeUnsupported(filename, url, format_txt)
         else:
             allowed = False
-            status = "fail"
-            error = "<p>Url <b>%s</b> is not a valid URL!</p>" \
-                    "<p>If this is unattended, please contact the support.</p>" % url
-            if MODE == "webserver":
-                with Job.connect():
-                    job = Job.get(Job.id_job == self.id_job)
-                    job.status = status
-                    job.error = error
-                    job.save()
-            else:
-                self.set_status_standalone(status, error)
+            raise DGeniesURLInvalid(url)
         return allowed
 
     def clear(self):
@@ -987,12 +949,12 @@ class JobManager:
 
     def check_file(self, input_type, should_be_local, max_upload_size_readable):
         """
-        Check if file is correct: format, size, valid gzip
+        Check if file is correct: format, size, valid gzip, will raise a DGeniesFileCheckError Exception on error
 
         :param input_type: query or target
         :param should_be_local: True if job should be treated locally
         :param max_upload_size_readable: max upload size human-readable
-        :return: (True if correct, True if error set [for fail - always the negation of correct], True if should be local)
+        :return: True if should be local, False else
         """
         if input_type == "target" and self.query is None:
             max_upload_size_readable = self.config.max_upload_size_ava / 1024 / 1024
@@ -1000,37 +962,27 @@ class JobManager:
             my_input = getattr(self, input_type)
             if my_input.get_path().endswith(".gz") and not self.is_gz_file(my_input.get_path()):
                 # Check file is correctly gzipped
-                self.set_job_status("fail", input_type + " file is not a correct gzip file")
-                self.clear()
-                return False, True, None
+                raise DGeniesNotGzipFileError(input_type + " file is not a correct gzip file")
+
             # Check size:
             file_size = self.get_file_size(my_input.get_path())
             if -1 < (self.config.max_upload_size if (input_type == "query" or self.query is not None)
                      else self.config.max_upload_size_ava) < file_size:
-                self.set_job_status("fail",
-                                    input_type +
-                                    " file exceed size limit of %d Mb (uncompressed)" % max_upload_size_readable)
-                self.clear()
-                return False, True, None
+                raise DGeniesUploadedFileSizeLimitError(input_type, max_upload_size_readable, compressed=False)
 
             if input_type == "align":
                 if not hasattr(validators, self.aln_format):
-                    self.set_job_status("fail", "Alignment file format not supported")
-                    return False, True, None
+                    raise DGeniesAlignmentFileUnsupported()
                 if not getattr(validators, self.aln_format)(self.align.get_path()):
-                    self.set_job_status("fail", "Alignment file is invalid. Please check your file.")
-                    return False, True, None
+                    raise DGeniesAlignmentFileInvalid()
             elif input_type not in ("backup", "batch"):
                 if my_input.get_path().endswith(".idx"):
                     if not validators.v_idx(my_input.get_path()):
-                        self.set_job_status("fail",
-                                            "%s index file is invalid. Please check your file." %
-                                            input_type.capitalize())
-                        return False, True, None
+                        raise DGeniesIndexFileInvalid(input_type.capitalize())
                 if self.config.runner_type != "local" and file_size >= getattr(self.config, "min_%s_size" % input_type):
                     should_be_local = False
 
-        return True, False, should_be_local
+        return should_be_local
 
     def download_files_with_pending(self, files_to_download, should_be_local, max_upload_size_readable):
         """
@@ -1074,17 +1026,18 @@ class JobManager:
                     if MODE == "webserver":
                         job.status = "getfiles"
                         job.save()
-                    for file, input_type in files_to_download:
-                        correct, error_set, finale_path, filename = self._getting_file_from_url(file, input_type)
-                        if not correct:
-                            break
-                        my_input = getattr(self, input_type)
-                        my_input.set_path(finale_path)
-                        my_input.set_name(filename)
-                        correct, error_set, should_be_local = self.check_file(input_type, should_be_local,
-                                                                              max_upload_size_readable)
-                        if not correct:
-                            break
+                    try:
+                        for file, input_type in files_to_download:
+                            finale_path, filename = self._getting_file_from_url(file, input_type)
+                            my_input = getattr(self, input_type)
+                            my_input.set_path(finale_path)
+                            my_input.set_name(filename)
+                            should_be_local = self.check_file(input_type, should_be_local, max_upload_size_readable)
+                    except (DGeniesFileCheckError, DGeniesURLError) as e:
+                        correct, error_set = False, True
+                        self.set_job_status("fail", e.message)
+                        if e.clear_job:
+                            self.clear()
 
                     if correct and MODE == "webserver" and job.runner_type != "local" and should_be_local \
                             and self.get_pending_local_number() < self.config.max_run_local:
@@ -1125,20 +1078,21 @@ class JobManager:
             max_upload_size_readable = self.config.max_upload_size / 1024 / 1024  # Set it in Mb
             files_to_download = []
 
-            for f_type, f_ext in ALLOWED_FILE_EXTENSIONS.get(self.get_job_type()).items():
-                f_attr = self.__getattribute__(f_type)
-                if correct and f_attr is not None:
-                    if f_attr.get_type() == "local":
-                        # Move local files from tmp and check them
-                        f_attr.set_path(self._getting_local_file(f_attr, f_type))
-                        correct, error_set, should_be_local = self.check_file(f_type, should_be_local,
-                                                                              max_upload_size_readable)
-                        if not correct:
-                            return False, error_set, True
-                    elif self._check_url(f_attr, f_ext):
-                        files_to_download.append([f_attr, f_type])
-                    else:
-                        return False, True, True
+            try:
+                for f_type, f_ext in ALLOWED_FILE_EXTENSIONS.get(self.get_job_type()).items():
+                    f_attr = self.__getattribute__(f_type)
+                    if correct and f_attr is not None:
+                        if f_attr.get_type() == "local":
+                            # Move local files from tmp and check them
+                            f_attr.set_path(self._getting_local_file(f_attr, f_type))
+                            should_be_local = self.check_file(f_type, should_be_local, max_upload_size_readable)
+                        elif self._check_url(f_attr, f_ext):
+                            files_to_download.append([f_attr, f_type])
+            except (DGeniesFileCheckError, DGeniesURLError) as e:
+                correct, error_set = False, True
+                self.set_job_status("fail", e.message)
+                if e.clear_job:
+                    self.clear()
 
             are_all_local_files = True
             if correct:
