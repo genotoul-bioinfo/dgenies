@@ -1,14 +1,7 @@
-class DGeniesFileCheckError(Exception):
+class DGeniesMessageException(Exception):
     """
-    Exception raise when an error append while testing local files
+    Exception with message fo user.
     """
-
-    def __init__(self, clear_job=False):
-        """
-        :param clear_job: job must be cleaned when managing except if True, else not needed
-        :type clear_job: bool
-        """
-        self.clear_job = clear_job
 
     @property
     def message(self):
@@ -19,6 +12,19 @@ class DGeniesFileCheckError(Exception):
         :rtype: str
         """
         return self.__str__()
+
+
+class DGeniesFileCheckError(DGeniesMessageException):
+    """
+    Exception raise when an error append while testing local files
+    """
+
+    def __init__(self, clear_job=False):
+        """
+        :param clear_job: job must be cleaned when managing except if True, else not needed
+        :type clear_job: bool
+        """
+        self.clear_job = clear_job
 
 
 class DGeniesNotGzipFileError(DGeniesFileCheckError):
@@ -93,7 +99,7 @@ class DGeniesAlignmentFileInvalid(DGeniesFileCheckError):
         :return: message for user
         :rtype: str
         """
-        return self.__str__() + ".  Please check your file."
+        return self.__str__() + ". Please check your file."
 
     def __str__(self):
         return "Alignment file is invalid"
@@ -122,7 +128,7 @@ class DGeniesIndexFileInvalid(DGeniesFileCheckError):
         return "{} index file is invalid".format(self.filename)
 
 
-class DGeniesURLError(Exception):
+class DGeniesURLError(DGeniesMessageException):
     """
     Exception raise when an URL related error appends
     """
@@ -133,16 +139,6 @@ class DGeniesURLError(Exception):
         :type clear_job: bool
         """
         self.clear_job = clear_job
-
-    @property
-    def message(self):
-        """
-        Get message for user
-
-        :return: message for user
-        :rtype: str
-        """
-        return self.__str__()
 
 
 class DGeniesURLInvalid(DGeniesURLError):
@@ -207,7 +203,7 @@ class DGeniesDistantFileTypeUnsupported(DGeniesURLError):
         return "File {} downloaded from {} is not {}!".format(self.filename, self.url, self.format_txt)
 
 
-class DGeniesBackupUnpackError(Exception):
+class DGeniesBackupUnpackError(DGeniesMessageException):
     """
     Exception raised when something went wrong when unpacking backup file
     """
