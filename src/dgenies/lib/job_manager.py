@@ -1100,17 +1100,14 @@ class JobManager:
                 if len(files_to_download) > 0:
                     are_all_local_files = False
 
-                    #thread = threading.Timer(0, self.download_files_with_pending,
-                    #                         kwargs={"files_to_download": files_to_download,
-                    #                                 "should_be_local": should_be_local,
-                    #                                 "max_upload_size_readable": max_upload_size_readable})
-                    #thread.start()  # Start the execution
+                    #self.download_files_with_pending(files_to_download, should_be_local)
+                    thread = threading.Timer(0, self.download_files_with_pending,
+                                             kwargs={"files_to_download": files_to_download,
+                                                     "should_be_local": should_be_local})
+                    thread.start()  # Start the execution
+                    if MODE != "webserver":
+                        thread.join()
 
-                    self.download_files_with_pending(files_to_download,
-                                                     should_be_local,
-                                                     max_upload_size_readable)
-                    #if MODE != "webserver":
-                    #    thread.join()
                 elif correct and MODE == "webserver" and job.runner_type != "local" and should_be_local \
                         and self.get_pending_local_number() < self.config.max_run_local:
                     job.runner_type = "local"
