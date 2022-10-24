@@ -947,7 +947,7 @@ class JobManager:
         else:
             return 0
 
-    def check_file(self, input_type, should_be_local, max_upload_size_readable):
+    def check_file(self, input_type, should_be_local):
         """
         Check if file is correct: format, size, valid gzip, will raise a DGeniesFileCheckError Exception on error
 
@@ -958,6 +958,8 @@ class JobManager:
         """
         if input_type == "target" and self.query is None:
             max_upload_size_readable = self.config.max_upload_size_ava / 1024 / 1024
+        else:
+            max_upload_size_readable = self.config.max_upload_size / 1024 / 1024
         with Job.connect():
             my_input = getattr(self, input_type)
             if my_input.get_path().endswith(".gz") and not self.is_gz_file(my_input.get_path()):
@@ -968,7 +970,7 @@ class JobManager:
             file_size = self.get_file_size(my_input.get_path())
             if -1 < (self.config.max_upload_size if (input_type == "query" or self.query is not None)
                      else self.config.max_upload_size_ava) < file_size:
-                raise DGeniesUploadedFileSizeLimitError(input_type, max_upload_size_readable, compressed=False)
+                raise DGeniesUploadedFileSizeLimitError(input_type, max_upload_size_readable, unit="Mb", compressed=False)
 
             if input_type == "align":
                 if not hasattr(validators, self.aln_format):
@@ -984,7 +986,7 @@ class JobManager:
 
         return should_be_local
 
-    def download_files_with_pending(self, files_to_download, should_be_local, max_upload_size_readable):
+    def download_files_with_pending(self, files_to_download, should_be_local):
         """
         Download files from URLs, with pending (according to the max number of concurrent downloads)
 
@@ -1032,7 +1034,7 @@ class JobManager:
                             my_input = getattr(self, input_type)
                             my_input.set_path(finale_path)
                             my_input.set_name(filename)
-                            should_be_local = self.check_file(input_type, should_be_local, max_upload_size_readable)
+                            should_be_local = self.check_file(input_type, should_be_local)
                     except (DGeniesFileCheckError, DGeniesURLError) as e:
                         correct, error_set = False, True
                         self.set_job_status("fail", e.message)
@@ -1075,7 +1077,6 @@ class JobManager:
             correct = True
             error_set = False
             should_be_local = True
-            max_upload_size_readable = self.config.max_upload_size / 1024 / 1024  # Set it in Mb
             files_to_download = []
 
             try:
