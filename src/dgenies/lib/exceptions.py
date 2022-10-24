@@ -203,6 +203,24 @@ class DGeniesDistantFileTypeUnsupported(DGeniesURLError):
         return "File {} downloaded from {} is not {}!".format(self.filename, self.url, self.format_txt)
 
 
+class DGeniesDownloadError(DGeniesMessageException):
+    """
+    Exception raised when something went wrong when downloading file
+    """
+    @property
+    def message(self):
+        """
+        Get message for user
+
+        :return: message for user
+        :rtype: str
+        """
+        return self.__str__() + ". Please contact the support to report the bug."
+
+    def __str__(self):
+        return "Error while downloading input files"
+
+
 class DGeniesBackupUnpackError(DGeniesMessageException):
     """
     Exception raised when something went wrong when unpacking backup file
