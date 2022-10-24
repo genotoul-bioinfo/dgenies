@@ -31,7 +31,7 @@ from dgenies.lib.paf import Paf
 from dgenies.lib.batch import read_batch_file
 from dgenies.lib.exceptions import DGeniesFileCheckError, DGeniesNotGzipFileError, DGeniesUploadedFileSizeLimitError,\
     DGeniesAlignmentFileUnsupported, DGeniesAlignmentFileInvalid, DGeniesIndexFileInvalid,\
-    DGeniesURLError, DGeniesURLInvalid, DGeniesDistantFileTypeUnsupported
+    DGeniesURLError, DGeniesURLInvalid, DGeniesDistantFileTypeUnsupported, DGeniesBackupUnpackError
 import gzip
 import io
 import binascii
@@ -964,7 +964,7 @@ class JobManager:
             my_input = getattr(self, input_type)
             if my_input.get_path().endswith(".gz") and not self.is_gz_file(my_input.get_path()):
                 # Check file is correctly gzipped
-                raise DGeniesNotGzipFileError(input_type + " file is not a correct gzip file")
+                raise DGeniesNotGzipFileError(input_type)
 
             # Check size:
             file_size = self.get_file_size(my_input.get_path())
@@ -1013,106 +1013,78 @@ class JobManager:
                 job = None
                 s_id = None
 
+            correct = True
             try:
-                correct = True
-                error_set = False
                 if MODE == "webserver":
                     allowed = session.ask_for_upload(True)
+                    while not allowed:
+                        time.sleep(15)
+                        session = Session.get(s_id=s_id)
+                        allowed = session.ask_for_upload(False)
                 else:
                     allowed = True
-                while not allowed:
-                    time.sleep(15)
-                    session = Session.get(s_id=s_id)
-                    allowed = session.ask_for_upload(False)
                 if allowed:
                     if MODE == "webserver":
                         job.status = "getfiles"
                         job.save()
-                    try:
-                        for file, input_type in files_to_download:
-                            finale_path, filename = self._getting_file_from_url(file, input_type)
-                            my_input = getattr(self, input_type)
-                            my_input.set_path(finale_path)
-                            my_input.set_name(filename)
-                            should_be_local = self.check_file(input_type, should_be_local)
-                    except (DGeniesFileCheckError, DGeniesURLError) as e:
-                        correct, error_set = False, True
-                        self.set_job_status("fail", e.message)
-                        if e.clear_job:
-                            self.clear()
 
-                    if correct and MODE == "webserver" and job.runner_type != "local" and should_be_local \
+                    # download each file
+                    for file, input_type in files_to_download:
+                        finale_path, filename = self._getting_file_from_url(file, input_type) # Raise exception on error
+                        my_input = getattr(self, input_type)
+                        my_input.set_path(finale_path)
+                        my_input.set_name(filename)
+                        should_be_local = self.check_file(input_type, should_be_local)  # Raise exception on error
+
+                    # Set runner to local if enough resource available
+                    if MODE == "webserver" and job.runner_type != "local" and should_be_local \
                             and self.get_pending_local_number() < self.config.max_run_local:
                         job.runner_type = "local"
                         job.save()
-                else:
-                    correct = False
-            except:  # Except all possible exceptions
-                traceback.print_exc()
-                correct = False
-                error_set = False
-            if MODE == "webserver":
-                session.delete_instance()
-            self._after_start(correct, error_set)
 
-    def getting_files(self):
-        """
-        Get files for the job
-
-        :return:
-            * [0] True if getting files succeed, False else
-            * [1] If error happened, True if error already saved for the job, False else (error will be saved later)
-            * [2] True if no data must be downloaded (will be downloaded with pending if True)
-        :rtype: tuple
-        """
-        with Job.connect():
-            status = "getfiles"
-            if MODE == "webserver":
-                job = Job.get(Job.id_job == self.id_job)
-                job.status = status
-                job.save()
-            else:
-                job = None
-                self.set_status_standalone(status)
-            correct = True
-            error_set = False
-            should_be_local = True
-            files_to_download = []
-
-            try:
-                for f_type, f_ext in ALLOWED_FILE_EXTENSIONS.get(self.get_job_type()).items():
-                    f_attr = self.__getattribute__(f_type)
-                    if correct and f_attr is not None:
-                        if f_attr.get_type() == "local":
-                            # Move local files from tmp and check them
-                            f_attr.set_path(self._getting_local_file(f_attr, f_type))
-                            should_be_local = self.check_file(f_type, should_be_local, max_upload_size_readable)
-                        elif self._check_url(f_attr, f_ext):
-                            files_to_download.append([f_attr, f_type])
             except (DGeniesFileCheckError, DGeniesURLError) as e:
-                correct, error_set = False, True
+                correct = False
                 self.set_job_status("fail", e.message)
+                self.send_mail_if_allowed()
                 if e.clear_job:
                     self.clear()
 
-            are_all_local_files = True
+            except:
+                # Except all possible exceptions, in particular session disappearance on timeout
+                traceback.print_exc()
+                correct = False
+                error = "<p>Error while downloading input files. Please contact the support to report the bug.</p>"
+                self._set_analytics_job_status("fail-getfiles")
+                self.set_job_status("fail", error)
+                self.send_mail_if_allowed()
+
+            if MODE == "webserver":
+                session.delete_instance()
             if correct:
-                if len(files_to_download) > 0:
-                    are_all_local_files = False
+                self._after_start()
 
-                    #self.download_files_with_pending(files_to_download, should_be_local)
-                    thread = threading.Timer(0, self.download_files_with_pending,
-                                             kwargs={"files_to_download": files_to_download,
-                                                     "should_be_local": should_be_local})
-                    thread.start()  # Start the execution
-                    if MODE != "webserver":
-                        thread.join()
+    def move_and_check_local_files(self):
+        """
+        Move local file from tmp and check files (both local files and distant files)
+        Raise DGeniesFileCheckError or DGeniesURLError on error
 
-                elif correct and MODE == "webserver" and job.runner_type != "local" and should_be_local \
-                        and self.get_pending_local_number() < self.config.max_run_local:
-                    job.runner_type = "local"
-                    job.save()
-        return correct, error_set, are_all_local_files
+        :return: list of file to download
+        :rtype: list of DataFile
+        """
+        files_to_download = []
+        should_be_local = True
+        for f_type, f_ext in ALLOWED_FILE_EXTENSIONS.get(self.get_job_type()).items():
+            f_attr = self.__getattribute__(f_type)
+            if f_attr is not None:
+                if f_attr.get_type() == "local":
+                    # Move local files from tmp and check them
+                    f_attr.set_path(self._getting_local_file(f_attr, f_type))
+                    should_be_local = self.check_file(f_type, should_be_local)  # Will raise an exception on error
+                else:
+                    self._check_url(f_attr, f_ext)  # Will raise an exception on error
+                    files_to_download.append([f_attr, f_type])
+        return files_to_download, should_be_local
+
 
     def run_align_in_thread(self, runner_type="local"):
         """
@@ -1735,18 +1707,18 @@ class JobManager:
             with tarfile.open(self.backup.get_path(), "r:*") as tar:
                 members = tar.getmembers()
                 if len(members) != 3:
-                    return False
+                    raise DGeniesBackupUnpackError()
                 for m in members:
                     if m.name not in allowed_files or not m.isfile():
-                        return False
+                        raise DGeniesBackupUnpackError()
                 tar.extractall(path=self.output_dir, members=self.allowed_backup_files(tar, allowed_files))
                 shutil.move(self.paf, self.paf_raw)
                 if not validators.paf(self.paf_raw):
-                    return False
+                    raise DGeniesBackupUnpackError()
                 target_path = os.path.join(self.output_dir, "target.idx")
                 query_path = os.path.join(self.output_dir, "query.idx")
                 if not validators.v_idx(target_path) or not validators.v_idx(query_path):
-                    return False
+                    raise DGeniesBackupUnpackError()
                 self.align = DataFile(name="map", path=self.paf_raw, type_f="local")
                 self.aln_format = "paf"
                 with open(os.path.join(self.output_dir, ".align"), "w") as aln:
@@ -1758,80 +1730,93 @@ class JobManager:
                 with open(os.path.join(self.output_dir, ".query"), "w") as qr:
                     qr.write(query_path)
             os.remove(self.backup.get_path())
-            return True
         except:
             traceback.print_exc()
-            return False
+            raise DGeniesBackupUnpackError()
 
-    def _after_start(self, success, error_set):
+    def _after_start(self):
         """
         Tasks done after input files downloaded, checked and parsed: if success, set job status to "waiting".
         Else, set job error and send mail.
-
-        :param success: job success
-        :type success: bool
-        :param error_set: error already set (else, set it now)
-        :type error_set: bool
         """
         with Job.connect():
             if MODE == "webserver" and self.config.analytics_enabled:
                 self._save_analytics_data()
-            if success:
+            try:
                 if self.backup is not None:
-                    success = self.unpack_backup()
-                    if not success:
-                        self.set_job_status("fail", "Backup file is not valid. If it is unattended, please contact the "
-                                                    "support.")
-                        self.send_mail_if_allowed()
-                        return False
+                    self.unpack_backup()
                 status = "waiting"
                 if MODE == "webserver":
+                    # Register job for next step
                     job = Job.get(Job.id_job == self.id_job)
                     job.status = status
                     job.save()
                 else:
+                    # Start next step
                     self.set_status_standalone(status)
                     self.prepare_job_in_thread()
-            else:
-                self._set_analytics_job_status("fail-getfiles")
-                if not error_set:
-                    status = "fail"
-                    error = "<p>Error while getting input files. Please contact the support to report the bug.</p>"
-                    if MODE == "webserver":
-                        job = Job.get(Job.id_job == self.id_job)
-                        job.status = status
-                        job.error = error
-                        job.save()
-                    else:
-                        self.set_status_standalone(status, error)
+            except DGeniesBackupUnpackError as e:
+                self.set_job_status("fail", e.message)
                 self.send_mail_if_allowed()
 
     def start_job(self):
         """
         Start job: download, check and parse input files
         """
-        try:
-            # success: all local files are correct
-            # error_set: always equal to 'not success' here
-            # are_all_local_files: all files are local (always True when success = False)
-            success, error_set, are_all_local_files = self.getting_files()
-            if not success or are_all_local_files:
-                # Only go there if no download was needed
-                # Else _after_start is called in download_files_with_pending() subfunction called in getting_files()
-                self._after_start(success, error_set)
-
-        except Exception:
-            traceback.print_exc()
-            error = "<p>An unexpected error has occurred. Please contact the support to report the bug.</p>"
+        with Job.connect():
+            status = "getfiles"
             if MODE == "webserver":
-                with Job.connect():
-                    job = Job.get(Job.id_job == self.id_job)
+                job = Job.get(Job.id_job == self.id_job)
+                job.status = status
+                job.save()
+            else:
+                job = None
+                self.set_status_standalone(status)
+            try:
+                files_to_download, should_be_local = self.move_and_check_local_files()
+
+                # Some files must be downloaded
+                if len(files_to_download) > 0:
+                    #self.download_files_with_pending(files_to_download, should_be_local)
+                    thread = threading.Timer(0, self.download_files_with_pending,
+                                             kwargs={"files_to_download": files_to_download,
+                                                     "should_be_local": should_be_local})
+                    thread.start()  # Start the execution
+                    if MODE != "webserver":
+                        thread.join()
+
+                # Set the runner according to available resource
+                elif MODE == "webserver" and job.runner_type != "local" and should_be_local \
+                        and self.get_pending_local_number() < self.config.max_run_local:
+                    job.runner_type = "local"
+                    job.save()
+
+            except (DGeniesFileCheckError, DGeniesURLError) as e:
+                if MODE == "webserver" and self.config.analytics_enabled:
+                    self._save_analytics_data()
+                self.set_job_status("fail", e.message)
+                if e.clear_job:
+                    self.clear()
+
+            except Exception:
+                traceback.print_exc()
+                error = "<p>An unexpected error has occurred while getting the files. Please contact the support to " \
+                        "report the bug.</p> "
+                if MODE == "webserver":
                     job.status = "fail"
                     job.error = error
                     job.save()
                     self.send_mail_if_allowed()
+                else:
+                    self.set_status_standalone("fail", error)
+
             else:
-                self.set_status_standalone("fail", error)
+                if not files_to_download:
+                    # Prepare job for next step
+                    self._after_start()
+                else:
+                    # _after_start is called in download_files_with_pending thread
+                    pass
 
     def launch_standalone(self, sync=False):
         """

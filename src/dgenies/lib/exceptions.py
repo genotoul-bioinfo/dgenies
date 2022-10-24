@@ -20,6 +20,7 @@ class DGeniesFileCheckError(Exception):
         """
         return self.__str__()
 
+
 class DGeniesNotGzipFileError(DGeniesFileCheckError):
     """
     Exception raise when tested file is not a gzip file
@@ -204,3 +205,21 @@ class DGeniesDistantFileTypeUnsupported(DGeniesURLError):
 
     def __str__(self):
         return "File {} downloaded from {} is not {}!".format(self.filename, self.url, self.format_txt)
+
+
+class DGeniesBackupUnpackError(Exception):
+    """
+    Exception raised when something went wrong when unpacking backup file
+    """
+    @property
+    def message(self):
+        """
+        Get message for user
+
+        :return: message for user
+        :rtype: str
+        """
+        return self.__str__() + ". If it is unattended, please contact the support."
+
+    def __str__(self):
+        return "Backup file is not valid"
