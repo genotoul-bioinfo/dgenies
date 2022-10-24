@@ -1,0 +1,17 @@
+groups:
+  fasta: &fasta [fa, fasta, fna, fa.gz, fasta.gz, fna.gz]
+  idx: &idx [idx]
+  map: &map [maf, paf]
+  backup: &backup [tar, tar.gz]
+  batch: &batch [txt, tab, tsv]
+server:
+  new:
+    query: [fasta]
+    target: [fasta]
+  plot:
+    query: [fasta, idx]
+    target: [fasta, idx]
+    align: [map]
+    backup: [backup]
+  batch: 
+    batch: [batch]

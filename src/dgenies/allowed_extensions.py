@@ -1,3 +1,4 @@
+import logging
 import os.path
 import yaml
 from pathlib import Path
@@ -26,7 +27,8 @@ config_search_path = (
     os.path.join(str(Path.home()), ".dgenies", "allowed_extensions.yaml.local"),
     "/etc/dgenies/allowed_extensions.yaml",
     "/etc/dgenies/allowed_extensions.yaml.local",
-    os.path.join(app_dir, "allowed_extensions.yaml"),
+    os.path.join(app_dir, "..", "etc", "dgenies", "allowed_extensions.yaml"),
+    os.path.join(app_dir, "allowed_extensions-dev.yaml"),
 )
 
 allowed_ext_file = None
@@ -37,6 +39,7 @@ for f in config_search_path:
 if allowed_ext_file is None:
     raise Exception("Configuration file allowed_extensions.yaml not found")
 
+logging.warning("Loading {}".format(allowed_ext_file))
 with open(allowed_ext_file, "r") as yaml_stream:
     extensions = yaml.load(yaml_stream, Loader=yaml.Loader)
 

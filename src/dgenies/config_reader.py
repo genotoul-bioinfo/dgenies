@@ -1,3 +1,4 @@
+import logging
 import os
 import sys
 import re
@@ -41,7 +42,9 @@ class AppConfigReader:
         if len(config_file) == 0:
             raise FileNotFoundError("ERROR: application.properties not found.")
         self.reader = RawConfigParser()
+        logging.warning("Loading {}".format(", ".join(config_file)))
         self.reader.read(config_file)
+        # Set attributes
         for attr in dir(self):
             attr_o = getattr(self, attr)
             if attr.startswith("_get_") and callable(attr_o):

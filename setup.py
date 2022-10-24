@@ -16,6 +16,7 @@ if os.name == "posix":
         wsgi_dir = config_dir
 
     data_files = [(config_dir, ['application.properties']),
+                  (config_dir, ['allowed_extensions.yaml']),
                   (config_dir, ['tools.yaml']),
                   (wsgi_dir, ['dgenies.wsgi'])]
 

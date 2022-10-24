@@ -1,3 +1,4 @@
+import logging
 import os
 import sys
 import platform
@@ -278,6 +279,8 @@ class Tools:
         config_file_search.append(os.path.join(app_dir, "tools-dev.yaml"))
         config_file_search.append(os.path.join(app_dir, "tools-dev.yaml.local"))
 
+
+
         for my_config_file in reversed(config_file_search):
             if os.path.exists(my_config_file):
                 yaml_file = my_config_file
@@ -285,6 +288,7 @@ class Tools:
         if yaml_file is None:
             raise FileNotFoundError("ERROR: tools.yaml not found.")
 
+        logging.warning("Loading {}".format(yaml_file))
         with open(yaml_file, "r") as yml_f:
             tools_dict = yaml.load(yml_f, Loader=yaml.FullLoader if trusted else yaml.SafeLoader)
             tools = {}
