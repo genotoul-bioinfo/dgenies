@@ -242,7 +242,8 @@ def parse_uploads_asks():
         nb_active_dl = len(sessions)
         _printer("Active_dl:", nb_active_dl)
         for session in sessions:
-            if not session.keep_active and (now - session.last_ping).total_seconds() > 50:
+            if not session.keep_active \
+                    and (now - session.last_ping).total_seconds() > config_reader.delete_allowed_session_delay:
                 _printer("Delete 1 active session:", session.s_id)
                 session.delete_instance()  # We consider the user has left
                 nb_active_dl -= 1
@@ -251,7 +252,7 @@ def parse_uploads_asks():
         _printer("Pending:", len(sessions))
         for session in sessions:
             delay = (now - session.last_ping).total_seconds()
-            if delay > 30:
+            if delay > config_reader.reset_pending_session_delay:
                 session.status = "reset"  # Reset position, the user has probably left
                 session.save()
                 _printer("Reset 1 session:", session.s_id)
@@ -263,7 +264,7 @@ def parse_uploads_asks():
         # Remove old sessions:
         for session in all_sessions:
             delay = (now - session.last_ping).total_seconds()
-            if delay > 86400:  # Session has more than 1 day
+            if delay > config_reader.delete_session_delay:
                 _printer("Delete 1 outdated session:", session.s_id)
                 session.delete_instance()  # Session has expired
 

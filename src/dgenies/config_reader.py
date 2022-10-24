@@ -153,9 +153,27 @@ class AppConfigReader:
 
     def _get_max_download_sessions(self):
         try:
-            return int(self._replace_vars(self.reader.get("global", "_get_max_download_sessions")))
+            return int(self._replace_vars(self.reader.get("session", "max_download_sessions")))
         except NoOptionError:
             return 5
+
+    def _get_delete_allowed_session_delay(self):
+        try:
+            return int(self._replace_vars(self.reader.get("session", "delete_allowed_session_delay")))
+        except NoOptionError:
+            return 50
+
+    def _get_reset_pending_session_delay(self):
+        try:
+            return int(self._replace_vars(self.reader.get("session", "reset_pending_session_delay")))
+        except NoOptionError:
+            return 30
+
+    def _get_delete_session_delay(self):
+        try:
+            return int(self._replace_vars(self.reader.get("session", "delete_session_delay")))
+        except NoOptionError:
+            return 86400
 
     def _get_database_type(self):
         try:
