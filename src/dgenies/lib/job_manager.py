@@ -1636,25 +1636,26 @@ class JobManager:
         """
         Save analytics data into the database
         """
-        from dgenies.database import Analytics
-        with Job.connect():
-            job = Job.get(Job.id_job == self.id_job)
-            target_size = os.path.getsize(self.target.get_path()) if (self.target is not None and self.target.get_type()
-                                                                      == "local" and
-                                                                      os.path.exists(self.target.get_path())) else 0
-            query_size = None
-            if self.query is not None and self.query.get_type() == "local" and os.path.exists(self.query.get_path()):
-                query_size = os.path.getsize(self.query.get_path())
-            log = Analytics.create(
-                id_job=self.id_job,
-                date_created=datetime.now(),
-                target_size=target_size,
-                query_size=query_size,
-                mail_client=self._anonymize_mail_client(job.email),
-                runner_type=job.runner_type,
-                job_type=self.get_job_type(),
-                tool=self.tool_name if self.tool_name is not None else "unset")
-            log.save()
+        if self.config.analytics_enabled and MODE == "webserver":
+            from dgenies.database import Analytics
+            with Job.connect():
+                job = Job.get(Job.id_job == self.id_job)
+                target_size = os.path.getsize(self.target.get_path()) if (self.target is not None and self.target.get_type()
+                                                                          == "local" and
+                                                                          os.path.exists(self.target.get_path())) else 0
+                query_size = None
+                if self.query is not None and self.query.get_type() == "local" and os.path.exists(self.query.get_path()):
+                    query_size = os.path.getsize(self.query.get_path())
+                log = Analytics.create(
+                    id_job=self.id_job,
+                    date_created=datetime.now(),
+                    target_size=target_size,
+                    query_size=query_size,
+                    mail_client=self._anonymize_mail_client(job.email),
+                    runner_type=job.runner_type,
+                    job_type=self.get_job_type(),
+                    tool=self.tool_name if self.tool_name is not None else "unset")
+                log.save()
 
     def _set_analytics_job_status(self, status):
         """
@@ -1727,8 +1728,6 @@ class JobManager:
         Else, set job error and send mail.
         """
         with Job.connect():
-            if MODE == "webserver" and self.config.analytics_enabled:
-                self._save_analytics_data()
             try:
                 if self.backup is not None:
                     self.unpack_backup()
@@ -1764,6 +1763,7 @@ class JobManager:
 
                 # Some files must be downloaded
                 if len(files_to_download) > 0:
+                    # Will raise a DGeniesDownloadError on error
                     should_be_local = self.download_files_with_pending(files_to_download, should_be_local)
 
                 # Set the runner according to available resource
@@ -1772,31 +1772,24 @@ class JobManager:
                     job.runner_type = "local"
                     job.save()
 
-            except (DGeniesFileCheckError, DGeniesURLError) as e:
-                if MODE == "webserver" and self.config.analytics_enabled:
-                    self._save_analytics_data()
+            except (DGeniesFileCheckError, DGeniesURLError, DGeniesDownloadError) as e:
                 self.set_job_status("fail", e.message)
+                self._save_analytics_data()
+                self._set_analytics_job_status("fail-getfiles")
                 if e.clear_job:
                     self.clear()
-
-            except DGeniesDownloadError as e:
-                self._set_analytics_job_status("fail-getfiles")
-                self.set_job_status("fail", e.message)
-                self.send_mail_if_allowed()
 
             except Exception:
                 traceback.print_exc()
                 error = "<p>An unexpected error has occurred while getting the files. Please contact the support to " \
                         "report the bug.</p> "
-                if MODE == "webserver":
-                    job.status = "fail"
-                    job.error = error
-                    job.save()
-                    self.send_mail_if_allowed()
-                else:
-                    self.set_status_standalone("fail", error)
+                self.set_job_status("fail", error)
+                self._save_analytics_data()
+                self._set_analytics_job_status("fail-getfiles")
+                self.send_mail_if_allowed()
 
             else:
+                self._save_analytics_data()
                 # Prepare job for next step
                 self._after_start()
 

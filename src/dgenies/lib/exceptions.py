@@ -1,6 +1,6 @@
 class DGeniesMessageException(Exception):
     """
-    Exception with message fo user.
+    Exception with message for user.
     """
 
     @property
@@ -13,6 +13,10 @@ class DGeniesMessageException(Exception):
         """
         return self.__str__()
 
+    @property
+    def clear_job(self):
+        return False
+
 
 class DGeniesFileCheckError(DGeniesMessageException):
     """
@@ -24,7 +28,11 @@ class DGeniesFileCheckError(DGeniesMessageException):
         :param clear_job: job must be cleaned when managing except if True, else not needed
         :type clear_job: bool
         """
-        self.clear_job = clear_job
+        self._clear_job = clear_job
+
+    @property
+    def clear_job(self):
+        return self._clear_job
 
 
 class DGeniesNotGzipFileError(DGeniesFileCheckError):
@@ -138,8 +146,11 @@ class DGeniesURLError(DGeniesMessageException):
         :param clear_job: job must be cleaned when managing except if True, else not needed
         :type clear_job: bool
         """
-        self.clear_job = clear_job
+        self._clear_job = clear_job
 
+    @property
+    def clear_job(self):
+        return self._clear_job
 
 class DGeniesURLInvalid(DGeniesURLError):
     """
