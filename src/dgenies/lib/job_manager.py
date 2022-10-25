@@ -883,14 +883,12 @@ class JobManager:
 
     def _check_url(self, datafile, formats):
         """
-        Check if an URL is valid, and if the file is valid too
+        Check if an URL is valid, and if the file is valid too. If invalid, raise an DGeniesURLError
 
         :param datafile: datafile file object
         :type datafile: DataFile
         :param formats: allowed file formats
         :type formats: tuple
-        :return: True if URL and file are valid, else False
-        :rtype: bool
         """
         url = datafile.get_path()
         try:
@@ -900,7 +898,6 @@ class JobManager:
         if filename is not None:
             allowed = Functions.allowed_file(filename, formats)
             if not allowed:
-                status = "fail"
                 format_txt = ""
                 if len(formats) == 1:
                     if formats[0] == "fasta":
@@ -920,9 +917,7 @@ class JobManager:
                         format_txt = "a valid file"
                 raise DGeniesDistantFileTypeUnsupported(filename, url, format_txt)
         else:
-            allowed = False
             raise DGeniesURLInvalid(url)
-        return allowed
 
     def clear(self):
         """
