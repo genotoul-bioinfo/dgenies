@@ -693,7 +693,7 @@ class JobManager:
 
         if step == "start":
             memory = self.config.cluster_memory
-            if self.query is None:
+            if self.query is None:  # ava mode
                 memory = self.config.cluster_memory_ava
                 if memory > 32:
                     name, order, contigs, reversed_c, abs_start, c_len = Index.load(self.idx_t, False)
@@ -791,25 +791,44 @@ class JobManager:
         :return: final full path of the file
         :rtype: str
         """
-        finale_path = os.path.join(self.output_dir, type_f + "_" + os.path.basename(datafile.get_path()))
+        finale_path = os.path.join(self.output_dir, os.path.basename(datafile.get_path()))
         if datafile.is_example():
             shutil.copy(datafile.get_path(), finale_path)
         else:
             if os.path.exists(datafile.get_path()):
                 shutil.move(datafile.get_path(), finale_path)
             else:
-                other_file = os.path.join(self.output_dir, ("query" if type_f == "target" else "query") + "_" +
-                                          os.path.basename(datafile.get_path()))
-                if os.path.exists(other_file):
-                    shutil.copy(other_file, finale_path)
+                raise Exception("Unable to copy %s file from temp to finale path: %s file does not exists" %
+                                (type_f, datafile.get_path()))
+        print(finale_path)
+        return finale_path
+
+    def normalize_files(self):
+        """
+        Rename data file with prefix and create dotfiles
+
+        :param datafile: data file Object
+        :type datafile: DataFile
+        :param type_f: query or target
+        :type type_f: str
+        :return: final full path of the file
+        :rtype: str
+        """
+        for type_f in ALLOWED_FILE_EXTENSIONS.get(self.get_job_type()).keys():
+            datafile = getattr(self, type_f)
+            if datafile is not None:
+                finale_path = os.path.join(self.output_dir, type_f + "_" + os.path.basename(datafile.get_path()))
+                print(finale_path)
+                if os.path.exists(datafile.get_path()):
+                    shutil.move(datafile.get_path(), finale_path)
+                    datafile.set_path(finale_path)
                 else:
-                    raise Exception("Unable to copy %s file from temp to finale path: %s file does not exists" %
+                    raise Exception("Unable to normalize %s file: %s file does not exists" %
                                     (type_f, datafile.get_path()))
 
-        # We create a "dot file" to store the file name for cluster
-        with open(os.path.join(self.output_dir, "." + type_f), "w") as save_file:
-            save_file.write(finale_path)
-        return finale_path
+                # We create a "dot file" to store the file name for cluster
+                with open(os.path.join(self.output_dir, "." + type_f), "w") as save_file:
+                    save_file.write(finale_path)
 
     def _get_filename_from_url(self, url):
         """
@@ -875,10 +894,9 @@ class JobManager:
             raise DGeniesURLInvalid(datafile.get_path())
         filename = os.path.basename(dl_path)
         name = os.path.splitext(filename.replace(".gz", ""))[0]
-        finale_path = os.path.join(self.output_dir, type_f + "_" + filename)
-        shutil.move(dl_path, finale_path)
-        with open(os.path.join(self.output_dir, "." + type_f), "w") as save_file:
-            save_file.write(finale_path)
+        finale_path = os.path.join(self.output_dir, filename)
+        if dl_path != finale_path:
+            shutil.move(dl_path, finale_path)
         return finale_path, name
 
     def _check_url(self, datafile, formats):
@@ -1056,7 +1074,7 @@ class JobManager:
         files_to_download = []
         should_be_local = True
         for f_type, f_ext in ALLOWED_FILE_EXTENSIONS.get(self.get_job_type()).items():
-            f_attr = self.__getattribute__(f_type)
+            f_attr = getattr(self, f_type)
             if f_attr is not None:
                 if f_attr.get_type() == "local":
                     # Move local files from tmp and check them
@@ -1609,7 +1627,6 @@ class JobManager:
                or os.path.exists(self.paf) \
                or self.backup is None
 
-
     def is_align(self):
         """
         Check if job is an align job
@@ -1754,12 +1771,16 @@ class JobManager:
                 job = None
                 self.set_status_standalone(status)
             try:
+                # Will raise a DGeniesFileCheckError or DGeniesURLError on error
                 files_to_download, should_be_local = self.move_and_check_local_files()
 
                 # Some files must be downloaded
                 if len(files_to_download) > 0:
-                    # Will raise a DGeniesDownloadError on error
+                    # Will raise a DGeniesURLError, DGeniesDownloadError or DGeniesFileCheckError on error
                     should_be_local = self.download_files_with_pending(files_to_download, should_be_local)
+
+                # Normalize files for job: add prefix to data files and create dotfiles.
+                self.normalize_files()
 
                 # Set the runner according to available resource
                 if MODE == "webserver" and job.runner_type != "local" and should_be_local \
