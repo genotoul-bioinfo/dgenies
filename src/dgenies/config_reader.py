@@ -7,6 +7,8 @@ from pathlib import Path
 from configparser import RawConfigParser, NoOptionError, NoSectionError
 from dgenies.lib.decorators import Singleton
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 @Singleton
 class AppConfigReader:
@@ -42,7 +44,7 @@ class AppConfigReader:
         if len(config_file) == 0:
             raise FileNotFoundError("ERROR: application.properties not found.")
         self.reader = RawConfigParser()
-        logging.warning("Loading {}".format(", ".join(config_file)))
+        logger.info("Loading {}".format(", ".join(config_file)))
         self.reader.read(config_file)
         # Set attributes
         for attr in dir(self):

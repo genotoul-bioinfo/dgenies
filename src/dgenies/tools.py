@@ -9,6 +9,8 @@ import yaml
 from dgenies.lib.decorators import Singleton
 from dgenies.lib import parsers
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 class Tool:
 
@@ -288,7 +290,7 @@ class Tools:
         if yaml_file is None:
             raise FileNotFoundError("ERROR: tools.yaml not found.")
 
-        logging.warning("Loading {}".format(yaml_file))
+        logger.info("Loading {}".format(yaml_file))
         with open(yaml_file, "r") as yml_f:
             tools_dict = yaml.load(yml_f, Loader=yaml.FullLoader if trusted else yaml.SafeLoader)
             tools = {}

@@ -39,6 +39,10 @@ from hashlib import sha1
 from dgenies.database import Job, ID_JOB_LENGTH
 from dgenies.allowed_extensions import ALLOWED_FILE_TYPES
 
+import logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
 if MODE == "webserver":
     from dgenies.database import Session, Gallery
     from peewee import DoesNotExist
@@ -464,7 +468,7 @@ class JobManager:
             req = request.Request(self.config.web_url + "/send-mail/" + self.id_job, data=data)
             resp = request.urlopen(req)
             if resp.getcode() != 200:
-                print("Job %s: Send mail failed!" % self.id_job)
+                logger.error("%s: Send mail failed!" % self.id_job)
 
     def search_error(self):
         """
@@ -1824,12 +1828,12 @@ class JobManager:
         """
         Launch a job in webserver mode (asynchronously in a new thread)
         """
-        print(self.get_job_type())
+        logger.info(self.id_job + ": start " + self.get_job_type() + "job")
         with Job.connect():
             # Cleanup
             j1 = Job.select().where(Job.id_job == self.id_job)
             if len(j1) > 0:
-                print("Old job found without result dir existing: delete it from BDD!")
+                logger.info(self.id_job + ": Old job found without result dir existing: delete it from BDD!")
                 for j11 in j1:
                     j11.delete_instance()
             if self.target is not None or self.backup is not None or self.batch is not None:
