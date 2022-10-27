@@ -1,4 +1,4 @@
-groups:
+formats:
   fasta: &fasta [fa, fasta, fna, fa.gz, fasta.gz, fna.gz]
   idx: &idx [idx]
   map: &map [maf, paf]

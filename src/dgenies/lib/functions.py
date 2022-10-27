@@ -10,7 +10,7 @@ from Bio import SeqIO
 from jinja2 import Template
 from xopen import xopen
 from dgenies.config_reader import AppConfigReader
-from dgenies.allowed_extensions import ALLOWED_GROUPED_EXTENSIONS
+from dgenies.allowed_extensions import ALLOWED_EXTENSIONS_PER_FORMAT
 
 
 class Functions:
@@ -32,8 +32,8 @@ class Functions:
         """
         for file_format in file_formats:
             if '.' in filename and \
-                   (filename.rsplit('.', 1)[1].lower() in ALLOWED_GROUPED_EXTENSIONS[file_format]
-                    or ".".join(filename.rsplit('.', 2)[1:]).lower() in ALLOWED_GROUPED_EXTENSIONS[file_format]):
+                   (filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS_PER_FORMAT[file_format]
+                    or ".".join(filename.rsplit('.', 2)[1:]).lower() in ALLOWED_EXTENSIONS_PER_FORMAT[file_format]):
                 return True
         return False
 

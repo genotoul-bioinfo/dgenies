@@ -15,7 +15,7 @@ from pathlib import Path
 from dgenies.lib.paf import Paf
 from dgenies.lib.job_manager import JobManager
 from dgenies.lib.functions import Functions
-from dgenies.allowed_extensions import ALLOWED_GROUPED_EXTENSIONS
+from dgenies.allowed_extensions import ALLOWED_EXTENSIONS_PER_FORMAT
 from dgenies.lib.upload_file import UploadFile
 from dgenies.lib.datafile import DataFile
 from dgenies.lib.latest import Latest
@@ -108,7 +108,7 @@ def run():
     if "email" in request.args:
         email = request.args["email"]
     return render_template("run.html", id_job=id_job, email=email,
-                           menu="run", allowed_ext=ALLOWED_GROUPED_EXTENSIONS, s_id=s_id,
+                           menu="run", allowed_ext=ALLOWED_EXTENSIONS_PER_FORMAT, s_id=s_id,
                            max_upload_file_size=config_reader.max_upload_file_size,
                            example_align=config_reader.example_target != "",
                            target=os.path.basename(config_reader.example_target),
@@ -308,9 +308,7 @@ def launch_analysis():
                     target_path = file_target
             target = DataFile(name=target_name, path=target_path, type_f=file_target_type, example=example)
 
-        # An alignment will be done if ".align" file exists (i.e. align job)
-        # Append when no alignfile nor backup file is given (side effect that backup was set to None if not used)
-        # TODO: move this part outside fasta file creation
+        # We put an .align file in order to specify the job is a plot job (where alignement was already computed.
         if alignfile is not None and alignfile != "" and backup is not None:
             Path(os.path.join(folder_files, ".align")).touch()
 

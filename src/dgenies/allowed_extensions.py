@@ -43,5 +43,5 @@ logging.warning("Loading {}".format(allowed_ext_file))
 with open(allowed_ext_file, "r") as yaml_stream:
     extensions = yaml.load(yaml_stream, Loader=yaml.Loader)
 
-ALLOWED_GROUPED_EXTENSIONS = extensions['groups']
-ALLOWED_FILE_EXTENSIONS = extensions['server']
+ALLOWED_EXTENSIONS_PER_FORMAT = extensions['formats']
+ALLOWED_FILE_TYPES = extensions['server']

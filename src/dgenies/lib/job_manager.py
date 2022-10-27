@@ -37,7 +37,7 @@ import io
 import binascii
 from hashlib import sha1
 from dgenies.database import Job, ID_JOB_LENGTH
-from dgenies.allowed_extensions import ALLOWED_FILE_EXTENSIONS
+from dgenies.allowed_extensions import ALLOWED_FILE_TYPES
 
 if MODE == "webserver":
     from dgenies.database import Session, Gallery
@@ -780,14 +780,12 @@ class JobManager:
                                       log_out=out_file,
                                       log_err=self.logs)
 
-    def _getting_local_file(self, datafile, type_f):
+    def _getting_local_file(self, datafile):
         """
         Copy temp file to its final location
 
         :param datafile: data file Object
         :type datafile: DataFile
-        :param type_f: query or target
-        :type type_f: str
         :return: final full path of the file
         :rtype: str
         """
@@ -798,9 +796,8 @@ class JobManager:
             if os.path.exists(datafile.get_path()):
                 shutil.move(datafile.get_path(), finale_path)
             else:
-                raise Exception("Unable to copy %s file from temp to finale path: %s file does not exists" %
-                                (type_f, datafile.get_path()))
-        print(finale_path)
+                raise Exception("Unable to copy file from temp to finale path: %s file does not exists" %
+                                (datafile.get_path()))
         return finale_path
 
     def normalize_files(self):
@@ -814,11 +811,10 @@ class JobManager:
         :return: final full path of the file
         :rtype: str
         """
-        for type_f in ALLOWED_FILE_EXTENSIONS.get(self.get_job_type()).keys():
+        for type_f in ALLOWED_FILE_TYPES.get(self.get_job_type()).keys():
             datafile = getattr(self, type_f)
             if datafile is not None:
                 finale_path = os.path.join(self.output_dir, type_f + "_" + os.path.basename(datafile.get_path()))
-                print(finale_path)
                 if os.path.exists(datafile.get_path()):
                     shutil.move(datafile.get_path(), finale_path)
                     datafile.set_path(finale_path)
@@ -1073,7 +1069,7 @@ class JobManager:
         """
         files_to_download = []
         should_be_local = True
-        for f_type, f_ext in ALLOWED_FILE_EXTENSIONS.get(self.get_job_type()).items():
+        for f_type, f_ext in ALLOWED_FILE_TYPES.get(self.get_job_type()).items():
             f_attr = getattr(self, f_type)
             if f_attr is not None:
                 if f_attr.get_type() == "local":
