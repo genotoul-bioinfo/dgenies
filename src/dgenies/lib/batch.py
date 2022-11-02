@@ -1,5 +1,6 @@
 from dgenies.tools import Tools
 from dgenies.config_reader import AppConfigReader
+from dgenies.lib.exceptions import DGeniesBatchFileError
 
 JOB_TYPES = ["align", "plot"]
 config = AppConfigReader()
@@ -141,4 +142,6 @@ def read_batch_file(batch_file: str):
                 if no_error:
                     # We add the job
                     job_param_list.append((type, param_dict))
-    return job_param_list, "; ".join(error_msg)
+    if error_msg:
+        raise DGeniesBatchFileError(error_msg)
+    return job_param_list

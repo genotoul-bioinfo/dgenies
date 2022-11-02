@@ -65,6 +65,15 @@ class DataFile:
         """
         return self._type
 
+    def set_type(self, f_type):
+        """
+        Set file type
+
+        :param f_type: type of file (local file or URL)
+        :type f_type: str
+        """
+        self._type = f_type
+
     def is_example(self):
         """
         Return if current sample is an example data
@@ -73,3 +82,22 @@ class DataFile:
         :rtype: bool
         """
         return self._example
+
+    def clone(self):
+        return DataFile(name=self._name, path=self._path, type_f=self._type, example=self._example)
+
+    @staticmethod
+    def create(name: str, path: str):
+        """
+        Create Datafile from a path, url, example
+
+        :param name: sample name
+        :type name: str
+        :param path: data file path
+        :type path: str
+        """
+        type_f = 'local'
+        if path.startswith("ftp://") or path.startswith("http://") or path.startswith("https://"):
+            type_f = 'URL'
+        example = path.startswith("example://")
+        return DataFile(name=name, path=path, type_f=type_f, example=example)

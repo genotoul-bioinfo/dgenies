@@ -152,6 +152,7 @@ class DGeniesURLError(DGeniesMessageException):
     def clear_job(self):
         return self._clear_job
 
+
 class DGeniesURLInvalid(DGeniesURLError):
     """
     Exception raise when URL is not connectable or contains an error
@@ -248,3 +249,18 @@ class DGeniesBackupUnpackError(DGeniesMessageException):
 
     def __str__(self):
         return "Backup file is not valid"
+
+
+class DGeniesBatchFileError(DGeniesMessageException):
+    """
+    Exception raised when batch file parsing went wrong
+    """
+    def __init__(self, messages):
+        """
+        :param messages: errors messages produced during parsing
+        :type messages: list of str
+        """
+        self._messages = messages
+
+    def __str__(self):
+        return "You provided a malformed batch file; " + "; ".join(self._messages)

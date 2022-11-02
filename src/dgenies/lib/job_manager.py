@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 from dgenies import MODE, DEBUG
 
 import os
@@ -29,17 +31,19 @@ from dgenies.bin.merge_splitted_chrms import Merger
 from dgenies.bin.sort_paf import Sorter
 from dgenies.lib.paf import Paf
 from dgenies.lib.batch import read_batch_file
-from dgenies.lib.exceptions import DGeniesFileCheckError, DGeniesNotGzipFileError, DGeniesUploadedFileSizeLimitError,\
-    DGeniesAlignmentFileUnsupported, DGeniesAlignmentFileInvalid, DGeniesIndexFileInvalid,\
-    DGeniesURLError, DGeniesURLInvalid, DGeniesDistantFileTypeUnsupported, DGeniesBackupUnpackError, DGeniesDownloadError
+from dgenies.lib.exceptions import DGeniesFileCheckError, DGeniesNotGzipFileError, DGeniesUploadedFileSizeLimitError, \
+    DGeniesAlignmentFileUnsupported, DGeniesAlignmentFileInvalid, DGeniesIndexFileInvalid, \
+    DGeniesURLError, DGeniesURLInvalid, DGeniesDistantFileTypeUnsupported, DGeniesDownloadError, \
+    DGeniesBackupUnpackError, DGeniesBatchFileError
 import gzip
 import io
 import binascii
 from hashlib import sha1
 from dgenies.database import Job, ID_JOB_LENGTH
-from dgenies.allowed_extensions import ALLOWED_FILE_TYPES
+from dgenies.allowed_extensions import ALLOWED_FORMATS_PER_ROLE
 
 import logging
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
@@ -53,9 +57,15 @@ class JobManager:
     Jobs management
     """
 
-    def __init__(self, id_job, email=None, query: DataFile=None, target: DataFile=None, mailer=None,
-                 tool="minimap2", align: DataFile=None, backup: DataFile=None, batch=None, options=None):
+    def __init__(self, id_job, email=None, query: DataFile = None, target: DataFile = None, mailer=None,
+                 tool="minimap2", align: DataFile = None, backup: DataFile = None, batch=None, options=None):
         """
+        This object will be used in two states:
+         - A full state for creating, launching jobs, send emails
+         - A partial state for managing job status. Only id_job will is needed in this case
+        Partial state can be upgraded to full state by using 'set_inputs_from_res_dir' method (for email, mailer must be
+        sent with the constructor)
+
         :param id_job: job id
         :type id_job: str
         :param email: email from user
@@ -83,7 +93,7 @@ class JobManager:
         self.target = target
         self.align = align
         if align is not None:
-            self.aln_format = os.path.splitext(align.get_path())[1][1:]
+            self.aln_format = self.get_align_format(align.get_path())
         self.backup = backup
         self.batch = batch
         self.error = ""
@@ -104,7 +114,7 @@ class JobManager:
         self.idx_t = os.path.join(self.output_dir, "target.idx")
         self.logs = os.path.join(self.output_dir, "logs.txt")
         self.mailer = mailer
-        self._filename_for_url = {}
+        self._filename_for_url = {}  # Cache for distant filenames
 
     def do_align(self):
         """
@@ -113,6 +123,10 @@ class JobManager:
         :return: True if the job is launched with an alignment file
         """
         return not os.path.exists(os.path.join(self.output_dir, ".align"))
+
+    @staticmethod
+    def get_align_format(filepath):
+        return os.path.splitext(filepath)[1][1:]
 
     @staticmethod
     def is_gz_file(filepath):
@@ -317,7 +331,7 @@ class JobManager:
         message += "Here the detail of each job:\n\n"
         subjobs = (JobManager(i) for i in self.get_subjob_ids())
         for sj in subjobs:
-            message += sj.id_job + "\n" + "-"*len(sj.id_job) + "\n\n"
+            message += sj.id_job + "\n" + "-" * len(sj.id_job) + "\n\n"
             query_name, target_name = sj._get_query_target_names()
             message += sj.get_job_mail_part(sj.status().get("status", "unknown"), target_name, query_name)
         return message
@@ -358,7 +372,8 @@ class JobManager:
         :rtype: str
         """
         if self.is_batch():
-            with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "mail_templates", "batch_job_notification.html"))\
+            with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "mail_templates",
+                                   "batch_job_notification.html")) \
                     as t_file:
                 template = Template(t_file.read())
                 subjobs = (JobManager(i) for i in self.get_subjob_ids())
@@ -377,14 +392,16 @@ class JobManager:
                 return template.render(job_name=self.id_job, status=status, url_base=self.config.web_url,
                                        error=self.error, subjobs=subjob_list)
         else:
-            with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "mail_templates", "job_notification.html"))\
+            with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), "mail_templates",
+                                   "job_notification.html")) \
                     as t_file:
                 template = Template(t_file.read())
                 return template.render(job_name=self.id_job, status=status, url_base=self.config.web_url,
                                        query_name=query_name if query_name is not None else "",
                                        target_name=target_name if target_name is not None else "",
                                        error=self.error,
-                                       target_filtered=self.is_target_filtered(), query_filtered=self.is_query_filtered())
+                                       target_filtered=self.is_target_filtered(),
+                                       query_filtered=self.is_query_filtered())
 
     def get_mail_subject(self, status):
         """
@@ -423,7 +440,7 @@ class JobManager:
         :rtype: bool
         """
         return MODE == "webserver" and self.config.send_mail_status \
-            and not os.path.exists(os.path.join(self.output_dir, ".no_mail"))
+               and not os.path.exists(os.path.join(self.output_dir, ".no_mail"))
 
     def send_mail_if_allowed(self):
         """
@@ -815,7 +832,7 @@ class JobManager:
         :return: final full path of the file
         :rtype: str
         """
-        for type_f in ALLOWED_FILE_TYPES.get(self.get_job_type()).keys():
+        for type_f in ALLOWED_FORMATS_PER_ROLE.get(self.get_job_type()).keys():
             datafile = getattr(self, type_f)
             if datafile is not None:
                 finale_path = os.path.join(self.output_dir, type_f + "_" + os.path.basename(datafile.get_path()))
@@ -832,7 +849,7 @@ class JobManager:
 
     def _get_filename_from_url(self, url):
         """
-        Retrieve filename from an URL (http or ftp)
+        Retrieve filename from an URL (http or ftp). Will raise DGeniesURLInvalid exception on error.
 
         :param url: url of the file to download
         :type url: str
@@ -843,14 +860,17 @@ class JobManager:
             if url.startswith("ftp://"):
                 self._filename_for_url[url] = url.split("/")[-1]
             elif url.startswith("http://") or url.startswith("https://"):
-                r = requests.head(url, allow_redirects=True)
-                self._filename_for_url[url] = r.url.split("/")[-1]
-                if 'content-disposition' in r.headers:
-                    fnames = re.findall(r'filename="(.+)"', r.headers['content-disposition'])
-                    if fnames:
-                        self._filename_for_url[url] = fnames[0]
+                try:
+                    r = requests.head(url, allow_redirects=True)
+                    self._filename_for_url[url] = r.url.split("/")[-1]
+                    if 'content-disposition' in r.headers:
+                        fnames = re.findall(r'filename="(.+)"', r.headers['content-disposition'])
+                        if fnames:
+                            self._filename_for_url[url] = fnames[0]
+                except (ConnectionError, URLError):
+                    raise DGeniesURLInvalid(url)
             else:
-                return None
+                raise DGeniesURLInvalid(url)
         return self._filename_for_url[url]
 
     def _download_file(self, url):
@@ -859,61 +879,60 @@ class JobManager:
 
         :param url: url of the file to download
         :type url: str
-        :return: absolute path of the downloaded file
-        :rtype: str
+        :return: distant file name and absolute path of the downloaded file
+        :rtype: tuple of str
         """
-        local_filename = os.path.join(self.output_dir, self._get_filename_from_url(url))
+        distant_filename = self._get_filename_from_url(url)
+        # Manage file override
+        local_path = os.path.join(self.output_dir, distant_filename)
+        i = 1
+        while os.path.exists(local_path):
+            local_path = os.path.join(self.output_dir, "{:d}_".format(i) + distant_filename)
+            i += 1
         # NOTE the stream=True parameter
         if url.startswith("ftp://"):
-            urlretrieve(url, local_filename)
+            urlretrieve(url, local_path)
         else:
             r = requests.get(url, stream=True)
-            with open(local_filename, 'wb') as f:
+            with open(local_path, 'wb') as f:
                 for chunk in r.iter_content(chunk_size=1024):
                     if chunk:  # filter out keep-alive new chunks
                         f.write(chunk)
                         # f.flush() commented by recommendation from J.F.Sebastian
-        return local_filename
+        return distant_filename, local_path
 
-    def _getting_file_from_url(self, datafile, type_f):
+    def _getting_file_from_url(self, datafile):
         """
         Download file from URL
 
         :param datafile: input file description
         :type datafile: DataFile
-        :param type_f: type of the file (query or target)
-        :type type_f: str
         :return:
             * [0] Finale path of the downloaded file {str}
             * [1] Name of the downloaded file {str}
         :rtype: tuple
         """
         try:
-            dl_path = self._download_file(datafile.get_path())
+            distant_filename, dl_path = self._download_file(datafile.get_path())
         except (ConnectionError, URLError):
             raise DGeniesURLInvalid(datafile.get_path())
-        filename = os.path.basename(dl_path)
-        name = os.path.splitext(filename.replace(".gz", ""))[0]
-        finale_path = os.path.join(self.output_dir, filename)
-        if dl_path != finale_path:
-            shutil.move(dl_path, finale_path)
-        return finale_path, name
+        name = os.path.splitext(os.path.basename(distant_filename).replace(".gz", ""))[0]
+        return dl_path, name
 
-    def _check_url(self, datafile, formats):
+    def _check_url(self, datafile, contexts):
         """
         Check if an URL is valid, and if the file is valid too. If invalid, raise an DGeniesURLError
 
         :param datafile: datafile file object
         :type datafile: DataFile
-        :param formats: allowed file formats
-        :type formats: tuple
+        :param contexts: list of contexts as (job type, file role) the datafile is used with
+        :type contexts: list of tuple
         """
         url = datafile.get_path()
-        try:
-            filename = self._get_filename_from_url(url)
-        except (ConnectionError, URLError):
-            raise DGeniesURLInvalid(url)
-        if filename is not None:
+        filename = self._get_filename_from_url(url)
+        for job_type, file_role in contexts:
+            logger.debug(file_role)
+            formats = ALLOWED_FORMATS_PER_ROLE[job_type][file_role]
             allowed = Functions.allowed_file(filename, formats)
             if not allowed:
                 format_txt = ""
@@ -934,8 +953,6 @@ class JobManager:
                     else:
                         format_txt = "a valid file"
                 raise DGeniesDistantFileTypeUnsupported(filename, url, format_txt)
-        else:
-            raise DGeniesURLInvalid(url)
 
     def clear(self):
         """
@@ -958,54 +975,56 @@ class JobManager:
         else:
             return 0
 
-    def check_file(self, input_type, should_be_local):
+    def check_file(self, datafile, input_type, size_limit, should_be_local):
         """
         Check if file is correct: format, size, valid gzip, will raise a DGeniesFileCheckError Exception on error
 
-        :param input_type: query or target
+        :param datafile: file to check
+        :type datafile: DataFile
+        :param input_type: query, target, align, backup or batch
+        :type input_type: str
+        :param size_limit: limit of file size
+        :type size_limit: int
         :param should_be_local: True if job should be treated locally
+        :type should_be_local: bool
         :return: True if should be local, False else
+        :rtype: bool
         """
-        if input_type == "target" and self.query is None:
-            max_upload_size_readable = self.config.max_upload_size_ava / 1024 / 1024
-        else:
-            max_upload_size_readable = self.config.max_upload_size / 1024 / 1024
+        max_upload_size_readable = size_limit / 1024 / 1024
         with Job.connect():
-            my_input = getattr(self, input_type)
-            if my_input.get_path().endswith(".gz") and not self.is_gz_file(my_input.get_path()):
+            if datafile.get_path().endswith(".gz") and not self.is_gz_file(datafile.get_path()):
                 # Check file is correctly gzipped
                 raise DGeniesNotGzipFileError(input_type)
 
             # Check size:
-            file_size = self.get_file_size(my_input.get_path())
-            if -1 < (self.config.max_upload_size if (input_type == "query" or self.query is not None)
-                     else self.config.max_upload_size_ava) < file_size:
-                raise DGeniesUploadedFileSizeLimitError(input_type, max_upload_size_readable, unit="Mb", compressed=False)
+            file_size = self.get_file_size(datafile.get_path())
+            if -1 < size_limit < file_size:
+                raise DGeniesUploadedFileSizeLimitError(input_type, max_upload_size_readable, unit="Mb",
+                                                        compressed=False)
 
             if input_type == "align":
-                if not hasattr(validators, self.aln_format):
+                if not hasattr(validators, self.get_align_format(datafile.get_path())):
                     raise DGeniesAlignmentFileUnsupported()
-                if not getattr(validators, self.aln_format)(self.align.get_path()):
+                if not getattr(validators, self.get_align_format(datafile.get_path()))(self.align.get_path()):
                     raise DGeniesAlignmentFileInvalid()
             elif input_type not in ("backup", "batch"):
-                if my_input.get_path().endswith(".idx"):
-                    if not validators.v_idx(my_input.get_path()):
+                if datafile.get_path().endswith(".idx"):
+                    if not validators.v_idx(datafile.get_path()):
                         raise DGeniesIndexFileInvalid(input_type.capitalize())
                 if self.config.runner_type != "local" and file_size >= getattr(self.config, "min_%s_size" % input_type):
                     should_be_local = False
 
         return should_be_local
 
-    def download_files_with_pending(self, files_to_download, should_be_local):
+    def download_files_with_pending(self, datafiles_with_contexts, should_be_local):
         """
         Download files from URLs, with pending (according to the max number of concurrent downloads)
 
-        :param files_to_download: files to download. For each item of the list, it's a list with 2 elements: first one
-            is the DataFile object, second one the input type (query or target)
-        :type files_to_download: list of list
+        :param datafiles_with_contexts: datafiles with contexts.
+        :type datafiles_with_contexts: DataFileContextManager
         :param should_be_local: True if the job should be run locally (according to input file sizes), else False
         :type should_be_local: bool
-        :rparam:
+        :return: True if the job should be run locally according to file local, False else
         :rtype: bool
         """
         with Job.connect():
@@ -1037,14 +1056,16 @@ class JobManager:
                         job.status = "getfiles"
                         job.save()
 
-                    # download each file
-                    for file, input_type in files_to_download:
-                        finale_path, filename = self._getting_file_from_url(file, input_type) # Raise exception on error
-                        # Update file path
-                        my_input = getattr(self, input_type)
-                        my_input.set_path(finale_path)
-                        my_input.set_name(filename)
-                        should_be_local = self.check_file(input_type, should_be_local)  # Raise exception on error
+                    # download each distant file
+                    for datafile in datafiles_with_contexts.get_datafiles():
+                        if datafile.get_type() != "local":
+                            finale_path, filename = self._getting_file_from_url(datafile)  # Raise exception on error
+                            datafile.set_path(finale_path)
+                            datafile.set_name(filename)
+                            datafile.set_type("local")
+                            # Check file
+                            for file_role, size_limit in datafiles_with_contexts.get(datafile, 'file_role', 'size_limit'):
+                                should_be_local = self.check_file(datafile, file_role, size_limit, should_be_local)
 
             except (DGeniesFileCheckError, DGeniesURLError) as e:
                 if MODE == "webserver":
@@ -1063,28 +1084,28 @@ class JobManager:
                 session.delete_instance()
             return should_be_local
 
-    def move_and_check_local_files(self):
+    def move_and_check_local_files(self, datafiles_with_contexts):
         """
         Move local file from tmp and check files (both local files and distant files)
         Raise DGeniesFileCheckError or DGeniesURLError on error
 
-        :return: list of file to download
-        :rtype: list of tuple(DataFile, type)
+        :params datafiles_with_contexts: Datafiles with contexts (job type, file type, file size, ...) they apply to
+        :type: DataFileContextManager
+        :return: True if the job should be run locally according to file local, False else
+        :rtype: bool
         """
-        files_to_download = []
         should_be_local = True
-        for f_type, f_ext in ALLOWED_FILE_TYPES.get(self.get_job_type()).items():
-            f_attr = getattr(self, f_type)
-            if f_attr is not None:
-                if f_attr.get_type() == "local":
-                    # Move local files from tmp and check them
-                    f_attr.set_path(self._getting_local_file(f_attr, f_type))
-                    should_be_local = self.check_file(f_type, should_be_local)  # Will raise an exception on error
-                else:
-                    self._check_url(f_attr, f_ext)  # Will raise an exception on error
-                    files_to_download.append([f_attr, f_type])
-        return files_to_download, should_be_local
-
+        for datafile in datafiles_with_contexts.get_datafiles():
+            if datafile.get_type() == "local":
+                # Move local files from tmp and check them
+                datafile.set_path(self._getting_local_file(datafile))
+                for file_role, size_limit in datafiles_with_contexts.get(datafile, 'file_role', 'size_limit'):
+                    should_be_local = self.check_file(datafile, file_role, size_limit, should_be_local)
+            else:
+                contexts = datafiles_with_contexts.get(datafile, 'job_type', 'file_role')
+                logger.debug(contexts)
+                self._check_url(datafile, contexts)  # Will raise an exception on error
+        return should_be_local
 
     def run_align_in_thread(self, runner_type="local"):
         """
@@ -1182,7 +1203,8 @@ class JobManager:
             uncompressed = None
             if self.target.get_path().endswith(".gz"):
                 uncompressed = self.target.get_path()[:-3]
-            success, nb_contigs, error = index_file(self.target.get_path(), self.target.get_name(), self.idx_t, uncompressed)
+            success, nb_contigs, error = index_file(self.target.get_path(), self.target.get_name(), self.idx_t,
+                                                    uncompressed)
             if success:
                 in_fasta = self.target.get_path()
                 if uncompressed is not None:
@@ -1330,21 +1352,20 @@ class JobManager:
         except FileNotFoundError:
             return []
 
-    def prepare_batch(self):
+    def create_new_jobs(self, job_params):
+        """"
+        Create a list of JobManager objects
+
+        :params job_params: List of jobs with parameters such as each entry is
+            * [0] the job type
+            * [1] a dict of params -> value
+        :type job_params: list of couples
+        :return: list of jobs
+        :rtype: list of JobManager
         """
-        Prepare batch locally.
-        """
-        # We get the job list from batch file
-        job_param_list, error_msgs = read_batch_file(self.batch.get_path())
-        if error_msgs:
-            self.set_job_status("fail", "You provided a malformed batch file; " + error_msgs)
-            self.send_mail_post_if_allowed()
-            return False
-        # We create a queue in order to run jobs sequentially in standalone mode.
-        self.set_job_status("preparing")
         job_queue = []
         with open(os.path.join(self.output_dir, ".jobs"), "wt") as jobs_file:
-            for job_type, params in job_param_list:
+            for job_type, params in job_params:
                 # We create a subjob id and the corresponding working directory
                 random_length = 5
                 job_id_prefix = params.get(
@@ -1358,17 +1379,19 @@ class JobManager:
                 folder_files = os.path.join(self.config.app_data, subjob_id)
                 os.makedirs(folder_files)
 
-                # We create the needed data files
+                # We create the needed datafiles
                 query = params.get("query", None)
                 if query is not None:
                     if query.startswith("example://") and self.config.example_query:
-                        query = DataFile(name=os.path.basename(self.config.example_query), path=self.config.example_query, type_f="local", example=True)
+                        query = DataFile(name=os.path.basename(self.config.example_query),
+                                         path=self.config.example_query, type_f="local", example=True)
                     else:
                         query = DataFile(name="query", path=query, type_f="URL")
                 target = params.get("target", None)
                 if target is not None:
                     if target.startswith("example://") and self.config.example_target:
-                        target = DataFile(name=os.path.basename(self.config.example_target), path=self.config.example_target, type_f="local", example=True)
+                        target = DataFile(name=os.path.basename(self.config.example_target),
+                                          path=self.config.example_target, type_f="local", example=True)
                     else:
                         target = DataFile(name="target", path=target, type_f="URL")
                 align = params.get("align", None)
@@ -1377,7 +1400,8 @@ class JobManager:
                 backup = params.get("backup", None)
                 if backup is not None:
                     if backup.startswith("example://") and self.config.example_backup:
-                        backup = DataFile(name=os.path.basename(self.config.example_backup), path=self.config.example_backup, type_f="local", example=True)
+                        backup = DataFile(name=os.path.basename(self.config.example_backup),
+                                          path=self.config.example_backup, type_f="local", example=True)
                     else:
                         backup = DataFile(name="backup", path=backup, type_f="URL")
                 tool = params.get("tool", None)
@@ -1396,7 +1420,22 @@ class JobManager:
                     options=options)
                 job_queue.append(subjob)
                 jobs_file.write(subjob_id + "\n")
-        #self.set_job_status("prepared")
+        return job_queue
+
+    def prepare_batch(self):
+        """
+        Prepare batch locally.
+        """
+        # We get the job list from .jobs file
+        try:
+            job_param_list = read_batch_file(self.batch.get_path())
+        except DGeniesBatchFileError as e:
+            self.set_job_status("fail", e.message)
+            self.send_mail_post_if_allowed()
+            return False
+        # We create a queue in order to run jobs sequentially in standalone mode.
+        self.set_job_status("preparing")
+        job_queue = self.create_new_jobs(job_param_list)
         if MODE == "webserver":
             self.set_job_status("started-batch")
             for subjob in job_queue:
@@ -1602,7 +1641,8 @@ class JobManager:
         if self.config.anonymous_analytics in ["dual_hash", "left_hash"]:
             lpart, rpart = email.rsplit('@', 1)
             return sha1(lpart.encode('utf-8')).hexdigest() + "@" + \
-                   (sha1(rpart.encode('utf-8')).hexdigest() if self.config.anonymous_analytics == "dual_hash" else rpart)
+                   (sha1(
+                       rpart.encode('utf-8')).hexdigest() if self.config.anonymous_analytics == "dual_hash" else rpart)
         else:
             for group, pattern in self.config.analytics_groups:
                 if re.match(pattern, email):
@@ -1635,6 +1675,14 @@ class JobManager:
         """
         return not self.is_plot() is None and not self.is_batch()
 
+    def is_ava(self):
+        """
+        Check if job is an ava align
+        :return: True if job is an ava align job
+        :rtype: bool
+        """
+        return self.target is not None and self.query is None
+
     def get_job_type(self):
         """
         Return job type based on the files used for the job.
@@ -1642,7 +1690,7 @@ class JobManager:
         :rtype: str
         """
         return "batch" if self.is_batch() \
-            else "new" if(self.align is None and self.backup is None) else "plot"
+            else "new" if (self.align is None and self.backup is None) else "plot"
 
     def _save_analytics_data(self):
         """
@@ -1696,7 +1744,7 @@ class JobManager:
         """
         for tarinfo in members:
             if tarinfo.name in allowed_files:
-               yield tarinfo
+                yield tarinfo
 
     def unpack_backup(self):
         """
@@ -1757,6 +1805,97 @@ class JobManager:
                 self.set_job_status("fail", e.message)
                 self.send_mail_if_allowed()
 
+    def to_job_list(self):
+        """
+        Transform current job into a list of jobs similar to batch format
+        """
+        jobtype = self.get_job_type()
+        return [(jobtype, {k: getattr(self, k) for k in ALLOWED_FORMATS_PER_ROLE[jobtype] if getattr(self, k) is not None})]
+
+    def get_datafiles(self):
+        """
+        Return a list that maps the kind of file (query, target, etc) to the datafile
+        """
+        return [(file_type, getattr(self, file_type)) for file_type in ALLOWED_FORMATS_PER_ROLE[self.get_job_type()].keys() if
+                getattr(self, file_type) is not None]
+
+    def from_file_to_datafiles(self, job_type, params, cache=dict()):
+        """
+        Replace filepaths within a list of parameters into datafile objects
+
+        :param job_type: type of job (align, plot, batch)
+        :type job_type: str
+        :param params: parameters of the job
+        :type params: dict
+        :param cache: datafile cache in order get deduplicate datafile objects
+        :type cache: dict
+        :return: copy of parameters where file paths where replaced by datafile object
+        :rtype: dict
+        """
+        job_input_files = ALLOWED_FORMATS_PER_ROLE["new" if job_type == "align" else job_type].keys()
+        res = dict()
+        for p, v in params.items():
+            if p in job_input_files:
+                try:
+                    v = cache[v]
+                except KeyError:
+                    v = DataFile.create(name=os.path.basename(v), path=v)
+                    cache[v] = v
+            res[p] = v
+        return job_type, res
+
+    def read_batch_file(self):
+        """
+        Read batch file where file are deduplicated datafiles
+
+        :return: list of jobs
+        :rtype: list of tuple
+        """
+        cache = dict()
+        try:
+            job_list = [self.from_file_to_datafiles(jt, params, cache) for jt, params in
+                        read_batch_file(self.batch.get_path())]
+        except DGeniesBatchFileError as e:
+            self.set_job_status("fail", e.message)
+            self.send_mail_post_if_allowed()
+        return job_list
+
+    def create_subjob(self, job_type, params_dict):
+        """"
+        Create a list of JobManager objects
+
+        :params job_params: List of jobs with parameters such as each entry is
+            * [0] the job type
+            * [1] a dict of params -> value
+        :type job_params: list of couples
+        :return: list of jobs
+        :rtype: list of JobManager
+        """
+        # We create a subjob id and the corresponding working directory
+        random_length = 5
+        job_id_prefix = params_dict.get(
+            "job_id_prefix",
+            self.id_job
+        )
+        job_id_prefix = job_id_prefix[0: min(len(job_id_prefix), ID_JOB_LENGTH - random_length - 1)]
+        subjob_id = job_id_prefix + "_" + Functions.random_string(random_length)
+        while os.path.exists(os.path.join(self.config.app_data, subjob_id)):
+            subjob_id = job_id_prefix + "_" + Functions.random_string(random_length)
+        folder_files = os.path.join(self.config.app_data, subjob_id)
+        os.makedirs(folder_files)
+        # We create the subjob itself
+        subjob = JobManager(
+            id_job=subjob_id,
+            email=self.email,
+            query=params_dict.get("query", None),
+            target=params_dict.get("target", None),
+            align=params_dict.get("align", None),
+            backup=params_dict.get("backup", None),
+            mailer=self.mailer,
+            tool=params_dict.get("tool", None),
+            options=params_dict.get("options", None))
+        return subjob
+
     def start_job(self):
         """
         Start job: download, check and parse input files
@@ -1771,16 +1910,70 @@ class JobManager:
                 job = None
                 self.set_status_standalone(status)
             try:
-                # Will raise a DGeniesFileCheckError or DGeniesURLError on error
-                files_to_download, should_be_local = self.move_and_check_local_files()
+                job_list = self.to_job_list()
+                logger.debug(job_list)
+                dcm = DataFileContextManager([self])
+                logger.debug(dcm)
 
-                # Some files must be downloaded
-                if len(files_to_download) > 0:
-                    # Will raise a DGeniesURLError, DGeniesDownloadError or DGeniesFileCheckError on error
-                    should_be_local = self.download_files_with_pending(files_to_download, should_be_local)
+                logger.info("Checking local files...")
+                # Will raise a DGeniesFileCheckError or DGeniesURLError on error
+                should_be_local = self.move_and_check_local_files(dcm)
+                logger.info("Checking local files: OK")
+
+                # Some files may be downloaded
+                # Will raise a DGeniesURLError, DGeniesDownloadError or DGeniesFileCheckError on error
+                logger.info("Downloading distant files...")
+                should_be_local = self.download_files_with_pending(dcm, should_be_local)
+                logger.info("Downloading distant files: OK")
 
                 # Normalize files for job: add prefix to data files and create dotfiles.
+                logger.info("Normalize filenames...")
                 self.normalize_files()
+                logger.info("Normalize filenames: OK")
+
+                if self.is_batch():
+                    logger.info("Managing files in batch file...")
+
+                    # We read the batch file and get (jobtype, files)
+                    job_list = self.read_batch_file()
+                    logger.debug(job_list)
+                    # Prepare list of datafiles with context for checking
+                    id_job_to_job = dict()
+                    for jobtype, params in job_list:
+                        with open(os.path.join(self.output_dir, ".jobs"), "wt") as jobs_file:
+                            job_queue = []
+                            subjob = self.create_subjob(jobtype, params)
+                            job_queue.append(subjob)
+                            id_job_to_job[subjob.id_job] = subjob
+                            jobs_file.write(subjob.id_job + "\n")
+
+                    dcm = DataFileContextManager(job_queue)
+
+                    logger.info("Checking local files for batch...")
+                    # Will raise a DGeniesFileCheckError or DGeniesURLError on error
+                    self.move_and_check_local_files(dcm)
+                    logger.info("Checking local files for batch: OK")
+
+                    # Some files may be downloaded
+                    # Will raise a DGeniesURLError, DGeniesDownloadError or DGeniesFileCheckError on error
+                    logger.info("Downloading distant files for batch...")
+                    self.download_files_with_pending(dcm, True)
+                    logger.info("Downloading distant files for batch: OK")
+
+                    # Move and check datafile in working dir
+                    logger.info("Copying files in each subjob...")
+                    # We copy datafile in subjob directory, duplicate datafile and update subjob
+                    for datafile in dcm.get_datafiles():
+                        for subjob_id, file_role in dcm.get(datafile, 'id_job', 'file_role'):
+                            logger.info("Copying {f} in {j}...".format(f=datafile.get_path(), j=subjob_id))
+                            subjob = id_job_to_job[subjob_id]
+                            newpath = os.path.join(subjob.output_dir, os.path.basename(datafile.get_path()))
+                            shutil.copy(datafile.get_path(), newpath)
+                            new_datafile = datafile.clone()
+                            new_datafile.set_path(newpath)
+                            setattr(subjob, file_role, new_datafile)
+                        #os.remove(datafile.get_path())  # We remove uneeded files for batch dir
+                    logger.info("Copying files in each subjob: OK")
 
                 # Set the runner according to available resource
                 if MODE == "webserver" and job.runner_type != "local" and should_be_local \
@@ -1927,3 +2120,43 @@ class JobManager:
                 job.delete_instance()
         shutil.rmtree(self.output_dir)
         return True, ""
+
+
+@dataclass
+class DataFileContext:
+    """
+    Keep track of datafile context
+    """
+    id_job: str
+    job_type: str
+    file_role: str
+    size_limit: int
+
+
+class DataFileContextManager:
+    """
+    Manage Datafile contexts
+    """
+
+    def __init__(self, jobs):
+        """
+        Create list of DatafilesContext for each Datafile in jobs
+        """
+        self.datafile_dict = dict()
+        config = AppConfigReader()
+        for j in jobs:
+            job_type = j.get_job_type()
+            size_limit = config.max_upload_size_ava if j.is_ava() else config.max_upload_size
+            for file_role, datafile in j.get_datafiles():
+                dc = DataFileContext(id_job=j.id_job, job_type=job_type, file_role=file_role, size_limit=size_limit,)
+                try:
+                    self.datafile_dict[datafile].append(dc)
+                except KeyError:
+                    self.datafile_dict[datafile] = [dc]
+
+    def get(self, datafile, *attributes):
+        contexts = self.datafile_dict[datafile]
+        return set(tuple(getattr(context, a) for a in attributes) for context in contexts)
+
+    def get_datafiles(self):
+        return self.datafile_dict.keys()
