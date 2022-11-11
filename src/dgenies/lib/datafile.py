@@ -19,6 +19,7 @@ class DataFile:
         self._path = path
         self._type = type_f
         self._example = example is not False
+        self._file_size = -1
 
     def set_path(self, path):
         """
@@ -83,8 +84,28 @@ class DataFile:
         """
         return self._example
 
+    def set_file_size(self, size: int):
+        """
+        Set file size
+
+        :param size: size of file in bytes
+        :type size: int
+        """
+        self._file_size = size
+
+    def get_file_size(self):
+        """
+        Set file type
+
+        :return: size (-1 if undefined)
+        :rtype: int
+        """
+        return self._file_size
+
     def clone(self):
-        return DataFile(name=self._name, path=self._path, type_f=self._type, example=self._example)
+        df = DataFile(name=self._name, path=self._path, type_f=self._type, example=self._example)
+        df.set_file_size(self._file_size)
+        return df
 
     @staticmethod
     def create(name: str, path: str):

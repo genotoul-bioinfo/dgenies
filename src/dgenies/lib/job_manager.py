@@ -1,5 +1,3 @@
-from dataclasses import dataclass
-
 from dgenies import MODE, DEBUG
 
 import os
@@ -115,6 +113,16 @@ class JobManager:
         self.logs = os.path.join(self.output_dir, "logs.txt")
         self.mailer = mailer
         self._filename_for_url = {}  # Cache for distant filenames
+
+    def set_role(self, role: str, datafile: DataFile):
+        if role == 'align':
+            self.align = datafile
+            self.aln_format = self.get_align_format(datafile.get_path()) if datafile is not None else None
+        else:
+            setattr(self, role, datafile)
+
+    def unset_role(self, role: str):
+        self.set_role(role, None)
 
     def do_align(self):
         """
@@ -824,19 +832,13 @@ class JobManager:
     def normalize_files(self):
         """
         Rename data file with prefix and create dotfiles
-
-        :param datafile: data file Object
-        :type datafile: DataFile
-        :param type_f: query or target
-        :type type_f: str
-        :return: final full path of the file
-        :rtype: str
         """
         for type_f in ALLOWED_FORMATS_PER_ROLE.get(self.get_job_type()).keys():
             datafile = getattr(self, type_f)
             if datafile is not None:
                 finale_path = os.path.join(self.output_dir, type_f + "_" + os.path.basename(datafile.get_path()))
                 if os.path.exists(datafile.get_path()):
+                    logger.debug("Move {} to {}".format(datafile.get_path(), finale_path))
                     shutil.move(datafile.get_path(), finale_path)
                     datafile.set_path(finale_path)
                 else:
@@ -978,6 +980,7 @@ class JobManager:
     def check_file(self, datafile, input_type, size_limit, should_be_local):
         """
         Check if file is correct: format, size, valid gzip, will raise a DGeniesFileCheckError Exception on error
+        Will set the size attribute of datafile
 
         :param datafile: file to check
         :type datafile: DataFile
@@ -990,22 +993,24 @@ class JobManager:
         :return: True if should be local, False else
         :rtype: bool
         """
+        logger.info('Check file: {}'.format(datafile.get_path()))
         max_upload_size_readable = size_limit / 1024 / 1024
         with Job.connect():
             if datafile.get_path().endswith(".gz") and not self.is_gz_file(datafile.get_path()):
                 # Check file is correctly gzipped
                 raise DGeniesNotGzipFileError(input_type)
-
             # Check size:
             file_size = self.get_file_size(datafile.get_path())
+            datafile.set_file_size(file_size)
             if -1 < size_limit < file_size:
                 raise DGeniesUploadedFileSizeLimitError(input_type, max_upload_size_readable, unit="Mb",
                                                         compressed=False)
 
             if input_type == "align":
-                if not hasattr(validators, self.get_align_format(datafile.get_path())):
+                aln_format = self.get_align_format(datafile.get_path())
+                if not hasattr(validators, aln_format):
                     raise DGeniesAlignmentFileUnsupported()
-                if not getattr(validators, self.get_align_format(datafile.get_path()))(self.align.get_path()):
+                if not getattr(validators, aln_format)(datafile.get_path()):
                     raise DGeniesAlignmentFileInvalid()
             elif input_type not in ("backup", "batch"):
                 if datafile.get_path().endswith(".idx"):
@@ -1013,6 +1018,7 @@ class JobManager:
                         raise DGeniesIndexFileInvalid(input_type.capitalize())
                 if self.config.runner_type != "local" and file_size >= getattr(self.config, "min_%s_size" % input_type):
                     should_be_local = False
+        logger.info('Done check file: {}'.format(datafile.get_path()))
 
         return should_be_local
 
@@ -1059,12 +1065,13 @@ class JobManager:
                     # download each distant file
                     for datafile in datafiles_with_contexts.get_datafiles():
                         if datafile.get_type() != "local":
+                            logger.info("Download file: {}".format(datafile.get_path()))
                             finale_path, filename = self._getting_file_from_url(datafile)  # Raise exception on error
                             datafile.set_path(finale_path)
                             datafile.set_name(filename)
                             datafile.set_type("local")
                             # Check file
-                            for file_role, size_limit in datafiles_with_contexts.get(datafile, 'file_role', 'size_limit'):
+                            for file_role, size_limit in datafiles_with_contexts.get_distinct(datafile, 'file_role', 'size_limit'):
                                 should_be_local = self.check_file(datafile, file_role, size_limit, should_be_local)
 
             except (DGeniesFileCheckError, DGeniesURLError) as e:
@@ -1099,10 +1106,10 @@ class JobManager:
             if datafile.get_type() == "local":
                 # Move local files from tmp and check them
                 datafile.set_path(self._getting_local_file(datafile))
-                for file_role, size_limit in datafiles_with_contexts.get(datafile, 'file_role', 'size_limit'):
+                for file_role, size_limit in datafiles_with_contexts.get_distinct(datafile, 'file_role', 'size_limit'):
                     should_be_local = self.check_file(datafile, file_role, size_limit, should_be_local)
             else:
-                contexts = datafiles_with_contexts.get(datafile, 'job_type', 'file_role')
+                contexts = datafiles_with_contexts.get_distinct(datafile, 'job_type', 'file_role')
                 logger.debug(contexts)
                 self._check_url(datafile, contexts)  # Will raise an exception on error
         return should_be_local
@@ -1220,6 +1227,7 @@ class JobManager:
                 is_filtered = filter_f.filter()
                 if uncompressed is not None:
                     if is_filtered:
+                        # replace original fasta file with filtered one
                         os.remove(self.target.get_path())
                         self.target.set_path(uncompressed)
                         with open(os.path.join(self.output_dir, ".target"), "w") as save_file:
@@ -1427,15 +1435,19 @@ class JobManager:
         Prepare batch locally.
         """
         # We get the job list from .jobs file
-        try:
-            job_param_list = read_batch_file(self.batch.get_path())
-        except DGeniesBatchFileError as e:
-            self.set_job_status("fail", e.message)
+        logger.info("Prepare batch job")
+        subjob_ids = self.get_subjob_ids()
+        if not subjob_ids:
+            self.set_job_status("fail", "Batch mode: no subjob found")
             self.send_mail_post_if_allowed()
             return False
         # We create a queue in order to run jobs sequentially in standalone mode.
         self.set_job_status("preparing")
-        job_queue = self.create_new_jobs(job_param_list)
+        job_queue = []
+        for jid in subjob_ids:
+            j = JobManager(jid)
+            j.set_inputs_from_res_dir()
+            job_queue.append(j)
         if MODE == "webserver":
             self.set_job_status("started-batch")
             for subjob in job_queue:
@@ -1683,6 +1695,9 @@ class JobManager:
         """
         return self.target is not None and self.query is None
 
+    def get_file_size_for_role(self, role):
+        return self.config.max_upload_size_ava if self.is_ava() and role == 'target' else self.config.max_upload_size
+
     def get_job_type(self):
         """
         Return job type based on the files used for the job.
@@ -1746,64 +1761,82 @@ class JobManager:
             if tarinfo.name in allowed_files:
                 yield tarinfo
 
-    def unpack_backup(self):
+    def _unpack_backup(self, backup: DataFile, output_dir):
         """
-        Untar backup file
+        Unpack backup file. A backup file must contain 3 files: "./map.paf", "./query.idx" and "./target.idx".
+        Will raise a DGeniesBackupUnpackError exception if file is not valid or on extraction error.
+
+        :param backup: backup file to unpack
+        :type backup: DataFile
+        :param output_dir: Directory where to unpack backup
+        :type output_dir: str or Path
+        :return: a triplet of datafiles
+            *[0]: query Datafile for "query.idx"
+            *[1]: target Datafile for "target.idx"
+            *[3]: align Datafile for "map.paf"
+        :rtype: tuple
         """
         allowed_files = {"map.paf", "query.idx", "target.idx"}
         try:
-            with tarfile.open(self.backup.get_path(), "r:*") as tar:
+            with tarfile.open(backup.get_path(), "r:*") as tar:
                 members = tar.getmembers()
                 if len(members) != 3:
                     raise DGeniesBackupUnpackError()
                 for m in members:
                     if m.name not in allowed_files or not m.isfile():
                         raise DGeniesBackupUnpackError()
-                tar.extractall(path=self.output_dir, members=self.allowed_backup_files(tar, allowed_files))
-                shutil.move(self.paf, self.paf_raw)
-                if not validators.paf(self.paf_raw):
+                tar.extractall(path=output_dir, members=self.allowed_backup_files(tar, allowed_files))
+                align_path = os.path.join(output_dir, "map.paf")
+                if not validators.paf(align_path):
                     raise DGeniesBackupUnpackError()
-                target_path = os.path.join(self.output_dir, "target.idx")
-                query_path = os.path.join(self.output_dir, "query.idx")
+                target_path = os.path.join(output_dir, "target.idx")
+                query_path = os.path.join(output_dir, "query.idx")
                 if not validators.v_idx(target_path) or not validators.v_idx(query_path):
                     raise DGeniesBackupUnpackError()
-                self.align = DataFile(name="map", path=self.paf_raw, type_f="local")
-                self.aln_format = "paf"
-                with open(os.path.join(self.output_dir, ".align"), "w") as aln:
-                    aln.write(self.paf_raw)
-                self.target = DataFile(name="target", path=target_path, type_f="local")
-                with open(os.path.join(self.output_dir, ".target"), "w") as trgt:
-                    trgt.write(target_path)
-                self.query = DataFile(name="query", path=query_path, type_f="local")
-                with open(os.path.join(self.output_dir, ".query"), "w") as qr:
-                    qr.write(query_path)
-            os.remove(self.backup.get_path())
+                align = DataFile(name="map", path=align_path, type_f="local")
+                target = DataFile(name="target", path=target_path, type_f="local")
+                query = DataFile(name="query", path=query_path, type_f="local")
+            return query, target, align
         except:
             traceback.print_exc()
             raise DGeniesBackupUnpackError()
 
-    def _after_start(self):
+    def unpack_backups(self, datafiles_with_contexts):
         """
-        Tasks done after input files downloaded, checked and parsed: if success, set job status to "waiting".
-        Else, set job error and send mail.
+        Unpack all backup files (if any) and update associated job. Backup files are deleted if not used as anything
+        else in other jobs.
+        On error raise an DGeniesBackupUnpackError exception.
+
+        :params datafiles_with_contexts: Collection of datafiles with associated contexts
+        :params datafiles_with_contexts: DataFileContextManager
         """
-        with Job.connect():
-            try:
-                if self.backup is not None:
-                    self.unpack_backup()
-                status = "waiting"
-                if MODE == "webserver":
-                    # Register job for next step
-                    job = Job.get(Job.id_job == self.id_job)
-                    job.status = status
-                    job.save()
-                else:
-                    # Start next step
-                    self.set_status_standalone(status)
-                    self.prepare_job_in_thread()
-            except DGeniesBackupUnpackError as e:
-                self.set_job_status("fail", e.message)
-                self.send_mail_if_allowed()
+        try:
+            for datafile in datafiles_with_contexts.get_datafiles():
+                if ("backup",) in datafiles_with_contexts.get_distinct(datafile, 'file_role'):
+                    logger.info("Unpack backup file {} ...".format(datafile.get_path()))
+                    output_dir = os.path.join(self.output_dir,
+                                              os.path.splitext(re.sub(r"\.gz$", "", datafile.get_path()))[0])
+                    os.mkdir(output_dir)
+                    query, target, align = self._unpack_backup(datafile, output_dir)
+                    # Remove backup datafiles
+                    removed_ctx = datafiles_with_contexts.remove(datafile, file_role="backup")
+                    # Add the extracted datafiles and update jobs
+                    for ctx in removed_ctx:
+                        # remove batch file from jobs it appears in
+                        ctx.job.unset_role('backup')
+                        # add decompressed datafiles into jobs in which they are used
+                        for role, new_datafile in [("align", align), ("query", query), ("target", target)]:
+                            new_ctx = ctx.clone()
+                            new_ctx.file_role = role
+                            new_ctx.job.set_role(role, new_datafile)
+                            datafiles_with_contexts.add(new_datafile, new_ctx)
+                    logger.info("Unpack backup file {} OK".format(datafile.get_path()))
+
+                if not datafiles_with_contexts.get_distinct(datafile, 'file_role'):
+                    # File is not used anywhere else, we remove it
+                    os.remove(datafile.get_path())
+        except DGeniesBackupUnpackError as e:
+            raise e
 
     def to_job_list(self):
         """
@@ -1818,6 +1851,7 @@ class JobManager:
         """
         return [(file_type, getattr(self, file_type)) for file_type in ALLOWED_FORMATS_PER_ROLE[self.get_job_type()].keys() if
                 getattr(self, file_type) is not None]
+
 
     def from_file_to_datafiles(self, job_type, params, cache=dict()):
         """
@@ -1910,70 +1944,91 @@ class JobManager:
                 job = None
                 self.set_status_standalone(status)
             try:
-                job_list = self.to_job_list()
-                logger.debug(job_list)
-                dcm = DataFileContextManager([self])
-                logger.debug(dcm)
-
-                logger.info("Checking local files...")
-                # Will raise a DGeniesFileCheckError or DGeniesURLError on error
-                should_be_local = self.move_and_check_local_files(dcm)
-                logger.info("Checking local files: OK")
-
-                # Some files may be downloaded
-                # Will raise a DGeniesURLError, DGeniesDownloadError or DGeniesFileCheckError on error
-                logger.info("Downloading distant files...")
-                should_be_local = self.download_files_with_pending(dcm, should_be_local)
-                logger.info("Downloading distant files: OK")
-
-                # Normalize files for job: add prefix to data files and create dotfiles.
-                logger.info("Normalize filenames...")
-                self.normalize_files()
-                logger.info("Normalize filenames: OK")
-
-                if self.is_batch():
-                    logger.info("Managing files in batch file...")
-
-                    # We read the batch file and get (jobtype, files)
-                    job_list = self.read_batch_file()
+                if os.path.exists(os.path.join(self.output_dir, '.already_checked')):
+                    logger.info("Files already checked, skipping file checking")
+                    should_be_local = not os.path.exists(os.path.join(self.output_dir, '.should_not_be_local'))
+                    logger.debug("Job should be local: {}".format(should_be_local))
+                else:
+                    job_list = self.to_job_list()
                     logger.debug(job_list)
-                    # Prepare list of datafiles with context for checking
-                    id_job_to_job = dict()
-                    for jobtype, params in job_list:
-                        with open(os.path.join(self.output_dir, ".jobs"), "wt") as jobs_file:
-                            job_queue = []
-                            subjob = self.create_subjob(jobtype, params)
-                            job_queue.append(subjob)
-                            id_job_to_job[subjob.id_job] = subjob
-                            jobs_file.write(subjob.id_job + "\n")
-
-                    dcm = DataFileContextManager(job_queue)
-
-                    logger.info("Checking local files for batch...")
+                    dcm = DataFileContextManager([self])
+                    logger.info("Check local files...")
                     # Will raise a DGeniesFileCheckError or DGeniesURLError on error
-                    self.move_and_check_local_files(dcm)
-                    logger.info("Checking local files for batch: OK")
+                    should_be_local = self.move_and_check_local_files(dcm)
+                    logger.info("Check local files: OK")
 
                     # Some files may be downloaded
                     # Will raise a DGeniesURLError, DGeniesDownloadError or DGeniesFileCheckError on error
-                    logger.info("Downloading distant files for batch...")
-                    self.download_files_with_pending(dcm, True)
-                    logger.info("Downloading distant files for batch: OK")
+                    logger.info("Download distant files...")
+                    should_be_local = self.download_files_with_pending(dcm, should_be_local)
+                    logger.info("Download distant files: OK")
 
-                    # Move and check datafile in working dir
-                    logger.info("Copying files in each subjob...")
-                    # We copy datafile in subjob directory, duplicate datafile and update subjob
-                    for datafile in dcm.get_datafiles():
-                        for subjob_id, file_role in dcm.get(datafile, 'id_job', 'file_role'):
-                            logger.info("Copying {f} in {j}...".format(f=datafile.get_path(), j=subjob_id))
-                            subjob = id_job_to_job[subjob_id]
-                            newpath = os.path.join(subjob.output_dir, os.path.basename(datafile.get_path()))
-                            shutil.copy(datafile.get_path(), newpath)
-                            new_datafile = datafile.clone()
-                            new_datafile.set_path(newpath)
-                            setattr(subjob, file_role, new_datafile)
+                    if self.backup is not None:
+                        logger.info("Unpack backup files...")
+                        self.unpack_backups(dcm)
+                        logger.info("Unpack backup files: OK")
+
+                    #  Normalize files for job: add prefix to data files and create dotfiles.
+                    logger.info("Normalize filenames...")
+                    self.normalize_files()
+                    logger.info("Normalize filenames: OK")
+
+                    if self.is_batch():
+                        logger.info("Manage files in batch file...")
+
+                        # We read the batch file and get (jobtype, files)
+                        job_list = self.read_batch_file()
+                        logger.debug(job_list)
+                        # Prepare list of datafiles with context for checking
+                        job_dict = dict()
+                        with open(os.path.join(self.output_dir, ".jobs"), "wt") as jobs_file:
+                            for jobtype, params in job_list:
+                                subjob = self.create_subjob(jobtype, params)
+                                logger.debug("Job created: {}".format(subjob.id_job))
+                                job_dict[subjob.id_job] = subjob
+                                jobs_file.write(subjob.id_job + "\n")
+
+                        dcm = DataFileContextManager(job_dict.values())
+
+                        logger.info("Check local files for batch...")
+                        # Will raise a DGeniesFileCheckError or DGeniesURLError on error
+                        self.move_and_check_local_files(dcm)
+                        logger.info("Check local files for batch: OK")
+
+                        # Some files may be downloaded
+                        # Will raise a DGeniesURLError, DGeniesDownloadError or DGeniesFileCheckError on error
+                        logger.info("Download distant files for batch...")
+                        self.download_files_with_pending(dcm, True)
+                        logger.info("Download distant files for batch: OK")
+
+                        # Unpack backup files if any
+                        self.unpack_backups(dcm)
+
+                        # Move and check datafile in working dir
+                        logger.info("Copy files in each subjob...")
+                        # We copy datafile in subjob directory, duplicate datafile and update subjob
+                        for datafile in dcm.get_datafiles():
+                            for subjob, file_role in dcm.get_distinct(datafile, 'job', 'file_role'):
+                                logger.info("Copy {f} to {j}...".format(f=datafile.get_path(), j=subjob.id_job))
+                                new_path = os.path.join(subjob.output_dir, os.path.basename(datafile.get_path()))
+                                shutil.copy(datafile.get_path(), new_path)
+                                new_datafile = datafile.clone()
+                                new_datafile.set_path(new_path)
+                                subjob.set_role(file_role, new_datafile)
+                                if MODE == "webserver" and subjob.config.runner_type != "local" \
+                                        and hasattr(subjob.config, "min_%s_size" % file_role) \
+                                        and datafile.set_file_size() >= getattr(subjob.config, "min_%s_size" % file_role):
+                                    # We set a flag to tell job must run on cluster
+                                    Path(os.path.join(subjob.output_dir, '.should_not_be_local')).touch()
                         #os.remove(datafile.get_path())  # We remove uneeded files for batch dir
-                    logger.info("Copying files in each subjob: OK")
+                        logger.info("Copy files in each subjob: OK")
+
+                        for subjob in job_dict.values():
+                            logger.debug("Normalize files in subjob: {}".format(subjob.id_job))
+                            subjob.normalize_files()
+                            logger.debug("Done normalize files in subjob: {}".format(subjob.id_job))
+                            # We set a flag to tell the files of subjob are already checked
+                            Path(os.path.join(subjob.output_dir, '.already_checked')).touch()
 
                 # Set the runner according to available resource
                 if MODE == "webserver" and job.runner_type != "local" and should_be_local \
@@ -1985,6 +2040,13 @@ class JobManager:
                 self.set_job_status("fail", e.message)
                 self._save_analytics_data()
                 self._set_analytics_job_status("fail-getfiles")
+                if e.clear_job:
+                    self.clear()
+
+            except DGeniesBackupUnpackError as e:
+                self.set_job_status("fail", e.message)
+                self._save_analytics_data()
+                self.send_mail_if_allowed()
                 if e.clear_job:
                     self.clear()
 
@@ -2000,7 +2062,16 @@ class JobManager:
             else:
                 self._save_analytics_data()
                 # Prepare job for next step
-                self._after_start()
+                status = "waiting"
+                if MODE == "webserver":
+                    # Register job for next step
+                    job = Job.get(Job.id_job == self.id_job)
+                    job.status = status
+                    job.save()
+                else:
+                    # Start next step
+                    self.set_status_standalone(status)
+                    self.prepare_job_in_thread()
 
     def launch_standalone(self, sync=False):
         """
@@ -2121,17 +2192,157 @@ class JobManager:
         shutil.rmtree(self.output_dir)
         return True, ""
 
+    def get_input_roles(self, datafile):
+        return (a for a in self.datafile_roles if getattr(self, a) is datafile)
 
-@dataclass
+    def check_size(self, datafile: DataFile):
+        """
+        Check if datafile size is correct
+
+        :param datafile: local datafile
+        :type datafile: DataFile
+        :return: file size (bytes)
+        :rtype: int
+        """
+        if datafile.get_path().endswith(".gz") and not self.is_gz_file(datafile.get_path()):
+            # Check file is correctly gzipped
+            raise DGeniesNotGzipFileError(datafile.get_path())
+        file_size = self.get_file_size(datafile.get_path())
+        datafile.set_file_size(file_size)
+        for role in self.get_input_roles(datafile):
+            size_limit = self.get_size_limit(role)
+            max_upload_size_readable = size_limit / 1024 / 1024
+            if -1 < size_limit < file_size:
+                raise DGeniesUploadedFileSizeLimitError(role, max_upload_size_readable, unit="Mb", compressed=False)
+        return file_size
+
+    def check_format(self, datafile: DataFile, role: str):
+        """
+        Check if file format is correct. Will raise a DGeniesFileCheckError Exception on error
+
+        :param datafile: datafile to check
+        :type datafile: DataFile
+        :param role: query, target, align, backup or batch
+        :type role: str
+        """
+        pass
+
+    def check_local_file(self, datafile: DataFile, role: str, should_be_local: bool):
+        file_size = self.check_size(datafile)
+        self.check_format(datafile, role)
+        if self.config.runner_type != "local" and file_size >= getattr(self.config, "min_%s_size" % role):
+            should_be_local = False
+        return should_be_local
+
+
+class AlignJob(JobManager):
+
+    job_type = "align"
+    datafile_roles = ["query", "target"]
+
+    def __init__(self, id_job,  email: str = None, mailer = None, query: DataFile = None, target: DataFile = None,
+                 tool: str = None, options=None):
+        super().__init__(id_job, email=email, mailer=mailer)
+        self.tool = tool
+        self._align = None
+        self._query = query
+        self._target = target
+        self.options = options
+
+    def _get_datafile_from_job_dir(self, role: str) -> DataFile:
+        """
+        Create datafile from job dir, raise DGeniesMissingFileException on error
+
+        :rtype: DataFile
+        """
+        datafile = None
+        res_dir = os.path.join(self.config.app_data, self.id_job)
+        dot_file = os.path.join(res_dir, ".{}".format(role))
+        if os.path.exists(dot_file):
+            with open(dot_file) as infile:
+                file_path = infile.readline()
+                datafile = DataFile(
+                    name=os.path.splitext(re.sub(r'^[^_]*_(.*)\.gz$', r'\1', os.path.basename(file_path)))[0],
+                    path=file_path,
+                    type_f="local"
+                )
+        else:
+            raise BaseException()
+        return datafile
+
+    @property
+    def align(self):
+        if self._align is None:
+            self._align = self._get_datafile_from_job_dir('align')
+        return self._align
+
+    @align.setter
+    def align(self, value):
+        self._align = value
+    def is_ava(self):
+        return self.query is None and self.target is not None
+
+
+class PlotJob(JobManager):
+
+    job_type = "plot"
+    datafile_roles = ["query", "target", "align", "backup"]
+
+    def __init__(self, id_job,  email: str = None, mailer=None, align: DataFile = None, query: DataFile = None,
+                 target: DataFile = None, backup: DataFile = None):
+        super().__init__(id_job, email=email, mailer=mailer)
+        # a Plot job is either construct from triplet align, query and target
+        self.align = align
+        self.aln_format = os.path.splitext(align.get_path())[1][1:] if align is not None else None
+        self.query = query
+        self.target = target
+        # or a backup file (that will contain align, query and target)
+        self.backup = backup
+
+    def check_format(self, datafile, role):
+        if role == "align":
+            if not hasattr(validators, self.aln_format):
+                raise DGeniesAlignmentFileUnsupported()
+            if not getattr(validators, self.aln_format)(datafile.get_path()):
+                raise DGeniesAlignmentFileInvalid()
+        if role in {"query", "target"}:
+            if datafile.get_path().endswith(".idx"):
+                if not validators.v_idx(datafile.get_path()):
+                    raise DGeniesIndexFileInvalid(datafile.get_path().capitalize())
+
+
+class BatchJob(JobManager):
+
+    job_type = "batch"
+    datafile_roles = ["batch"]
+
+    def __init__(self, id_job,  email: str = None, mailer=None, batch: DataFile = None, jobs=None):
+        super().__init__(id_job, email=email, mailer=mailer)
+        self.batch = batch
+        self.jobs = jobs
+
+
 class DataFileContext:
     """
     Keep track of datafile context
     """
-    id_job: str
-    job_type: str
-    file_role: str
-    size_limit: int
 
+    def __init__(self, job: JobManager, job_type: str, file_role: str, size_limit: int):
+        self.job = job
+        self.job_type = job_type
+        self.file_role = file_role
+        self.size_limit = size_limit
+
+    def clone(self):
+        return DataFileContext(self.job, self.job_type, self.file_role, self.size_limit)
+
+    def __repr__(self):
+        rep = ', '.join(['{}:{}'.format(k, v) for k, v in {'job': self.job, 'job_type': self.job_type,
+                                                           'file_role': self.file_role, 'size_limit': self.size_limit}.items()])
+        return 'DataFileContext({})'.format(rep)
+
+    def __str__(self):
+        return self.__repr__()
 
 class DataFileContextManager:
     """
@@ -2146,17 +2357,49 @@ class DataFileContextManager:
         config = AppConfigReader()
         for j in jobs:
             job_type = j.get_job_type()
-            size_limit = config.max_upload_size_ava if j.is_ava() else config.max_upload_size
             for file_role, datafile in j.get_datafiles():
-                dc = DataFileContext(id_job=j.id_job, job_type=job_type, file_role=file_role, size_limit=size_limit,)
-                try:
-                    self.datafile_dict[datafile].append(dc)
-                except KeyError:
-                    self.datafile_dict[datafile] = [dc]
+                size_limit = j.get_file_size_for_role(file_role)
+                dc = DataFileContext(job=j, job_type=job_type, file_role=file_role, size_limit=size_limit)
+                self.add(datafile, dc)
 
-    def get(self, datafile, *attributes):
-        contexts = self.datafile_dict[datafile]
-        return set(tuple(getattr(context, a) for a in attributes) for context in contexts)
+    def add(self, datafile, context):
+        """
+        Remove datafile matching attribute from datafile context manager. Datafile is removed if it has no more context
+        """
+        try:
+            self.datafile_dict[datafile].append(context)
+        except KeyError:
+            self.datafile_dict[datafile] = [context]
+
+    def remove(self, datafile, **kwargs):
+        """
+        Remove datafile matching attribute from datafile context manager. Datafile is removed if it has no more context
+        """
+        to_remove, to_keep = [], []
+        if datafile in self.datafile_dict:
+            for ctx in self.datafile_dict[datafile]:
+                if all([getattr(ctx, attr) == val for attr, val in kwargs.items()]):
+                    to_remove.append(ctx)
+                else:
+                    to_keep.append(ctx)
+            if to_keep:
+                self.datafile_dict[datafile] = to_keep
+            else:
+                del self.datafile_dict[datafile]
+        return to_remove
 
     def get_datafiles(self):
-        return self.datafile_dict.keys()
+        return list(self.datafile_dict.keys())
+
+    def get_distinct(self, datafile, *args):
+        if datafile in self.datafile_dict:
+            contexts = self.datafile_dict[datafile]
+            return set(tuple(getattr(context, a) for a in args) for context in contexts)
+        else:
+            return set()
+
+    def __repr__(self):
+        return [(datafile.get_path(), c) for datafile, contexts in self.datafile_dict.items() for c in contexts]
+
+    def __str__(self):
+        return str(self.__repr__())
