@@ -10,7 +10,7 @@ from Bio import SeqIO
 from jinja2 import Template
 from xopen import xopen
 from dgenies.config_reader import AppConfigReader
-from dgenies.allowed_extensions import ALLOWED_EXTENSIONS_PER_FORMAT
+from dgenies.allowed_extensions import AllowedExtensions
 
 
 class Functions:
@@ -30,10 +30,11 @@ class Functions:
         :param file_formats: accepted file formats
         :return: True if valid format, else False
         """
+        allowed_extensions = AllowedExtensions()
         for file_format in file_formats:
             if '.' in filename and \
-                   (filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS_PER_FORMAT[file_format]
-                    or ".".join(filename.rsplit('.', 2)[1:]).lower() in ALLOWED_EXTENSIONS_PER_FORMAT[file_format]):
+                   (filename.rsplit('.', 1)[1].lower() in allowed_extensions.get_extensions(file_format)
+                    or ".".join(filename.rsplit('.', 2)[1:]).lower() in allowed_extensions.get_extensions(file_format)):
                 return True
         return False
 

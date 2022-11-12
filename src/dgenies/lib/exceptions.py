@@ -186,19 +186,19 @@ class DGeniesDistantFileTypeUnsupported(DGeniesURLError):
     Exception raise when a distant file (from url) is unsupported
     """
 
-    def __init__(self, filename, url, format_txt):
+    def __init__(self, filename, url, format_descriptions):
         """
         :param filename: name of the file
         :type filename: str
         :param url: url of the file
         :type url: str
-        :param format_txt: text part about format of the file
-        :type format_txt: str
+        :param format_descriptions: text parts about format of the file
+        :type format_descriptions: list of str
         """
         super().__init__()
         self.filename = filename
         self.url = url
-        self.format_txt = format_txt
+        self.format_txt = " nor ".join(format_descriptions)
 
     @property
     def message(self):

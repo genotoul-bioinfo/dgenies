@@ -15,7 +15,7 @@ from pathlib import Path
 from dgenies.lib.paf import Paf
 from dgenies.lib.job_manager import JobManager
 from dgenies.lib.functions import Functions
-from dgenies.allowed_extensions import ALLOWED_EXTENSIONS_PER_FORMAT
+from dgenies.allowed_extensions import AllowedExtensions
 from dgenies.lib.upload_file import UploadFile
 from dgenies.lib.datafile import DataFile
 from dgenies.lib.latest import Latest
@@ -89,6 +89,9 @@ def run():
         tools_ava[tool_name] = 1 if tool.all_vs_all is not None else 0
         tools_options[tool_name] = tool.options
 
+    # We get allowed files
+    extensions = AllowedExtensions()
+
     # We create working dirs
     if MODE == "webserver":
         with Session.connect():
@@ -101,6 +104,7 @@ def run():
             upload_folder = Functions.random_string(20)
             upload_folder_path = os.path.join(tmp_dir, upload_folder)
         s_id = upload_folder
+
     id_job = Functions.random_string(5) + "_" + datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S')
     if "id_job" in request.args:
         id_job = request.args["id_job"]
@@ -108,7 +112,7 @@ def run():
     if "email" in request.args:
         email = request.args["email"]
     return render_template("run.html", id_job=id_job, email=email,
-                           menu="run", allowed_ext=ALLOWED_EXTENSIONS_PER_FORMAT, s_id=s_id,
+                           menu="run", allowed_ext=extensions.allowed_extensions_per_format, s_id=s_id,
                            max_upload_file_size=config_reader.max_upload_file_size,
                            example_align=config_reader.example_target != "",
                            target=os.path.basename(config_reader.example_target),

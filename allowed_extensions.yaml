@@ -14,7 +14,7 @@ formats:
   batch:
     extensions: &batch [txt, tab, tsv]
     description: a batch file
-server:
+job:
   new:
     query: [fasta]
     target: [fasta]

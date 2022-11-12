@@ -38,7 +38,7 @@ import io
 import binascii
 from hashlib import sha1
 from dgenies.database import Job, ID_JOB_LENGTH
-from dgenies.allowed_extensions import ALLOWED_FORMATS_PER_ROLE
+from dgenies.allowed_extensions import AllowedExtensions
 
 import logging
 
@@ -98,6 +98,7 @@ class JobManager:
         self.id_process = "-1"
         # Get configs:
         self.config = AppConfigReader()
+        self.allowed_ext = AllowedExtensions()
         self.tools = Tools().tools
         self.tool = self.tools[tool] if tool is not None else None
         self.tool_name = tool
@@ -833,7 +834,7 @@ class JobManager:
         """
         Rename data file with prefix and create dotfiles
         """
-        for type_f in ALLOWED_FORMATS_PER_ROLE.get(self.get_job_type()).keys():
+        for type_f in self.allowed_ext.get_roles(self.get_job_type()):
             datafile = getattr(self, type_f)
             if datafile is not None:
                 finale_path = os.path.join(self.output_dir, type_f + "_" + os.path.basename(datafile.get_path()))
@@ -934,27 +935,11 @@ class JobManager:
         filename = self._get_filename_from_url(url)
         for job_type, file_role in contexts:
             logger.debug(file_role)
-            formats = ALLOWED_FORMATS_PER_ROLE[job_type][file_role]
-            allowed = Functions.allowed_file(filename, formats)
+            formats = self.allowed_ext.get_formats(job_type, file_role)
+            allowed = Functions.allowed_file(filename, tuple(formats))
             if not allowed:
-                format_txt = ""
-                if len(formats) == 1:
-                    if formats[0] == "fasta":
-                        format_txt = "a Fasta file"
-                    elif formats[0] == "idx":
-                        format_txt = "an index file"
-                    elif formats[0] == "map":
-                        format_txt = "an alignment file"
-                    elif formats[0] == "backup":
-                        format_txt = "a backup file"
-                    else:
-                        format_txt = "a valid file"
-                else:
-                    if "fasta" in formats and "idx" in formats:
-                        format_txt = "a Fasta file or an index file"
-                    else:
-                        format_txt = "a valid file"
-                raise DGeniesDistantFileTypeUnsupported(filename, url, format_txt)
+                format_descriptions = [self.allowed_ext.get_description(f) for f in formats]
+                raise DGeniesDistantFileTypeUnsupported(filename, url, format_descriptions)
 
     def clear(self):
         """
@@ -1843,15 +1828,16 @@ class JobManager:
         Transform current job into a list of jobs similar to batch format
         """
         jobtype = self.get_job_type()
-        return [(jobtype, {k: getattr(self, k) for k in ALLOWED_FORMATS_PER_ROLE[jobtype] if getattr(self, k) is not None})]
+        params_dict = {a: a for a in self.allowed_ext.get_roles(jobtype)}
+        params_dict.update({"tool": "tool_name", "options": "options"})
+        return [(jobtype, {p: getattr(self, a) for p, a in params_dict.items() if getattr(self, a) is not None})]
 
     def get_datafiles(self):
         """
         Return a list that maps the kind of file (query, target, etc) to the datafile
         """
-        return [(file_type, getattr(self, file_type)) for file_type in ALLOWED_FORMATS_PER_ROLE[self.get_job_type()].keys() if
+        return [(file_type, getattr(self, file_type)) for file_type in self.allowed_ext.get_roles(self.get_job_type()) if
                 getattr(self, file_type) is not None]
-
 
     def from_file_to_datafiles(self, job_type, params, cache=dict()):
         """
@@ -1866,7 +1852,7 @@ class JobManager:
         :return: copy of parameters where file paths where replaced by datafile object
         :rtype: dict
         """
-        job_input_files = ALLOWED_FORMATS_PER_ROLE["new" if job_type == "align" else job_type].keys()
+        job_input_files = self.allowed_ext.get_roles("new" if job_type == "align" else job_type)
         res = dict()
         for p, v in params.items():
             if p in job_input_files:
