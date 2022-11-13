@@ -10,9 +10,10 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
+@Singleton
 class AllowedExtensions:
     """
-    Ger allowed extensions per job
+    Get allowed extensions per job
     """
 
     def __init__(self):
