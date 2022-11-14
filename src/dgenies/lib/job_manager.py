@@ -116,6 +116,25 @@ class JobManager:
         self.mailer = mailer
         self._filename_for_url = {}  # Cache for distant filenames
 
+    @staticmethod
+    def create(id_job: str, job_type: str, jobs: list, email: str = None, mailer=None):
+        if job_type == "align":
+            query = jobs[0].get("query", None)
+            target = jobs[0].get("target", None)
+            tool = jobs[0].get("tool", None)
+            options = jobs[0].get("options", None)
+            return JobManager(id_job=id_job, email=email, query=query, target=target,
+                              mailer=mailer, tool=tool, options=options)
+        elif job_type == "plot":
+            query = jobs[0].get("query", None)
+            target = jobs[0].get("target", None)
+            align = jobs[0].get("align", None)
+            backup = jobs[0].get("backup", None)
+            return JobManager(id_job=id_job, email=email, query=query, target=target,
+                              align=align, backup=backup, mailer=mailer)
+        else:  # batch
+            return JobManager(id_job=id_job, email=email, batch=jobs, mailer=mailer)
+
     def set_role(self, role: str, datafile: DataFile):
         """"
         Set role for a datafile
@@ -141,11 +160,11 @@ class JobManager:
         self.set_role(role, None)
 
     def __repr__(self):
-        to_display = ('id_job', 'query', 'target', 'align', 'backup', 'tool', 'options')
-        return [(attr, getattr(self, attr))for attr in to_display if getattr(self, attr) is not None]
+        to_display = ('id_job', 'query', 'target', 'align', 'backup', 'tool_name', 'options')
+        return [(attr, getattr(self, attr)) for attr in to_display if getattr(self, attr) is not None]
 
     def __str__(self):
-        return "JobManager({})".format(", ".join(["{}:{}".format(k, v) for k,v in self.__repr__()]))
+        return "JobManager({})".format(", ".join(["{}:{}".format(k, v) for k, v in self.__repr__()]))
 
     def do_align(self):
         """
@@ -1875,6 +1894,7 @@ class JobManager:
         except DGeniesBatchFileError as e:
             self.set_job_status("fail", e.message)
             self.send_mail_post_if_allowed()
+            raise e
         return job_list
 
     def create_subjob(self, job_type, params_dict):
@@ -1891,7 +1911,7 @@ class JobManager:
         # We create a subjob id and the corresponding working directory
         random_length = 5
         job_id_prefix = params_dict.get(
-            "job_id_prefix",
+            "id_job",
             self.id_job
         )
         job_id_prefix = job_id_prefix[0: min(len(job_id_prefix), ID_JOB_LENGTH - random_length - 1)]

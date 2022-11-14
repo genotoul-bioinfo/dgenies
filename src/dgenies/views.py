@@ -18,6 +18,7 @@ from dgenies.lib.functions import Functions
 from dgenies.allowed_extensions import AllowedExtensions
 from dgenies.lib.upload_file import UploadFile
 from dgenies.lib.datafile import DataFile
+from dgenies.lib.exceptions import DGeniesExampleNotAvailable, DGeniesJobCheckError
 from dgenies.lib.latest import Latest
 from dgenies.tools import Tools
 from markdown import Markdown
@@ -30,6 +31,10 @@ if MODE == "webserver":
     from dgenies.database import Session, Gallery
     from peewee import DoesNotExist
 
+import logging
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 @app.context_processor
 def global_templates_variables():
@@ -121,6 +126,7 @@ def run():
                            backup=os.path.basename(config_reader.example_backup),
                            example_batch=config_reader.example_batch != "",
                            batch=os.path.basename(config_reader.example_batch),
+                           max_batch_jobs=config_reader.max_nb_jobs_in_batch_mode,
                            tools_names=tools_names, tools=tools,
                            tools_ava=tools_ava, tools_options=tools_options, version=VERSION, inforun=inforun)
 
@@ -137,6 +143,138 @@ def run_test():
         with Session.connect():
             return Session.new()
     return abort(500)
+
+
+def create_datafile(f: str, f_type: str, upload_folder: str, example_path: str) -> DataFile:
+    """
+    Create DataFile object. Raise an DGeniesExampleNotAvailable if example file does not exist
+
+   :param f: filename or url
+   :type f: str
+   :param f_type: file type
+   :type f_type: str
+   :param upload_folder: upload folder
+   :type upload_folder: str
+   :param example_path: example file path
+   :type example_path: str
+   :return: Fasta object
+   :rtype: DataFile
+    """
+    example = False
+    f_name = None
+    if f.startswith("example://"):
+        if example_path:
+            # File path is local example file
+            f_path = example_path
+            f_name = os.path.basename(f_path)
+            # TODO: check if re.sub(r"^example://", "", f) matches f_name
+            f_type = "local"
+            example = True
+        else:
+            raise DGeniesExampleNotAvailable
+    else:
+        if f_type == "local":
+            f_name = os.path.splitext(re.sub(r"\.gz$", "", f))[0]
+            f_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder, f)
+            # Sanitize filename
+            # TODO: use secure_filename instead
+            if os.path.exists(f_path):
+                if " " in f:
+                    new_f_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder,
+                                              f.replace(" ", "_"))
+                    shutil.move(f_path, new_f_path)
+                    f_path = new_f_path
+            else:
+                raise FileNotFoundError
+        else:
+            # File path is file url
+            f_path = f
+    return DataFile(name=f_name, path=f_path, type_f=f_type, example=example)
+
+
+def check_file_type_and_resolv_options(job: dict):
+    """
+    Check and normalize the given job parameters.
+    Job syntax and parameters constraints must have been verified on the client side.
+
+    :param job: job parameters
+    :type job: dict
+    :return: (True, []) if everything is alright, (False, list of errors) else
+    :rtype: (bool, list)
+    """
+    errors = []
+    job_type = job["type"]
+
+    if job_type == "align":
+        for key in ("target", "query"):
+            if job[key] is not None:
+                errors.extend(check_file_type(job, key))
+
+        if job["target"] == "":
+            errors.append("No target fasta selected")
+
+        if job["tool"] is not None and job["tool"] not in Tools().tools:
+            errors.append("Tool unavailable: %s" % job["tool"])
+
+        valid_options, options = get_tools_options(job["tool"], job["options"])
+        if not valid_options:
+            errors.append("Chosen tool options unavailable")
+        else:
+            job["options"] = options
+
+    elif job_type == "plot":
+        for key in ("target", "query", "align", "backup"):
+            if job[key] is not None:
+                errors.extend(check_file_type(job, key))
+
+    if errors:
+        raise DGeniesJobCheckError(errors)
+
+
+def check_file_type(job: dict, key: str) -> (bool, list):
+    errors = []
+    if job[key] and not job["{k}_type".format(k=key)]:
+        errors.append("Server error: no {k}_type in form. Please contact the support".foramt(k=k))
+    return errors
+
+
+def update_files(jobs: list, upload_folder: str):
+    """
+    Update job list by replacing file url and file path by datafile object.
+    Same path is replaced by same datafile object avoiding duplication.
+
+    jobs:
+    """
+    # entries with a potential file
+    file_keys = ["query", "target", "align", "backup"]
+    # entries with a potential example
+    keys_with_example = {k: getattr(config_reader, "example_{}".format(k)) for k in ["query", "target", "backup"]}
+    datafiles = dict()  # cache for deduplication
+    for j in jobs:
+        for k in file_keys:
+            if k in j and j[k]:
+                path = j[k]
+                if path in datafiles:
+                    f = datafiles[path]
+                else:
+                    file_type = j["{}_type".format(k)]
+                    f = create_datafile(path, file_type, upload_folder, keys_with_example.get(k, ""))
+                    datafiles[path] = f
+                j[k] = f
+                del j["{}_type".format(k)]
+
+
+def create_batch_file(batch_path: str, jobs: list) -> DataFile:
+    # We create the batch file in tmpdir
+    with open(batch_path, "wt") as outfile:
+        for j in jobs:
+            params_dict = {'type': j['type'], 'id_job': j['id_job']}
+            params_dict.update({a: j[a].get_path() for a in ['query', 'target', 'align', 'backup'] if a in j and j[a] is not None})
+            if 'tool_options' in j and j['tool_options']:
+                params_dict.update({'options': j['tool_options']})
+            outfile.write("{}\n".format("\t".join(["{k}={v}".format(k=k, v=v) for k, v in params_dict.items()])))
+    # We must avoid that a file has the same name as batch_file
+    return DataFile(name="batch", path=batch_path, type_f="local")
 
 
 # Launch analysis
@@ -159,19 +297,44 @@ def launch_analysis():
 
     # We get the distinct client's message elements
     id_job = request.form["id_job"]
+    job_type = request.form["type"]
     email = request.form["email"]
-    file_query = request.form["query"] if "query" in request.form else ""
-    file_query_type = request.form["query_type"] if "query" in request.form else None
-    file_target = request.form["target"] if "target" in request.form else ""
-    file_target_type = request.form["target_type"] if "target" in request.form else None
-    tool = request.form["tool"] if "tool" in request.form else None
-    tool_options = request.form.getlist("tool_options[]")
-    alignfile = request.form["alignfile"] if "alignfile" in request.form else None
-    alignfile_type = request.form["alignfile_type"] if "alignfile_type" in request.form else None
-    backup = request.form["backup"] if "backup" in request.form else None
-    backup_type = request.form["backup_type"] if "backup_type" in request.form else None
-    batch = request.form["batch"] if "batch" in request.form else None
-    batch_type = request.form["batch_type"] if "batch_type" in request.form else None
+    nb_jobs = int(request.form["nb_jobs"]) if "nb_jobs" in request.form else 0
+    jobs = list()
+    for i in range(0, nb_jobs):
+        jt = Template("jobs[$i][$attr]") # job template
+        k = jt.safe_substitute(i=i, attr="id_job")
+        id_sub_job = request.form[k] if k in request.form else id_job
+        # subjob
+        j = {"id_job": id_sub_job,
+             "email": email}
+        # k: key in j, attr: key in jt
+        for k, attr in (
+                ("type", "type"),
+                ("query", "query"),
+                ("query_type", "query_type"),
+                ("target", "target"),
+                ("target_type", "target_type"),
+                ("tool", "tool"),
+                ("align", "alignfile"),
+                ("align_type", "alignfile_type"),
+                ("backup", "backup"),
+                ("backup_type", "backup_type"),
+                ("batch", "batch"),
+                ("batch_type", "batch_type")
+            ):
+            s = jt.safe_substitute(i=i, attr=attr)
+            j[k] = request.form[s] if s in request.form else None
+            if j[k] == "":
+                j[k] = None
+        tool_options = jt.safe_substitute(i=i, attr="tool_options][")
+        j["options"] = request.form.getlist(tool_options) if tool_options in request.form else []
+        j["tool_options"] = j["options"]
+        jobs.append(j)
+
+    print(request.form.to_dict())
+    print(jobs)
+
 
     # Check form
     # Client side must have sent correct message depending on the job type.
@@ -183,45 +346,9 @@ def launch_analysis():
     errors = []
 
     # No alignfile_type given for alignfile
-    if alignfile is not None and alignfile_type is None:
-        errors.append("Server error: no alignfile_type in form. Please contact the support")
-        form_pass = False
+    batch_mode = nb_jobs > 1
 
-    # No backup_type given for backup
-    if backup is not None and backup != "" and (backup_type is None or backup_type == ""):
-        errors.append("Server error: no backup_type in form. Please contact the support")
-        form_pass = False
-
-    if backup is not None and backup != "":
-        # if a backup file is given, this is a plot job. Exclusive plot entries from plot form are erased.
-        alignfile = ""
-        file_query = ""
-        file_target = ""
-    elif batch is not None and batch != "":
-        # if a batch file is given, this is a batch job. All entries from other forms are erased.
-        backup = None # Set to None instead of ""
-        alignfile = ""
-        file_query = ""
-        file_target = ""
-    else:
-        # the last choice is and new alignment
-        backup = None
-        if file_target == "":
-            errors.append("No target fasta selected")
-            form_pass = False
-
-    # We look that the chosen tool is available.
-    if tool is not None and tool not in Tools().tools:
-        errors.append("Tool unavailable: %s" % tool)
-        form_pass = False
-
-    # We check that the tool options are always available.
-    valid_options, options = get_tools_options(tool, tool_options)
-    if not valid_options:
-        errors.append("Chosen options unavailable")
-        form_pass = False
-
-    # A job must have an id.
+    # We check job header (id + email)
     if id_job == "":
         errors.append("Id of job not given")
         form_pass = False
@@ -240,6 +367,15 @@ def launch_analysis():
             errors.append("Email is invalid")
             form_pass = False
 
+    # We check each job parameters
+
+    for j in jobs:
+        try:
+            check_file_type_and_resolv_options(j)
+        except DGeniesJobCheckError as e:
+            form_pass = False
+            errors.append(e.message)
+
     # Form pass
     if form_pass:
         # Get final job id (sanitize and avoid collision):
@@ -253,131 +389,28 @@ def launch_analysis():
         folder_files = os.path.join(APP_DATA, id_job)
         os.makedirs(folder_files)
 
-        # Generate DataFile objects:
-        # - Query file
-        query = None
-        if file_query != "":
-            example = False
-            if file_query.startswith("example://"):
-                # File path is local example file
-                example = True
-                query_path = config_reader.example_query
-                query_name = os.path.basename(query_path)
-                file_query_type = "local"
-            else:
-                query_name = os.path.splitext(file_query.replace(".gz", ""))[0] if file_query_type == "local" else None
-                if file_query_type == "local":
-                    # Sanitize filename
-                    # TODO: use secure_filename instead
-                    query_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder, file_query)
-                    if os.path.exists(query_path):
-                        if " " in file_query:
-                            new_query_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder,
-                                                                       file_query.replace(" ", "_"))
-                            shutil.move(query_path, new_query_path)
-                            query_path = new_query_path
-                    else:
-                        errors.append("Query file not correct!")
-                        form_pass = False
-                else:
-                    # File path is file url
-                    query_path = file_query
-            query = DataFile(name=query_name, path=query_path, type_f=file_query_type, example=example)
-
-        # - Target file
-        example = False
-        target = None
-        if file_target != "":
-            if file_target.startswith("example://"):
-                example = True
-                target_path = config_reader.example_target
-                target_name = os.path.basename(target_path)
-                file_target_type = "local"
-            else:
-                target_name = os.path.splitext(file_target.replace(".gz", ""))[0] if file_target_type == "local" \
-                    else None
-                if file_target_type == "local":
-                    target_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder, file_target)
-                    if os.path.exists(target_path):
-                        # Sanitize file name
-                        if " " in target_path:
-                            new_target_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder,
-                                                           file_target.replace(" ", "_"))
-                            shutil.move(target_path, new_target_path)
-                            target_path = new_target_path
-                    else:
-                        errors.append("Target file not correct!")
-                        form_pass = False
-                else:
-                    target_path = file_target
-            target = DataFile(name=target_name, path=target_path, type_f=file_target_type, example=example)
-
-        # We put an .align file in order to specify the job is a plot job (where alignement was already computed.
-        if alignfile is not None and alignfile != "" and backup is not None:
-            Path(os.path.join(folder_files, ".align")).touch()
-
-        # - Align file
-        align = None
-        if alignfile is not None and alignfile != "":
-            alignfile_name = os.path.splitext(alignfile)[0] if alignfile_type == "local" else None
-            alignfile_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder, alignfile) \
-                if alignfile_type == "local" else alignfile
-            if alignfile_type == "local" and not os.path.exists(alignfile_path):
-                errors.append("Alignment file not correct!")
-                form_pass = False
-            align = DataFile(name=alignfile_name, path=alignfile_path, type_f=alignfile_type)
-
-        # - Backup file
-        bckp = None
-        if backup is not None:
-            example = backup.startswith("example://")
-            if example:
-                backup_path = config_reader.example_backup
-                backup_name = os.path.basename(backup_path)
-                backup_type = "local"
-            else:
-                backup_name = os.path.splitext(backup)[0] if backup_type == "local" else None
-                backup_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder, backup) \
-                    if backup_type == "local" else backup
-                if backup_type == "local" and not os.path.exists(backup_path):
-                    errors.append("Backup file not correct!")
-                    form_pass = False
-            bckp = DataFile(name=backup_name, path=backup_path, type_f=backup_type, example=example)
-
-        batch_path = None
-
-        # - Batch file
-        if batch is not None:
-            example = batch.startswith("example://")
-            if example:
-                batch_path = config_reader.example_batch
-                batch_name = os.path.basename(batch_path)
-                batch_type = "local"
-            else:
-                batch_name = os.path.splitext(batch)[0] if batch_type == "local" else None
-                batch_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder, batch) \
-                    if batch_type == "local" else batch
-                if batch_type == "local" and not os.path.exists(batch_path):
-                    errors.append("Batch file not correct!")
-                    form_pass = False
-            batch = DataFile(name=batch_name, path=batch_path, type_f=batch_type, example=example)
-
+        # Transform files path into datafiles:
+        update_files(jobs, upload_folder)
+        print(jobs)
         if form_pass:
+
+            if batch_mode:
+                batch_file = os.path.join(folder_files, 'batch.txt')
+                i = 1
+                while os.path.exists(batch_file):
+                    batch_file = os.path.join(folder_files, 'batch_%d.txt' % i)
+                    i += 1
+                jobs = create_batch_file(batch_file, jobs)
+
             # Launch job:
-            job = JobManager(id_job=id_job,
-                             email=email,
-                             query=query,
-                             target=target,
-                             align=align,
-                             backup=bckp,
-                             batch=batch,
-                             mailer=mailer,
-                             tool=tool,
-                             options=options)
+            job = JobManager.create(id_job=id_job, job_type=job_type, jobs=jobs, email=email, mailer=mailer)
+            print(job)
+
             if MODE == "webserver":
                 job.launch()
             else:
                 job.launch_standalone()
+
             return jsonify({"success": True, "redirect": url_for(".status", id_job=id_job)})
     if not form_pass:
         return jsonify({"success": False, "errors": errors})

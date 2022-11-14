@@ -21,7 +21,7 @@ def has_correct_argument_keys(job_type: str, job_params: dict):
     result = False, None
     if job_type == "align":
         comparison = {"target", "query", "tool", "options"}.symmetric_difference(job_params.keys())
-        optional = {"options", "query", "tool", "job_id_prefix"}
+        optional = {"options", "query", "tool", "id_job"}
         # if result of comparison of given params with expected params is not a subset of optional params,
         # then there is some unconsidered params in given params
         result = comparison.issubset(optional), comparison - optional
@@ -34,7 +34,7 @@ def has_correct_argument_keys(job_type: str, job_params: dict):
             comparison = {"backup"}.symmetric_difference(job_params.keys())
         else:
             comparison = {"target", "query", "align"}.symmetric_difference(job_params.keys())
-        optional = {"job_id_prefix"}
+        optional = {"id_job"}
         result = comparison.issubset(optional), comparison - optional
     return result
 

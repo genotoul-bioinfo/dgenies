@@ -264,3 +264,36 @@ class DGeniesBatchFileError(DGeniesMessageException):
 
     def __str__(self):
         return "You provided a malformed batch file; " + "; ".join(self._messages)
+
+
+class DGeniesExampleNotAvailable(DGeniesMessageException):
+    """
+    Example file not available
+    """
+    pass
+
+
+class DGeniesJobCheckError(DGeniesMessageException):
+    """
+    Error append on server side
+    """
+
+    def __init__(self, errors):
+        """
+        :param messages: errors messages produced during parsing
+        :type messages: list of str
+        """
+        self._errors = errors
+
+    @property
+    def message(self):
+        """
+        Get message for user
+
+        :return: message for user
+        :rtype: str
+        """
+        return "Server error: " + self.__str__() + ". Please contact the support."
+
+    def __str__(self):
+        return "; ".join(self._errors)
