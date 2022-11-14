@@ -342,7 +342,7 @@ def launch_analysis():
     errors = []
 
     # No alignfile_type given for alignfile
-    batch_mode = nb_jobs > 1
+    batch_mode = job_type == "batch"
 
     # We check job header (id + email)
     if id_job == "":
