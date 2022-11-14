@@ -36,6 +36,7 @@ from dgenies.lib.exceptions import DGeniesFileCheckError, DGeniesNotGzipFileErro
 import gzip
 import io
 import binascii
+import json
 from hashlib import sha1
 from dgenies.database import Job, ID_JOB_LENGTH
 from dgenies.allowed_extensions import AllowedExtensions
@@ -116,6 +117,14 @@ class JobManager:
         self._filename_for_url = {}  # Cache for distant filenames
 
     def set_role(self, role: str, datafile: DataFile):
+        """"
+        Set role for a datafile
+
+        :param role: the role (e.g. query, target, ...)
+        :type role: str
+        :param datafile: the datafile
+        :type datafile: DataFile
+        """
         if role == 'align':
             self.align = datafile
             self.aln_format = self.get_align_format(datafile.get_path()) if datafile is not None else None
@@ -123,7 +132,20 @@ class JobManager:
             setattr(self, role, datafile)
 
     def unset_role(self, role: str):
+        """"
+        Unset a role
+
+        :param role: the role (e.g. query, target, ...)
+        :type role: str
+        """
         self.set_role(role, None)
+
+    def __repr__(self):
+        to_display = ('id_job', 'query', 'target', 'align', 'backup', 'tool', 'options')
+        return [(attr, getattr(self, attr))for attr in to_display if getattr(self, attr) is not None]
+
+    def __str__(self):
+        return "JobManager({})".format(", ".join(["{}:{}".format(k, v) for k,v in self.__repr__()]))
 
     def do_align(self):
         """
@@ -1338,82 +1360,39 @@ class JobManager:
 
         return self._end_of_prepare_dotplot()
 
+    def write_jobs(self, jobs):
+        """
+        Write job description (file paths for roles, tool, options, ...) into a json file for futher steps file storing jobs description
+        Document structure follows the message structure obtained from form.
+        """
+        with open(os.path.join(self.output_dir, ".jobs"), "wt", encoding = 'utf8') as json_file:
+            data = [subjob.as_job_entry() for subjob in jobs]
+            json.dump(data, json_file, allow_nan=True, )
+
+    def read_jobs(self):
+        """
+        Read file storing job descriptions (file paths for roles, tool, options, ...)
+        Document structure follows the message structure obtained from form.
+
+        :return: list of dict. Each dict is a job is a dict where param:value
+        :rtype: list
+        """
+        with open(os.path.join(self.output_dir, ".jobs"), "rt", encoding = 'utf8') as json_file:
+            data = json.load(json_file)
+            print(data)
+            return data
+
     def get_subjob_ids(self):
+        """
+        Get the subjobs ids if any
+
+        :return:
+        :rtype: list of str
+        """
         try:
-            with open(os.path.join(self.output_dir, ".jobs"), "rt") as jobs_file:
-                return jobs_file.read().strip().split()
+            return [j['id_job'] for j in self.read_jobs()]
         except FileNotFoundError:
             return []
-
-    def create_new_jobs(self, job_params):
-        """"
-        Create a list of JobManager objects
-
-        :params job_params: List of jobs with parameters such as each entry is
-            * [0] the job type
-            * [1] a dict of params -> value
-        :type job_params: list of couples
-        :return: list of jobs
-        :rtype: list of JobManager
-        """
-        job_queue = []
-        with open(os.path.join(self.output_dir, ".jobs"), "wt") as jobs_file:
-            for job_type, params in job_params:
-                # We create a subjob id and the corresponding working directory
-                random_length = 5
-                job_id_prefix = params.get(
-                    "job_id_prefix",
-                    self.id_job
-                )
-                job_id_prefix = job_id_prefix[0: min(len(job_id_prefix), ID_JOB_LENGTH - random_length - 1)]
-                subjob_id = job_id_prefix + "_" + Functions.random_string(random_length)
-                while os.path.exists(os.path.join(self.config.app_data, subjob_id)):
-                    subjob_id = job_id_prefix + "_" + Functions.random_string(random_length)
-                folder_files = os.path.join(self.config.app_data, subjob_id)
-                os.makedirs(folder_files)
-
-                # We create the needed datafiles
-                query = params.get("query", None)
-                if query is not None:
-                    if query.startswith("example://") and self.config.example_query:
-                        query = DataFile(name=os.path.basename(self.config.example_query),
-                                         path=self.config.example_query, type_f="local", example=True)
-                    else:
-                        query = DataFile(name="query", path=query, type_f="URL")
-                target = params.get("target", None)
-                if target is not None:
-                    if target.startswith("example://") and self.config.example_target:
-                        target = DataFile(name=os.path.basename(self.config.example_target),
-                                          path=self.config.example_target, type_f="local", example=True)
-                    else:
-                        target = DataFile(name="target", path=target, type_f="URL")
-                align = params.get("align", None)
-                if align is not None:
-                    align = DataFile(name="align", path=align, type_f="URL")
-                backup = params.get("backup", None)
-                if backup is not None:
-                    if backup.startswith("example://") and self.config.example_backup:
-                        backup = DataFile(name=os.path.basename(self.config.example_backup),
-                                          path=self.config.example_backup, type_f="local", example=True)
-                    else:
-                        backup = DataFile(name="backup", path=backup, type_f="URL")
-                tool = params.get("tool", None)
-                options = params.get("options", None)
-
-                # We create the subjob itself
-                subjob = JobManager(
-                    id_job=subjob_id,
-                    email=self.email,
-                    query=query,
-                    target=target,
-                    align=align,
-                    backup=backup,
-                    mailer=self.mailer,
-                    tool=tool,
-                    options=options)
-                job_queue.append(subjob)
-                jobs_file.write(subjob_id + "\n")
-        return job_queue
 
     def prepare_batch(self):
         """
@@ -1421,28 +1400,31 @@ class JobManager:
         """
         # We get the job list from .jobs file
         logger.info("Prepare batch job")
-        subjob_ids = self.get_subjob_ids()
-        if not subjob_ids:
+        subjobs = self.read_jobs()
+        if not subjobs:
             self.set_job_status("fail", "Batch mode: no subjob found")
             self.send_mail_post_if_allowed()
             return False
         # We create a queue in order to run jobs sequentially in standalone mode.
         self.set_job_status("preparing")
         job_queue = []
-        for jid in subjob_ids:
-            j = JobManager(jid)
+        # TODO: get back options and tool
+        for sj in subjobs:
+            j = JobManager(sj["id_job"], email=self.email, mailer=self.mailer)
             j.set_inputs_from_res_dir()
+            j.tool_name = sj["tool"] if "tool" in sj else None
+            j.options = sj["options"] if "options" in sj else None
             job_queue.append(j)
         if MODE == "webserver":
             self.set_job_status("started-batch")
             for subjob in job_queue:
-                print("run job " + subjob.id_job)
+                logger.info("run job " + subjob.id_job)
                 subjob.set_send_mail(False)
                 subjob.launch()
         else:
             self.set_job_status("started-batch")
             for subjob in job_queue:
-                print("run job " + subjob.id_job)
+                logger.info("run job " + subjob.id_job)
                 subjob.launch_standalone(sync=True)
             # We get end status for each subjob
             is_success = all(s in ("success", "no-match") for s in map(lambda j: j.get_status_standalone(), job_queue))
@@ -1823,14 +1805,29 @@ class JobManager:
         except DGeniesBackupUnpackError as e:
             raise e
 
-    def to_job_list(self):
+    def as_job_entry(self):
         """
-        Transform current job into a list of jobs similar to batch format
+        Get a representation of current job as a job entry in batch file
+
+        :return:
+        :rtype: dict
         """
         jobtype = self.get_job_type()
-        params_dict = {a: a for a in self.allowed_ext.get_roles(jobtype)}
-        params_dict.update({"tool": "tool_name", "options": "options"})
-        return [(jobtype, {p: getattr(self, a) for p, a in params_dict.items() if getattr(self, a) is not None})]
+        params_dict = {'type': jobtype, 'id_job': self.id_job}
+        params_dict.update({a: getattr(self, a).get_path() for a in self.allowed_ext.get_roles(jobtype) if getattr(self, a) is not None})
+        if self.tool_name is not None:
+            params_dict["tool"] = self.tool_name
+        if self.options is not None:
+            params_dict["options"] = self.options
+        return params_dict
+
+    def to_job_list(self):
+        """
+        Get a representation of current job a list of jobs similar to what we obtain when reading batch file
+        """
+        job = self.as_job_entry()
+        jobtype = job.pop('type')
+        return [(jobtype, job)]
 
     def get_datafiles(self):
         """
@@ -1967,12 +1964,10 @@ class JobManager:
                         logger.debug(job_list)
                         # Prepare list of datafiles with context for checking
                         job_dict = dict()
-                        with open(os.path.join(self.output_dir, ".jobs"), "wt") as jobs_file:
-                            for jobtype, params in job_list:
-                                subjob = self.create_subjob(jobtype, params)
-                                logger.debug("Job created: {}".format(subjob.id_job))
-                                job_dict[subjob.id_job] = subjob
-                                jobs_file.write(subjob.id_job + "\n")
+                        for jobtype, params in job_list:
+                            subjob = self.create_subjob(jobtype, params)
+                            logger.debug("Job created: {}".format(subjob.id_job))
+                            job_dict[subjob.id_job] = subjob
 
                         dcm = DataFileContextManager(job_dict.values())
 
@@ -2010,11 +2005,15 @@ class JobManager:
                         logger.info("Copy files in each subjob: OK")
 
                         for subjob in job_dict.values():
-                            logger.debug("Normalize files in subjob: {}".format(subjob.id_job))
+                            logger.info("Normalize files in subjob: {}".format(subjob.id_job))
                             subjob.normalize_files()
-                            logger.debug("Done normalize files in subjob: {}".format(subjob.id_job))
+                            logger.info("Done normalize files in subjob: {}".format(subjob.id_job))
                             # We set a flag to tell the files of subjob are already checked
                             Path(os.path.join(subjob.output_dir, '.already_checked')).touch()
+
+                        # Backup jobs with params for next step in standalone mode.
+                        self.write_jobs(job_dict.values())
+
 
                 # Set the runner according to available resource
                 if MODE == "webserver" and job.runner_type != "local" and should_be_local \
