@@ -332,10 +332,6 @@ def launch_analysis():
         j["tool_options"] = j["options"]
         jobs.append(j)
 
-    print(request.form.to_dict())
-    print(jobs)
-
-
     # Check form
     # Client side must have sent correct message depending on the job type.
     # Here we check that everything was correctly transmitted.
@@ -391,7 +387,6 @@ def launch_analysis():
 
         # Transform files path into datafiles:
         update_files(jobs, upload_folder)
-        print(jobs)
         if form_pass:
 
             if batch_mode:
@@ -404,7 +399,6 @@ def launch_analysis():
 
             # Launch job:
             job = JobManager.create(id_job=id_job, job_type=job_type, jobs=jobs, email=email, mailer=mailer)
-            print(job)
 
             if MODE == "webserver":
                 job.launch()
