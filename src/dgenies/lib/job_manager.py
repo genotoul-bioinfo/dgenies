@@ -1882,18 +1882,18 @@ class JobManager:
 
     def read_batch_file(self):
         """
-        Read batch file where file are deduplicated datafiles
+        Read batch file where file are deduplicated datafiles.
+        Raise a DGeniesBatchFileError on error
 
         :return: list of jobs
         :rtype: list of tuple
         """
         cache = dict()
+        job_list = []
         try:
             job_list = [self.from_file_to_datafiles(jt, params, cache) for jt, params in
                         read_batch_file(self.batch.get_path())]
         except DGeniesBatchFileError as e:
-            self.set_job_status("fail", e.message)
-            self.send_mail_post_if_allowed()
             raise e
         return job_list
 
@@ -2041,7 +2041,7 @@ class JobManager:
                     job.runner_type = "local"
                     job.save()
 
-            except (DGeniesFileCheckError, DGeniesURLError, DGeniesDownloadError) as e:
+            except (DGeniesFileCheckError, DGeniesURLError, DGeniesDownloadError, DGeniesBatchFileError) as e:
                 self.set_job_status("fail", e.message)
                 self._save_analytics_data()
                 self._set_analytics_job_status("fail-getfiles")
