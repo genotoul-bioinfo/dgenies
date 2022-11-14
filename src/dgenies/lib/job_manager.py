@@ -1998,7 +1998,7 @@ class JobManager:
                                 subjob.set_role(file_role, new_datafile)
                                 if MODE == "webserver" and subjob.config.runner_type != "local" \
                                         and hasattr(subjob.config, "min_%s_size" % file_role) \
-                                        and datafile.set_file_size() >= getattr(subjob.config, "min_%s_size" % file_role):
+                                        and datafile.get_file_size() >= getattr(subjob.config, "min_%s_size" % file_role):
                                     # We set a flag to tell job must run on cluster
                                     Path(os.path.join(subjob.output_dir, '.should_not_be_local')).touch()
                         #os.remove(datafile.get_path())  # We remove uneeded files for batch dir
