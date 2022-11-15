@@ -715,6 +715,33 @@ class JobManager:
                     break
         return error
 
+    def _get_runner_config(self, step):
+        """
+        Get runner config (runner type, memory, thread, walltime)
+
+        :param step: The job step
+        :type step: str
+        :return: the config:
+            * [0]: memory in GB
+            * [1]: number of threads
+            * [2]: walltime
+        :rtype: tuple
+        """
+        if step == "start":
+            # TODO: rework hardcoded memory limits
+            memory = self.config.cluster_memory
+            if self.is_ava():
+                memory = self.config.cluster_memory_ava
+                if memory > 32:
+                    name, order, contigs, reversed_c, abs_start, c_len = Index.load(self.idx_t, False)
+                    if c_len <= 500000000:
+                        memory = 32
+            if memory > self.tool.max_memory:
+                memory = self.tool.max_memory
+            return memory, self.tool.threads_cluster, "02:00:00"
+        else:  # step == "prepare"
+            return 8, 1, "02:00:00"
+
     def launch_to_cluster(self, step, runner_type, command, args, log_out, log_err):
         """
         Launch a program to the cluster
@@ -750,36 +777,17 @@ class JobManager:
             jt.outputPath = ":" + log_out
             jt.errorPath = ":" + log_err
 
-        if step == "start":
-            memory = self.config.cluster_memory
-            if self.query is None:  # ava mode
-                memory = self.config.cluster_memory_ava
-                if memory > 32:
-                    name, order, contigs, reversed_c, abs_start, c_len = Index.load(self.idx_t, False)
-                    if c_len <= 500000000:
-                        memory = 32
-            if memory > self.tool.max_memory:
-                memory = self.tool.max_memory
-        else:
-            memory = 8000
+        memory, threads, walltime = self._get_runner_config(step)
 
         native_specs = self.config.drmaa_native_specs
         if runner_type == "slurm":
             if native_specs == "###DEFAULT###":
                 native_specs = "--mem-per-cpu={0} --mincpus={1} --time={2}"
-            if step == "prepare":
-                jt.nativeSpecification = native_specs.format(memory, 1, "02:00:00")
-            elif step == "start":
-                jt.nativeSpecification = native_specs.format(memory // self.tool.threads_cluster * 1000,
-                                                             self.tool.threads_cluster, "02:00:00")
+            jt.nativeSpecification = native_specs.format(memory * 1000 // threads, threads, walltime)
         elif runner_type == "sge":
             if native_specs == "###DEFAULT###":
                 native_specs = "-l mem={0},h_vmem={0} -pe parallel_smp {1}"
-            if step == "prepare":
-                jt.nativeSpecification = native_specs.format(8000, 1)
-            elif step == "start":
-                jt.nativeSpecification = native_specs.format(
-                    memory // self.tool.threads_cluster * 1000, self.tool.threads_cluster)
+            jt.nativeSpecification = native_specs.format(memory * 1000 // threads, threads)
         jt.workingDirectory = self.output_dir
         jobid = s.runJob(jt)
         self.id_process = jobid
