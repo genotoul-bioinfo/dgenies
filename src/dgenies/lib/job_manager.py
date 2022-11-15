@@ -161,10 +161,8 @@ class JobManager:
 
     def __repr__(self):
         to_display = ('id_job', 'query', 'target', 'align', 'backup', 'tool_name', 'options')
-        return [(attr, getattr(self, attr)) for attr in to_display if getattr(self, attr) is not None]
-
-    def __str__(self):
-        return "JobManager({})".format(", ".join(["{}:{}".format(k, v) for k, v in self.__repr__()]))
+        attributes = [(attr, getattr(self, attr)) for attr in to_display if getattr(self, attr) is not None]
+        return "JobManager({})".format(", ".join(["{}:{}".format(k, v) for k, v in attributes]))
 
     def do_align(self):
         """
@@ -2219,6 +2217,7 @@ class DataFileContext:
     def __str__(self):
         return self.__repr__()
 
+
 class DataFileContextManager:
     """
     Manage Datafile contexts
@@ -2274,7 +2273,7 @@ class DataFileContextManager:
             return set()
 
     def __repr__(self):
-        return [(datafile.get_path(), c) for datafile, contexts in self.datafile_dict.items() for c in contexts]
+        return str([(datafile.get_path(), c) for datafile, contexts in self.datafile_dict.items() for c in contexts])
 
     def __str__(self):
-        return str(self.__repr__())
+        return self.__repr__()
