@@ -183,7 +183,7 @@ def parse_started_jobs():
         cluster_jobs_started = []  # Only cluster jobs
         jobs = Job.select().where((Job.status == "started") | (Job.status == "starting") | (Job.status == "succeed") |
                                   (Job.status == "merging") | (Job.status == "scheduled-cluster") |
-                                  (Job.status == "prepare-scheduled") | (Job.status == "prepare-cluster"))
+                                  (Job.status == "prepare-scheduled") | (Job.status == "preparing-cluster"))
         for job in jobs:
             pid = job.id_process
             if job.runner_type == "local":
