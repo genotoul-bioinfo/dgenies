@@ -543,6 +543,32 @@ class JobManager:
                        "<br/>You can contact the support for more information."
         return "Your job #ID# has failed. You can try again.<br/>If the problem persists, please contact the support."
 
+    def forge_command_line(self, default_out_file=None):
+        """
+        Forge command line for running alignment
+
+        :params default_out_file: output file to use by default
+        :type default_out_file: str
+        :return: the command line and the output file that will be used:
+            *[0]: the exec file
+            *[2]: the command arguments
+            *[1]: the output file, can be either the default one, or the one computed from tool command pattern
+        :rtype: tuple
+        """
+        out_file = default_out_file
+        if self.is_ava():
+            args = re.sub(r"{exe}\s?", "", self.tool.all_vs_all)
+        else:
+            args = re.sub(r"{exe}\s?", "", self.tool.command_line).replace("{query}", self.get_query_split())
+        if ">" in args:
+            out_file = self.paf_raw
+            args = args[:args.index(">")]
+        args = args.replace("{target}", self.target.get_path()) \
+                   .replace("{threads}", str(self.tool.threads)) \
+                   .replace("{options}", self.options) \
+                   .replace("{out}", self.paf_raw)
+        return self.tool.exec, args, out_file
+
     def _launch_local(self):
         """
         Launch a job on the current machine
@@ -554,21 +580,11 @@ class JobManager:
             cmd = ["/usr/bin/time", "-f", "%e %M"]
         else:
             cmd = []
-        if self.query is not None:
-            command_line = self.tool.command_line.replace("{query}", self.query.get_path())
-        else:
-            command_line = self.tool.all_vs_all
-        out_file = None
-        if ">" in command_line:
-            out_file = self.paf_raw
-            command_line = command_line[:command_line.index(">")]
-        command_line = command_line.replace("{exe}", self.tool.exec) \
-                                   .replace("{target}", self.target.get_path()) \
-                                   .replace("{threads}", str(self.tool.threads)) \
-                                   .replace("{options}", self.options) \
-                                   .replace("{out}", self.paf_raw)
 
-        cmd += command_line.split(" ")
+        exe, args, out_file = self.forge_command_line(default_out_file=None)
+        cmd += [exe]
+        cmd += args.split(" ")
+        logger.info("Will run: {}".format(" ".join(cmd)))
         if out_file is None:
             with open(self.logs, "w") as logs:
                 p = subprocess.Popen(cmd, stdout=logs, stderr=logs)
@@ -824,22 +840,8 @@ class JobManager:
         :param runner_type: slurm or sge
         :return: True if job succeed, else False
         """
-
-        if self.query is not None:
-            args = re.sub("{exe}\s?", "", self.tool.command_line).replace("{query}", self.get_query_split())
-        else:
-            args = re.sub("{exe}\s?", "", self.tool.all_vs_all)
-        out_file = self.logs
-        if ">" in args:
-            out_file = self.paf_raw
-            args = args[:args.index(">")]
-        args = args.replace("{target}", self.target.get_path()) \
-                   .replace("{threads}", str(self.tool.threads_cluster)) \
-                   .replace("{options}", self.options) \
-                   .replace("{out}", self.paf_raw)
-
+        exec, args, out_file = self.forge_command_line(default_out_file=self.logs)
         args = args.split(" ")
-
         return self.launch_to_cluster(step="start",
                                       runner_type=runner_type,
                                       command=self.tool.exec,
