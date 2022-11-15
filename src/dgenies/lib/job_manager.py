@@ -502,17 +502,7 @@ class JobManager:
                     self.email = job.email
                 status = job.status
                 self.error = job.error
-
-                target_name = None
-                if os.path.exists(self.idx_t):
-                    with open(self.idx_t, "r") as idxt:
-                        target_name = idxt.readline().rstrip()
-                query_name = None
-                if os.path.exists(self.idx_q):
-                    with open(self.idx_q, "r") as idxq:
-                        query_name = idxq.readline().rstrip()
-                        if query_name == target_name:
-                            query_name = None
+                query_name, target_name = self._get_query_target_names()
 
                 # Send:
                 self.mailer.send_mail(recipients=[self.email],
