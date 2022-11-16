@@ -1353,15 +1353,15 @@ class JobManager:
                                        log_err=self.logs,
                                        scheduled_status="prepare-scheduled")
 
-                if self.query is None:
-                    shutil.copy(self.idx_t, self.idx_q)
-
-                status = "prepared"
-                self.update_job_status(status)
-                self._end_of_prepare_dotplot()
-
             except (DGeniesClusterRunError, DGeniesMissingParserError) as e:
                 raise e
+
+        if self.query is None:
+            shutil.copy(self.idx_t, self.idx_q)
+
+        status = "prepared"
+        self.update_job_status(status)
+        self._end_of_prepare_dotplot()
 
     def prepare_dotplot_local(self):
         """
