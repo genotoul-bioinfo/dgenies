@@ -1987,6 +1987,29 @@ class JobManager:
             options=params_dict.get("options", None))
         return subjob
 
+    def distribute_files(self, datafiles_with_contexts):
+        """
+        Copy datafile in subjob directory, duplicate datafile and update subjob.
+        Set file '.should_not_be_local' to flag if a job shouldn't be local
+        """
+        for datafile in datafiles_with_contexts.get_datafiles():
+            for job, file_role in datafiles_with_contexts.get_distinct(datafile, 'job', 'file_role'):
+                logger.info("Copy {f} to {j}...".format(f=datafile.get_path(), j=job.id_job))
+                new_path = os.path.join(job.output_dir, os.path.basename(datafile.get_path()))
+                if new_path != datafile.get_path():
+                    # We are in batch job
+                    shutil.copy(datafile.get_path(), new_path)
+                new_datafile = datafile.clone()
+                new_datafile.set_path(new_path)
+                job.set_role(file_role, new_datafile)
+                #subjob._write_job()
+                if MODE == "webserver" and job.config.runner_type != "local" \
+                        and hasattr(job.config, "min_%s_size" % file_role) \
+                        and datafile.get_file_size() >= getattr(job.config, "min_%s_size" % file_role):
+                    # We set a flag to tell job must run on cluster
+                    Path(os.path.join(job.output_dir, '.should_not_be_local')).touch()
+        # os.remove(datafile.get_path())  # We remove uneeded files for batch dir
+
     def start_job(self):
         """
         Start job: download, check and parse input files
@@ -2003,92 +2026,58 @@ class JobManager:
             try:
                 if os.path.exists(os.path.join(self.output_dir, '.already_checked')):
                     logger.info("Files already checked, skipping file checking")
-                    should_be_local = not os.path.exists(os.path.join(self.output_dir, '.should_not_be_local'))
-                    logger.debug("Job should be local: {}".format(should_be_local))
                 else:
                     job_list = self.to_job_list()
                     logger.debug(job_list)
-                    dcm = DataFileContextManager([self])
+                    if self.is_batch():
+                        # We normalize file batch file name
+                        self.normalize_files()
+                        # We read the batch file and get (jobtype, files)
+                        job_list = self.read_batch_file()
+                        logger.debug(job_list)
+                        # Prepare list of datafiles with context for checking
+                        jobs = []
+                        for j, params in job_list:
+                            j = self.create_subjob(j, params)
+                            logger.debug("Job created: {}".format(j.id_job))
+                            jobs.append(j)
+                    else:
+                        jobs = [self]
+                    dcm = DataFileContextManager(jobs)
+
                     logger.info("Check local files...")
                     # Will raise a DGeniesFileCheckError or DGeniesURLError on error
-                    should_be_local = self.move_and_check_local_files(dcm)
+                    self.move_and_check_local_files(dcm)
                     logger.info("Check local files: OK")
 
                     # Some files may be downloaded
                     # Will raise a DGeniesURLError, DGeniesDownloadError or DGeniesFileCheckError on error
                     logger.info("Download distant files...")
-                    should_be_local = self.download_files_with_pending(dcm, should_be_local)
+                    self.download_files_with_pending(dcm, True)
                     logger.info("Download distant files: OK")
 
-                    if self.backup is not None:
-                        logger.info("Unpack backup files...")
-                        self.unpack_backups(dcm)
-                        logger.info("Unpack backup files: OK")
+                    # unpack backup files if any
+                    self.unpack_backups(dcm)
 
-                    #  Normalize files for job: add prefix to data files and create dotfiles.
-                    logger.info("Normalize filenames...")
-                    self.normalize_files()
-                    logger.info("Normalize filenames: OK")
+                    # Move and check datafile in working dir
+                    logger.info("Distribute file into job(s)...")
+                    self.distribute_files(dcm)
+                    # We copy datafile in subjob directory, duplicate datafile and update subjob
+                    logger.info("Distribute file into job(s): OK")
 
-                    if self.is_batch():
-                        logger.info("Manage files in batch file...")
+                    for j in jobs:
+                        logger.info("Normalize files job: {}".format(j.id_job))
+                        j.normalize_files()
+                        logger.info("Done normalize files in job: {}".format(j.id_job))
+                        # We set a flag to tell the files of subjob are already checked
+                        Path(os.path.join(j.output_dir, '.already_checked')).touch()
 
-                        # We read the batch file and get (jobtype, files)
-                        job_list = self.read_batch_file()
-                        logger.debug(job_list)
-                        # Prepare list of datafiles with context for checking
-                        job_dict = dict()
-                        for jobtype, params in job_list:
-                            subjob = self.create_subjob(jobtype, params)
-                            logger.debug("Job created: {}".format(subjob.id_job))
-                            job_dict[subjob.id_job] = subjob
+                    # Backup jobs with params for next batch step in standalone mode.
+                    self.write_jobs(jobs)
 
-                        dcm = DataFileContextManager(job_dict.values())
-
-                        logger.info("Check local files for batch...")
-                        # Will raise a DGeniesFileCheckError or DGeniesURLError on error
-                        self.move_and_check_local_files(dcm)
-                        logger.info("Check local files for batch: OK")
-
-                        # Some files may be downloaded
-                        # Will raise a DGeniesURLError, DGeniesDownloadError or DGeniesFileCheckError on error
-                        logger.info("Download distant files for batch...")
-                        self.download_files_with_pending(dcm, True)
-                        logger.info("Download distant files for batch: OK")
-
-                        # Unpack backup files if any
-                        self.unpack_backups(dcm)
-
-                        # Move and check datafile in working dir
-                        logger.info("Copy files in each subjob...")
-                        # We copy datafile in subjob directory, duplicate datafile and update subjob
-                        for datafile in dcm.get_datafiles():
-                            for subjob, file_role in dcm.get_distinct(datafile, 'job', 'file_role'):
-                                logger.info("Copy {f} to {j}...".format(f=datafile.get_path(), j=subjob.id_job))
-                                new_path = os.path.join(subjob.output_dir, os.path.basename(datafile.get_path()))
-                                shutil.copy(datafile.get_path(), new_path)
-                                new_datafile = datafile.clone()
-                                new_datafile.set_path(new_path)
-                                subjob.set_role(file_role, new_datafile)
-                                if MODE == "webserver" and subjob.config.runner_type != "local" \
-                                        and hasattr(subjob.config, "min_%s_size" % file_role) \
-                                        and datafile.get_file_size() >= getattr(subjob.config, "min_%s_size" % file_role):
-                                    # We set a flag to tell job must run on cluster
-                                    Path(os.path.join(subjob.output_dir, '.should_not_be_local')).touch()
-                        #os.remove(datafile.get_path())  # We remove uneeded files for batch dir
-                        logger.info("Copy files in each subjob: OK")
-
-                        for subjob in job_dict.values():
-                            logger.info("Normalize files in subjob: {}".format(subjob.id_job))
-                            subjob.normalize_files()
-                            logger.info("Done normalize files in subjob: {}".format(subjob.id_job))
-                            # We set a flag to tell the files of subjob are already checked
-                            Path(os.path.join(subjob.output_dir, '.already_checked')).touch()
-
-                        # Backup jobs with params for next step in standalone mode.
-                        self.write_jobs(job_dict.values())
-
-                # Set the runner according to available resource
+                # Set the runner according to available resources
+                should_be_local = not os.path.exists(os.path.join(self.output_dir, '.should_not_be_local'))
+                logger.debug("Job should be local: {}".format(should_be_local))
                 if MODE == "webserver" and job.runner_type != "local" and should_be_local \
                         and self.get_pending_local_number() < self.config.max_run_local:
                     job.runner_type = "local"
