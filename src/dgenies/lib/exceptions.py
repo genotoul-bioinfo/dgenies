@@ -316,12 +316,31 @@ class DGeniesJobCheckError(DGeniesMessageException):
         return "; ".join(self._errors)
 
 
-class DGeniesClusterRunError(DGeniesMessageException):
+class DGeniesRunError(DGeniesMessageException):
+
+    def __init__(self, error: str):
+        """
+        :param messages: errors messages produced during parsing
+        :type messages: list of str
+        """
+        self.error = error
+
+    def __str__(self):
+        return self.error
+
+
+class DGeniesClusterRunError(DGeniesRunError):
     """
-    Error appends during running job on cluster
+    Error appends during running job on cluster runner
     """
     pass
 
+
+class DGeniesLocalRunError(DGeniesRunError):
+    """
+    Error appends during running job on local runner
+    """
+    pass
 
 class DGeniesMissingParserError(DGeniesMessageException):
 
@@ -346,7 +365,7 @@ class DGeniesMissingParserError(DGeniesMessageException):
         return "No parser found for format %s" % self.fmt
 
 
-class MissingSubjobsError(DGeniesMessageException):
+class DgeniesMissingSubjobsError(DGeniesMessageException):
 
     def __str__(self):
         return "Batch mode: no subjob found"

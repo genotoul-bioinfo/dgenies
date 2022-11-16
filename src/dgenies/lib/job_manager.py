@@ -32,8 +32,8 @@ from dgenies.lib.batch import read_batch_file
 from dgenies.lib.exceptions import DGeniesFileCheckError, DGeniesNotGzipFileError, DGeniesUploadedFileSizeLimitError, \
     DGeniesAlignmentFileUnsupported, DGeniesAlignmentFileInvalid, DGeniesIndexFileInvalid, DGeniesFastaFileInvalid, \
     DGeniesURLError, DGeniesURLInvalid, DGeniesDistantFileTypeUnsupported, DGeniesDownloadError, \
-    DGeniesBackupUnpackError, DGeniesBatchFileError, DGeniesClusterRunError, DGeniesMissingParserError, \
-    MissingSubjobsError
+    DGeniesBackupUnpackError, DGeniesBatchFileError, DGeniesRunError, DGeniesClusterRunError, DGeniesLocalRunError, \
+    DGeniesMissingParserError, DgeniesMissingSubjobsError
 import gzip
 import io
 import binascii
@@ -573,6 +573,7 @@ class JobManager:
     def _launch_local(self):
         """
         Launch a job on the current machine
+        Raise DGeniesLocalRunError on error
 
         :return: True if job succeed, else False
         :rtype: bool
@@ -613,15 +614,9 @@ class JobManager:
                 if status == "no-match":
                     self._set_analytics_job_status("no-match")
                 return status == "succeed"
-            self.error = self.search_error()
-            status = "fail"
-            if MODE == "webserver":
-                job.status = status
-                job.error = self.error
-                job.save()
             else:
-                self.set_status_standalone(status, self.error)
-        return False
+                self.error = self.search_error()
+                raise DGeniesLocalRunError(self.error)
 
     def check_job_status_slurm(self):
         """
@@ -832,6 +827,7 @@ class JobManager:
     def _launch_drmaa(self, runner_type):
         """
         Launch the mapping step to a cluster
+        Raise DGeniesClusterRunError on error
 
         :param runner_type: slurm or sge
         :type runner_type: str
@@ -849,6 +845,7 @@ class JobManager:
                                    log_err=self.logs,
                                    scheduled_status="scheduled-cluster")
             status = self.check_job_success()
+            logger.debug("Job ends with status: {}".format(status))
             if status == "no-match":
                 self._set_analytics_job_status("no-match")
             self.update_job_status(status)
@@ -1435,7 +1432,7 @@ class JobManager:
         logger.info("Prepare batch job")
         subjobs = self.read_jobs()
         if not subjobs:
-            raise MissingSubjobsError()
+            raise DgeniesMissingSubjobsError()
         # We create a queue in order to run jobs sequentially in standalone mode.
         self.set_job_status("preparing")
         job_queue = []
@@ -1470,7 +1467,7 @@ class JobManager:
             try:
                 self.prepare_batch()
 
-            except MissingSubjobsError as e:
+            except DgeniesMissingSubjobsError as e:
                 self.set_job_status("fail", e.message)
                 self._set_analytics_job_status("fail-batch-prepare")
                 self.send_mail_post_if_allowed()
@@ -1556,110 +1553,125 @@ class JobManager:
                 self.set_job_status(self.refresh_batch_status())
             else:
                 # We start the 'align' job
-                success = False
                 if runner_type == "local":
-                    success = self._launch_local()
+                    self._launch_local()
                 elif runner_type in ["slurm", "sge"]:
-                    try:
-                        self._launch_drmaa(runner_type)
-                        success = True
-                    except DGeniesClusterRunError:
-                        success = False
-                if success:
-                    with Job.connect():
-                        # We get the stats of the job
-                        if MODE == "webserver":
-                            job = Job.get(Job.id_job == self.id_job)
-                            with open(self.logs) as logs:
-                                measures = logs.readlines()[-1].strip("\n").split(" ")
-                                map_elapsed = round(float(measures[0]))
-                                job.mem_peak = int(measures[1])
-                            with open(self.preptime_file) as ptime:
-                                lines = ptime.readlines()
-                                start = int(lines[0].strip("\n"))
-                                end = int(lines[1].strip("\n"))
-                                prep_elapsed = end - start
-                                job.time_elapsed = prep_elapsed + map_elapsed
-                        else:
-                            job = None
-                        # We do the post processes
-                        status = "merging"
-                        if MODE == "webserver":
-                            job.status = "merging"
-                            job.save()
-                        else:
-                            self.set_status_standalone(status)
-                        if self.tool.split_before and self.query is not None:
-                            # If split and not ava, we merge back files
-                            start = time.time()
-                            paf_raw = self.paf_raw + ".split"
-                            os.remove(self.get_query_split())
-                            merger = Merger(self.paf_raw, paf_raw, self.query_index_split,
-                                            self.idx_q, debug=DEBUG)
-                            merger.merge()
-                            os.remove(self.paf_raw)
-                            os.remove(self.query_index_split)
-                            self.paf_raw = paf_raw
-                            end = time.time()
-                            if MODE == "webserver":
-                                job.time_elapsed += end - start
-                        elif self.query is None:
-                            # If ava, we copy target index to query index
-                            shutil.copyfile(self.idx_t, self.idx_q)
-                            Path(os.path.join(self.output_dir, ".all-vs-all")).touch()
-                        if self.tool.parser is not None:
-                            # The align file needs to be transformed to paf
-                            paf_raw = self.paf_raw + ".parsed"
-                            getattr(parsers, self.tool.parser)(self.paf_raw, paf_raw)
-                            os.remove(self.paf_raw)
-                            self.paf_raw = paf_raw
-                        # Matches form paf file are sorted by desc. matching size
-                        sorter = Sorter(self.paf_raw, self.paf)
-                        sorter.sort()
+                    self._launch_drmaa(runner_type)
+                with Job.connect():
+                    # We get the stats of the job
+                    if MODE == "webserver":
+                        job = Job.get(Job.id_job == self.id_job)
+                        with open(self.logs) as logs:
+                            measures = logs.readlines()[-1].strip("\n").split(" ")
+                            map_elapsed = round(float(measures[0]))
+                            job.mem_peak = int(measures[1])
+                        with open(self.preptime_file) as ptime:
+                            lines = ptime.readlines()
+                            start = int(lines[0].strip("\n"))
+                            end = int(lines[1].strip("\n"))
+                            prep_elapsed = end - start
+                            job.time_elapsed = prep_elapsed + map_elapsed
+                    else:
+                        job = None
+                    # We do the post processes
+                    status = "merging"
+                    logger.info("Starting merging step")
+                    if MODE == "webserver":
+                        job.status = status
+                        job.save()
+                    else:
+                        self.set_status_standalone(status)
+                    if self.tool.split_before and self.query is not None:
+                        # If split and not ava, we merge back files
+                        start = time.time()
+                        paf_raw = self.paf_raw + ".split"
+                        os.remove(self.get_query_split())
+                        merger = Merger(self.paf_raw, paf_raw, self.query_index_split,
+                                        self.idx_q, debug=DEBUG)
+                        merger.merge()
                         os.remove(self.paf_raw)
-                        # Cleanup target
-                        if self.target is not None and os.path.exists(self.target.get_path()):
-                            os.remove(self.target.get_path())
-                        # The job ask to do a sort of contig
-                        if os.path.isfile(os.path.join(self.output_dir, ".do-sort")):
-                            paf = Paf(paf=self.paf,
-                                      idx_q=self.idx_q,
-                                      idx_t=self.idx_t,
-                                      auto_parse=False)
-                            paf.sort()
-                            if not paf.parsed:
-                                success = False
-                                status = "fail"
-                                error = "Error while sorting query. Please contact us to report the bug"
-                                if MODE == "webserver":
-                                    job = Job.get(Job.id_job == self.id_job)
-                                    job.status = status
-                                    job.error = error
-                                    self._set_analytics_job_status("fail-sort")
-                                else:
-                                    self.set_status_standalone(status, error)
-                        if success:
-                            status = "success"
+                        os.remove(self.query_index_split)
+                        self.paf_raw = paf_raw
+                        end = time.time()
+                        if MODE == "webserver":
+                            job.time_elapsed += end - start
+                    elif self.query is None:
+                        logger.debug("No merge needed in ava mode")
+                        # If ava, we copy target index to query index
+                        shutil.copyfile(self.idx_t, self.idx_q)
+                        Path(os.path.join(self.output_dir, ".all-vs-all")).touch()
+                    if self.tool.parser is not None:
+                        # The align file needs to be transformed to paf
+                        logger.debug("Transform align file to PAF...")
+                        paf_raw = self.paf_raw + ".parsed"
+                        getattr(parsers, self.tool.parser)(self.paf_raw, paf_raw)
+                        os.remove(self.paf_raw)
+                        self.paf_raw = paf_raw
+                        logger.debug("Transform align file to PAF: OK")
+                    # Matches form paf file are sorted by desc. matching size
+                    logger.info("Sorting PAF file...")
+                    sorter = Sorter(self.paf_raw, self.paf)
+                    sorter.sort()
+                    os.remove(self.paf_raw)
+                    logger.info("Sorting PAF file: OK")
+                    # Cleanup target
+                    if self.target is not None and os.path.exists(self.target.get_path()):
+                        os.remove(self.target.get_path())
+                    # The job ask to do a sort of contig
+                    success = True
+                    if os.path.isfile(os.path.join(self.output_dir, ".do-sort")):
+                        logger.info("Sorting contig files...")
+                        paf = Paf(paf=self.paf,
+                                  idx_q=self.idx_q,
+                                  idx_t=self.idx_t,
+                                  auto_parse=False)
+                        paf.sort()
+                        if not paf.parsed:
+                            success = False
+                            status = "fail"
+                            error = "Error while sorting query. Please contact us to report the bug"
                             if MODE == "webserver":
                                 job = Job.get(Job.id_job == self.id_job)
-                                job.status = "success"
-                                job.save()
-
-                                # Analytics:
-                                self._set_analytics_job_status("success")
-                                self.send_mail_post_if_allowed()
-
+                                job.status = status
+                                job.error = error
+                                self._set_analytics_job_status("fail-sort")
                             else:
-                                self.set_status_standalone(status)
-                elif MODE == "webserver":
-                    self._set_analytics_job_status("fail-map")
+                                self.set_status_standalone(status, error)
+                    if success:
+                        status = "success"
+                        if MODE == "webserver":
+                            job = Job.get(Job.id_job == self.id_job)
+                            job.status = status
+                            job.save()
+
+                            # Analytics:
+                            self._set_analytics_job_status("success")
+                            self.send_mail_post_if_allowed()
+
+                        else:
+                            self.set_status_standalone(status)
+
+        except DGeniesRunError as e:
+            with Job.connect():
+                job = Job.get(Job.id_job == self.id_job)
+                status = "fail"
+                if MODE == "webserver":
+                    job.status = status
+                    job.error = e.error
+                    job.save()
+                else:
+                    self.set_status_standalone(status, e.error)
+                self._set_analytics_job_status("fail-map")
+                self.send_mail_post_if_allowed()
+
         except Exception as e:
+            # TODO: avoid catching send mail related exception errors here
             traceback.print_exc()
             with open(self.logs, 'a') as f:
                 f.write(str(e))
                 f.write(traceback.format_exc())
             self.set_job_status("fail", "Your job has failed for an unexpected reason. Please contact the support if"
-                                        "the problem persists.")
+                                        " the problem persists.")
             if MODE == "webserver":
                 self._set_analytics_job_status("fail-map-after")
 
