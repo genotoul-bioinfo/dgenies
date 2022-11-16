@@ -1923,11 +1923,10 @@ class JobManager:
         res = dict()
         for p, v in params.items():
             if p in job_input_files:
-                try:
-                    v = cache[v]
-                except KeyError:
-                    v = DataFile.create(name=os.path.basename(v), path=v)
-                    cache[v] = v
+                if v not in cache:
+                    df = DataFile.create(name=os.path.basename(v), path=v)
+                    cache[v] = df
+                v = cache[v]
             res[p] = v
         return job_type, res
 
