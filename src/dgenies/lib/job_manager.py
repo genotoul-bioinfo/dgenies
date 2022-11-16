@@ -928,11 +928,15 @@ class JobManager:
         :rtype: tuple of str
         """
         distant_filename = self._get_filename_from_url(url)
+        # download in dedicated dir in order to avoid collision with working files.
+        download_dir = os.path.join(self.output_dir, "download")
+        if not os.path.exists(download_dir):
+            os.mkdir(download_dir)
         # Manage file override
-        local_path = os.path.join(self.output_dir, distant_filename)
+        local_path = os.path.join(download_dir, distant_filename)
         i = 1
         while os.path.exists(local_path):
-            local_path = os.path.join(self.output_dir, "{:d}_".format(i) + distant_filename)
+            local_path = os.path.join(download_dir, "{:d}_".format(i) + distant_filename)
             i += 1
         # NOTE the stream=True parameter
         if url.startswith("ftp://"):
