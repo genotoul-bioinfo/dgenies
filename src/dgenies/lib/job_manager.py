@@ -30,9 +30,10 @@ from dgenies.bin.sort_paf import Sorter
 from dgenies.lib.paf import Paf
 from dgenies.lib.batch import read_batch_file
 from dgenies.lib.exceptions import DGeniesFileCheckError, DGeniesNotGzipFileError, DGeniesUploadedFileSizeLimitError, \
-    DGeniesAlignmentFileUnsupported, DGeniesAlignmentFileInvalid, DGeniesIndexFileInvalid, \
+    DGeniesAlignmentFileUnsupported, DGeniesAlignmentFileInvalid, DGeniesIndexFileInvalid, DGeniesFastaFileInvalid, \
     DGeniesURLError, DGeniesURLInvalid, DGeniesDistantFileTypeUnsupported, DGeniesDownloadError, \
-    DGeniesBackupUnpackError, DGeniesBatchFileError
+    DGeniesBackupUnpackError, DGeniesBatchFileError, DGeniesClusterRunError, DGeniesMissingParserError, \
+    MissingSubjobsError
 import gzip
 import io
 import binascii
@@ -543,7 +544,7 @@ class JobManager:
                        "<br/>You can contact the support for more information."
         return "Your job #ID# has failed. You can try again.<br/>If the problem persists, please contact the support."
 
-    def forge_command_line(self, default_out_file=None):
+    def forge_align_command(self, default_out_file=None):
         """
         Forge command line for running alignment
 
@@ -581,7 +582,7 @@ class JobManager:
         else:
             cmd = []
 
-        exe, args, out_file = self.forge_command_line(default_out_file=None)
+        exe, args, out_file = self.forge_align_command(default_out_file=None)
         cmd += [exe]
         cmd += args.split(" ")
         logger.info("Will run: {}".format(" ".join(cmd)))
@@ -758,9 +759,10 @@ class JobManager:
         else:  # step == "prepare"
             return 8, 1, "02:00:00"
 
-    def launch_to_cluster(self, step, runner_type, command, args, log_out, log_err):
+    def launch_to_cluster(self, step, runner_type, command, args, log_out, log_err, scheduled_status):
         """
-        Launch a program to the cluster
+        Launch a program to the cluster.
+        Raise DGeniesClusterRunError on error
 
         :param step: step (prepare, start)
         :type step: str
@@ -774,13 +776,15 @@ class JobManager:
         :type log_out: str
         :param log_err: log file for stderr
         :type log_err: str
-        :return: True if succeed, else False
-        :rtype: bool
+        :param scheduled_status: status to set when job is scheduled
+        :type scheduled_status: str
         """
         import drmaa
         from dgenies.lib.drmaasession import DrmaaSession
         drmaa_session = DrmaaSession()
         s = drmaa_session.session
+
+        # prepare job submission
         jt = s.createJobTemplate()
         jt.remoteCommand = command
         jt.args = args
@@ -805,49 +809,51 @@ class JobManager:
                 native_specs = "-l mem={0},h_vmem={0} -pe parallel_smp {1}"
             jt.nativeSpecification = native_specs.format(memory * 1000 // threads, threads)
         jt.workingDirectory = self.output_dir
+
+        # submit job
         jobid = s.runJob(jt)
         self.id_process = jobid
+        # TODO split here into submit_to_cluster -> s (above) and wait_cluster(s) in order to update job status outside
+        #  of the function
+        self.update_job_status(scheduled_status, jobid)
+        logger.info("Job {} submitted".format(jobid))
 
-        self.update_job_status("scheduled-cluster" if step == "start" else "prepare-scheduled", jobid)
-
+        # wait for job ending
         retval = s.wait(jobid, drmaa.Session.TIMEOUT_WAIT_FOREVER)
+        logger.info("Job {} ended".format(jobid))
         if retval.hasExited and (self.check_job_status_slurm() if runner_type == "slurm" else
         self.check_job_status_sge()):
-            if step == "start":
-                status = self.check_job_success()
-                if status == "no-match":
-                    self._set_analytics_job_status("no-match")
-            else:
-                status = "prepared"
-            # job = Job.get(id_job=self.id_job)
-            # job.status = status
-            # db.commit()
-            self.update_job_status(status)
             s.deleteJobTemplate(jt)
-            return status == "succeed" or status == "prepared"
-        error = self.find_error_in_log(log_err)
-        if step == "prepare":
-            error += "<br/>Please check your input file and try again."
-        self.set_job_status("fail", error)
-
-        s.deleteJobTemplate(jt)
-        return False
+        else:
+            error = self.find_error_in_log(log_err)
+            s.deleteJobTemplate(jt)
+            raise DGeniesClusterRunError(error)
 
     def _launch_drmaa(self, runner_type):
         """
         Launch the mapping step to a cluster
 
         :param runner_type: slurm or sge
-        :return: True if job succeed, else False
+        :type runner_type: str
+        :return: new status:either succeed, no-match or fail
+        :rtype: str
         """
-        exec, args, out_file = self.forge_command_line(default_out_file=self.logs)
+        exec, args, out_file = self.forge_align_command(default_out_file=self.logs)
         args = args.split(" ")
-        return self.launch_to_cluster(step="start",
-                                      runner_type=runner_type,
-                                      command=self.tool.exec,
-                                      args=args,
-                                      log_out=out_file,
-                                      log_err=self.logs)
+        try:
+            self.launch_to_cluster(step="start",
+                                   runner_type=runner_type,
+                                   command=self.tool.exec,
+                                   args=args,
+                                   log_out=out_file,
+                                   log_err=self.logs,
+                                   scheduled_status="scheduled-cluster")
+            status = self.check_job_success()
+            if status == "no-match":
+                self._set_analytics_job_status("no-match")
+            self.update_job_status(status)
+        except DGeniesClusterRunError as e:
+            raise e
 
     def _getting_local_file(self, datafile):
         """
@@ -1178,14 +1184,25 @@ class JobManager:
                      "-n", self.query.get_name()]
             if self.tool.split_before:
                 args.append("--split")
-        success = self.launch_to_cluster(step="prepare",
-                                         runner_type=runner_type,
-                                         command=self.config.cluster_python_exec,
-                                         args=args,
-                                         log_out=self.logs,
-                                         log_err=self.logs)
-        self.send_mail_post_if_allowed()
-        return success
+
+        try:
+            self.launch_to_cluster(step="prepare",
+                                   runner_type=runner_type,
+                                   command=self.config.cluster_python_exec,
+                                   args=args,
+                                   log_out=self.logs,
+                                   log_err=self.logs,
+                                   scheduled_status="prepare-scheduled")
+            status = "prepared"
+            # job = Job.get(id_job=self.id_job)
+            # job.status = status
+            # db.commit()
+            self.update_job_status(status)
+            self.send_mail_post_if_allowed()
+
+        except DGeniesClusterRunError as e:
+            raise e
+
 
     def prepare_align_local(self):
         """
@@ -1196,7 +1213,6 @@ class JobManager:
         with open(self.preptime_file, "w") as ptime, Job.connect():
             self.set_job_status("preparing")
             ptime.write(str(round(time.time())) + "\n")
-            error_tail = "Please check your input file and try again."
             if self.query is not None:
                 fasta_in = self.query.get_path()
                 if self.tool.split_before:
@@ -1228,9 +1244,7 @@ class JobManager:
                                       replace_fa=True)
                     filter_f.filter()
                 else:
-                    self.set_job_status("fail", "<br/>".join(["Query fasta file is not valid:", error, error_tail]))
-                    self.send_mail_post_if_allowed()
-                    return False
+                    raise DGeniesFastaFileInvalid("Query", error)
             uncompressed = None
             if self.target.get_path().endswith(".gz"):
                 uncompressed = self.target.get_path()[:-3]
@@ -1264,14 +1278,11 @@ class JobManager:
                         os.remove(uncompressed)
                     except FileNotFoundError:
                         pass
-                self.set_job_status("fail", "<br/>".join(["Target fasta file is not valid:", error, error_tail]))
-                self.send_mail_post_if_allowed()
-                return False
+                raise DGeniesFastaFileInvalid("Target", error)
             ptime.write(str(round(time.time())) + "\n")
             self.set_job_status("prepared")
             if MODE != "webserver":
                 self.run_align("local")
-            return True
 
     def _end_of_prepare_dotplot(self):
         """
@@ -1284,8 +1295,7 @@ class JobManager:
         elif self.aln_format == "paf":
             shutil.move(self.align.get_path(), self.paf_raw)
         else:
-            self.set_job_status("fail", "No parser found for format %s. Please contact the support." % self.aln_format)
-            return False
+            raise DGeniesMissingParserError(self.aln_format)
 
         self.set_job_status("started")
 
@@ -1300,11 +1310,11 @@ class JobManager:
         self.align.set_path(self.paf)
         self.set_job_status("success")
         self.send_mail_post_if_allowed()
-        return True
 
     def prepare_dotplot_cluster(self, runner_type):
         """
         Prepare data if alignment already done: just index the fasta (if index not given), then parse the alignment
+        DGeniesClusterRunError or DGeniesMissingParserError on error
 
         :param runner_type: type of cluster (slurm or sge)
         :type runner_type: str
@@ -1313,47 +1323,50 @@ class JobManager:
         args = [self.config.cluster_prepare_script,
                 "-p", self.preptime_file, "--index-only"]
 
-        has_index = False
-
         target_format = os.path.splitext(self.target.get_path())[1][1:]
-        if target_format == "idx":
+        has_index = target_format == "idx"
+        if has_index:
             shutil.move(self.target.get_path(), self.idx_t)
             os.remove(os.path.join(self.output_dir, ".target"))
         else:
-            has_index = True
             args += ["-t", self.target.get_path(),
                      "-m", self.target.get_name()]
+
         if self.query is not None:
             query_format = os.path.splitext(self.query.get_path())[1][1:]
-            if query_format == "idx":
+            has_index = has_index and query_format == "idx"
+            if has_index:
                 shutil.move(self.query.get_path(), self.idx_q)
                 os.remove(os.path.join(self.output_dir, ".query"))
             else:
-                has_index = True
                 args += ["-q", self.query.get_path(),
                          "-n", self.query.get_name()]
 
-        success = True
-        if has_index:
-            success = self.launch_to_cluster(step="prepare",
-                                             runner_type=runner_type,
-                                             command=self.config.cluster_python_exec,
-                                             args=args,
-                                             log_out=self.logs,
-                                             log_err=self.logs)
+        if not has_index:
+            try:
+                self.launch_to_cluster(step="prepare",
+                                       runner_type=runner_type,
+                                       command=self.config.cluster_python_exec,
+                                       args=args,
+                                       log_out=self.logs,
+                                       log_err=self.logs,
+                                       scheduled_status="prepare-scheduled")
 
-        if success:
-            if self.query is None:
-                shutil.copy(self.idx_t, self.idx_q)
-            return self._end_of_prepare_dotplot()
+                if self.query is None:
+                    shutil.copy(self.idx_t, self.idx_q)
 
-        self.send_mail_post_if_allowed()
-        return False
+                status = "prepared"
+                self.update_job_status(status)
+                self._end_of_prepare_dotplot()
+
+            except (DGeniesClusterRunError, DGeniesMissingParserError) as e:
+                raise e
 
     def prepare_dotplot_local(self):
         """
         Prepare data if alignment already done: just index the fasta (if index not given), then parse the alignment
         file and sort it.
+        Raise DGeniesMissingParserError on error
         """
         self.set_job_status("preparing")
         # Prepare target index:
@@ -1375,7 +1388,10 @@ class JobManager:
         else:
             shutil.copy(self.idx_t, self.idx_q)
 
-        return self._end_of_prepare_dotplot()
+        try:
+            self._end_of_prepare_dotplot()
+        except DGeniesMissingParserError as e:
+            raise e
 
     def write_jobs(self, jobs):
         """
@@ -1419,13 +1435,10 @@ class JobManager:
         logger.info("Prepare batch job")
         subjobs = self.read_jobs()
         if not subjobs:
-            self.set_job_status("fail", "Batch mode: no subjob found")
-            self.send_mail_post_if_allowed()
-            return False
+            raise MissingSubjobsError()
         # We create a queue in order to run jobs sequentially in standalone mode.
         self.set_job_status("preparing")
         job_queue = []
-        # TODO: get back options and tool
         for sj in subjobs:
             j = JobManager(sj["id_job"], email=self.email, mailer=self.mailer)
             j.set_inputs_from_res_dir()
@@ -1447,7 +1460,6 @@ class JobManager:
             is_success = all(s in ("success", "no-match") for s in map(lambda j: j.get_status_standalone(), job_queue))
             # The batch job succeed if all subjobs succeed
             self.set_job_status("success") if is_success else self.set_job_status("fail")
-        return True
 
     def prepare_job(self):
         """
@@ -1455,49 +1467,74 @@ class JobManager:
         """
         if self.batch is not None:
             # batch mode
-            if MODE == "webserver":
-                with Job.connect():
-                    job = Job.get(Job.id_job == self.id_job)
-                    success = self.prepare_batch()
-                    if not success:
-                        self._set_analytics_job_status("fail-batch-prepare")
-            else:
+            try:
                 self.prepare_batch()
+
+            except MissingSubjobsError as e:
+                self.set_job_status("fail", e.message)
+                self._set_analytics_job_status("fail-batch-prepare")
+                self.send_mail_post_if_allowed()
+
         elif self.align is None:
             # new align mode
-            if MODE == "webserver":
-                with Job.connect():
-                    job = Job.get(Job.id_job == self.id_job)
-                    if job.runner_type == "local":
-                        success = self.prepare_align_local()
-                    else:
-                        success = self.prepare_align_cluster(job.runner_type)
-                    if not success:
-                        self._set_analytics_job_status("fail-prepare")
-            else:
-                self.prepare_align_local()
+            try:
+                if MODE == "webserver":
+                    with Job.connect():
+                        job = Job.get(Job.id_job == self.id_job)
+                        if job.runner_type == "local":
+                            self.prepare_align_local()
+                        else:
+                            self.prepare_align_cluster(job.runner_type)
+                else:
+                    self.prepare_align_local()
+
+            except DGeniesClusterRunError as e:
+                error = e.message + "<br/>Please check your input file and try again."
+                self.set_job_status("fail", error)
+                self._set_analytics_job_status("fail-prepare")
+                self.send_mail_post_if_allowed()
+
+            except DGeniesFastaFileInvalid as e:
+                self.set_job_status("fail", e.message)
+                self._set_analytics_job_status("fail-prepare")
+                self.send_mail_post_if_allowed()
+
         else:
             # plot mode
-            if MODE == "webserver":
-                with Job.connect():
-                    job = Job.get(Job.id_job == self.id_job)
-                    if job.runner_type == "local":
-                        success = self.prepare_dotplot_local()
-                    else:
-                        success = self.prepare_dotplot_cluster(job.runner_type)
-                    if success:
+            try:
+                if MODE == "webserver":
+                    with Job.connect():
+                        job = Job.get(Job.id_job == self.id_job)
+                        if job.runner_type == "local":
+                            self.prepare_dotplot_local()
+                        else:
+                            self.prepare_dotplot_cluster(job.runner_type)
                         self._set_analytics_job_status("success")
-                    else:
-                        self._set_analytics_job_status("fail-all")
-            else:
-                self.prepare_dotplot_local()
+                else:
+                    self.prepare_dotplot_local()
+
+            except DGeniesClusterRunError as e:
+                error = e.message + "<br/>Please check your input file and try again."
+                self.set_job_status("fail", error)
+                self._set_analytics_job_status("fail-all")
+                self.send_mail_post_if_allowed()
+
+            except DGeniesMissingParserError as e:
+                self.set_job_status("fail", e.message)
+                self._set_analytics_job_status("fail-all")
+                self.send_mail_post_if_allowed()
 
     def refresh_batch_status(self):
+        """
+        Compute batch status by looking at subjob status
+        
+        :return: new job status
+        :rtype: str
+        """
         status_list = []
         for i in self.get_subjob_ids():
             job = JobManager(i)
             status_list.append(job.status())
-        print(status_list)
         is_finished = all(s["status"] in ("success", "fail", "no-match") for s in status_list)
         is_successfull = all(s["status"] in ("success", "no-match") for s in status_list)
         if is_finished:
@@ -1523,7 +1560,11 @@ class JobManager:
                 if runner_type == "local":
                     success = self._launch_local()
                 elif runner_type in ["slurm", "sge"]:
-                    success = self._launch_drmaa(runner_type)
+                    try:
+                        self._launch_drmaa(runner_type)
+                        success = True
+                    except DGeniesClusterRunError:
+                        success = False
                 if success:
                     with Job.connect():
                         # We get the stats of the job
@@ -2031,7 +2072,6 @@ class JobManager:
 
                         # Backup jobs with params for next step in standalone mode.
                         self.write_jobs(job_dict.values())
-
 
                 # Set the runner according to available resource
                 if MODE == "webserver" and job.runner_type != "local" and should_be_local \

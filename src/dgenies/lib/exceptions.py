@@ -130,10 +130,34 @@ class DGeniesIndexFileInvalid(DGeniesFileCheckError):
         :return: message for user
         :rtype: str
         """
-        return self.__str__() + ".  Please check your file."
+        return self.__str__() + ". Please check your file."
 
     def __str__(self):
         return "{} index file is invalid".format(self.filename)
+
+
+class DGeniesFastaFileInvalid(DGeniesFileCheckError):
+    """
+    Exception raise index file content is invalid
+    """
+
+    def __init__(self, filename, error):
+        super().__init__()
+        self.filename = filename
+        self.error = error
+
+    @property
+    def message(self):
+        """
+        Get message for user
+
+        :return: message for user
+        :rtype: str
+        """
+        return self.__str__() + "<br/>Please check your input file and try again."
+
+    def __str__(self):
+        return "{} fasta file is invalid:<br/>{}".format(self.filename, self.error)
 
 
 class DGeniesURLError(DGeniesMessageException):
@@ -266,16 +290,9 @@ class DGeniesBatchFileError(DGeniesMessageException):
         return "You provided a malformed batch file; " + "; ".join(self._messages)
 
 
-class DGeniesExampleNotAvailable(DGeniesMessageException):
-    """
-    Example file not available
-    """
-    pass
-
-
 class DGeniesJobCheckError(DGeniesMessageException):
     """
-    Error append on server side
+    Error appends on server side
     """
 
     def __init__(self, errors):
@@ -297,3 +314,46 @@ class DGeniesJobCheckError(DGeniesMessageException):
 
     def __str__(self):
         return "; ".join(self._errors)
+
+
+class DGeniesClusterRunError(DGeniesMessageException):
+    """
+    Error appends during running job on cluster
+    """
+    pass
+
+
+class DGeniesMissingParserError(DGeniesMessageException):
+
+    def __init__(self, fmt):
+        """
+        :param messages: errors messages produced during parsing
+        :type messages: list of str
+        """
+        self.fmt = fmt
+
+    @property
+    def message(self):
+        """
+        Get message for user
+
+        :return: message for user
+        :rtype: str
+        """
+        return self.__str__() + ". Please contact the support."
+
+    def __str__(self):
+        return "No parser found for format %s" % self.fmt
+
+
+class MissingSubjobsError(DGeniesMessageException):
+
+    def __str__(self):
+        return "Batch mode: no subjob found"
+
+
+class DGeniesExampleNotAvailable(DGeniesMessageException):
+    """
+    Example file not available
+    """
+    pass
