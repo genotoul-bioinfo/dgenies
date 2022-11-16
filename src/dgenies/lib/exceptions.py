@@ -365,6 +365,12 @@ class DGeniesMissingParserError(DGeniesMessageException):
         return "No parser found for format %s" % self.fmt
 
 
+class DGeniesMissingJobError(DGeniesMessageException):
+
+    def __str__(self):
+        return "Job does not exists"
+
+
 class DgeniesMissingSubjobsError(DGeniesMessageException):
 
     def __str__(self):
@@ -376,3 +382,9 @@ class DGeniesExampleNotAvailable(DGeniesMessageException):
     Example file not available
     """
     pass
+
+
+class DGeniesDeleteGalleryJobForbidden(DGeniesMessageException):
+
+    def __str__(self):
+        return "Delete a job that is in gallery is forbidden"

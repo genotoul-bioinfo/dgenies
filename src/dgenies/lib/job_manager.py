@@ -33,7 +33,7 @@ from dgenies.lib.exceptions import DGeniesFileCheckError, DGeniesNotGzipFileErro
     DGeniesAlignmentFileUnsupported, DGeniesAlignmentFileInvalid, DGeniesIndexFileInvalid, DGeniesFastaFileInvalid, \
     DGeniesURLError, DGeniesURLInvalid, DGeniesDistantFileTypeUnsupported, DGeniesDownloadError, \
     DGeniesBackupUnpackError, DGeniesBatchFileError, DGeniesRunError, DGeniesClusterRunError, DGeniesLocalRunError, \
-    DGeniesMissingParserError, DgeniesMissingSubjobsError
+    DGeniesMissingParserError, DGeniesMissingJobError, DgeniesMissingSubjobsError, DGeniesDeleteGalleryJobForbidden
 import gzip
 import io
 import binascii
@@ -1549,7 +1549,7 @@ class JobManager:
         """
         try:
             if self.batch is not None:
-                # A batch job does nothing but refresh it state until it ends
+                # A batch job does nothing but refresh its state until it ends
                 self.set_job_status(self.refresh_batch_status())
             else:
                 # We start the 'align' job
@@ -2225,14 +2225,10 @@ class JobManager:
     def delete(self):
         """
         Remove a job
-
-        :return:
-            * [0] Success of the deletion
-            * [1] Error message, if any (else empty string)
-        :rtype: (bool, str)
+        Raise a MissingJobError if job is missing, DGeniesDeleteGalleryJobForbidden if job is in gallery
         """
         if not os.path.exists(self.output_dir) or not os.path.isdir(self.output_dir):
-            return False, "Job does not exists"
+            raise DGeniesMissingJobError
         if MODE == "webserver":
             # Forbid to delete job existing in gallery
             try:
@@ -2242,10 +2238,10 @@ class JobManager:
             else:
                 is_gallery = Gallery.select().where(Gallery.job == job)
                 if is_gallery:
-                    return False, "Delete a job that is in gallery is forbidden"
+                    raise DGeniesDeleteGalleryJobForbidden()
                 job.delete_instance()
         shutil.rmtree(self.output_dir)
-        return True, ""
+
 
 class DataFileContext:
     """

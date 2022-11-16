@@ -18,7 +18,7 @@ from dgenies.lib.functions import Functions
 from dgenies.allowed_extensions import AllowedExtensions
 from dgenies.lib.upload_file import UploadFile
 from dgenies.lib.datafile import DataFile
-from dgenies.lib.exceptions import DGeniesExampleNotAvailable, DGeniesJobCheckError
+from dgenies.lib.exceptions import DGeniesExampleNotAvailable, DGeniesJobCheckError, DGeniesMissingJobError, DGeniesDeleteGalleryJobForbidden
 from dgenies.lib.latest import Latest
 from dgenies.tools import Tools
 from markdown import Markdown
@@ -1264,11 +1264,17 @@ def delete_job(id_res):
     :type id_res: str
     """
     job = JobManager(id_job=id_res)
-    success, error = job.delete()
-    return jsonify({
-        "success": success,
-        "error": error
-    })
+    try:
+        job.delete()
+        return jsonify({
+            "success": True,
+            "error": ""
+        })
+    except (DGeniesDeleteGalleryJobForbidden, DGeniesMissingJobError) as e:
+        return jsonify({
+            "success": False,
+            "error": e.message
+        })
 
 
 @app.route("/example/backup", methods=['GET'])
