@@ -119,6 +119,7 @@ class JobManager:
 
     @staticmethod
     def create(id_job: str, job_type: str, jobs: list, email: str = None, mailer=None):
+        logger.debug("Create job: {}".format(id_job))
         if job_type == "align":
             query = jobs[0].get("query", None)
             target = jobs[0].get("target", None)
@@ -227,6 +228,7 @@ class JobManager:
         if os.path.exists(query_file):
             with open(query_file) as q_f:
                 file_path = q_f.readline()
+                logger.debug("Set query file to {}".format(file_path))
                 self.query = DataFile(
                     name="target" if file_path.endswith(".idx") else
                          os.path.splitext(os.path.basename(file_path.replace(".gz", "")).split("_", 1)[1])[0],
@@ -237,6 +239,7 @@ class JobManager:
         if os.path.exists(target_file):
             with open(target_file) as t_f:
                 file_path = t_f.readline()
+                logger.debug("Set target file to {}".format(file_path))
                 self.target = DataFile(
                     name="query" if file_path.endswith(".idx") else
                          os.path.splitext(os.path.basename(file_path.replace(".gz", "")).split("_", 1)[1])[0],
@@ -247,6 +250,7 @@ class JobManager:
         if os.path.exists(align_file):
             with open(align_file) as a_f:
                 file_path = a_f.readline()
+                logger.debug("Set align file to {}".format(file_path))
                 self.align = DataFile(
                     name="map",
                     path=file_path,
@@ -1213,6 +1217,7 @@ class JobManager:
             if self.query is not None:
                 fasta_in = self.query.get_path()
                 if self.tool.split_before:
+                    logger.info("Split query file: {}".format(fasta_in))
                     split = True
                     splitter = Splitter(input_f=fasta_in, name_f=self.query.get_name(), output_f=self.get_query_split(),
                                         query_index=self.query_index_split, debug=DEBUG)
@@ -1224,12 +1229,14 @@ class JobManager:
                     uncompressed = None
                     if self.query.get_path().endswith(".gz"):
                         uncompressed = self.query.get_path()[:-3]
+                    logger.info("Index query file: {}".format(self.query.get_path()))
                     success, nb_contigs, error = index_file(self.query.get_path(), self.query.get_name(), self.idx_q,
                                                             uncompressed)
                     in_fasta = self.query.get_path()
                     if uncompressed is not None:
                         in_fasta = uncompressed
                 if success:
+                    logger.info("Filter query file: {}".format(self.query.get_path()))
                     filtered_fasta = os.path.join(os.path.dirname(self.get_query_split()), "filtered_" +
                                                   os.path.basename(self.get_query_split()))
                     filter_f = Filter(fasta=in_fasta,
@@ -1251,6 +1258,7 @@ class JobManager:
                 in_fasta = self.target.get_path()
                 if uncompressed is not None:
                     in_fasta = uncompressed
+                logger.info("Filter target file: {}".format(in_fasta))
                 filtered_fasta = os.path.join(os.path.dirname(in_fasta), "filtered_" + os.path.basename(in_fasta))
                 filter_f = Filter(fasta=in_fasta,
                                   index_file=self.idx_t,
@@ -1286,6 +1294,7 @@ class JobManager:
         Tasks done after preparing dot plot data: parse & sort of alignment file
         """
         # Parse alignment file:
+        logger.info("Parse align file")
         if hasattr(parsers, self.aln_format):
             getattr(parsers, self.aln_format)(self.align.get_path(), self.paf_raw)
             os.remove(self.align.get_path())
@@ -1297,6 +1306,7 @@ class JobManager:
         self.set_job_status("started")
 
         # Sort paf lines:
+        logger.info("Sort PAF file")
         sorter = Sorter(self.paf_raw, self.paf)
         sorter.sort()
         os.remove(self.paf_raw)
@@ -1341,6 +1351,7 @@ class JobManager:
 
         if not has_index:
             try:
+                logger.info("Index files: {}".format(str(args)))
                 self.launch_to_cluster(step="prepare",
                                        runner_type=runner_type,
                                        command=self.config.cluster_python_exec,
@@ -1372,6 +1383,7 @@ class JobManager:
             shutil.move(self.target.get_path(), self.idx_t)
             os.remove(os.path.join(self.output_dir, ".target"))
         else:
+            logger.info("Index target file: {}".format(self.target.get_path()))
             index_file(self.target.get_path(), self.target.get_name(), self.idx_t)
 
         # Prepare query index:
@@ -1381,6 +1393,7 @@ class JobManager:
                 shutil.move(self.query.get_path(), self.idx_q)
                 os.remove(os.path.join(self.output_dir, ".query"))
             else:
+                logger.info("Index query file: {}".format(self.query.get_path()))
                 index_file(self.query.get_path(), self.query.get_name(), self.idx_q)
         else:
             shutil.copy(self.idx_t, self.idx_q)
@@ -1445,13 +1458,13 @@ class JobManager:
         if MODE == "webserver":
             self.set_job_status("started-batch")
             for subjob in job_queue:
-                logger.info("run job " + subjob.id_job)
+                logger.info("Run job " + subjob.id_job)
                 subjob.set_send_mail(False)
                 subjob.launch()
         else:
             self.set_job_status("started-batch")
             for subjob in job_queue:
-                logger.info("run job " + subjob.id_job)
+                logger.info("Run job " + subjob.id_job)
                 subjob.launch_standalone(sync=True)
             # We get end status for each subjob
             is_success = all(s in ("success", "no-match") for s in map(lambda j: j.get_status_standalone(), job_queue))
@@ -1465,9 +1478,12 @@ class JobManager:
         if self.batch is not None:
             # batch mode
             try:
+                logger.info("Run batch job")
                 self.prepare_batch()
+                logger.info("Run batch: Ended")
 
             except DgeniesMissingSubjobsError as e:
+                logger.error("Run batch: Failed")
                 self.set_job_status("fail", e.message)
                 self._set_analytics_job_status("fail-batch-prepare")
                 self.send_mail_post_if_allowed()
@@ -1479,19 +1495,23 @@ class JobManager:
                     with Job.connect():
                         job = Job.get(Job.id_job == self.id_job)
                         if job.runner_type == "local":
+                            logger.info("Run prepare align: local mode")
                             self.prepare_align_local()
                         else:
+                            logger.info("Run prepare align: cluster mode")
                             self.prepare_align_cluster(job.runner_type)
                 else:
                     self.prepare_align_local()
 
             except DGeniesClusterRunError as e:
+                logger.error("Run prepare align: Failed")
                 error = e.message + "<br/>Please check your input file and try again."
                 self.set_job_status("fail", error)
                 self._set_analytics_job_status("fail-prepare")
                 self.send_mail_post_if_allowed()
 
             except DGeniesFastaFileInvalid as e:
+                logger.error("Run prepare align: Failed")
                 self.set_job_status("fail", e.message)
                 self._set_analytics_job_status("fail-prepare")
                 self.send_mail_post_if_allowed()
@@ -1503,20 +1523,24 @@ class JobManager:
                     with Job.connect():
                         job = Job.get(Job.id_job == self.id_job)
                         if job.runner_type == "local":
+                            logger.info("Run prepare plot: local mode")
                             self.prepare_dotplot_local()
                         else:
+                            logger.info("Run prepare plot: cluster mode")
                             self.prepare_dotplot_cluster(job.runner_type)
                         self._set_analytics_job_status("success")
                 else:
                     self.prepare_dotplot_local()
 
             except DGeniesClusterRunError as e:
+                logger.error("Run prepare plot: Failed")
                 error = e.message + "<br/>Please check your input file and try again."
                 self.set_job_status("fail", error)
                 self._set_analytics_job_status("fail-all")
                 self.send_mail_post_if_allowed()
 
             except DGeniesMissingParserError as e:
+                logger.error("Run prepare plot: Failed")
                 self.set_job_status("fail", e.message)
                 self._set_analytics_job_status("fail-all")
                 self.send_mail_post_if_allowed()
@@ -1554,8 +1578,10 @@ class JobManager:
             else:
                 # We start the 'align' job
                 if runner_type == "local":
+                    logger.info("Run align: local mode")
                     self._launch_local()
                 elif runner_type in ["slurm", "sge"]:
+                    logger.info("Run align: cluster mode")
                     self._launch_drmaa(runner_type)
                 with Job.connect():
                     # We get the stats of the job
@@ -1627,6 +1653,7 @@ class JobManager:
                                   auto_parse=False)
                         paf.sort()
                         if not paf.parsed:
+                            logger.info("Run align: Failed")
                             success = False
                             status = "fail"
                             error = "Error while sorting query. Please contact us to report the bug"
@@ -1649,10 +1676,12 @@ class JobManager:
                             self.send_mail_post_if_allowed()
 
                         else:
+                            logger.error("Run align: Failed")
                             self.set_status_standalone(status)
 
         except DGeniesRunError as e:
             with Job.connect():
+                logger.error("Run align: Failed - DGeniesRunError")
                 status = "fail"
                 if MODE == "webserver":
                     job = Job.get(Job.id_job == self.id_job)
@@ -1666,6 +1695,7 @@ class JobManager:
 
         except Exception as e:
             # TODO: avoid catching send mail related exception errors here
+            logger.error("Run align: Failed")
             traceback.print_exc()
             with open(self.logs, 'a') as f:
                 f.write(str(e))
@@ -2076,6 +2106,7 @@ class JobManager:
                 logger.debug("Job should be local: {}".format(should_be_local))
                 if MODE == "webserver" and job.runner_type != "local" and should_be_local \
                         and self.get_pending_local_number() < self.config.max_run_local:
+                    logger.debug("Set logger from {} to {}".format(job.runner_type, "local"))
                     job.runner_type = "local"
                     job.save()
 
