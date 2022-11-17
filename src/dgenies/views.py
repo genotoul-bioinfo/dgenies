@@ -234,7 +234,7 @@ def check_file_type_and_resolv_options(job: dict):
 def check_file_type(job: dict, key: str) -> (bool, list):
     errors = []
     if job[key] and not job["{k}_type".format(k=key)]:
-        errors.append("Server error: no {k}_type in form. Please contact the support".foramt(k=k))
+        errors.append("Server error: no {k}_type in form. Please contact the support".format(k=key))
     return errors
 
 
