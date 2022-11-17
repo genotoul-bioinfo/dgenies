@@ -1657,9 +1657,9 @@ class JobManager:
 
         except DGeniesRunError as e:
             with Job.connect():
-                job = Job.get(Job.id_job == self.id_job)
                 status = "fail"
                 if MODE == "webserver":
+                    job = Job.get(Job.id_job == self.id_job)
                     job.status = status
                     job.error = e.error
                     job.save()
