@@ -568,15 +568,13 @@ class JobManager:
                    .replace("{threads}", str(self.tool.threads)) \
                    .replace("{options}", self.options) \
                    .replace("{out}", self.paf_raw)
+        args = re.sub(r" +", " ", args)
         return self.tool.exec, args, out_file
 
     def _launch_local(self):
         """
         Launch a job on the current machine
         Raise DGeniesLocalRunError on error
-
-        :return: True if job succeed, else False
-        :rtype: bool
         """
         if MODE == "webserver":
             cmd = ["/usr/bin/time", "-f", "%e %M"]
@@ -613,7 +611,6 @@ class JobManager:
                     self.set_status_standalone(status)
                 if status == "no-match":
                     self._set_analytics_job_status("no-match")
-                return status == "succeed"
             else:
                 self.error = self.search_error()
                 raise DGeniesLocalRunError(self.error)
@@ -1203,7 +1200,6 @@ class JobManager:
 
         except DGeniesClusterRunError as e:
             raise e
-
 
     def prepare_align_local(self):
         """
