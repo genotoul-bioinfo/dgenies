@@ -236,6 +236,30 @@ dgenies.run.line_to_job = function(str){
     return result
 }
 
+/**
+ * Parse batch file content and populated related data structures.
+ * 
+ * @param {string} text the readed text in batch file 
+ */
+dgenies.run.parse_batch = function(text) {
+    // We normalize seperators and blank lines
+    let job_array = text.trim()
+                        .replace(/[ \t]+/g, "\t")
+                        .split(/[\n\r]+/);
+    // We limit the number of jobs
+    if (job_array.length > dgenies.run.max_jobs) {
+        dgenies.notify(`Batch file too long, only ${dgenies.run.max_jobs} first jobs were considered!`, "danger", 3000);
+        job_array = job_array.slice(0, dgenies.run.max_jobs);
+    }
+    // We fill the html field with processed file content
+    $("#batch_content").text(job_array.join("\n"));
+    // We generate job list from job_array
+    dgenies.run.job_list = job_array.map(dgenies.run.line_to_job).filter(
+        obj => !(obj && Object.keys(obj).length === 0 && obj.constructor === Object));
+    dgenies.run.files_in_batch = dgenies.run.get_local_files(dgenies.run.job_list)
+    dgenies.run.check_files();
+    dgenies.run.refresh_listing();
+}
 
 /**
  * Parse a batch file and add it in html
@@ -243,27 +267,12 @@ dgenies.run.line_to_job = function(str){
 dgenies.run.read_batch = function() {
     console.log("Change batch file");
     const [f] = this.files;
+    // TODO: check file type (mime = text)
     const reader = new FileReader();
     // resulting job list
     if (f) {
         reader.onload = function(e) {
-            // We normalize seperators and blank lines
-            let job_array = e.target.result.trim()
-                                           .replace(/[ \t]+/g, "\t")
-                                           .split(/[\n\r]+/);
-            // We limit the number of jobs
-            if (job_array.length > dgenies.run.max_jobs) {
-                dgenies.notify(`Batch file too long, only ${dgenies.run.max_jobs} first jobs were considered!`, "danger", 3000);
-                job_array = job_array.slice(0, dgenies.run.max_jobs);
-            }
-            // We fill the html field with processed file content
-            $("#batch_content").text(job_array.join("\n"));
-            // We generate job list from job_array
-            dgenies.run.job_list = job_array.map(dgenies.run.line_to_job).filter(
-                obj => !(obj && Object.keys(obj).length === 0 && obj.constructor === Object));
-            dgenies.run.files_in_batch = dgenies.run.get_local_files(dgenies.run.job_list)
-            dgenies.run.check_files();
-            dgenies.run.refresh_listing();
+            dgenies.run.parse_batch(e.target.result);
           };
         reader.onerror = function(e) {
             $("#batch_content").text(e.target.error);
@@ -531,7 +540,18 @@ dgenies.run.fill_examples = function (tab) {
     }
     if (tab == "tab3") {
         $("select.batch").val("1").trigger("change");
-        $("input#batch").val("example://" + dgenies.run.batch_example);
+        /* TODO:
+         * - fetch file, read file, fill textarea
+         */
+        dgenies.get(
+            "/example/batch",
+            {},
+            function (data) {
+                $("#bname").val('');
+                dgenies.run.parse_batch(data);
+            }
+        )
+        
     }
 };
 
