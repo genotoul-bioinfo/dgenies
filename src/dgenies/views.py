@@ -213,7 +213,9 @@ def check_file_type_and_resolv_options(job: dict):
         if job["target"] == "":
             errors.append("No target fasta selected")
 
-        if job["tool"] is not None and job["tool"] not in Tools().tools:
+        if job["tool"] is None:
+            job["tool"] = Tools().get_default()
+        elif job["tool"] not in Tools().tools:
             errors.append("Tool unavailable: %s" % job["tool"])
 
         valid_options, options = get_tools_options(job["tool"], job["options"])
@@ -329,7 +331,6 @@ def launch_analysis():
                 j[k] = None
         tool_options = jt.safe_substitute(i=i, attr="tool_options][")
         j["options"] = request.form.getlist(tool_options) if tool_options in request.form else []
-        j["tool_options"] = j["options"]
         jobs.append(j)
 
     # Check form
@@ -389,21 +390,17 @@ def launch_analysis():
         update_files(jobs, upload_folder)
         if form_pass:
 
-            if batch_mode:
-                batch_file = os.path.join(folder_files, 'batch.txt')
-                i = 1
-                while os.path.exists(batch_file):
-                    batch_file = os.path.join(folder_files, 'batch_%d.txt' % i)
-                    i += 1
-                jobs = create_batch_file(batch_file, jobs)
-
             # Launch job:
-            job = JobManager.create(id_job=id_job, job_type=job_type, jobs=jobs, email=email, mailer=mailer)
+            try:
+                job = JobManager.create(id_job=id_job, job_type=job_type, jobs=jobs, email=email, mailer=mailer)
+                if MODE == "webserver":
+                    job.launch()
+                else:
+                    job.launch_standalone()
 
-            if MODE == "webserver":
-                job.launch()
-            else:
-                job.launch_standalone()
+            except:
+                traceback.print_exc()
+                return jsonify({"success": False, "errors": ["Something went wrong during job creation!"]})
 
             return jsonify({"success": True, "redirect": url_for(".status", id_job=id_job)})
     if not form_pass:

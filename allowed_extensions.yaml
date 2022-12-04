@@ -23,5 +23,3 @@ job:
     target: [fasta, idx]
     align: [map]
     backup: [backup]
-  batch: 
-    batch: [batch]

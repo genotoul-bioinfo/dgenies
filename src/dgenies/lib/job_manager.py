@@ -28,12 +28,11 @@ from dgenies.bin.filter_contigs import Filter
 from dgenies.bin.merge_splitted_chrms import Merger
 from dgenies.bin.sort_paf import Sorter
 from dgenies.lib.paf import Paf
-from dgenies.lib.batch import read_batch_file
 from dgenies.lib.exceptions import DGeniesFileCheckError, DGeniesNotGzipFileError, DGeniesUploadedFileSizeLimitError, \
     DGeniesAlignmentFileUnsupported, DGeniesAlignmentFileInvalid, DGeniesIndexFileInvalid, DGeniesFastaFileInvalid, \
     DGeniesURLError, DGeniesURLInvalid, DGeniesDistantFileTypeUnsupported, DGeniesDownloadError, \
-    DGeniesBackupUnpackError, DGeniesBatchFileError, DGeniesRunError, DGeniesClusterRunError, DGeniesLocalRunError, \
-    DGeniesMissingParserError, DGeniesMissingJobError, DgeniesMissingSubjobsError, DGeniesDeleteGalleryJobForbidden
+    DGeniesBackupUnpackError, DGeniesRunError, DGeniesClusterRunError, DGeniesLocalRunError, DGeniesMissingParserError,\
+    DGeniesMissingJobError, DgeniesMissingSubjobsError, DGeniesDeleteGalleryJobForbidden
 import gzip
 import io
 import binascii
@@ -107,6 +106,8 @@ class JobManager:
         self.options = options if tool is not None or options is not None else None
         # Outputs:
         self.output_dir = os.path.join(self.config.app_data, id_job)
+        if self.batch is not None:
+            Path(self.output_dir, ".batch").touch()
         self.preptime_file = os.path.join(self.output_dir, "prep_times")
         self.query_index_split = os.path.join(self.output_dir, "query_split.idx")
         self.paf = os.path.join(self.output_dir, "map.paf")
@@ -135,7 +136,41 @@ class JobManager:
             return JobManager(id_job=id_job, email=email, query=query, target=target,
                               align=align, backup=backup, mailer=mailer)
         else:  # batch
-            return JobManager(id_job=id_job, email=email, batch=jobs, mailer=mailer)
+            # We create subjobs
+            batch = []
+            for j in jobs:
+                j = JobManager.create_subjob(id_job, j, email=email, mailer=mailer)
+                batch.append(j)
+                logger.debug("Subjob created: {}".format(j.id_job))
+            return JobManager(id_job=id_job, email=email, batch=batch, mailer=mailer)
+
+    @staticmethod
+    def create_subjob(id_job, params_dict, email=None, mailer=None):
+        """"
+        Create a list of JobManager objects
+
+        :param id_job: parent job id
+        :type id_job:
+        :param params_dict: List of dict describing the job. Files in it must be DataFile objects
+        :type params_dict: list of couples
+        :return: list of jobs
+        :rtype: list of JobManager
+        """
+        # We create a subjob id and the corresponding working directory
+        config = AppConfigReader()
+        random_length = 5
+        id_job_prefix = params_dict.get("id_job", id_job)
+        id_job_prefix = id_job_prefix[0: min(len(id_job_prefix), ID_JOB_LENGTH - random_length - 1)]
+        subjob_id = id_job_prefix + "_" + Functions.random_string(random_length)
+        while os.path.exists(os.path.join(config.app_data, subjob_id)):
+            subjob_id = id_job_prefix + "_" + Functions.random_string(random_length)
+        job_type = params_dict.pop("type")
+        folder_files = os.path.join(config.app_data, subjob_id)
+        os.makedirs(folder_files)
+        # We create the subjob itself
+        subjob = JobManager.create(subjob_id, job_type, [params_dict],  email=email, mailer=mailer)
+        logger.debug(subjob)
+        return subjob
 
     def set_role(self, role: str, datafile: DataFile):
         """"
@@ -257,15 +292,10 @@ class JobManager:
                     type_f="local"
                 )
                 self.aln_format = os.path.splitext(file_path)[1][1:]
-        batch_file = os.path.join(res_dir, ".batch")
+        batch_file = os.path.join(res_dir, ".jobs")
         if os.path.exists(batch_file):
-            with open(batch_file) as b_f:
-                file_path = b_f.readline()
-                self.batch = DataFile(
-                    name="batch",
-                    path=file_path,
-                    type_f="local"
-                )
+            # WARNING: Files in jobs are not Datafiles here.
+            self.batch = self.read_jobs()
 
     def check_job_success(self):
         """
@@ -1408,9 +1438,9 @@ class JobManager:
         Write job description (file paths for roles, tool, options, ...) into a json file for futher steps file storing jobs description
         Document structure follows the message structure obtained from form.
         """
-        with open(os.path.join(self.output_dir, ".jobs"), "wt", encoding = 'utf8') as json_file:
+        with open(os.path.join(self.output_dir, ".jobs"), "wt", encoding='utf8') as json_file:
             data = [subjob.as_job_entry() for subjob in jobs]
-            json.dump(data, json_file, allow_nan=True, )
+            json.dump(data, json_file, allow_nan=True)
 
     def read_jobs(self):
         """
@@ -1420,9 +1450,8 @@ class JobManager:
         :return: list of dict. Each dict is a job is a dict where param:value
         :rtype: list
         """
-        with open(os.path.join(self.output_dir, ".jobs"), "rt", encoding = 'utf8') as json_file:
+        with open(os.path.join(self.output_dir, ".jobs"), "rt", encoding='utf8') as json_file:
             data = json.load(json_file)
-            print(data)
             return data
 
     def get_subjob_ids(self):
@@ -1921,13 +1950,12 @@ class JobManager:
             params_dict["options"] = self.options
         return params_dict
 
-    def to_job_list(self):
+    @staticmethod
+    def to_job_list(jobs):
         """
         Get a representation of current job a list of jobs similar to what we obtain when reading batch file
         """
-        job = self.as_job_entry()
-        jobtype = job.pop('type')
-        return [(jobtype, job)]
+        return [(j.pop('type'), j) for j in jobs]
 
     def get_datafiles(self):
         """
@@ -1960,58 +1988,6 @@ class JobManager:
             res[p] = v
         return job_type, res
 
-    def read_batch_file(self):
-        """
-        Read batch file where file are deduplicated datafiles.
-        Raise a DGeniesBatchFileError on error
-
-        :return: list of jobs
-        :rtype: list of tuple
-        """
-        cache = dict()
-        job_list = []
-        try:
-            job_list = [self.from_file_to_datafiles(jt, params, cache) for jt, params in
-                        read_batch_file(self.batch.get_path())]
-        except DGeniesBatchFileError as e:
-            raise e
-        return job_list
-
-    def create_subjob(self, job_type, params_dict):
-        """"
-        Create a list of JobManager objects
-
-        :params job_params: List of jobs with parameters such as each entry is
-            * [0] the job type
-            * [1] a dict of params -> value
-        :type job_params: list of couples
-        :return: list of jobs
-        :rtype: list of JobManager
-        """
-        # We create a subjob id and the corresponding working directory
-        random_length = 5
-        job_id_prefix = params_dict.get(
-            "id_job",
-            self.id_job
-        )
-        job_id_prefix = job_id_prefix[0: min(len(job_id_prefix), ID_JOB_LENGTH - random_length - 1)]
-        subjob_id = job_id_prefix + "_" + Functions.random_string(random_length)
-        while os.path.exists(os.path.join(self.config.app_data, subjob_id)):
-            subjob_id = job_id_prefix + "_" + Functions.random_string(random_length)
-        folder_files = os.path.join(self.config.app_data, subjob_id)
-        os.makedirs(folder_files)
-        # We create the subjob itself
-        subjob = JobManager(
-            id_job=subjob_id,
-            email=self.email,
-            query=params_dict.get("query", None),
-            target=params_dict.get("target", None),
-            align=params_dict.get("align", None),
-            backup=params_dict.get("backup", None),
-            mailer=self.mailer,
-            tool=params_dict.get("tool", None),
-            options=params_dict.get("options", None))
-        return subjob
 
     def distribute_files(self, datafiles_with_contexts):
         """
@@ -2053,20 +2029,8 @@ class JobManager:
                 if os.path.exists(os.path.join(self.output_dir, '.already_checked')):
                     logger.info("Files already checked, skipping file checking")
                 else:
-                    job_list = self.to_job_list()
-                    logger.debug(job_list)
                     if self.is_batch():
-                        # We normalize file batch file name
-                        self.normalize_files()
-                        # We read the batch file and get (jobtype, files)
-                        job_list = self.read_batch_file()
-                        logger.debug(job_list)
-                        # Prepare list of datafiles with context for checking
-                        jobs = []
-                        for j, params in job_list:
-                            j = self.create_subjob(j, params)
-                            logger.debug("Job created: {}".format(j.id_job))
-                            jobs.append(j)
+                        jobs = self.batch
                     else:
                         jobs = [self]
                     dcm = DataFileContextManager(jobs)
@@ -2099,7 +2063,8 @@ class JobManager:
                         Path(os.path.join(j.output_dir, '.already_checked')).touch()
 
                     # Backup jobs with params for next batch step in standalone mode.
-                    self.write_jobs(jobs)
+                    if self.is_batch():
+                        self.write_jobs(jobs)
 
                 # Set the runner according to available resources
                 should_be_local = not os.path.exists(os.path.join(self.output_dir, '.should_not_be_local'))
@@ -2110,7 +2075,7 @@ class JobManager:
                     job.runner_type = "local"
                     job.save()
 
-            except (DGeniesFileCheckError, DGeniesURLError, DGeniesDownloadError, DGeniesBatchFileError) as e:
+            except (DGeniesFileCheckError, DGeniesURLError, DGeniesDownloadError) as e:
                 self.set_job_status("fail", e.message)
                 self._save_analytics_data()
                 self._set_analytics_job_status("fail-getfiles")
