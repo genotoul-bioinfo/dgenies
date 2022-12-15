@@ -450,7 +450,7 @@
                                     <td style="vertical-align:top;">
                                         {{ tools[tool].label | capitalize }}
                                             <span class="glyphicon glyphicon-question-sign" style="color: #2aabd2"
-                                                  title="{{ tools[tool].help }}"></span><br>({% if loop.index0 == 0 %}<span style="font-weight: bold">{% endif %}tool={{ tool }}</span>)
+                                                  title="{{ tools[tool].help }}"></span><br>(tool={{ tool }}</span>)
                                     </td>
                                     {% if tools[tool].options %}
                                         <td>
@@ -460,7 +460,7 @@
                                                 <li>{{ opt.label }}{% if opt.type == "radio" %} (mutually exclusive){% endif %}:</li>
                                                 <ul>
                                                 {% for entry in opt['entries'] %}
-                                                    <li {% if entry.default %}style="font-weight: bold"{% endif %}>{{ outer_loop.index0 }}-{{ loop.index0 }}: {{ entry.label }}&nbsp<span class="glyphicon glyphicon-question-sign" style="color: #2aabd2"
+                                                    <li {% if entry.default %}style="font-weight: bold"{% endif %}>{{ opt.group }}:{{ entry.key }} - {{ entry.label }}&nbsp<span class="glyphicon glyphicon-question-sign" style="color: #2aabd2"
                                                         title="{{ entry.help }}"></span></li>
                                                 {% endfor %}
                                                 </ul>

@@ -107,14 +107,12 @@ A new align job is descibed with the following template.
 
 *Optional parameters*:
 
-- `job_id_prefix`: we can set a name prefix to the job. A random part will be added at the end. If not set, the batch job name will be used as a prefix
-- `query`: the query file against which we will align the target. If not set, target will be aligned against itself
+- `id_job`: we can set a name prefix to the job. A random part will be added at the end. If not set, the batch job name will be used as a prefix
+- `query`: the query file against which we will align the target. If not set, target will be aligned against itself if possible.
 - `tool`: the tool use as aligner
 - `options`: some options given to the aligner, see below for details
 
-For `options` key, `option_id` values must be separated by a coma. The values of `option_id` are presented on batch page. They mirror options in run page. They look like `0-0` for 1st choice of 1st option, `0-1` for 2nd choice of 1st option, ..., `1-0` for 1st choice of 2nd option, ... If options are not precised, default ones will be use. In case of checkbox, the `option_id` can be negate by using this syntax `!option_id`
-
-The mapping between `option_id` and its meaning is displayed on batch page.
+For `options` key, `option_id` values must be separated by a coma. The possible values of `option_id` are presented on batch page. They mirror options in run page.
 
 ### Plot job
 
@@ -135,7 +133,7 @@ or
 
 *Optional parameters*:
 
-- `job_id_prefix`: we can set a name prefix to the job. A random part will be added at the end. If not set, the batch job name will be used as a prefix
+- `id_job`: we can set a name prefix to the job. A random part will be added at the end. If not set, the batch job name will be used as a prefix
 
 ## Association table
 

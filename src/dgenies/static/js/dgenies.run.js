@@ -973,7 +973,7 @@ dgenies.run.fill_examples = function (tab) {
             {},
             function (data) {
                 $("#bname").val('');
-                $("#batch_content").text(data);
+                dgenies.run.editor.setValue(data);
             }
         )
         
