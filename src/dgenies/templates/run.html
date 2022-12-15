@@ -19,19 +19,24 @@
         <script src="{{ url_for('static', filename='js/jquery.fileupload-process.js') }}"></script>
         <!-- The File Upload validation plugin -->
         <script src="{{ url_for('static', filename='js/jquery.fileupload-validate.js') }}"></script>
-        <script src="{{ url_for('static', filename='js/dgenies.run.js') }}" type="text/JavaScript"></script>
 
         <script src="{{ url_for('static', filename='js/chevrotain.min.js') }}" type="text/JavaScript"></script>
-
         <link rel="stylesheet" href="{{ url_for('static', filename='css/codemirror/codemirror.css') }}" type="text/css">
         <link rel="stylesheet" href="{{ url_for('static', filename='css/codemirror/lint.css') }}" type="text/css">
         <script src="{{ url_for('static', filename='js/codemirror/codemirror.js') }}" type="text/JavaScript"></script>
         <script src="{{ url_for('static', filename='js/codemirror/simple.js') }}" type="text/JavaScript"></script>
         <script src="{{ url_for('static', filename='js/codemirror/lint.js') }}" type="text/JavaScript"></script>
         
+        <script src="{{ url_for('static', filename='js/dgenies.run.js') }}" type="text/JavaScript"></script>
         <script src="{{ url_for('static', filename='js/dgenies.run.batch.js') }}" type="text/JavaScript"></script>
     {% else %}
         <script src="{{ url_for('static', filename='js/jquery.fileupload.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/chevrotain.min.js') }}" type="text/JavaScript"></script>
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/codemirror/codemirror.css') }}" type="text/css">
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/codemirror/lint.css') }}" type="text/css">
+        <script src="{{ url_for('static', filename='js/codemirror/codemirror.js') }}" type="text/JavaScript"></script>
+        <script src="{{ url_for('static', filename='js/codemirror/simple.js') }}" type="text/JavaScript"></script>
+        <script src="{{ url_for('static', filename='js/codemirror/lint.js') }}" type="text/JavaScript"></script>
         <script src="{{ url_for('static', filename='js/dgenies.run.min.js') }}" type="text/JavaScript"></script>
     {% endif %}
 {% endblock %}
@@ -184,7 +189,7 @@
                             {% endif %}
                             {% if tools | length > 1 %}
                                 {% for tool in tools_names %}
-                                {% set tool_loop = loop %}
+                                    {% set tool_loop = loop %}
                                     <tr class="tabx tab1 optionx tool-options-{{tool}} {% if loop.index0 != 0 or not tools[tool].options %}hidden{% endif %}">
                                         <td colspan="2" style="vertical-align:top;">
                                             <div id="tool-options-{{tool}}">
@@ -198,20 +203,21 @@
                                                 {% set outer_loop = loop %}
                                                 <td style="vertical-align:top;">
                                                     {{ opt.label }}&nbsp<span class="glyphicon glyphicon-question-sign" style="color: #2aabd2"
-                                                                              title="{{ opt.help }}"></span>
+                                                                              title="{{ opt.help }} (group: {{ opt.group }})"></span>
                                                 </td>
                                                 <td>
                                                     {% for entry in opt['entries'] %}
                                                         <div class="form-check">
-                                                            <input type="{{ opt.type }}" id="tool-options-{{tool}}-{{ outer_loop.index0 }}-{{ loop.index0 }}"
-                                                                   name="tool-options-{{tool}}-{{ outer_loop.index0 }}{% if opt.type != 'radio' %}-{{loop.index0}}{% endif %}"
-                                                                   value="tool-options-{{tool}}-{{ outer_loop.index0 }}-{{ loop.index0 }}"
-                                                                   class="form-check-input"
+                                                            <input class="form-check-input"
+                                                                   type="{{ opt.type }}"
+                                                                   id="tool-options-{{tool}}-{{ opt.group }}:{{ entry.key }}"
+                                                                   name="tool-options-{{tool}}-{{ opt.group }}{% if opt.type != 'radio' %}:{{ entry.key }}{% endif %}"
+                                                                   value="{{ opt.group }}:{{ entry.key }}"
                                                                    {% if entry.default %}checked{% endif %}/>
                                                             <label class="form-check-label" style="vertical-align: bottom; line-height: 30px; font-weight: normal;"
-                                                                   for="tool-options-{{tool}}-{{ outer_loop.index0 }}-{{ loop.index0 }}">
+                                                                   for="tool-options-{{tool}}-{{ opt.group }}:{{ entry.key }}">
                                                                 {{ entry.label | capitalize }}&nbsp<span class="glyphicon glyphicon-question-sign" style="color: #2aabd2"
-                                                                      title="{{ entry.help }}"></span>
+                                                                      title="{{ entry.help }} (id: {{ opt.group }}:{{ entry.key }})"></span>
                                                             </label>
                                                         </div>
                                                     {% endfor %}
@@ -230,30 +236,30 @@
                                     </td>
                                 </tr>
                                 {% if tools[tool].options %}
-                                    <tr class="tabx tab1 optionx tool-options-{{tool}}" >
-                                        {% for opt in tools[tool].options %}
-                                            <td style="vertical-align:top;">
-                                                {{ opt.label }}&nbsp<span class="glyphicon glyphicon-question-sign" style="color: #2aabd2"
-                                                                          title="{{ opt.help }}"></span>
-                                            </td>
-                                            <td>
-                                                {% for entry in opt['entries'] %}
+                                <tr class="tabx tab1 optionx tool-options-{{tool}}" >
+                                    {% for opt in tools[tool].options %}
+                                        <td style="vertical-align:top;">
+                                            {{ opt.label }}&nbsp<span class="glyphicon glyphicon-question-sign" style="color: #2aabd2"
+                                                                        title="{{ opt.help }} (group: {{ opt.group }})"></span>
+                                        </td>
+                                        <td>
+                                            {% for entry in opt['entries'] %}
                                                 <div class="form-check">
                                                     <input class="form-check-input"
                                                            type="{{ opt.type }}"
-                                                           id="tool-options-{{tool}}-0-{{ loop.index0 }}"
-                                                           name="tool-options-{{tool}}-0{% if opt.type != 'radio' %}-{{loop.index0}}{% endif %}"
-                                                           value="tool-options-{{tool}}-0-{{ loop.index0 }}"
+                                                           id="tool-options-{{tool}}-{{ opt.group }}:{{ entry.key }}"
+                                                           name="tool-options-{{tool}}-{{ opt.group }}{% if opt.type != 'radio' %}:{{ entry.key }}{% endif %}"
+                                                           value="{{ opt.group }}:{{ entry.key }}"
                                                            {% if entry.default %}checked{% endif %}/>
                                                     <label class="form-check-label"
-                                                           for="tool-options-{{tool}}-0-{{ loop.index0 }}"
+                                                           for="tool-options-{{tool}}-{{ opt.group }}:{{ entry.key }}"
                                                            style="vertical-align: bottom; line-height: 30px; font-weight: normal;">
                                                         {{ entry.label | capitalize }}&nbsp<span class="glyphicon glyphicon-question-sign" style="color: #2aabd2"
-                                                              title="{{ entry.help }}"></span>
+                                                                title="{{ entry.help }} (id: {{ opt.group }}:{{ entry.key }})"></span>
                                                     </label>
                                                 </div>
-                                                {% endfor %}
-                                            </td>
+                                            {% endfor %}
+                                        </td>
                                         {% endfor %}
                                     </tr>
                                 {% endif %}

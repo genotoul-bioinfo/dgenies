@@ -18,6 +18,32 @@ class DGeniesMessageException(Exception):
         return False
 
 
+class DGeniesUnknownOptionError(DGeniesMessageException):
+    """
+    Exception raise when an unknown option is used
+    """
+
+    def __init__(self, key):
+        super().__init__()
+        self.key = key
+
+    def __str__(self):
+        return "Option unavailable: {}".format(self.key)
+
+
+class DGeniesUnknownToolError(DGeniesMessageException):
+    """
+    Exception raise when an unknown tool is used
+    """
+
+    def __init__(self, key):
+        super().__init__()
+        self.key = key
+
+    def __str__(self):
+        return "Tool unavailable: {}".format(self.key)
+
+
 class DGeniesFileCheckError(DGeniesMessageException):
     """
     Exception raise when an error append while testing local files
@@ -341,6 +367,7 @@ class DGeniesLocalRunError(DGeniesRunError):
     Error appends during running job on local runner
     """
     pass
+
 
 class DGeniesMissingParserError(DGeniesMessageException):
 

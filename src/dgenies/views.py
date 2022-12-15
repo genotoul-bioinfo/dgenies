@@ -18,7 +18,8 @@ from dgenies.lib.functions import Functions
 from dgenies.allowed_extensions import AllowedExtensions
 from dgenies.lib.upload_file import UploadFile
 from dgenies.lib.datafile import DataFile
-from dgenies.lib.exceptions import DGeniesExampleNotAvailable, DGeniesJobCheckError, DGeniesMissingJobError, DGeniesDeleteGalleryJobForbidden
+from dgenies.lib.exceptions import DGeniesExampleNotAvailable, DGeniesJobCheckError, DGeniesMissingJobError,\
+    DGeniesDeleteGalleryJobForbidden, DGeniesUnknownToolError, DGeniesUnknownOptionError
 from dgenies.lib.latest import Latest
 from dgenies.tools import Tools
 from markdown import Markdown
@@ -126,6 +127,7 @@ def run():
     email = ""
     if "email" in request.args:
         email = request.args["email"]
+
     return render_template("run.html", id_job=id_job, email=email,
                            menu="run", allowed_ext=extensions.allowed_extensions_per_format, s_id=s_id,
                            max_upload_file_size=config_reader.max_upload_file_size,
@@ -224,16 +226,15 @@ def check_file_type_and_resolv_options(job: dict):
         if job["target"] == "":
             errors.append("No target fasta selected")
 
-        if job["tool"] is None:
-            job["tool"] = Tools().get_default()
-        elif job["tool"] not in Tools().tools:
-            errors.append("Tool unavailable: %s" % job["tool"])
+        try:
+            if job["tool"] is None:
+                job["tool"] = Tools().get_default()
+            elif job["tool"] not in Tools().tools:
+                raise DGeniesUnknownToolError(job["tool"])
 
-        valid_options, options = get_tools_options(job["tool"], job["options"])
-        if not valid_options:
-            errors.append("Chosen tool options unavailable")
-        else:
-            job["options"] = options
+            job["options"] = " ".join(get_tools_options(job["tool"], job["options"]))
+        except (DGeniesUnknownToolError, DGeniesUnknownOptionError) as e:
+            errors.append(e.message)
 
     elif job_type == "plot":
         for key in ("target", "query", "align", "backup"):
@@ -344,6 +345,7 @@ def launch_analysis():
         j["options"] = request.form.getlist(tool_options) if tool_options in request.form else []
         jobs.append(j)
 
+    print(jobs)
     # Check form
     # Client side must have sent correct message depending on the job type.
     # Here we check that everything was correctly transmitted.
@@ -380,6 +382,7 @@ def launch_analysis():
     for j in jobs:
         try:
             check_file_type_and_resolv_options(j)
+            print(j)
         except DGeniesJobCheckError as e:
             form_pass = False
             errors.append(e.message)
@@ -514,22 +517,19 @@ def gallery_file(filename):
 
 def get_tools_options(tool_name, chosen_options):
     """
-    Transform options chosen in javascript into parameters
+    Transform options chosen from client side into option values
 
-    :return: True is chosen options are valid + a string containing optional parameters to use with tool
-    :rtype: boolean, str
+    :param tool_name: the tool name
+    :type tool_name: str
+    :param chosen_options: the list of option ids
+    :type chosen_options: list of str
+    :return: return options value
+    :rtype: list
     """
     tools = Tools().tools
-    if tool_name is None:
-        return True, None
-    tool = tools[tool_name] if tool_name in tools else None
-    tool_options = tool.options if tool is not None else None
-    # We filter options for the chosen tool.
-    tool_prefix = "tool-options-%s-" % tool_name
-    # Option keys looks like 0-0, 0-1, ..., 1-0, ...
-    options_keys = [s[len(tool_prefix):] for s in chosen_options if s.startswith(tool_prefix)]
-    valid, options_params = tool.resolve_option_keys(options_keys)
-    return valid, " ".join(options_params)
+    if tool_name is None or tool_name not in tools:
+        raise DGeniesUnknownToolError(tool_name)
+    return tools[tool_name].resolve_option_keys(chosen_options)
 
 
 def get_file(file, gzip=False):  # pragma: no cover

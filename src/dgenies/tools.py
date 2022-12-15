@@ -2,15 +2,16 @@ import logging
 import os
 import sys
 import platform
-import re
 import inspect
 from pathlib import Path
 import yaml
 from dgenies.lib.decorators import Singleton
+from dgenies.lib.exceptions import DGeniesUnknownOptionError
 from dgenies.lib import parsers
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
 
 class Tool:
 
@@ -111,138 +112,35 @@ class Tool:
                 self.order = order
 
         # Options
-        if options is None:
-            self.options = []
-        elif isinstance(options, list):
-            self.options = options
-            self._coord_to_option_value = [[e['value'] for e in o['entries']] for o in options]
-        else:
-            raise ValueError("Tools: options must be a yaml list")
-
-    @staticmethod
-    def _option_key_to_tuple(key: str):
-        """
-        Transform an option key string into an option key tuple
-        :param key: an option key
-        :type key: str
-        :return: A couple of int (0,0), (0,1), ..., (1,0)
-        :rtype: tuple
-        """
-        i, j = key.split("-", maxsplit=1)
-        return int(i), int(j)
-
-    @staticmethod
-    def _option_tuple_to_key(t: tuple):
-        """
-        Transform an option key tuple into an option key string
-        :param t: an option key
-        :type t: tuple
-        :return: return an options keys string like '0-0', '0-1', ..., '1-0'
-        :rtype: str
-        """
-        return "{:d}-{:d}".format(t[0], t[1])
-
-    def get_option_group(self, key):
-        """
-        Transform an option key string into an option key tuple
-        :param key: an option key
-        :type key: str or tuple
-        :return: the option group coordinate
-        :rtype: int
-        """
-        if isinstance(key, str):
-            key = self._option_key_to_tuple(key)
-        return key[0]
-
-    def get_default_option_keys(self):
-        """
-        Get default options keys set for this tool
-        :return: A set of options keys like 0-0, 0-1, ..., 1-0
-        :rtype: set of str
-        """
-        default_option_keys = set()
-        if self.options is not None:
-            for i, o in enumerate(self.options):
-                for j, e in enumerate(o['entries']):
-                    if e.get("default", False):
-                        default_option_keys.add(self._option_tuple_to_key((i, j)))
-        return default_option_keys
-
-    def is_valid_option_key(self, key):
-        """
-        Get default options keys set for this tool
-        :param key: an option key
-        :type key: str
-        :return: True if the option exists for the given key, else False
-        :rtype: bool
-        """
-        try:
-            i, j = self._option_key_to_tuple(key)
-            self.options[i]["entries"][j]
-        except Exception:
-            return False
-        return True
-
-    def get_option_tuples(self, key=None):
-        """
-        Get option keys available for this tool.
-        :param key: an option key
-        :type key: str
-        :return: A list of all options keys if key = None, else the list of options keys at the same level than key
-        :rtype: set of tuple
-        """
-        option_key_list = []
-        if key is None:
-            option_key_list = ((i, j) for i, o in enumerate(self.options) for j, e in enumerate(o["entries"]))
-        else:
-            i = self._option_key_to_tuple(key)[0]
-            # We check the coordinates
-            if 0 <= i < len(self.options):
-                option_key_list = ((i, j) for j, e in enumerate(self.options[i]["entries"]))
-        return list(option_key_list)
-
-    def get_option_keys(self, key=None):
-        """
-        Get option keys available for this tool.
-        :param key: an option key
-        :type key: str
-        :return: A list of all options keys if key = None, else the list of options keys at the same level than key
-        :rtype: set of str
-        """
-        return [self._option_tuple_to_key(t) for t in self.get_option_tuples(key)]
-
-    def is_an_exclusive_option_key(self, key: str):
-        """
-        Tells if an option-key (like 0-0, 0-1, ..., 1-0) is a part of an exclusive options
-        :return: True if a part of an exclusive option, else false
-        :rtype: bool
-        """
-        group = self.get_option_group(key)
-        return self.options[group]["type"] == "radio"
+        self.options = []
+        self.options_dict = {}
+        if options is not None:
+            if isinstance(options, list):
+                self.options = options
+                try:
+                    for group in options:
+                        for entry in group['entries']:
+                            self.options_dict["{}:{}".format(group['group'], entry["key"])] = entry['value']
+                except KeyError as e:
+                    raise ValueError("Missing key {} in tool option".format(e.args[0]))
+            else:
+                raise ValueError("Tools: options must be a yaml list")
 
     def resolve_option_keys(self, keys):
         """
-        Resolve/Translate options keys like 0-0, 0-1, ..., 1-0, ... to effective parameters
-        :param keys: list/set of key
-        :type keys: collection of str
-        :return: tuple:
-            * [0] True if all option keys in keys are valid, False else
-            * [1] list of str, associated parameters associated to options keys
-        :rtype: tuple
+        Resolve options keys to effective parameters
+        :param keys: list of option keys
+        :type keys: list of str
+        :return: associated parameters associated to option keys
+        :rtype: list of str
         """
-        valid = True
         options_params = []
         try:
             for k in keys:
-                o, e = self._option_key_to_tuple(k)
-                options_params.append(self._coord_to_option_value[o][e])
-        except KeyError:
-            valid = False
-            options_params = []
-        except IndexError:
-            valid = False
-            options_params = []
-        return valid, options_params
+                options_params.append(self.options_dict[k])
+        except KeyError as e:
+            raise DGeniesUnknownOptionError(e.args[0])
+        return options_params
 
 
 @Singleton
@@ -281,8 +179,6 @@ class Tools:
 
         config_file_search.append(os.path.join(app_dir, "tools-dev.yaml"))
         config_file_search.append(os.path.join(app_dir, "tools-dev.yaml.local"))
-
-
 
         for my_config_file in reversed(config_file_search):
             if os.path.exists(my_config_file):
