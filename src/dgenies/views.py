@@ -90,11 +90,21 @@ def run():
     tools_names = sorted(list(tools.keys()), key=lambda x: (tools[x].order, tools[x].name))
     tools_ava = {}
     tools_options = {}
+    tools_checking = {}
     for tool_name, tool in tools.items():
         tools_ava[tool_name] = 1 if tool.all_vs_all is not None else 0
         tools_options[tool_name] = tool.options
+        tools_checking[tool_name] = {
+            # "has_ava": 1 if tool.all_vs_all is not None else 0,
+            "options": [{
+                "group": opt["group"],
+                "choices": ["{}:{}".format(opt["group"], e["key"]) for e in opt['entries']],
+                "exclusive": 1 if opt['type'] == 'radio' else 0
+            } for opt in tool.options],
+            "default": ["{}:{}".format(opt["group"], e["key"]) for opt in tool.options for e in opt['entries'] if "default" in e and e["default"]]
+        }
 
-    # We get allowed files
+        # We get allowed files
     extensions = AllowedExtensions()
 
     # We create working dirs
@@ -128,7 +138,8 @@ def run():
                            batch=os.path.basename(config_reader.example_batch),
                            max_batch_jobs=config_reader.max_nb_jobs_in_batch_mode,
                            tools_names=tools_names, tools=tools,
-                           tools_ava=tools_ava, tools_options=tools_options, version=VERSION, inforun=inforun)
+                           tools_ava=tools_ava, tools_options=tools_options, tools_checking=tools_checking,
+                           version=VERSION, inforun=inforun)
 
 
 @app.route("/run-test", methods=['GET'])

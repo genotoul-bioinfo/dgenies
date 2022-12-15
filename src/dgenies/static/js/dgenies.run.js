@@ -26,13 +26,35 @@ dgenies.run.target_example = "";
 dgenies.run.query_example = "";
 dgenies.run.backup_example = "";
 dgenies.run.batch_example = "";
+dgenies.run.tools = [];
 dgenies.run.tool_has_ava = {};
+dgenies.run.tools_checking = {};
+dgenies.run.tools_options = {}
 dgenies.run.max_jobs = 1
 dgenies.run.enabled = true;
 dgenies.run.valid = true;
 
+dgenies.run.FTYPES = {
+    "query": {"formats": ["fasta",]},
+    "target": {"formats": ["fasta",]},
+    "queryidx": {"formats": ["fasta", "idx"]},
+    "targetidx": {"formats": ["fasta", "idx"]},
+    "alignfile": {"formats": ["map"]},
+    "backup": {"formats": ["backup"]},
+    "batch": {"formats": ["batch"]},
+}
+
+dgenies.run.FTYPES_REGEX = {
+    "fasta": /^.+\.(fa|fna|fasta)(\.gz)?$/,
+    "idx": /^.+\.idx(\.gz)?$/,
+    "map": /^.+\.paf$/,
+    "backup": /^.+\.tar(\.gz)?$/,
+    "batch": /^.+\.(tab|tsv|txt)$/,
+}
+
+
 // Keys in batch file that will use files
-dgenies.run.KEYS_FOR_FILES = ["alignfile", "backup", "query", "target"]
+dgenies.run.KEYS_FOR_FILES = ["alignfile", "backup", "query", "target", "queryidx", "targetidx"]
 //dgenies.run.FILE_STATES = ["available", "duplicated", "missing", "unused"]
 
 // list of files in batch file: array of strings
@@ -47,6 +69,8 @@ dgenies.run.job_list = []
 
 // list of fileupload that will be uploaded
 dgenies.run.files_to_upload = []
+dgenies.run.editor = null;
+
 
 /**
  * Initialise app for run page
@@ -59,10 +83,11 @@ dgenies.run.files_to_upload = []
  * @param {string} backup_example backup example pseudo path
  * @param {string} batch_example batch example pseudo path
  * @param {object} tool_has_ava defines if each available tool has an all-vs-all mode
+ * @param {object} tools_checking options for each tool
  * @param {int} max_jobs maximum number of jobs in batch file
  */
-dgenies.run.init = function (s_id, allowed_ext, max_upload_file_size=1073741824, target_example="", query_example="",
-                             backup_example="", batch_example="", tool_has_ava={}, max_jobs = 1) {
+dgenies.run.init = function(s_id, allowed_ext, max_upload_file_size=1073741824, target_example="", query_example="",
+                            backup_example="", batch_example="", tools=[], tool_has_ava={}, tools_checking={}, max_jobs = 1) {
     dgenies.run.s_id = s_id;
     dgenies.run.allowed_ext = allowed_ext;
     dgenies.run.max_upload_file_size = max_upload_file_size;
@@ -70,11 +95,30 @@ dgenies.run.init = function (s_id, allowed_ext, max_upload_file_size=1073741824,
     dgenies.run.query_example = query_example;
     dgenies.run.batch_example = batch_example;
     dgenies.run.backup_example = backup_example;
+    dgenies.run.tools = tools;
     dgenies.run.tool_has_ava = tool_has_ava;
-    dgenies.run.max_jobs = max_jobs;
+    dgenies.run.tools_checking = tools_checking;
+    dgenies.run.tools_options = {}
+    for(let tool in dgenies.run.tools_checking){
+        if(dgenies.run.tools_checking.hasOwnProperty(tool)) {
+            let value = dgenies.run.tools_checking[tool]
+            let data = {}
+            for (let opt of value.options){
+                for (let choice of opt.choices){
+                    data[choice] = {
+                        group: opt.group,
+                        exclusive: opt.exclusive
+                    }
+                }
+            }
+            dgenies.run.tools_options[tool] = data
+        }
+    };
+    dgenies.run.max_jobs = max_jobs
     dgenies.run.restore_form();
     dgenies.run.set_events();
     dgenies.run.init_fileuploads();
+    dgenies.run.init_codemirror();
 };
 
 /**
@@ -100,7 +144,7 @@ dgenies.run.jq_remove_from_listing = function(jq_selection) {
 /**
  * Regenerate the html file listing
  */
- dgenies.run.refresh_listing = function() {
+dgenies.run.refresh_listing = function() {
     
     let list = []
     for (let i=0; i<dgenies.run.files_for_batch.length; i++){
@@ -120,6 +164,7 @@ dgenies.run.jq_remove_from_listing = function(jq_selection) {
                 dgenies.run.files_for_batch.splice(i, 1)
                 dgenies.run.check_files()
                 dgenies.run.refresh_listing()
+                dgenies.run.relint()
             })
 }
 
@@ -130,7 +175,7 @@ dgenies.run.jq_remove_from_listing = function(jq_selection) {
  * @param {array} uploaded_files list of filenames in upload field
  * @returns {array} a list of string with the same length than @uploaded_files
  **/
- dgenies.run.check_uploaded_files = function(needed_files, uploaded_files){
+dgenies.run.check_uploaded_files = function(needed_files, uploaded_files){
     // list of states (following the order of list of files)
     let states = []
 
@@ -159,6 +204,19 @@ dgenies.run.jq_remove_from_listing = function(jq_selection) {
     return states
 }
 
+
+
+/**
+ * Get the list of uploaded files
+ *
+ * @returns {array} a list of string
+ **/
+dgenies.run.get_uploaded_files = function(){
+    return Array.from(dgenies.run.files_for_batch, function(elem){return elem.files[0].name})
+}
+
+
+
 /**
  * Check which files are missing in batch files
  *
@@ -166,7 +224,7 @@ dgenies.run.jq_remove_from_listing = function(jq_selection) {
  * @param {array} uploaded_files list of filenames in upload field
  * @returns {array} a list of string with the same length than @uploaded_files
  **/
- dgenies.run.check_missing_files = function(needed_files, uploaded_files){
+dgenies.run.check_missing_files = function(needed_files, uploaded_files){
     return needed_files.filter(
         function(x) { return uploaded_files.indexOf(x) < 0 }
     );
@@ -175,8 +233,8 @@ dgenies.run.jq_remove_from_listing = function(jq_selection) {
 /**
  * Compute states of files
  **/
- dgenies.run.check_files = function(){
-    let file_list = Array.from(dgenies.run.files_for_batch, elem => elem.files[0].name)
+dgenies.run.check_files = function(){
+    let file_list = dgenies.run.get_uploaded_files()
     dgenies.run.file_states = dgenies.run.check_uploaded_files(dgenies.run.files_in_batch, file_list)
     dgenies.run.missing_files = dgenies.run.check_missing_files(dgenies.run.files_in_batch, file_list)
 }
@@ -190,8 +248,7 @@ dgenies.run.get_local_files = function(job_list){
     let needed_files = new Set();
     for (let j of job_list){
         for (let k of dgenies.run.KEYS_FOR_FILES) {
-            // We check if file isn't an url
-            if (`${k}_type` in j && j[`${k}_type`] === "local"){
+            if (`${k}_type` in j && j[`${k}_type`] === "local") {
                 needed_files.add(j[k])
             }
         }
@@ -201,65 +258,349 @@ dgenies.run.get_local_files = function(job_list){
 
 
 /**
- * Transform the string describing a job into a Job object
- * TODO: malformed part of the line to be stored in an error list (position + substr)
- * @param {string} str a line describing a job
- * @returns {object} a dictionnary
- **/
-dgenies.run.line_to_job = function(str){
-    let result = {}
-    let array = str.trim().split(/[ \t]+/).map(
-        // each line is transformed in list of key=value
-        kv => kv.match(/\b(?<key>[^ \t=]+)=(?<value>[^ \t]+)\b/)
-    );
-    // We extract the key: value from matches.
-    for(let e of array) {
-        if(e !== null) {
-            result[e.groups.key] = e.groups.value
+ * Check if file has the right extension.
+ * 
+ * @param {string} type the job type
+ * @param {string} key the param key
+ * @param {string} val the param value
+ * @return a map if something wrong, undefined else
+ */
+dgenies.run.check_file_format_and_presence = function(type, key, val){
+    let corrected_key = key
+    if ((key == "query" || key == "target") && type == "plot") {
+        corrected_key = key + "idx" 
+    } else if (key == "align"){
+        corrected_key = "alignfile" 
+    }
+    if (dgenies.run.KEYS_FOR_FILES.includes(corrected_key) && (! dgenies.run.check_url(val, false))) {
+        if (val.startsWith("example://")){
+            let example_url = ""
+            if (`${key}_example` in dgenies.run){
+                example_url = dgenies.run[`${key}_example`]
+            }
+            if (example_url != val){
+                return {
+                    message: example_url=="" ? `No example url for ${key}` : `Example link must be: ${example_url}`,
+                    severity: "error"
+                }
+            }
+        } else {
+            let regexps = dgenies.run.FTYPES[corrected_key].formats.map(function(x){return dgenies.run.FTYPES_REGEX[x]})
+            let has_match = false;
+            for (let e of regexps){
+                has_match = has_match || e.test(val)
+            }
+            if (! has_match){
+                return {
+                    message: `File must be have the following format for ${key}: ${dgenies.run.FTYPES[corrected_key].formats.join(", ")}`,
+                    severity: "error"
+                }
+            } else {
+                let uploaded_files = dgenies.run.get_uploaded_files();
+                if(! uploaded_files.includes(val)){
+                    return {
+                        message : `Missing file in user files: ${val}`,
+                        severity: "error"
+                    }
+                }
+        }
         }
     }
-    // adjust align to alignfile key used as entry
-    if ("align" in result){
-        result["alignfile"] = result["align"]
-        delete result["align"];
+    return undefined
+}
+
+
+/**
+ * Check if file has the right extension.
+ * 
+ * @param {job} type the job
+ * @return list of found errors and warnings
+ */
+dgenies.run.ckeck_job = function(job) {
+    let found = []
+    let param_dict = {}
+    let jobtype;
+    let start_token = job[0][0]
+    let end_token = job[job.length-1][1]
+
+    // looking for duplicated keys
+    for (let param of job){
+        let [key, val] = param
+        if (key.image in param_dict){
+            found.push({
+                "message": `Duplicate key: ${key.image}`,
+                "severity": "error",
+                "from": CodeMirror.Pos(key.startLine - 1, key.startColumn-1),
+                "to": CodeMirror.Pos(key.endLine - 1, key.endColumn)
+            })
+        }
+        param_dict[key.image] = {key: key, val: val}
     }
-    // add the file type (url or local)
-    for (let k of dgenies.run.KEYS_FOR_FILES){
-        if (`${k}` in result){
-            if(dgenies.run.check_url(result[`${k}`])){
-                result[`${k}_type`] = "url"
+    // get job type
+    if ("type" in param_dict) {
+        let param_val = param_dict["type"].val
+        jobtype = param_val.image
+        if (! ["align", "plot"].includes(jobtype)){
+            found.push({
+                "message": `Unknown type: ${jobtype}`,
+                "severity": "error",
+                "from": CodeMirror.Pos(param_val.startLine - 1, param_val.startColumn-1),
+                "to": CodeMirror.Pos(param_val.endLine - 1, param_val.endColumn)
+            })
+        }
+    } else {
+        found.push({
+            "message": `Missing mandatory key: type`,
+            "severity": "error",
+            "from": CodeMirror.Pos(start_token.startLine - 1, start_token.startColumn-1),
+            "to": CodeMirror.Pos(end_token.endLine - 1, end_token.endColumn)
+        })
+    }
+    // manage align job parameters
+    if (jobtype == "align"){
+        // check tool
+        let has_ava = true
+        if (!("tool" in param_dict)){
+
+            found.push({
+                "message": `Missing key "tool"`,
+                "severity": "error",
+                "from": CodeMirror.Pos(start_token.startLine - 1, start_token.startColumn-1),
+                "to": CodeMirror.Pos(end_token.endLine - 1, end_token.endColumn)
+            })
+        } else {
+            let tool_val = param_dict["tool"].val
+            let tool = tool_val.image
+            if (! dgenies.run.tools.includes(tool)){
+                found.push({
+                    "message": `Tool "${tool}" is unknown, please use ones of following choice: ${dgenies.run.tools.join(", ")}`,
+                    "severity": "error",
+                    "from": CodeMirror.Pos(tool_val.startLine - 1, tool_val.startColumn-1),
+                    "to": CodeMirror.Pos(tool_val.endLine - 1, tool_val.endColumn)
+                })
             } else {
-                result[`${k}_type`] = "local"
+                has_ava =  dgenies.run.tool_has_ava[tool] // for ava param checking
+                let options = dgenies.run.tools_checking[tool].default
+                let options_val = {
+                    image: options.join(","),
+                    startLine : start_token.startLine,
+                    startColumn: start_token.startColumn,
+                    endLine : start_token.endLine,
+                    endColumn: start_token.endColumn
+                }
+                // Manage options
+                if ("options" in param_dict){
+                    options_val = param_dict["options"].val
+                    options = options_val.image.split(",")
+                } else {
+                    found.push({
+                        "message": `Missing key "options", will use "options=${options.join(",")}"`,
+                        "severity": "warning",
+                        "from": CodeMirror.Pos(start_token.startLine - 1, start_token.startColumn-1),
+                        "to": CodeMirror.Pos(end_token.endLine - 1, end_token.endColumn)
+                    })
+                }
+                let allowed_options = Object.keys(dgenies.run.tools_options[tool])
+                let unknown_options = options.filter(function(opt) {
+                    return ! allowed_options.includes(opt);
+                });
+                // TODO: manage option exclusion
+                if (unknown_options.length > 0) {
+                    found.push({
+                        "message": `unknown option "${unknown_options.join(", ")}", please use options in following list: ${allowed_options.join(", ")}`,
+                        "severity": "error",
+                        "from": CodeMirror.Pos(options_val.startLine - 1, options_val.startColumn-1),
+                        "to": CodeMirror.Pos(options_val.endLine - 1, options_val.endColumn)
+                    });
+                } else {
+                    // Manage option exclusion
+                    let exclusive = {}
+                    for (let opt of options) {
+                        let k = dgenies.run.tools_options[tool][opt]
+                        if (k.exclusive && k.group in exclusive){
+                            exclusive[k.group].push(opt)
+                        } else {
+                            exclusive[k.group] = [opt]
+                        }
+                    }
+                    for (let g of Object.keys(exclusive)){
+                        if (exclusive[g].length > 1){
+                            found.push({
+                                "message": `Incompatible options: ${exclusive[g].join(", ")}`,
+                                "severity": "error",
+                                "from": CodeMirror.Pos(options_val.startLine - 1, options_val.startColumn-1),
+                                "to": CodeMirror.Pos(options_val.endLine - 1, options_val.endColumn)
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+
+        // check mandatory and optional params (appart 'type' and 'tool')
+        let mandatory = ["target", "type", "tool"]
+        let optional = ["id_job", "options"]
+
+        if (has_ava){
+            mandatory.push("query")
+        } else {
+            optional.push("query")
+        }
+
+        let all_allowed = mandatory.concat(optional)
+        for (let param of job){
+            let key = param[0];
+            if (!all_allowed.includes(key.image)){
+                found.push({
+                    "message": `Unknown key "${key.image}"`,
+                    "severity": "error",
+                    "from": CodeMirror.Pos(key.startLine - 1, key.startColumn-1),
+                    "to": CodeMirror.Pos(key.endLine - 1, key.endColumn)
+                })
+            }
+        }
+
+    } else {
+        // jobtype == "plot"
+
+        // check either backup file or individual files
+        if (("align" in param_dict) || ("query" in param_dict) || ("target" in param_dict)){
+            if ("backup" in param_dict){
+                let backup_key = param_dict["backup"].key
+                found.push({
+                    "message": '"backup" key is exclusive with "align", "query" and "target" keys',
+                    "severity": "error",
+                    "from": CodeMirror.Pos(backup_key.startLine - 1, backup_key.startColumn-1),
+                    "to": CodeMirror.Pos(backup_key.endLine - 1, backup_key.endColumn)
+                });
+                for (let p of ["align", "query", "target"]) {
+                    let key = param_dict[p].key
+                    if (key !== undefined){
+                        found.push({
+                            "message": `"${key.image}" key cannot be used with "backup" key`,
+                            "severity": "error",
+                            "from": CodeMirror.Pos(key.startLine - 1, key.startColumn-1),
+                            "to": CodeMirror.Pos(key.endLine - 1, key.endColumn)
+                        });
+                    }
+                }
+            } else {
+                // check for missing individual files
+                for (let p of ["align", "query", "target"]) {
+                    if (param_dict[p] === undefined){
+                        found.push({
+                            "message": `Missing ${p} key`,
+                            "severity": "error",
+                            "from": CodeMirror.Pos(start_token.startLine - 1, start_token.startColumn-1),
+                            "to": CodeMirror.Pos(end_token.endLine - 1, end_token.endColumn)
+                        })
+                    }
+                }
+            }
+        } else if (!("backup" in param_dict)){
+            found.push({
+                "message": `Missing either "backup" key or "align", "query" and "target" keys`,
+                "severity": "error",
+                "from": CodeMirror.Pos(start_token.startLine - 1, start_token.startColumn-1),
+                "to": CodeMirror.Pos(end_token.endLine - 1, end_token.endColumn)
+            })
+        }
+        // check for mandatory and optional keys
+        let mandatory = [["align", "type", "query", "target"], ["type", "backup"]]
+        let optional = ["id_job"]
+        let all_allowed = mandatory.map(function(x){return x.concat(optional)})
+        let present_keys = job.map(function(param){return param[0];})
+        let unknown_keys = present_keys.filter(
+            function(k){
+                return all_allowed.every(
+                    function(x){
+                        return !x.includes(k.image)
+                    });
+                });
+        for (let key of unknown_keys){
+            found.push({
+                "message": `Unknown key "${key.image}"`,
+                "severity": "error",
+                "from": CodeMirror.Pos(key.startLine - 1, key.startColumn-1),
+                "to": CodeMirror.Pos(key.endLine - 1, key.endColumn)
+            })
+        }
+    }
+
+    for (let param of job){
+        let [key, val] = param
+        // check file format and missing file
+        let error = dgenies.run.check_file_format_and_presence(jobtype, key.image, val.image)
+        if (error !== undefined){
+            found.push({
+                "message": error.message,
+                "severity": error.severity,
+                "from": CodeMirror.Pos(val.startLine - 1, val.startColumn-1),
+                "to": CodeMirror.Pos(val.endLine - 1, val.endColumn)
+            })
+        }
+    }
+    console.log(found)
+    return found
+}
+
+
+/**
+ * Adjust and complete each job parameters after parsing batch file.
+ * 
+ * @param {string} jobs the job list
+ */
+dgenies.run.adjust_job_list = function(jobs){
+    for (let job of jobs){
+        // rename 'align' key to 'alignfile'
+        if ("align" in job){
+            job["alignfile"] = job["align"]
+            delete job["align"];
+        }
+        // add the file type (url or local)
+        for (let k of dgenies.run.KEYS_FOR_FILES){
+            if (`${k}` in job){
+                if(dgenies.run.check_url(job[`${k}`])){
+                    job[`${k}_type`] = "url"
+                } else {
+                    job[`${k}_type`] = "local"
+                }
             }
         }
     }
-    return result
 }
 
+
 /**
- * Parse batch file content and populated related data structures.
+ * Create list of jobs from parse list of jobs
  * 
- * @param {string} text the readed text in batch file 
+ * @param {string} jobs the job list
+ * @returns {array} a list of dict
  */
-dgenies.run.parse_batch = function(text) {
-    // We normalize seperators and blank lines
-    let job_array = text.trim()
-                        .replace(/[ \t]+/g, "\t")
-                        .split(/[\n\r]+/);
-    // We limit the number of jobs
-    if (job_array.length > dgenies.run.max_jobs) {
-        dgenies.notify(`Batch file too long, only ${dgenies.run.max_jobs} first jobs were considered!`, "danger", 3000);
-        job_array = job_array.slice(0, dgenies.run.max_jobs);
+dgenies.run.create_job_list = function(jobs){
+    let job_list = []
+    for (let j of jobs){
+        let job = {}
+        for (let param of j){
+            let [key, val] = param
+            job[key.image] = val.image
+        }
+        job_list.push(job)
     }
-    // We fill the html field with processed file content
-    $("#batch_content").text(job_array.join("\n"));
-    // We generate job list from job_array
-    dgenies.run.job_list = job_array.map(dgenies.run.line_to_job).filter(
-        obj => !(obj && Object.keys(obj).length === 0 && obj.constructor === Object));
-    dgenies.run.files_in_batch = dgenies.run.get_local_files(dgenies.run.job_list)
-    dgenies.run.check_files();
-    dgenies.run.refresh_listing();
+    dgenies.run.adjust_job_list(job_list)
+    return job_list
 }
+
+/*
+ * Re lint batch editor by refreshing its content
+ */
+dgenies.run.relint = function() {
+    CodeMirror.signal(dgenies.run.editor, "change", dgenies.run.editor)
+    // Alt way...
+    //dgenies.run.editor.setValue(dgenies.run.editor.getValue())
+}
+
 
 /**
  * Parse a batch file and add it in html
@@ -271,20 +612,21 @@ dgenies.run.read_batch = function() {
     const reader = new FileReader();
     // resulting job list
     if (f) {
-        reader.onload = function(e) {
-            dgenies.run.parse_batch(e.target.result);
-          };
-        reader.onerror = function(e) {
-            $("#batch_content").text(e.target.error);
-            console.log(e.target.error);
-        };
 
         reader.readAsText(f);
+
+        reader.onload = function(e) {
+            dgenies.run.editor.setValue(reader.result)
+          };
+        
+        reader.onerror = function(e) {
+            dgenies.notify(`Error while reading batch file: ${e.target.error}!`, "danger");
+            console.log(e.target.error);
+        };
     } else {
-        $("#batch_content").text("No batch file loaded")
+        dgenies.run.editor.setValue(reader.batch_default_content)
     }
   }
-
 
 
 /**
@@ -305,7 +647,6 @@ dgenies.run.restore_form = function () {
  */
 dgenies.run.upload_next = function () {
     let next = dgenies.run.files_to_upload.pop();
-    console.log(next)
     while (next === undefined && dgenies.run.files_to_upload.length > 0) {
         next = dgenies.run.files_to_upload.pop();
     }
@@ -413,15 +754,14 @@ dgenies.run._init_multiple_fileupload = function(formats) {
         maxNumberOfFiles: 1, // max_files_for_a_job * number_of_jobs * 1.1 = 3 * 10 * 1.1
         dropZone: $('#input-dropzone'),
         add: function (e, data) {
-            console.log(data)
             // We add the file
             dgenies.run.files_for_batch.push(data);
-
-            console.log(data)
             // We check the against the batch file
             dgenies.run.check_files();
             // We refresh the file listing
             dgenies.run.refresh_listing();
+            // We relint the batch content
+            dgenies.run.relint();
         },
         drop: function (e, data) {
             $.each(data.files, function (index, file) {
@@ -458,17 +798,12 @@ dgenies.run._init_multiple_fileupload = function(formats) {
         }
     });
 };
+
 /**
  * Init file upload forms
  */
 dgenies.run.init_fileuploads = function () {
-    let ftypes = {"query": {"formats": ["fasta",]},
-                  "target": {"formats": ["fasta",]},
-                  "queryidx": {"formats": ["fasta", "idx"]},
-                  "targetidx": {"formats": ["fasta", "idx"]},
-                  "alignfile": {"formats": ["map"]},
-                  "backup": {"formats": ["backup"]},
-                  "batch": {"formats": ["batch"]},};
+    let ftypes = dgenies.run.FTYPES;
     $.each(ftypes, function(ftype, data) {
         let formats = data["formats"];
         let position = dgenies.run.files_nb[ftype];
@@ -479,7 +814,7 @@ dgenies.run.init_fileuploads = function () {
         });
     });
 
-    // We set add buuton from multiple upload behavior
+    // We set add buton from multiple upload behavior
     dgenies.run._init_multiple_fileupload(["fasta", "idx", "map", "backup"]);
     $(":button[id='multiple-files-btn']").click(function() 
     {
@@ -489,18 +824,108 @@ dgenies.run.init_fileuploads = function () {
     // We set behavior of 'remove unused' button
     $(":button[id='delete-unused-btn']").click(function() {
         dgenies.run.jq_remove_from_listing($('#listing').find('tr.unused-file'))
+        dgenies.run.relint()
     })
 
     // We set behavior of 'clear all' button
     $(":button[id='delete-all-btn']").click(function() {
         dgenies.run.files_for_batch = new Array()
         dgenies.run.refresh_listing()
+        dgenies.run.relint()
     })
 
     // We set bname behavior on change
     $("#bname").on("change", dgenies.run.read_batch);
-
+    //dgenies.run.batch_text_interval = window.setInterval(dgenies.run.parse_if_batch_text_change, 1000);
 };
+
+dgenies.run.init_codemirror = function () {
+
+    CodeMirror.defineSimpleMode("batch", {
+        // The start state contains the rules that are initially used
+        start: [
+            {regex: /(?:type|align|query|target|backup|tool|options|id_job)\b/, token: "key"},
+            {regex: /=/, token: "affectation", next: "value"},
+        ],
+        value: [
+            {regex: /[^\s'"]+/, token: "value", next: "start"},
+            {regex: /"[^"\r\n]+"/, token: "qvalue", next: "start"},
+            {regex: /'[^'\r\n]+'/, token: "qvalue", next: "start"}
+        ],
+        meta: {
+            dontIndentStates: ["start", "value"],
+            lineComment: "//"
+        }
+    });
+
+    CodeMirror.registerHelper("lint", "batch", function(text) {
+        let res = dgenies.run.batchParser.parse(text);
+        let found = res.lexErrors.map(
+            (elem) => {return {
+                "message": elem.message,
+                "severity": "error",
+                "from": CodeMirror.Pos(elem.line - 1, elem.column - 1),
+                "to": CodeMirror.Pos(elem.line - 1, elem.column + elem.length)
+            }}
+        ).concat(res.parseErrors.map(
+            (elem) => {return {
+                "message": elem.message,
+                "severity": "error",
+                "from": CodeMirror.Pos(elem.token.startLine - 1, elem.token.startOffset),
+                "to": CodeMirror.Pos(elem.token.endLine - 1, elem.token.startOffset + elem.token.image.length)
+            }}
+        ))
+
+        // Additional checking
+        // Limit number of jobs
+        let jobs = res.data.slice(0,10)
+        if (res.data.length > dgenies.run.max_jobs){
+            dgenies.notify(`Batch file too long, only ${dgenies.run.max_jobs} first jobs were considered!`, "warning", 3000);
+            let ignored_jobs = res.data.slice(dgenies.run.max_jobs)
+            for (let j of ignored_jobs){
+                let start = j[0][0]
+                let end = j[j.length-1][1]
+                found.push({
+                    "message": `Only ${dgenies.run.max_jobs} first jobs are considered!`,
+                    "severity": "warning",
+                    "from": CodeMirror.Pos(start.startLine - 1, start.startColumn-1),
+                    "to": CodeMirror.Pos(end.endLine - 1, end.endColumn)
+                })
+            }
+        } 
+
+        // check each job parameters
+        for (let j of jobs){
+            found = found.concat(dgenies.run.ckeck_job(j))
+        }
+        // Refresh file listing, get local files, set a warning on those that are missing (needs the coordinates and look for a way to lint again when file list updated).
+
+        console.log(found)
+        // TODO: remove get_local_files and get local file in dgenies.run.ckeck_job 
+        dgenies.run.files_in_batch = dgenies.run.get_local_files(dgenies.run.job_list)
+        dgenies.run.check_files();
+        dgenies.run.refresh_listing();
+
+        // convert to POST message
+        dgenies.run.job_list = dgenies.run.create_job_list(jobs)
+        //dgenies.run.adjust_job_list(jobs)
+        console.log(dgenies.run.job_list)
+        return found;
+    });
+    
+    CodeMirror.defineMIME("text/plain", "batch");
+
+    dgenies.run.editor = CodeMirror.fromTextArea(batch_content, {
+        lineNumbers: true,
+        mode: "batch",
+        lineWrapping: true,
+        theme: "dgenies",
+        gutters: ["CodeMirror-lint-markers"],
+        lint: true,
+        selfContain: true
+    });
+}
+
 
 /**
  * Get file size (human readable)
@@ -548,7 +973,7 @@ dgenies.run.fill_examples = function (tab) {
             {},
             function (data) {
                 $("#bname").val('');
-                dgenies.run.parse_batch(data);
+                $("#batch_content").text(data);
             }
         )
         
@@ -601,6 +1026,7 @@ dgenies.run._set_file_select_event = function(ftype) {
     });
 };
 
+
 /**
  * Change displayed tab
  *
@@ -611,6 +1037,11 @@ dgenies.run.show_tab = function(tab) {
     $(`#tabs .tab:not(#${tab})`).removeClass("active");
     $(`.tabx:not(${tab})`).hide();
     $(`.tabx.${tab}`).show();
+    if (tab == "tab3"){
+        //activate timer
+    } else {
+        //deactivate timer
+    }
 };
 
 
@@ -935,7 +1366,14 @@ dgenies.run.valid_form = function () {
     /* TAB 3 */
     else {
         //Check input target:
-        if ($("input#bname").val().length === 0) {
+        let inputText = dgenies.run.editor.getValue()
+        if (inputText.length === 0) {
+            $("label.file-batch").addClass("error");
+            dgenies.run.add_error("Batch file is required!");
+            has_errors = true;
+        }
+        //Parse input target and check for errors:
+        if (inputText.length === 0) {
             $("label.file-batch").addClass("error");
             dgenies.run.add_error("Batch file is required!");
             has_errors = true;
@@ -1046,11 +1484,12 @@ dgenies.run.ping_upload = function () {
  * Check if an URL is valid
  *
  * @param {string} url the url to check
+ * @param {boolean} with_example consider 'example://' as url 
  * @returns {boolean} true if valid, else false
  */
-dgenies.run.check_url = function (url) {
+dgenies.run.check_url = function (url, with_example=true) {
     return url.startsWith("http://") || url.startsWith("https://") || url.startsWith("ftp://") ||
-        url.startsWith("example://");
+        (url.startsWith("example://") && with_example);
 };
 
 /**

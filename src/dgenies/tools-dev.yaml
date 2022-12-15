@@ -11,23 +11,38 @@ minimap2:
   order: 0
   options:
     -
+      group: repeat
       label: Repeatedness
       type: radio
       help: "Ignore top fraction of most frequent minimizers"
       entries:
         -
+          key: few
           label: "few repeats"
           value: "-f 0.0002"
           help: "-f 0.0002"
           default: True
         -
+          key: some
           label: "some repeats"
           value: "-f 0.002"
           help: "-f 0.002"
         -
+          key: many
           label: "many repeats"
           value: "-f 0.02"
           help: "-f 0.02"
+    -
+      group: annot
+      label: Annotations
+      type: checkbox
+      help: "Generate some annotations"
+      entries:
+        -
+          key: cigar
+          label: Enable
+          value: "-c"
+          help: "Enable/Disable CIGAR annotations. Side effect is that the alignment strategy done by minimap2 is changed"
 
 mashmap:
   exec: default

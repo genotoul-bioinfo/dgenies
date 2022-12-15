@@ -111,10 +111,11 @@ class Tool:
                 self.order = order
 
         # Options
-        if options is None or isinstance(options, list):
+        if options is None:
+            self.options = []
+        elif isinstance(options, list):
             self.options = options
-            if options is not None:
-                self._coord_to_option_value = [[e['value'] for e in o['entries']] for o in options]
+            self._coord_to_option_value = [[e['value'] for e in o['entries']] for o in options]
         else:
             raise ValueError("Tools: options must be a yaml list")
 

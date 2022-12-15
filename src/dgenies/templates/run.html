@@ -20,6 +20,16 @@
         <!-- The File Upload validation plugin -->
         <script src="{{ url_for('static', filename='js/jquery.fileupload-validate.js') }}"></script>
         <script src="{{ url_for('static', filename='js/dgenies.run.js') }}" type="text/JavaScript"></script>
+
+        <script src="{{ url_for('static', filename='js/chevrotain.min.js') }}" type="text/JavaScript"></script>
+
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/codemirror/codemirror.css') }}" type="text/css">
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/codemirror/lint.css') }}" type="text/css">
+        <script src="{{ url_for('static', filename='js/codemirror/codemirror.js') }}" type="text/JavaScript"></script>
+        <script src="{{ url_for('static', filename='js/codemirror/simple.js') }}" type="text/JavaScript"></script>
+        <script src="{{ url_for('static', filename='js/codemirror/lint.js') }}" type="text/JavaScript"></script>
+        
+        <script src="{{ url_for('static', filename='js/dgenies.run.batch.js') }}" type="text/JavaScript"></script>
     {% else %}
         <script src="{{ url_for('static', filename='js/jquery.fileupload.min.js') }}"></script>
         <script src="{{ url_for('static', filename='js/dgenies.run.min.js') }}" type="text/JavaScript"></script>
@@ -27,8 +37,8 @@
 {% endblock %}
 {% block onload %}
     {{ super() }}
-    dgenies.run.init('{{ s_id }}',{{ allowed_ext }}, {{ max_upload_file_size }}, '{{ target }}', '{{ query }}',
-    '{{ backup }}', '{{ batch }}', {{ tools_ava }}, {{max_batch_jobs}});
+    dgenies.run.init('{{ s_id }}', {{ allowed_ext }}, {{ max_upload_file_size }}, '{{ target }}', '{{ query }}',
+    '{{ backup }}', '{{ batch }}', {{ tools_names }}, {{ tools_ava }}, {{ tools_checking }}, {{ max_batch_jobs }});
 {% endblock %}
 {% block content %}
     {% set fnote = 1 %}
@@ -109,7 +119,7 @@
                                         <div id="progress-target" class="progress">
                                             <div class="bar" style="width: 0%;"></div>
                                         </div>
-                                        <input id="target" name="target" class="form-control show-file" type="text" value="" readonly/>
+                                        <input id="target" name="target" class="form-control show-file" type="text" value=""/>
                                     </div>
 
                                     <button class="btn btn-file" type="button" id="button-target" title="Select a file">
@@ -370,9 +380,7 @@
                             </tr>
                             <tr class="batch tabx tab3">
                                 <td colspan="2">
-                                    <textarea id="batch_content" rows="10">
-                                        No batch file loaded
-                                    </textarea>
+                                    <textarea id="batch_content" rows="10"></textarea>
                                 </td>
                             </tr>
                             <tr class="batch tabx tab3">

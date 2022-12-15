@@ -1101,3 +1101,9 @@ div.jquery-modal div.modal {
     /*white-space: nowrap;*/
     max-width: 100%;
 }
+
+.cm-s-dgenies.CodeMirror { color: #888888; }
+.cm-s-dgenies span.cm-affectation { color: #000000; line-height: 1em; font-weight: bold; }
+.cm-s-dgenies span.cm-key { color: #ba32cc; line-height: 1em; font-weight: bold; }
+.cm-s-dgenies span.cm-value { color: #5a9418; line-height: 1em; font-weight: bold; }
+.cm-s-dgenies span.cm-qvalue { color: #5a9418; line-height: 1em; font-weight: bold; }
