@@ -326,6 +326,201 @@ dgenies.run.check_file_format_and_presence = function(type, key, val){
 /**
  * Check if file has the right extension.
  * 
+ * @param {*} job list of params
+ * @param {*} param_dict dict associating key to params
+ * @param {*} param_dict first token apparing in job string
+ * @param {*} param_dict last token apparing in job string
+ * @return list of found errors and warnings
+ */
+dgenies.run.ckeck_align_job = function(job, param_dict, start_token, end_token) {
+    let found = []
+    // check tool
+    let has_ava = true
+    if (!("tool" in param_dict)){
+
+        found.push({
+            "message": `Missing key "tool"`,
+            "severity": "error",
+            "from": CodeMirror.Pos(start_token.startLine - 1, start_token.startColumn-1),
+            "to": CodeMirror.Pos(end_token.endLine - 1, end_token.endColumn)
+        })
+    } else {
+        let tool_val = param_dict["tool"].val
+        let tool = tool_val.image
+        if (! dgenies.run.tools.includes(tool)){
+            found.push({
+                "message": `Tool "${tool}" is unknown, please use ones of following choice: ${dgenies.run.tools.join(", ")}`,
+                "severity": "error",
+                "from": CodeMirror.Pos(tool_val.startLine - 1, tool_val.startColumn-1),
+                "to": CodeMirror.Pos(tool_val.endLine - 1, tool_val.endColumn)
+            })
+        } else {
+            has_ava =  dgenies.run.tool_has_ava[tool] // for ava param checking
+            let options = dgenies.run.tools_checking[tool].default
+            let options_val = {
+                image: options.join(","),
+                startLine : start_token.startLine,
+                startColumn: start_token.startColumn,
+                endLine : start_token.endLine,
+                endColumn: start_token.endColumn
+            }
+            // Manage options
+            if ("options" in param_dict){
+                options_val = param_dict["options"].val
+                options = options_val.image.split(",")
+            } else {
+                found.push({
+                    "message": `Missing key "options", will use "options=${options.join(",")}"`,
+                    "severity": "warning",
+                    "from": CodeMirror.Pos(start_token.startLine - 1, start_token.startColumn-1),
+                    "to": CodeMirror.Pos(end_token.endLine - 1, end_token.endColumn)
+                })
+            }
+            let allowed_options = Object.keys(dgenies.run.tools_options[tool])
+            let unknown_options = options.filter(function(opt) {
+                return ! allowed_options.includes(opt);
+            });
+            // TODO: manage option exclusion
+            if (unknown_options.length > 0) {
+                found.push({
+                    "message": `unknown option "${unknown_options.join(", ")}", please use options in following list: ${allowed_options.join(", ")}`,
+                    "severity": "error",
+                    "from": CodeMirror.Pos(options_val.startLine - 1, options_val.startColumn-1),
+                    "to": CodeMirror.Pos(options_val.endLine - 1, options_val.endColumn)
+                });
+            } else {
+                // Manage option exclusion
+                let exclusive = {}
+                for (let opt of options) {
+                    let k = dgenies.run.tools_options[tool][opt]
+                    if (k.exclusive && k.group in exclusive){
+                        exclusive[k.group].push(opt)
+                    } else {
+                        exclusive[k.group] = [opt]
+                    }
+                }
+                for (let g of Object.keys(exclusive)){
+                    if (exclusive[g].length > 1){
+                        found.push({
+                            "message": `Incompatible options: ${exclusive[g].join(", ")}`,
+                            "severity": "error",
+                            "from": CodeMirror.Pos(options_val.startLine - 1, options_val.startColumn-1),
+                            "to": CodeMirror.Pos(options_val.endLine - 1, options_val.endColumn)
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    // check mandatory and optional params (appart 'type' and 'tool')
+    let mandatory = ["target", "type", "tool"]
+    let optional = ["id_job", "options"]
+
+    if (has_ava){
+        mandatory.push("query")
+    } else {
+        optional.push("query")
+    }
+
+    let all_allowed = mandatory.concat(optional)
+    for (let param of job){
+        let key = param[0];
+        if (!all_allowed.includes(key.image)){
+            found.push({
+                "message": `Unknown key "${key.image}"`,
+                "severity": "error",
+                "from": CodeMirror.Pos(key.startLine - 1, key.startColumn-1),
+                "to": CodeMirror.Pos(key.endLine - 1, key.endColumn)
+            })
+        }
+    }
+    return found
+}
+
+
+/**
+ * Check if file has the right extension.
+ * 
+ * @param {*} job list of params
+ * @param {*} param_dict dict associating key to params
+ * @param {*} param_dict first token apparing in job string
+ * @param {*} param_dict last token apparing in job string
+ * @return list of found errors and warnings
+ */
+dgenies.run.ckeck_plot_job = function(job, param_dict, start_token, end_token) {
+    let found = []
+    // check either backup file or individual files
+    if (("align" in param_dict) || ("query" in param_dict) || ("target" in param_dict)){
+        if ("backup" in param_dict){
+            let backup_key = param_dict["backup"].key
+            found.push({
+                "message": '"backup" key is exclusive with "align", "query" and "target" keys',
+                "severity": "error",
+                "from": CodeMirror.Pos(backup_key.startLine - 1, backup_key.startColumn-1),
+                "to": CodeMirror.Pos(backup_key.endLine - 1, backup_key.endColumn)
+            });
+            for (let p of ["align", "query", "target"]) {
+                let key = param_dict[p].key
+                if (key !== undefined){
+                    found.push({
+                        "message": `"${key.image}" key cannot be used with "backup" key`,
+                        "severity": "error",
+                        "from": CodeMirror.Pos(key.startLine - 1, key.startColumn-1),
+                        "to": CodeMirror.Pos(key.endLine - 1, key.endColumn)
+                    });
+                }
+            }
+        } else {
+            // check for missing individual files
+            for (let p of ["align", "query", "target"]) {
+                if (param_dict[p] === undefined){
+                    found.push({
+                        "message": `Missing ${p} key`,
+                        "severity": "error",
+                        "from": CodeMirror.Pos(start_token.startLine - 1, start_token.startColumn-1),
+                        "to": CodeMirror.Pos(end_token.endLine - 1, end_token.endColumn)
+                    })
+                }
+            }
+        }
+    } else if (!("backup" in param_dict)){
+        found.push({
+            "message": `Missing either "backup" key or "align", "query" and "target" keys`,
+            "severity": "error",
+            "from": CodeMirror.Pos(start_token.startLine - 1, start_token.startColumn-1),
+            "to": CodeMirror.Pos(end_token.endLine - 1, end_token.endColumn)
+        })
+    }
+
+    // check for mandatory and optional keys
+    let mandatory = [["align", "type", "query", "target"], ["type", "backup"]]
+    let optional = ["id_job"]
+    let all_allowed = mandatory.map(function(x){return x.concat(optional)})
+    let present_keys = job.map(function(param){return param[0];})
+    let unknown_keys = present_keys.filter(
+        function(k){
+            return all_allowed.every(
+                function(x){
+                    return !x.includes(k.image)
+                });
+            });
+    for (let key of unknown_keys){
+        found.push({
+            "message": `Unknown key "${key.image}"`,
+            "severity": "error",
+            "from": CodeMirror.Pos(key.startLine - 1, key.startColumn-1),
+            "to": CodeMirror.Pos(key.endLine - 1, key.endColumn)
+        });
+    }
+    return found
+}
+
+
+
+/**
+ * Check if file has the right extension.
+ * 
  * @param {job} type the job
  * @return list of found errors and warnings
  */
@@ -371,179 +566,15 @@ dgenies.run.ckeck_job = function(job) {
     }
     // manage align job parameters
     if (jobtype == "align"){
-        // check tool
-        let has_ava = true
-        if (!("tool" in param_dict)){
-
-            found.push({
-                "message": `Missing key "tool"`,
-                "severity": "error",
-                "from": CodeMirror.Pos(start_token.startLine - 1, start_token.startColumn-1),
-                "to": CodeMirror.Pos(end_token.endLine - 1, end_token.endColumn)
-            })
-        } else {
-            let tool_val = param_dict["tool"].val
-            let tool = tool_val.image
-            if (! dgenies.run.tools.includes(tool)){
-                found.push({
-                    "message": `Tool "${tool}" is unknown, please use ones of following choice: ${dgenies.run.tools.join(", ")}`,
-                    "severity": "error",
-                    "from": CodeMirror.Pos(tool_val.startLine - 1, tool_val.startColumn-1),
-                    "to": CodeMirror.Pos(tool_val.endLine - 1, tool_val.endColumn)
-                })
-            } else {
-                has_ava =  dgenies.run.tool_has_ava[tool] // for ava param checking
-                let options = dgenies.run.tools_checking[tool].default
-                let options_val = {
-                    image: options.join(","),
-                    startLine : start_token.startLine,
-                    startColumn: start_token.startColumn,
-                    endLine : start_token.endLine,
-                    endColumn: start_token.endColumn
-                }
-                // Manage options
-                if ("options" in param_dict){
-                    options_val = param_dict["options"].val
-                    options = options_val.image.split(",")
-                } else {
-                    found.push({
-                        "message": `Missing key "options", will use "options=${options.join(",")}"`,
-                        "severity": "warning",
-                        "from": CodeMirror.Pos(start_token.startLine - 1, start_token.startColumn-1),
-                        "to": CodeMirror.Pos(end_token.endLine - 1, end_token.endColumn)
-                    })
-                }
-                let allowed_options = Object.keys(dgenies.run.tools_options[tool])
-                let unknown_options = options.filter(function(opt) {
-                    return ! allowed_options.includes(opt);
-                });
-                // TODO: manage option exclusion
-                if (unknown_options.length > 0) {
-                    found.push({
-                        "message": `unknown option "${unknown_options.join(", ")}", please use options in following list: ${allowed_options.join(", ")}`,
-                        "severity": "error",
-                        "from": CodeMirror.Pos(options_val.startLine - 1, options_val.startColumn-1),
-                        "to": CodeMirror.Pos(options_val.endLine - 1, options_val.endColumn)
-                    });
-                } else {
-                    // Manage option exclusion
-                    let exclusive = {}
-                    for (let opt of options) {
-                        let k = dgenies.run.tools_options[tool][opt]
-                        if (k.exclusive && k.group in exclusive){
-                            exclusive[k.group].push(opt)
-                        } else {
-                            exclusive[k.group] = [opt]
-                        }
-                    }
-                    for (let g of Object.keys(exclusive)){
-                        if (exclusive[g].length > 1){
-                            found.push({
-                                "message": `Incompatible options: ${exclusive[g].join(", ")}`,
-                                "severity": "error",
-                                "from": CodeMirror.Pos(options_val.startLine - 1, options_val.startColumn-1),
-                                "to": CodeMirror.Pos(options_val.endLine - 1, options_val.endColumn)
-                            });
-                        }
-                    }
-                }
-            }
-        }
-
-
-        // check mandatory and optional params (appart 'type' and 'tool')
-        let mandatory = ["target", "type", "tool"]
-        let optional = ["id_job", "options"]
-
-        if (has_ava){
-            mandatory.push("query")
-        } else {
-            optional.push("query")
-        }
-
-        let all_allowed = mandatory.concat(optional)
-        for (let param of job){
-            let key = param[0];
-            if (!all_allowed.includes(key.image)){
-                found.push({
-                    "message": `Unknown key "${key.image}"`,
-                    "severity": "error",
-                    "from": CodeMirror.Pos(key.startLine - 1, key.startColumn-1),
-                    "to": CodeMirror.Pos(key.endLine - 1, key.endColumn)
-                })
-            }
-        }
-
+        found = found.concat(dgenies.run.ckeck_align_job(job, param_dict, start_token, end_token))
     } else {
         // jobtype == "plot"
-
-        // check either backup file or individual files
-        if (("align" in param_dict) || ("query" in param_dict) || ("target" in param_dict)){
-            if ("backup" in param_dict){
-                let backup_key = param_dict["backup"].key
-                found.push({
-                    "message": '"backup" key is exclusive with "align", "query" and "target" keys',
-                    "severity": "error",
-                    "from": CodeMirror.Pos(backup_key.startLine - 1, backup_key.startColumn-1),
-                    "to": CodeMirror.Pos(backup_key.endLine - 1, backup_key.endColumn)
-                });
-                for (let p of ["align", "query", "target"]) {
-                    let key = param_dict[p].key
-                    if (key !== undefined){
-                        found.push({
-                            "message": `"${key.image}" key cannot be used with "backup" key`,
-                            "severity": "error",
-                            "from": CodeMirror.Pos(key.startLine - 1, key.startColumn-1),
-                            "to": CodeMirror.Pos(key.endLine - 1, key.endColumn)
-                        });
-                    }
-                }
-            } else {
-                // check for missing individual files
-                for (let p of ["align", "query", "target"]) {
-                    if (param_dict[p] === undefined){
-                        found.push({
-                            "message": `Missing ${p} key`,
-                            "severity": "error",
-                            "from": CodeMirror.Pos(start_token.startLine - 1, start_token.startColumn-1),
-                            "to": CodeMirror.Pos(end_token.endLine - 1, end_token.endColumn)
-                        })
-                    }
-                }
-            }
-        } else if (!("backup" in param_dict)){
-            found.push({
-                "message": `Missing either "backup" key or "align", "query" and "target" keys`,
-                "severity": "error",
-                "from": CodeMirror.Pos(start_token.startLine - 1, start_token.startColumn-1),
-                "to": CodeMirror.Pos(end_token.endLine - 1, end_token.endColumn)
-            })
-        }
-        // check for mandatory and optional keys
-        let mandatory = [["align", "type", "query", "target"], ["type", "backup"]]
-        let optional = ["id_job"]
-        let all_allowed = mandatory.map(function(x){return x.concat(optional)})
-        let present_keys = job.map(function(param){return param[0];})
-        let unknown_keys = present_keys.filter(
-            function(k){
-                return all_allowed.every(
-                    function(x){
-                        return !x.includes(k.image)
-                    });
-                });
-        for (let key of unknown_keys){
-            found.push({
-                "message": `Unknown key "${key.image}"`,
-                "severity": "error",
-                "from": CodeMirror.Pos(key.startLine - 1, key.startColumn-1),
-                "to": CodeMirror.Pos(key.endLine - 1, key.endColumn)
-            })
-        }
+        found = found.concat(dgenies.run.ckeck_plot_job(job, param_dict, start_token, end_token))
     }
 
+    // check file format and missing files
     for (let param of job){
         let [key, val] = param
-        // check file format and missing file
         let error = dgenies.run.check_file_format_and_presence(jobtype, key.image, val.image)
         if (error !== undefined){
             found.push({
