@@ -66,6 +66,7 @@ dgenies.run.file_states = []
 dgenies.run.missing_files = []
 // Job list that will be send to server
 dgenies.run.job_list = []
+dgenies.run.batch_errors = []
 
 // list of fileupload that will be uploaded
 dgenies.run.files_to_upload = []
@@ -121,6 +122,22 @@ dgenies.run.init = function(s_id, allowed_ext, max_upload_file_size=1073741824, 
     dgenies.run.init_codemirror();
 };
 
+
+/**
+ * Refresh everything related to files for batch job
+ * @param {bool} relint Lint the batch file content (default = true)
+ */
+dgenies.run.refresh_files_status = function(relint = true){
+    // We check the uploaded files and the files in batch
+    dgenies.run.check_files();
+    // We refresh the file listing
+    dgenies.run.refresh_html_listing();
+    // We relint the batch content
+    if (relint){
+        dgenies.run.relint();
+    }
+}
+
 /**
  * Remove some files from listing
  * @param {*} jq_selection Element selection from jquery
@@ -136,15 +153,13 @@ dgenies.run.jq_remove_from_listing = function(jq_selection) {
         }
     }
     dgenies.run.files_for_batch = new_file_list
-    // We refresh the listing
-    dgenies.run.check_files()
-    dgenies.run.refresh_listing()
+    dgenies.run.refresh_files_status()
 }
 
 /**
  * Regenerate the html file listing
  */
-dgenies.run.refresh_listing = function() {
+dgenies.run.refresh_html_listing = function() {
     
     let list = []
     for (let i=0; i<dgenies.run.files_for_batch.length; i++){
@@ -162,9 +177,7 @@ dgenies.run.refresh_listing = function() {
             $(":button[id^='delete-btn']").click(function() {
                 let i = $(this).parents("tr").data("index")
                 dgenies.run.files_for_batch.splice(i, 1)
-                dgenies.run.check_files()
-                dgenies.run.refresh_listing()
-                dgenies.run.relint()
+                dgenies.run.refresh_files_status()
             })
 }
 
@@ -231,12 +244,12 @@ dgenies.run.check_missing_files = function(needed_files, uploaded_files){
 }
 
 /**
- * Compute states of files
+ * Compute states of files, both for uploaded ones and missing ones
  **/
 dgenies.run.check_files = function(){
-    let file_list = dgenies.run.get_uploaded_files()
-    dgenies.run.file_states = dgenies.run.check_uploaded_files(dgenies.run.files_in_batch, file_list)
-    dgenies.run.missing_files = dgenies.run.check_missing_files(dgenies.run.files_in_batch, file_list)
+    let uploaded_files = dgenies.run.get_uploaded_files()
+    dgenies.run.file_states = dgenies.run.check_uploaded_files(dgenies.run.files_in_batch, uploaded_files)
+    dgenies.run.missing_files = dgenies.run.check_missing_files(dgenies.run.files_in_batch, uploaded_files)
 }
 
 /**
@@ -300,7 +313,7 @@ dgenies.run.check_file_format_and_presence = function(type, key, val){
                 if(! uploaded_files.includes(val)){
                     return {
                         message : `Missing file in user files: ${val}`,
-                        severity: "error"
+                        severity: "warning"
                     }
                 }
         }
@@ -593,7 +606,7 @@ dgenies.run.create_job_list = function(jobs){
 }
 
 /*
- * Re lint batch editor by refreshing its content
+ * Relint batch editor by refreshing its content
  */
 dgenies.run.relint = function() {
     CodeMirror.signal(dgenies.run.editor, "change", dgenies.run.editor)
@@ -756,12 +769,8 @@ dgenies.run._init_multiple_fileupload = function(formats) {
         add: function (e, data) {
             // We add the file
             dgenies.run.files_for_batch.push(data);
-            // We check the against the batch file
-            dgenies.run.check_files();
-            // We refresh the file listing
-            dgenies.run.refresh_listing();
-            // We relint the batch content
-            dgenies.run.relint();
+            // We refresh batch status
+            dgenies.run.refresh_files_status()
         },
         drop: function (e, data) {
             $.each(data.files, function (index, file) {
@@ -824,14 +833,13 @@ dgenies.run.init_fileuploads = function () {
     // We set behavior of 'remove unused' button
     $(":button[id='delete-unused-btn']").click(function() {
         dgenies.run.jq_remove_from_listing($('#listing').find('tr.unused-file'))
-        dgenies.run.relint()
+        dgenies.run.refresh_files_status()
     })
 
     // We set behavior of 'clear all' button
     $(":button[id='delete-all-btn']").click(function() {
         dgenies.run.files_for_batch = new Array()
-        dgenies.run.refresh_listing()
-        dgenies.run.relint()
+        dgenies.run.refresh_files_status()
     })
 
     // We set bname behavior on change
@@ -898,18 +906,15 @@ dgenies.run.init_codemirror = function () {
         for (let j of jobs){
             found = found.concat(dgenies.run.ckeck_job(j))
         }
-        // Refresh file listing, get local files, set a warning on those that are missing (needs the coordinates and look for a way to lint again when file list updated).
-
-        console.log(found)
-        // TODO: remove get_local_files and get local file in dgenies.run.ckeck_job 
-        dgenies.run.files_in_batch = dgenies.run.get_local_files(dgenies.run.job_list)
-        dgenies.run.check_files();
-        dgenies.run.refresh_listing();
 
         // convert to POST message
         dgenies.run.job_list = dgenies.run.create_job_list(jobs)
-        //dgenies.run.adjust_job_list(jobs)
-        console.log(dgenies.run.job_list)
+        // Get files to upload in jobs
+        // TODO: remove get_local_files and get local file in dgenies.run.ckeck_job 
+        dgenies.run.files_in_batch = dgenies.run.get_local_files(dgenies.run.job_list)
+        dgenies.run.refresh_files_status(false)
+
+        dgenies.run.batch_errors = found
         return found;
     });
     
@@ -965,9 +970,6 @@ dgenies.run.fill_examples = function (tab) {
     }
     if (tab == "tab3") {
         $("select.batch").val("1").trigger("change");
-        /* TODO:
-         * - fetch file, read file, fill textarea
-         */
         dgenies.get(
             "/example/batch",
             {},
@@ -1037,11 +1039,6 @@ dgenies.run.show_tab = function(tab) {
     $(`#tabs .tab:not(#${tab})`).removeClass("active");
     $(`.tabx:not(${tab})`).hide();
     $(`.tabx.${tab}`).show();
-    if (tab == "tab3"){
-        //activate timer
-    } else {
-        //deactivate timer
-    }
 };
 
 
@@ -1366,21 +1363,17 @@ dgenies.run.valid_form = function () {
     /* TAB 3 */
     else {
         //Check input target:
-        let inputText = dgenies.run.editor.getValue()
-        if (inputText.length === 0) {
-            $("label.file-batch").addClass("error");
-            dgenies.run.add_error("Batch file is required!");
-            has_errors = true;
+        let has_batch_error = false
+        for (error of dgenies.run.batch_errors) {
+            has_batch_error = has_batch_error || error.severity == "error"
         }
-        //Parse input target and check for errors:
-        if (inputText.length === 0) {
-            $("label.file-batch").addClass("error");
-            dgenies.run.add_error("Batch file is required!");
-            has_errors = true;
+        if (has_batch_error) {
+            dgenies.run.add_error("Batch file is incorrect");
+            has_errors = has_batch_error
         }
         // Check that no file in batch file is missing
         if (dgenies.run.missing_files.length > 0) {
-            dgenies.run.add_error("Some input files in batch file are missing!");
+            dgenies.run.add_error("Some input files from batch file are missing!");
             has_errors = true;
         }
         // Check that no file in multiple upload field is duplicated

@@ -401,22 +401,21 @@ def launch_analysis():
         os.makedirs(folder_files)
 
         # Transform files path into datafiles:
-        update_files(jobs, upload_folder)
-        if form_pass:
-
-            # Launch job:
-            try:
+        try:
+            update_files(jobs, upload_folder)
+            if form_pass:
+                # Launch job:
                 job = JobManager.create(id_job=id_job, job_type=job_type, jobs=jobs, email=email, mailer=mailer)
                 if MODE == "webserver":
                     job.launch()
                 else:
                     job.launch_standalone()
+                return jsonify({"success": True, "redirect": url_for(".status", id_job=id_job)})
 
-            except:
-                traceback.print_exc()
-                return jsonify({"success": False, "errors": ["Something went wrong during job creation!"]})
+        except Exception:
+            traceback.print_exc()
+            return jsonify({"success": False, "errors": ["Something went wrong during job creation!"]})
 
-            return jsonify({"success": True, "redirect": url_for(".status", id_job=id_job)})
     if not form_pass:
         return jsonify({"success": False, "errors": errors})
 
