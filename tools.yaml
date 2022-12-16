@@ -11,23 +11,27 @@ minimap2:
   order: 0
   options:
     -
+      group: repeat
       label: Repeatedness
       type: radio
-      help: "Trade-off between alignment precision and computation requirements (CPU Time + RAM) by ignoring the top fraction of most frequent minimizers"
+      help: "Ignore top fraction of most frequent minimizers"
       entries:
         -
+          key: few
           label: "few repeats"
           value: "-f 0.0002"
-          help: "High precision, but long computation time and important RAM requirement if many repeats (-f 0.0002, Minimap2 default)"
+          help: "-f 0.0002"
           default: True
         -
+          key: some
           label: "some repeats"
           value: "-f 0.002"
-          help: "Average precision with average computation time and RAM requirement (-f 0.002)"
+          help: "-f 0.002"
         -
+          key: many
           label: "many repeats"
           value: "-f 0.02"
-          help: "Low precision but fast computation time and low RAM requirement (-f 0.02)"
+          help: "-f 0.02"
 
 mashmap:
   exec: default
