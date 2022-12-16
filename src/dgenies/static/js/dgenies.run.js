@@ -291,9 +291,9 @@ dgenies.run.check_file_format_and_presence = function(type, key, val){
             if (`${key}_example` in dgenies.run){
                 example_url = dgenies.run[`${key}_example`]
             }
-            if (example_url != val){
+            if (("example://" + example_url) != val){
                 return {
-                    message: example_url=="" ? `No example url for ${key}` : `Example link must be: ${example_url}`,
+                    message: example_url=="" ? `No example url for ${key}` : `Example link must be: "example://${example_url}"`,
                     severity: "error"
                 }
             }
@@ -554,7 +554,6 @@ dgenies.run.ckeck_job = function(job) {
             })
         }
     }
-    console.log(found)
     return found
 }
 
