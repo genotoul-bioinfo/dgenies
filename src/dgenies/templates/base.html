@@ -21,7 +21,6 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/animate.css') }}" type="text/css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/jquery-ui.min.css') }}" type="text/css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}" type="text/css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-theme.min.css') }}" type="text/css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/jquery.modal.min.css') }}" type="text/css"/>
     {% if debug %}
         <link rel="stylesheet" href="{{ url_for('static', filename='css/dgenies.css') }}" type="text/css">
@@ -31,7 +30,8 @@
     <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
 </head>
 <body role="document" onload="{% block onload %}dgenies.init({{ all_jobs}}, '{{ mode }}');{% endblock %}">
-    {% if cookie_wall %}
+{% block body %}
+   {% if cookie_wall %}
     <div id="cwall" class="modal">
         <p> {{ cookie_wall | safe }} </p>
         <p style="text-align:right;">
@@ -39,95 +39,94 @@
         </p>
     </div>
     {% endif %}
-{% block body %}
     <div id="main-wrapper">
+        <header>
         <!-- Fixed navbar -->
-        <div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
-            <div class="container">
-                <div class="navbar-header">
-                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse"
-                            data-target=".navbar-collapse">
-                        <span class="sr-only">Toggle navigation</span>
-                        <span class="icon-bar"></span>
-                        <span class="icon-bar"></span>
-                        <span class="icon-bar"></span>
-                    </button>
-                    <a class="navbar-brand" href="/">D-GENIES</a>
-                </div>
-                <div class="navbar-collapse collapse">
-                    <ul class="nav navbar-nav">
-                        <li class="{% if(menu == 'index') %}active{% endif %}"><a href="/">About</a></li>
-                        <li class="{% if(menu == 'run') %}active{% endif %}"><a href="/run">Run</a></li>
-                        <li class="dropdown result {% if(menu == 'result') %}active{% endif %}">
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Results<span
-                                    class="caret"></span></a>
-                            <ul class="dropdown-menu" role="menu">
-                            </ul>
-                        </li>
-                        {% if mode == "webserver" %}
-                            <li class="{% if(menu == 'gallery') %}active{% endif %}"><a href="/gallery">Gallery</a></li>
-                        {% endif %}
-                        <li class="dropdown documentation {% if(menu == 'documentation') %}active{% endif %}">
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Documentation<span
-                                    class="caret"></span></a>
-                            <ul class="dropdown-menu" role="menu">
-                                <li><a href="/documentation/run">Launch a job</a></li>
-                                <li><a href="/documentation/definitions">Definitions</a></li>
-                                <li><a href="/documentation/result">Results</a></li>
-                                <li><a href="/documentation/dotplot">Dot plot</a></li>
-                                <li><a href="/documentation/formats">File formats</a></li>
-                            </ul>
-                        </li>
-                        <li class="{% if(menu == 'install') %}active{% endif %}"><a href="/install">Install</a></li>
-                        <li class="{% if(menu == 'contact') %}active{% endif %}"><a href="/contact">Contact</a></li>
-                        {% if mode == "webserver" and legal_pages %}
-                            <li class="dropdown legal {% if(menu == 'legal') %}active{% endif %}">
-                                <a href="#" class="dropdown-toggle" data-toggle="dropdown">Legal<span
+            <div class="navbar navbar-dark bg-dark fixed-top navbar-expand" role="navigation">
+                <div class="container">
+                    <div class="navbar-header">
+                        <button type="button" class="navbar-toggler collapsed" data-toggle="collapse" data-target=".navbar-collapse">
+                            <span class="sr-only">Toggle navigation</span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                        </button>
+                        <a class="navbar-brand" href="/">D-GENIES</a>
+                    </div>
+                    <div class="navbar-collapse collapse">
+                        <ul class="nav navbar-nav mr-auto">
+                            <li class="nav-item{% if(menu == 'index') %} active{% endif %}"><a class="nav-link" href="/">About</a></li>
+                            <li class="nav-item{% if(menu == 'run') %} active{% endif %}"><a class="nav-link" href="/run">Run</a></li>
+                            <li class="nav-item dropdown result {% if(menu == 'result') %}active{% endif %}">
+                                <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Results<span
                                         class="caret"></span></a>
                                 <ul class="dropdown-menu" role="menu">
-                                    {% for page in legal_pages %}
-                                        <li><a href="/legal/{{ page }}">{{ page | capitalize }}</a></li>
-                                    {% endfor %}
                                 </ul>
                             </li>
-                        {% endif %}
-                    </ul>
-                </div><!--/.nav-collapse -->
+                            {% if mode == "webserver" %}
+                                <li class="nav-item{% if(menu == 'gallery') %} active{% endif %}"><a class="nav-link" href="/gallery">Gallery</a></li>
+                            {% endif %}
+                            <li class="nav-item dropdown documentation {% if(menu == 'documentation') %}active{% endif %}">
+                                <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Documentation<span
+                                        class="caret"></span></a>
+                                <ul class="dropdown-menu" role="menu">
+                                    <li><a class="dropdown-item" href="/documentation/run">Launch a job</a></li>
+                                    <li><a class="dropdown-item" href="/documentation/definitions">Definitions</a></li>
+                                    <li><a class="dropdown-item" href="/documentation/result">Results</a></li>
+                                    <li><a class="dropdown-item" href="/documentation/dotplot">Dot plot</a></li>
+                                    <li><a class="dropdown-item" href="/documentation/formats">File formats</a></li>
+                                </ul>
+                            </li>
+                            <li class="nav-item{% if(menu == 'install') %} active{% endif %}"><a class="nav-link" href="/install">Install</a></li>
+                            <li class="nav-item{% if(menu == 'contact') %} active{% endif %}"><a class="nav-link" href="/contact">Contact</a></li>
+                            {% if mode == "webserver" and legal_pages %}
+                                <li class="nav-link dropdown legal {% if(menu == 'legal') %}active{% endif %}">
+                                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Legal<span
+                                            class="caret"></span></a>
+                                    <ul class="dropdown-menu" role="menu">
+                                        {% for page in legal_pages %}
+                                            <li><a class="dropdown-item" href="/legal/{{ page }}">{{ page | capitalize }}</a></li>
+                                        {% endfor %}
+                                    </ul>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </div><!--/.nav-collapse -->
+                </div>
             </div>
-        </div>
+        </header>
 
-        <div id="main-error">
+        <div id="main-error"></div>
 
-        </div>
-
-        <div class="container theme-showcase" id="body-container" role="main">
+        <main class="container" id="body-container" role="main">
 
             {% block content %}
             {% endblock %}
 
-            <footer>
-                <hr>
-                <div class="container" style="text-align: center;">
-                    <p>Copyright © 2020-2022 — INRAE | Copyright © 2017-2019 — INRA |
-                        Designed by <a target="_blank" href="http://bioinfo.genotoul.fr/">GenoToul Bioinfo platform</a>.</p>
-                </div>
-            </footer>
 
-        </div> <!-- /container -->
+        </main> <!-- /container -->
+
+        <footer class="footer">
+            <div class="container" style="text-align: center;">
+                <hr>
+                <p>Copyright © 2020-2022 — INRAE | Copyright © 2017-2019 — INRA |
+                    Designed by <a target="_blank" href="http://bioinfo.genotoul.fr/">GenoToul Bioinfo platform</a>.</p>
+            </div>
+        </footer>
     </div>
 {% endblock %}
 
-<script type="text/javascript">
-            var supportsTemplateLiterals = false;
-            try {
-                eval("`foo`");
-                supportsTemplateLiterals = true;
-            }
-            catch (e) {
-            }
-            if (!supportsTemplateLiterals) {
-                $("#main-error").html("<span class='big'>Your browser is not supported!</span><br/>Please use a compatible browser like <a href=\"https://www.mozilla.org/firefox\">Firefox</a> or <a href=\"https://www.google.com/chrome/\">Google Chrome / Chromium</a>").show();
-            }
-        </script>
+    <script type="text/javascript">
+        var supportsTemplateLiterals = false;
+        try {
+            eval("`foo`");
+            supportsTemplateLiterals = true;
+        }
+        catch (e) {
+        }
+        if (!supportsTemplateLiterals) {
+            $("#main-error").html("<span class='big'>Your browser is not supported!</span><br/>Please use a compatible browser like <a href=\"https://www.mozilla.org/firefox\">Firefox</a> or <a href=\"https://www.google.com/chrome/\">Google Chrome / Chromium</a>").show();
+        }
+    </script>
 </body>
 </html>

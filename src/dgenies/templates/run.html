@@ -378,7 +378,7 @@
                                 {% set fnote_tab = fnote %}
 
                                 <td style="vertical-align: top">
-                                    <label for="bname">Batch file</label>
+                                    <label for="bname">Batch file<sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup>{% set fnote_tab = fnote_tab + 1 %}</label>
                                 </td>
                                 <td>
                                     <input type="file" id="bname" name="bname">
@@ -500,7 +500,7 @@
                 {% endif %}
                 <div class="tabx tab1">
                     {% set fnote_tab = fnote %}
-                    <p class="afterworlff"><sup id="fn{{ fnote_tab }}"><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup> Can be gzipped. Must end with <code>.fa</code>, <code>.fasta</code>, <code>.fna</code>, <code>.fa.gz</code>, <code>.fasta.gz</code>or <code>.fna.gz</code></p>
+                    <p class="afterworlff"><sup id="fn{{ fnote_tab }}"><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup> Can be gzipped. Must end with <code>.fa</code>, <code>.fasta</code>, <code>.fna</code>, <code>.fa.gz</code>, <code>.fasta.gz</code> or <code>.fna.gz</code></p>
                     {% set fnote_tab = fnote_tab + 1 %}
                 </div>
                 <div class="tabx tab2">
@@ -529,7 +529,6 @@
             <input type="file" name="file-targetidx" class="file-targetidx" data-url="/upload"/>
             <input type="file" name="file-queryidx" class="file-queryidx" data-url="/upload"/>
             <input type="file" name="file-backup" class="file-backup" data-url="/upload"/>
-            <!-- <input type="file" name="file-batch" class="file-batch" data-url="/upload"/> -->
             <input id="batch-multiple-files-upload" type="file" name="multiple-files" class="multiple-files" data-url="/upload" multiple/>
         </div>
     </form>

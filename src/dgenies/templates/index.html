@@ -5,21 +5,20 @@
         <h1>D-Genies</h1>
           <p class="description lead">D-GENIES &#150; for <strong>D</strong>ot plot large <strong>Gen</strong>omes in an <strong>I</strong>nteractive, <strong>E</strong>fficient and <strong>S</strong>imple way &#150; is an online tool
         designed to compare two genomes. It supports large genome and you can interact with the dot plot to improve the visualisation.</p>
-        <p class="description">We use minimap version 2 to align the two genomes. Then, the PAF file is parsed and plotted into
-        an interactive plot written with d3.js library.</p>
-          <p class="description">D-Genies also allows to display dot plots from other aligners by uploading their
-              <a href="/documentation/formats">PAF</a> or <a href="/documentation/formats#maf-multiple-alignment-file">MAF</a> alignment
-        file.</p>
-        <div style="position:absolute;width:90%;padding:10px 5px 0 5px;background-color:white;border:1px solid lightgrey;border-radius:5px; margin-top: 15px;">
-			<span class="label label-primary" style="position:absolute;top:-10px;left:-10px">How to cite</span>
-            <span style="font-weight: bold; font-size: 0.9em;">Cabanettes F, Klopp C. (2018) D-GENIES: dot plot large genomes in an interactive, efficient and simple way. PeerJ 6:e4958 <a href="https://doi.org/10.7717/peerj.4958">https://doi.org/10.7717/peerj.4958</a></span>
+          <p class="description lead">We use minimap version 2 to align the two genomes. Then, the PAF file is parsed and plotted into
+          an interactive plot written with d3.js library.</p>
+          <p class="description lead">D-Genies also allows to display dot plots from other aligners by uploading their
+            <a href="/documentation/formats">PAF</a> or <a href="/documentation/formats#maf-multiple-alignment-file">MAF</a> alignment file.</p>
+        <div style="position:absolute;width:92%;padding:10px 10px 5px 10px;background-color:white;border:1px solid lightgrey;border-radius:5px; margin-top: 15px;; margin-left: 10px;">
+			<span class="badge badge-primary" style="position:absolute;top:-10px;left:-10px">How to cite</span>
+            <span style="font-weight: bold; font-size: 0.9em;">Cabanettes F, Klopp C. (2018) D-GENIES: dot plot large genomes in an interactive, efficient and simple way. PeerJ&#8239;6:e4958 <a href="https://doi.org/10.7717/peerj.4958">https://doi.org/10.7717/peerj.4958</a></span>
         </div>
       </div>
 
       <div class="row">
 
         <div class="col-lg-6" style="text-align:justify">
-        	<h1 class="page-header">D-Genies <small>Summary</small></h1>
+        	<h1 class="border-bottom">D-Genies <small class="text-secondary">Summary</small></h1>
 			<p>Dot plots are widely used to quickly compare sequence sets. They provide a synthetic similarity overview, highlighting repetitions, breaks and inversions. Different tools have been developed to easily generated genomic alignment dot plots, but they are often limited in the input sequence size. D-GENIES is a standalone and WEB application performing large genome alignments using minimap2 software package and generating interactive dot plots. It enables users to sort query sequences along the reference , zoom in the plot and download several image, alignment or sequence files. D-GENIES is an easy to install open source software package (GPL) developed in Python and JavaScript.</p>
 
         {% if pict is none %}
@@ -27,7 +26,7 @@
         <div class="col-lg-6" style="text-align:justify">
         {% endif %}
 
-			<h1 class="page-header">D-Genies <small>Availability</small></h1>
+			<h1 class="border-bottom">D-Genies <small class="text-secondary">Availability</small></h1>
 			<p>D-Genies is available under the GNU General
 				Public License (GPL). The package is coming with full documentation and test data. Sources are available <a target="_blank" href="https://github.com/genotoul-bioinfo/dgenies">here</a>.</p>
         </div><!--/span-->

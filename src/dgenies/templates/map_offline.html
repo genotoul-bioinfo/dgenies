@@ -29,8 +29,15 @@
         img.logo-stick {
             margin-left: 40px;
         }
+        footer {
+            height: 55px;
+        }
         footer hr {
             margin-top: 5px;
+        }
+        #body-container {
+            padding-top: 0;
+            padding-bottom: 55px;
         }
         #restore-all {
             background-image: url('data:image/svg+xml;utf8,<svg xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" version="1.1" id="Capa_1" x="0px" y="0px" viewBox="0 0 14.155 14.155" style="enable-background:new 0 0 14.155 14.155;" xml:space="preserve" width="512px" height="512px" inkscape:version="0.91 r13725" sodipodi:docname="reset.svg"><metadata id="metadata41"><rdf:RDF><cc:Work rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage" /></cc:Work></rdf:RDF></metadata><defs id="defs39" /><sodipodi:namedview pagecolor="#ffffff" bordercolor="#666666" borderopacity="1" objecttolerance="10" gridtolerance="10" guidetolerance="10" inkscape:pageopacity="0" inkscape:pageshadow="2" inkscape:window-width="1862" inkscape:window-height="1051" id="namedview37" showgrid="false" inkscape:zoom="0.4609375" inkscape:cx="-174.64407" inkscape:cy="256" inkscape:window-x="58" inkscape:window-y="0" inkscape:window-maximized="1" inkscape:current-layer="g3" /><g id="g3"><path d="M12.083,1.887c-0.795-0.794-1.73-1.359-2.727-1.697v2.135c0.48,0.239,0.935,0.55,1.334,0.95 c1.993,1.994,1.993,5.236,0,7.229c-1.993,1.99-5.233,1.99-7.229,0c-1.991-1.995-1.991-5.235,0-7.229 C3.466,3.269,3.482,3.259,3.489,3.25h0.002l1.181,1.179L4.665,0.685L0.923,0.68l1.176,1.176C2.092,1.868,2.081,1.88,2.072,1.887 c-2.763,2.762-2.763,7.243,0,10.005c2.767,2.765,7.245,2.765,10.011,0C14.844,9.13,14.847,4.649,12.083,1.887z" fill="#388700" id="path5" style="fill:#000000;fill-opacity:1" /></g><g id="g7" /><g id="g9" /><g id="g11" /><g id="g13" /><g id="g15" /><g id="g17" /><g id="g19" /><g id="g21" /><g id="g23" /><g id="g25" /><g id="g27" /><g id="g29" /><g id="g31" /><g id="g33" /><g id="g35" /></svg>');
@@ -82,84 +89,80 @@
 
         </div>
 
-        <div class="container theme-showcase" id="body-container" role="main">
+        <main class="container" id="body-container" role="main">
 
-            
-
-            
-
-<div id="supdraw">
-    <div class="top-forms">
-        <a href="http://dgenies.toulouse.inra.fr" target="_blank"><img class="logo-stick" alt="D-Genies" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHMAAAAeCAYAAAAfKSFiAAAABmJLR0QA/wD/AP+gvaeTAAAACXBI WXMAAA3XAAAN1wFCKJt4AAAAB3RJTUUH4gcNDTgZrD6TjAAADYtJREFUaN7tW3lQlNeW/93vA7tB CNK0CBrAdgtGnhqFmNE3LiQupATHslKV+GJcUhmpxCVuaGYcNVM+y0RT5ZtYWSxetJJYWmpMLB1D FgKYhJAQQR+KsURlbaDbZhFl7f5+84fdN91AN83L5K9wq04B5zv33OV3zz3n3HsB/CvjkpOTX/jq q69OnDp1qh6AHQDdSAPgcP7Uun0boN5JE0K4yOGcUxeZAXwOYCOAfwEwzB+QAvr4nghgJ4AFDocj 4KGHHkJ5eXlvcsJJruLqsIKB0r245gYAFJJQFEWQdJeJdtIC599WAH8DcBzAzf405gJgi/tKWrZs GcvKyjhp0qT+rD7HgAV6UJdr5xJCUAhB1+9+1m8F8GJ/wBQArrsrMRgMzMvLY15e3j+1nQyACALo 7I3vDmo/5vJ/+9r1XB9ruivZsHUrb1ssnJOWxkEAHw4M5LCAgAFQ/R+3ozcQAVARggKgAlA4yU+9 WW7G5/mLs5QBGO3O+LPRiMyNG9FSWIh7xcXQkRL1Vk3DyZYWvN/UBM0/XyH+gD7SAUB1n3BFUeDQ NAgh4PKVwt2RCgHN04d6K18CmN8DzL8OHfrfMQEB/3WjsxNGVUWiXo+4gAC0dnXhPolWAK1CoJNE lxPQwYqCMYMG4aO7d7HdavWnce2PFBQpgB1CBGgkVPFgqh3+gQTFOVl+lO0A/uoO5sy/R0Xl/Umn g04IdJFo1jSocXEwTJmC76qqcOCzz1ArBO5rmmzEqKrYaTTi30JC8ExNDQra2/2N5v4IFkpFCKGR HlbnskZFUR5YpRNc9pIOqEL4A347gBkAilzmmTVYUWhUVQ5TVUaqKuPCw5l9/jxvl5cTqup1707U 6/ljXBz3RUYO+E8nPfzww9y/fz9fe+21XgMeRVF81u9HQOSiA64dL6E3B71gwQJWVlZy1qxZPhVN 0umYHxfH//l/APPs2bPMzc3lN998w+zsbB4+fJgzZ85kZP90EwCHDRvGFStWsKqqiq7S2dnJ3bt3 MyIi4ncDUgjB7du3a6423VM51WkUfYLZ7acfZAUQCQDpvQkUFxfz/PnzNBgMPhUtDAnhNZOJS0JD fxOYQgh6K9XV1ZwzZ47f+tPT02mz2bzqe/311/+Z1e83mOnp6VpbWxtzc3Op0+n6ZZXulin61/Yi OI+NPD7Ex8fzxo0b3LFjh08FOiF4dPhwlo8axTA/OukLzCVLlsjJXr58OWfPns3z589LXkFBQZ8L CwBfffVV2u12WW/r1q2Mj49nfHw8ly5dyqqqKkZFRf3eW609NDSUQUFBPazSn0XkSlGU/i24LABo 6v5h5syZLC0t5dq1a30qeFyvZ4XJxN3OSf4tq/2LL74gSXZ0dHDUqFGSf+HCBQnM448/7lPHhAkT WFdXR5JsbGzklClT/Gp72rRp/OSTT9jY2MjW1lbm5eVxxowZHkAcO3aMubm5jI+P57p162g2m9nS 0sJdu3Z56IqKimJpaalWUlLCqVOnSn5AQABTUlKYk5PD+/fvs7m5mSdPnmRMTIyUCQkJ4ZtvvsmK igp2dnayqqqKmZmZNJlM/oyjDL1ZSVxcHG/fvs2DBw96t0qA344cyeIFC/jKypVct349t23bxs2b N3PVqlV+WZE7VVRUkCS//vprhrpt2WvXrpVgzp8/36eO9evXS9k1a9b02aaqqlyzZo2sU1ZWxsbG RrkYoqOjCYDjx4+nzWZjR0cHDx8+3GPbfu6556TO1atXS3/pskZVVXno0CEp//PPP9NqtZIk7927 J+v+8MMPUubGjRvs6OggSS5ZssSfkyIHvH08cOAAS0tLeejQIc6ePZsmk4mJiYlcuXIl9+3fz8+O HeOlnBxeLChgyZUrLCsrY3l5OW/dusWSkhLm5ORw7NixfgE5cuRIaVHdF9AzzzwjB5iWluZTz6VL l6Ssi2cymThu3DhJY8aMoV6vJwCOGTNGyp87d456vZ6qqkrevHnzCIArVqygw+EgSVZVVXH69Okc P368lLt48aJs7+TJkyRJi8UiJ/+tt96Ssi+++CLDwsI8xhUVFcWkpCS2tbWRJHfs2MEhQ4ZwxIgR XLRoEYODg/06+vN6a5KRkQGj0YipU6fiySefhKqq0DQNHR0daL13D6K9HXcbGvCP0lLcunkTRUVF qKqqwuDBg5GWloann34aWVlZeOSRR2C3230mSqNHj0ZwcDBIora21uPbo48+Kn+3WCwAgIiICGja ryl1S0sL7HY7Jk2aBADIzs6W327duuWhr66uDhMnTkR7ezs+/fRTAEBXVxcWLlyIoKAgZGRkSFnX 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"/></a>
-        <form id="select-zone">
-            <div class="chosen-widget">
-                <select id="select-target" data-placeholder="Select a target...">
-                    <option value="###NONE###" label=" "></option>
-                </select>
-            </div>
-            <div class="chosen-widget">
-                <select id="select-contig" data-placeholder="Select a query...">
-                    <option value="###NONE###" label=" "></option>
-                </select>
-            </div>
-            <input type="button" class="submit" value="Apply"/>
-        </form>
-    </div>
-    <div class="master">
-        <div id="draw"></div>
-        <div id="sidebar">
-            <div id="legend">
-                <div class="title">
-                    Legend
+            <div id="supdraw">
+                <div class="top-forms">
+                    <a href="http://dgenies.toulouse.inra.fr" target="_blank"><img class="logo-stick" alt="D-Genies" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHMAAAAeCAYAAAAfKSFiAAAABmJLR0QA/wD/AP+gvaeTAAAACXBI WXMAAA3XAAAN1wFCKJt4AAAAB3RJTUUH4gcNDTgZrD6TjAAADYtJREFUaN7tW3lQlNeW/93vA7tB CNK0CBrAdgtGnhqFmNE3LiQupATHslKV+GJcUhmpxCVuaGYcNVM+y0RT5ZtYWSxetJJYWmpMLB1D FgKYhJAQQR+KsURlbaDbZhFl7f5+84fdN91AN83L5K9wq04B5zv33OV3zz3n3HsB/CvjkpOTX/jq q69OnDp1qh6AHQDdSAPgcP7Uun0boN5JE0K4yOGcUxeZAXwOYCOAfwEwzB+QAvr4nghgJ4AFDocj 4KGHHkJ5eXlvcsJJruLqsIKB0r245gYAFJJQFEWQdJeJdtIC599WAH8DcBzAzf405gJgi/tKWrZs GcvKyjhp0qT+rD7HgAV6UJdr5xJCUAhB1+9+1m8F8GJ/wBQArrsrMRgMzMvLY15e3j+1nQyACALo 7I3vDmo/5vJ/+9r1XB9ruivZsHUrb1ssnJOWxkEAHw4M5LCAgAFQ/R+3ozcQAVARggKgAlA4yU+9 WW7G5/mLs5QBGO3O+LPRiMyNG9FSWIh7xcXQkRL1Vk3DyZYWvN/UBM0/XyH+gD7SAUB1n3BFUeDQ NAgh4PKVwt2RCgHN04d6K18CmN8DzL8OHfrfMQEB/3WjsxNGVUWiXo+4gAC0dnXhPolWAK1CoJNE lxPQwYqCMYMG4aO7d7HdavWnce2PFBQpgB1CBGgkVPFgqh3+gQTFOVl+lO0A/uoO5sy/R0Xl/Umn g04IdJFo1jSocXEwTJmC76qqcOCzz1ArBO5rmmzEqKrYaTTi30JC8ExNDQra2/2N5v4IFkpFCKGR HlbnskZFUR5YpRNc9pIOqEL4A347gBkAilzmmTVYUWhUVQ5TVUaqKuPCw5l9/jxvl5cTqup1707U 6/ljXBz3RUYO+E8nPfzww9y/fz9fe+21XgMeRVF81u9HQOSiA64dL6E3B71gwQJWVlZy1qxZPhVN 0umYHxfH//l/APPs2bPMzc3lN998w+zsbB4+fJgzZ85kZP90EwCHDRvGFStWsKqqiq7S2dnJ3bt3 MyIi4ncDUgjB7du3a6423VM51WkUfYLZ7acfZAUQCQDpvQkUFxfz/PnzNBgMPhUtDAnhNZOJS0JD fxOYQgh6K9XV1ZwzZ47f+tPT02mz2bzqe/311/+Z1e83mOnp6VpbWxtzc3Op0+n6ZZXulin61/Yi OI+NPD7Ex8fzxo0b3LFjh08FOiF4dPhwlo8axTA/OukLzCVLlsjJXr58OWfPns3z589LXkFBQZ8L CwBfffVV2u12WW/r1q2Mj49nfHw8ly5dyqqqKkZFRf3eW609NDSUQUFBPazSn0XkSlGU/i24LABo 6v5h5syZLC0t5dq1a30qeFyvZ4XJxN3OSf4tq/2LL74gSXZ0dHDUqFGSf+HCBQnM448/7lPHhAkT WFdXR5JsbGzklClT/Gp72rRp/OSTT9jY2MjW1lbm5eVxxowZHkAcO3aMubm5jI+P57p162g2m9nS 0sJdu3Z56IqKimJpaalWUlLCqVOnSn5AQABTUlKYk5PD+/fvs7m5mSdPnmRMTIyUCQkJ4ZtvvsmK igp2dnayqqqKmZmZNJlM/oyjDL1ZSVxcHG/fvs2DBw96t0qA344cyeIFC/jKypVct349t23bxs2b N3PVqlV+WZE7VVRUkCS//vprhrpt2WvXrpVgzp8/36eO9evXS9k1a9b02aaqqlyzZo2sU1ZWxsbG RrkYoqOjCYDjx4+nzWZjR0cHDx8+3GPbfu6556TO1atXS3/pskZVVXno0CEp//PPP9NqtZIk7927 J+v+8MMPUubGjRvs6OggSS5ZssSfkyIHvH08cOAAS0tLeejQIc6ePZsmk4mJiYlcuXIl9+3fz8+O HeOlnBxeLChgyZUrLCsrY3l5OW/dusWSkhLm5ORw7NixfgE5cuRIaVHdF9AzzzwjB5iWluZTz6VL l6Ssi2cymThu3DhJY8aMoV6vJwCOGTNGyp87d456vZ6qqkrevHnzCIArVqygw+EgSVZVVXH69Okc P368lLt48aJs7+TJkyRJi8UiJ/+tt96Ssi+++CLDwsI8xhUVFcWkpCS2tbWRJHfs2MEhQ4ZwxIgR XLRoEYODg/06+vN6a5KRkQGj0YipU6fiySefhKqq0DQNHR0daL13D6K9HXcbGvCP0lLcunkTRUVF qKqqwuDBg5GWloann34aWVlZeOSRR2C3230mSqNHj0ZwcDBIora21uPbo48+Kn+3WCwAgIiICGja ryl1S0sL7HY7Jk2aBADIzs6W327duuWhr66uDhMnTkR7ezs+/fRTAEBXVxcWLlyIoKAgZGRkSFnX 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"/></a>
+                    <form id="select-zone">
+                        <div class="chosen-widget">
+                            <select id="select-target" data-placeholder="Select a target...">
+                                <option value="###NONE###" label=" "></option>
+                            </select>
+                        </div>
+                        <div class="chosen-widget">
+                            <select id="select-contig" data-placeholder="Select a query...">
+                                <option value="###NONE###" label=" "></option>
+                            </select>
+                        </div>
+                        <input type="button" class="submit" value="Apply"/>
+                    </form>
                 </div>
-                <div class="draw"></div>
+                <div class="master">
+                    <div id="draw"></div>
+                    <div id="sidebar">
+                        <div id="legend">
+                            <div class="title">
+                                Legend
+                            </div>
+                            <div class="draw"></div>
+                        </div>
+                        <form id="form-parameters">
+                            <p><label>Filter small matches:<br/>
+                            <input type="range" min="0" max="6" value="0" step="1" id="filter_size"/></label></p>
+                            <p><label>Min identity (abs):<br/>
+                            <input type="number" min="0" max="0.95" value="0" step="0.05" id="filter_identity"/></label></p>
+                            <p><label class="input-checkbox-label"><input type="checkbox" id="stroke-linecap"/> Strong precision</label></p>
+                            <p><label>Stroke width:<br/>
+                            <input type="range" min="0" max="3" value="1" step="1" id="stroke-width"/></label></p>
+                            <p><label>Regions delimiters:<br/>
+                            <input type="range" min="0" max="5" value="2" step="1" id="chroms-limits"/></label></p>
+                            <p><input type="button" id="summary-offline" value="Summary"/></p>
+                        </form>
+                    </div>
+                </div>
+                <div id="loading">
+                    <div class="cssload-container">
+                        <div class="cssload-whirlpool"></div>
+                    </div>
+                    <div class="label">
+                        <div class="mylabel">
+                            Loading...
+                        </div>
+                    </div>
+                </div>
+                <div id="export-pict" style="display: none;"></div>
+                <div id="modal-stats" style="display: none;">
+                    <div id="draw-stats" style="margin-top: 15px"></div>
+                </div>
             </div>
-            <form id="form-parameters">
-                <p><label>Filter small matches:<br/>
-                <input type="range" min="0" max="6" value="0" step="1" id="filter_size"/></label></p>
-                <p><label>Min identity (abs):<br/>
-                <input type="number" min="0" max="0.95" value="0" step="0.05" id="filter_identity"/></label></p>
-                <p><label class="input-checkbox-label"><input type="checkbox" id="stroke-linecap"/> Strong precision</label></p>
-                <p><label>Stroke width:<br/>
-                <input type="range" min="0" max="3" value="1" step="1" id="stroke-width"/></label></p>
-                <p><label>Regions delimiters:<br/>
-                <input type="range" min="0" max="5" value="2" step="1" id="chroms-limits"/></label></p>
-                <p><input type="button" id="summary-offline" value="Summary"/></p>
-            </form>
-        </div>
-    </div>
-    <div id="loading">
-        <div class="cssload-container">
-            <div class="cssload-whirlpool"></div>
-        </div>
-        <div class="label">
-            <div class="mylabel">
-                Loading...
+
+            <div style="position:relative;width:92%;padding:10px 10px 5px 10px;background-color:white;border:1px solid lightgrey;border-radius:5px; margin-top: 15px;">
+                <span class="badge badge-primary" style="position:absolute;top:-10px;left:-10px">How to cite</span>
+                <span style="font-weight: bold; font-size: 0.9em;">Cabanettes F, Klopp C. (2018) D-GENIES: dot plot large genomes in an interactive, efficient and simple way. PeerJ&#8239;6:e4958 <a href="https://doi.org/10.7717/peerj.4958">https://doi.org/10.7717/peerj.4958</a></span>
             </div>
-        </div>
-    </div>
-    <div id="export-pict" style="display: none;"></div>
-    <div id="modal-stats" style="display: none;">
-        <div id="draw-stats" style="margin-top: 15px"></div>
-    </div>
-</div>
-
-<div style="position:relative;width:90%;padding:10px 5px 0 5px;background-color:white;border:1px solid lightgrey;border-radius:5px; margin-top: 15px;">
-    <span class="label label-primary" style="position:absolute;top:-10px;left:-10px">How to cite</span>
-    <span style="font-weight: bold; font-size: 0.9em;">Cabanettes F, Klopp C. (2018) D-GENIES: dot plot large genomes in an interactive, efficient and simple way. PeerJ 6:e4958 <a href="https://doi.org/10.7717/peerj.4958">https://doi.org/10.7717/peerj.4958</a></span>
-</div>
 
 
-            <footer>
+        </main> <!-- /container -->
 
+        <footer>
+
+            <div class="container" style="text-align: center;">
                 <hr>
-                <div class="container" style="text-align: center;">
-                    <p>Copyright © 2017, INRA | Designed by <a target="_blank" href="http://bioinfo.genotoul.fr/">GenoToul
-                        Bioinfo platform</a>.</p>
-                </div>
-            </footer>
-
-        </div> <!-- /container -->
+                <p>Copyright © 2020-2022 — INRAE | Copyright © 2017-2019 — INRA |
+                    Designed by <a target="_blank" href="http://bioinfo.genotoul.fr/">GenoToul Bioinfo platform</a>.</p>
+            </div>
+        </footer>
     </div>
 
 <script type="text/javascript">

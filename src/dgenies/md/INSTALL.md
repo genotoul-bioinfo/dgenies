@@ -531,24 +531,34 @@ Define options displayed in form. List of individual options where each element 
 
     options:
       -
+        group: repeat
         label: Repeatedness
         type: radio
         help: "Ignore top fraction of most frequent minimizers"
         entries:
           -
+            key: few
             label: "few repeats"
             value: "-f 0.0002"
             help: "-f 0.0002"
             default: True
           -
+            key: some
             label: "some repeats"
             value: "-f 0.002"
             help: "-f 0.002"
           -
+            key: many
             label: "many repeats"
             value: "-f 0.02"
             help: "-f 0.02"
 
+
+##### Group
+
+Required.
+
+Group id. Will be use with option `key` to compute the option identifier `group:key`
 
 ##### Label
 
@@ -571,6 +581,13 @@ Define a message to show aside the option label in the run form. Set it in the `
 ##### Entries
 
 List of choice allowed for the current option. Each entry must/can have the following keys:
+
+
+###### Key
+
+Required.
+
+Key id. Will be use with option `group` to compute the option identifier `group:key`
 
 ###### Label
 

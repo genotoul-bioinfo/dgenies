@@ -53,12 +53,14 @@ dgenies.update_results = function(results) {
         for (let i=0; i<results.length; i++) {
             let result = results[i];
             job_list_item.append($("<li>").append($("<a>")
+            .addClass("dropdown-item")
             .attr("href", `/result/${result}`)
-            .text(result)))
+            .text(result)));
         }
     }
     else {
         job_list_item.append($("<li>").append($("<a>")
+            .addClass("dropdown-item")
             .attr("href", "/run")
             .text("Please run a job!")))
     }
