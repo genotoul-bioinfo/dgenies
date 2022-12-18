@@ -81,18 +81,18 @@
                     <table>
                         <tbody>
                             <tr class="id_job">
-                                <td>
+                                <th>
                                     <label for="id_job" class="id-job">Name of your job</label>
-                                </td>
+                                </th>
                                 <td>
                                     <input type="text" id="id_job" name="id_job" value="{{ id_job }}" autocomplete="Off" required/>
                                 </td>
                             </tr>
                             {% if mode == "webserver" %}
                             <tr class="email">
-                                <td>
+                                <th>
                                     <label for="email" class="email">E-mail <sup><a href="#fn{{ fnote }}" id="ref{{ fnote }}">{{ fnote }}</a></sup>{% set fnote = fnote + 1 %}</label>
-                                </td>
+                                </th>
                                 <td>
                                     <input type="email" name="email" id="email" value="{{ email }}" required/>
                                 </td>
@@ -111,9 +111,9 @@
                             {# Tab 1 #}
                             <tr class="target tabx tab1">
                                 {% set fnote_tab = fnote %}
-                                <td>
+                                <th>
                                     <label for="file_target" class="file-target">Target fasta <sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup></label>
-                                </td>
+                                </th>
                                 <td class="input-group">
                                     <select class="select-type-input target">
                                         <option value="0">Local</option>
@@ -136,9 +136,9 @@
                                 </td>
                             </tr>
                             <tr class="query tabx tab1">
-                                <td>
+                                <th>
                                     <label for="file_query" class="file-query">Query fasta <sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup></label>
-                                </td>
+                                </th>
                                 <td class="input-group">
                                     <select class="select-type-input query">
                                         <option value="0">Local</option>
@@ -162,9 +162,9 @@
                             </tr>
                             {% if tools | length > 1 %}
                                 <tr class="tabx tab1">
-                                    <td>
+                                    <th>
                                         <label class="tools">Aligner</label>
-                                    </td>
+                                    </th>
                                     <td>
                                     {% for tool in tools_names %}
                                         <label style="vertical-align: bottom; line-height: 35px;" class="radio-inline">
@@ -190,16 +190,16 @@
                             {% if tools | length > 1 %}
                                 {% for tool in tools_names %}
                                     {% set tool_loop = loop %}
-                                    <tr class="tabx tab1 optionx tool-options-{{tool}} {% if loop.index0 != 0 or not tools[tool].options %}hidden{% endif %}">
-                                        <td colspan="2" style="vertical-align:top;">
+                                    <tr class="tabx tab1 optionx tool-options-{{tool}}" {% if loop.index0 != 0 or not tools[tool].options %}style="display: none;"{% endif %}>
+                                        <th colspan="2" style="vertical-align:top;">
                                             <div id="tool-options-{{tool}}">
                                                 <label class="options">Options</label>
                                             </div>
-                                        </td>
+                                        </th>
                                     </tr>
                                     {% if tools[tool].options %}
                                         {% for opt in tools_options[tool] %}
-                                            <tr class="tabx tab1 optionx tool-options-{{tool}} {% if tool_loop.index0 != 0 %}hidden{% endif %}" >
+                                            <tr class="tabx tab1 optionx tool-options-{{tool}}" {% if tool_loop.index0 != 0 %}style="display: none;"{% endif %}>
                                                 {% set outer_loop = loop %}
                                                 <td style="vertical-align:top;">
                                                     {{ opt.label }}&nbsp<span class="glyphicon glyphicon-question-sign" style="color: #2aabd2"
@@ -228,7 +228,7 @@
                                 {% endfor %}
                             {% else %}
                                 {% set tool = tools_names[0] %}
-                                <tr class="tabx tab1 optionx tool-options-{{tool}} {% if not tools[tool].options %}hidden{% endif %}">
+                                <tr class="tabx tab1 optionx tool-options-{{tool}}" {% if not tools[tool].options %}style="display: none;"{% endif %}>
                                     <td colspan="2" style="vertical-align:top;">
                                         <div id="tool-options">
                                             <label class="options">Options</label>
@@ -269,9 +269,9 @@
                             {# Tab 2 #}
                             <tr class="alignfile tabx tab2">
                                 {% set fnote_tab = fnote %}
-                                <td>
+                                <th>
                                     <label for="file_align" class="file-align">Alignment file <sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup>{% set fnote_tab = fnote_tab + 1 %}</label>
-                                </td>
+                                </th>
                                 <td class="input-group">
                                     <select class="select-type-input alignfile">
                                         <option value="0">Local</option>
@@ -294,9 +294,9 @@
                                 </td>
                             </tr>
                             <tr class="targetidx tabx tab2">
-                                <td>
+                                <th>
                                     <label for="file_targetidx" class="file-targetidx">Target file<sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup></label>
-                                </td>
+                                </th>
                                 <td class="input-group">
                                     <select class="select-type-input targetidx">
                                         <option value="0">Local</option>
@@ -319,9 +319,9 @@
                                 </td>
                             </tr>
                             <tr class="queryidx tabx tab2">
-                                <td>
+                                <th>
                                     <label for="file_queryidx" class="file-queryidx">Query file<sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup>{% set fnote_tab = fnote_tab + 1 %}</label>
-                                </td>
+                                </th>
                                 <td class="input-group">
                                     <select class="select-type-input queryidx">
                                         <option value="0">Local</option>
@@ -349,9 +349,9 @@
                                 </td>
                             </tr>
                             <tr class="backup tabx tab2">
-                                <td>
+                                <th>
                                     <label for="file_backup" class="file-backup">Backup file<sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup>{% set fnote_tab = fnote_tab + 1 %}</label>
-                                </td>
+                                </th>
                                 <td class="input-group">
                                     <select class="select-type-input backup">
                                         <option value="0">Local</option>
@@ -377,9 +377,9 @@
                             <tr class="batch tabx tab3">
                                 {% set fnote_tab = fnote %}
 
-                                <td style="vertical-align: top">
+                                <th style="vertical-align: top">
                                     <label for="bname">Batch file<sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup>{% set fnote_tab = fnote_tab + 1 %}</label>
-                                </td>
+                                </th>
                                 <td>
                                     <input type="file" id="bname" name="bname">
                                 </td>
@@ -390,9 +390,9 @@
                                 </td>
                             </tr>
                             <tr class="batch tabx tab3">
-                                <td  style="vertical-align: top">
+                                <th style="vertical-align: top">
                                     <label id="listing-desc" for="batch-file-upload">User files</label>
-                                </td>
+                                </th>
                                 <td>
                                     <div class="input-container">
                                         <div class="row fileupload-buttonbar">
