@@ -1079,9 +1079,9 @@ dgenies.run.show_tab = function(tab) {
  */
 
 dgenies.run.show_tool_options = function(tool) {
-    $(`.optionx:not(tool-options-${tool})`).hide();
+    $(`.optionx:not(tool-options-${tool})`).addClass('hide');
     if($(`.optionx.tool-options-${tool}`).length > 1){
-        $(`.optionx.tool-options-${tool}`).show();
+        $(`.optionx.tool-options-${tool}`).removeClass('hide');
     }
 };
 

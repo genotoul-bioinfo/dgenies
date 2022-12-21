@@ -190,7 +190,7 @@
                             {% if tools | length > 1 %}
                                 {% for tool in tools_names %}
                                     {% set tool_loop = loop %}
-                                    <tr class="tabx tab1 optionx tool-options-{{tool}}" {% if loop.index0 != 0 or not tools[tool].options %}style="display: none;"{% endif %}>
+                                    <tr class="tabx tab1 optionx tool-options-{{tool}} {% if loop.index0 != 0 or not tools[tool].options %}hide{% endif %}">
                                         <th colspan="2" style="vertical-align:top;">
                                             <div id="tool-options-{{tool}}">
                                                 <label class="options">Options</label>
@@ -199,7 +199,7 @@
                                     </tr>
                                     {% if tools[tool].options %}
                                         {% for opt in tools_options[tool] %}
-                                            <tr class="tabx tab1 optionx tool-options-{{tool}}" {% if tool_loop.index0 != 0 %}style="display: none;"{% endif %}>
+                                            <tr class="tabx tab1 optionx tool-options-{{tool}} {% if tool_loop.index0 != 0 %}hide{% endif %}">
                                                 {% set outer_loop = loop %}
                                                 <td style="vertical-align:top;">
                                                     {{ opt.label }}&nbsp<span class="glyphicon glyphicon-question-sign" style="color: #2aabd2"
