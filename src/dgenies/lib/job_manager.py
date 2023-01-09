@@ -1705,7 +1705,7 @@ class JobManager:
                             self.send_mail_post_if_allowed()
 
                         else:
-                            logger.error("Run align: Failed")
+                            logger.info("Run align: OK")
                             self.set_status_standalone(status)
 
         except DGeniesRunError as e:
