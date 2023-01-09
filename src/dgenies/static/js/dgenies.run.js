@@ -72,7 +72,6 @@ dgenies.run.batch_errors = []
 dgenies.run.files_to_upload = []
 dgenies.run.editor = null;
 
-
 /**
  * Initialise app for run page
  *
@@ -119,7 +118,6 @@ dgenies.run.init = function(s_id, allowed_ext, max_upload_file_size=1073741824, 
     dgenies.run.restore_form();
     dgenies.run.set_events();
     dgenies.run.init_fileuploads();
-    dgenies.run.init_codemirror();
 };
 
 
@@ -1069,6 +1067,10 @@ dgenies.run.show_tab = function(tab) {
     $(`#tabs .tab:not(#${tab})`).removeClass("active");
     $(`.tabx:not(${tab})`).hide();
     $(`.tabx.${tab}`).show();
+    if(tab === "tab3" && dgenies.run.editor === null){
+        // delayed init else style broken
+        dgenies.run.init_codemirror();
+    }
 };
 
 
