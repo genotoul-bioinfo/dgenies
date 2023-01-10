@@ -378,7 +378,6 @@ dgenies.run.ckeck_align_job = function(job, param_dict, start_token, end_token) 
             let unknown_options = options.filter(function(opt) {
                 return ! allowed_options.includes(opt);
             });
-            // TODO: manage option exclusion
             if (unknown_options.length > 0) {
                 found.push({
                     "message": `unknown option "${unknown_options.join(", ")}", please use options in following list: ${allowed_options.join(", ")}`,
@@ -416,11 +415,22 @@ dgenies.run.ckeck_align_job = function(job, param_dict, start_token, end_token) 
     let optional = ["id_job", "options"]
 
     if (has_ava){
-        mandatory.push("query")
-    } else {
         optional.push("query")
+    } else {
+        mandatory.push("query")
     }
 
+    for (let param of mandatory) {
+        if (!(param in param_dict)){
+            found.push({
+                "message": `Missing key "${param}"`,
+                "severity": "error",
+                "from": CodeMirror.Pos(start_token.startLine - 1, start_token.startColumn-1),
+                "to": CodeMirror.Pos(end_token.endLine - 1, end_token.endColumn)
+            })
+        }
+    }
+    
     let all_allowed = mandatory.concat(optional)
     for (let param of job){
         let key = param[0];
