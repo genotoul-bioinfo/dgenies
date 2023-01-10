@@ -10,7 +10,7 @@ import threading
 import traceback
 import json
 from string import Template
-from flask import render_template, request, url_for, jsonify, Response, abort, send_file, Markup
+from flask import render_template, request, url_for, jsonify, Response, abort, send_file, send_from_directory, Markup
 from pathlib import Path
 from dgenies.lib.paf import Paf
 from dgenies.lib.job_manager import JobManager
@@ -910,7 +910,7 @@ def get_query_as_reference(id_res):
     """
     if MODE != "standalone":
         return abort(404)
-    return send_file(build_query_as_reference(id_res))
+    return send_file(build_query_as_reference(id_res), as_attachment=True)
 
 
 @app.route('/download/<id_res>/<filename>')
@@ -1075,12 +1075,15 @@ def get_backup_file(id_res):
     :type id_res: str
     """
     res_dir = os.path.join(APP_DATA, id_res)
-    tar = os.path.join(res_dir, "%s.tar.gz" % id_res)
+    filename = "%s.tar.gz" % id_res
+    tar = os.path.join(res_dir, filename)
     with xopen(tar, mode="wb", compresslevel=9) as gz_file:
         with tarfile.open(fileobj=gz_file, mode="w|") as tarf:
             for file in ("map.paf", "target.idx", "query.idx"):
                 tarf.add(os.path.join(res_dir, file), arcname=file)
-    return send_file(tar)
+    response = send_from_directory(res_dir, filename, as_attachment=True)
+    response.headers.remove('Content-Disposition')  # Restore flask<2 behavior (else file cannot be renamed by js side)
+    return response
 
 
 def get_filter_out(id_res, type_f):
@@ -1290,7 +1293,6 @@ def download_example_backup():
     Download example batch file
     """
     example_file = config_reader.example_backup
-    print(example_file)
     if not os.path.exists(example_file):
         abort(404)
     return send_file(example_file, as_attachment=True,
