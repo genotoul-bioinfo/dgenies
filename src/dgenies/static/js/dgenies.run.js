@@ -291,7 +291,7 @@ dgenies.run.check_file_format_and_presence = function(type, key, val){
             }
             if (("example://" + example_url) != val){
                 return {
-                    message: example_url=="" ? `No example url for ${key}` : `Example link must be: "example://${example_url}"`,
+                    message: example_url=="" ? `No example url for "${key}"` : `Example link must be: "example://${example_url}"`,
                     severity: "error"
                 }
             }
@@ -303,7 +303,7 @@ dgenies.run.check_file_format_and_presence = function(type, key, val){
             }
             if (! has_match){
                 return {
-                    message: `File must be have the following format for ${key}: ${dgenies.run.FTYPES[corrected_key].formats.join(", ")}`,
+                    message: `File must be have the following format for "${key}": ${dgenies.run.FTYPES[corrected_key].formats.join(", ")}`,
                     severity: "error"
                 }
             } else {
@@ -334,15 +334,7 @@ dgenies.run.ckeck_align_job = function(job, param_dict, start_token, end_token) 
     let found = []
     // check tool
     let has_ava = true
-    if (!("tool" in param_dict)){
-
-        found.push({
-            "message": `Missing key "tool"`,
-            "severity": "error",
-            "from": CodeMirror.Pos(start_token.startLine - 1, start_token.startColumn-1),
-            "to": CodeMirror.Pos(end_token.endLine - 1, end_token.endColumn)
-        })
-    } else {
+    if ("tool" in param_dict) {
         let tool_val = param_dict["tool"].val
         let tool = tool_val.image
         if (! dgenies.run.tools.includes(tool)){
@@ -484,7 +476,7 @@ dgenies.run.ckeck_plot_job = function(job, param_dict, start_token, end_token) {
             for (let p of ["align", "query", "target"]) {
                 if (param_dict[p] === undefined){
                     found.push({
-                        "message": `Missing ${p} key`,
+                        "message": `Missing key "${p}"`,
                         "severity": "error",
                         "from": CodeMirror.Pos(start_token.startLine - 1, start_token.startColumn-1),
                         "to": CodeMirror.Pos(end_token.endLine - 1, end_token.endColumn)
@@ -544,7 +536,7 @@ dgenies.run.ckeck_job = function(job) {
         let [key, val] = param
         if (key.image in param_dict){
             found.push({
-                "message": `Duplicate key: ${key.image}`,
+                "message": `Duplicate key "${key.image}"`,
                 "severity": "error",
                 "from": CodeMirror.Pos(key.startLine - 1, key.startColumn-1),
                 "to": CodeMirror.Pos(key.endLine - 1, key.endColumn)
@@ -566,32 +558,39 @@ dgenies.run.ckeck_job = function(job) {
         }
     } else {
         found.push({
-            "message": `Missing mandatory key: type`,
+            "message": `Missing mandatory key "type"`,
             "severity": "error",
             "from": CodeMirror.Pos(start_token.startLine - 1, start_token.startColumn-1),
             "to": CodeMirror.Pos(end_token.endLine - 1, end_token.endColumn)
         })
     }
-    // manage align job parameters
-    if (jobtype == "align"){
-        found = found.concat(dgenies.run.ckeck_align_job(job, param_dict, start_token, end_token))
-    } else {
-        // jobtype == "plot"
-        found = found.concat(dgenies.run.ckeck_plot_job(job, param_dict, start_token, end_token))
+    let has_error = false
+    for (error of found) {
+        has_error = has_error || error.severity == "error"
     }
-
-    // check file format and missing files
-    for (let param of job){
-        let [key, val] = param
-        let error = dgenies.run.check_file_format_and_presence(jobtype, key.image, val.image)
-        if (error !== undefined){
-            found.push({
-                "message": error.message,
-                "severity": error.severity,
-                "from": CodeMirror.Pos(val.startLine - 1, val.startColumn-1),
-                "to": CodeMirror.Pos(val.endLine - 1, val.endColumn)
-            })
+    // manage align job parameters
+    if (! has_error) {
+        if (jobtype == "align"){
+            found = found.concat(dgenies.run.ckeck_align_job(job, param_dict, start_token, end_token))
+        } else {
+            // jobtype == "plot"
+            found = found.concat(dgenies.run.ckeck_plot_job(job, param_dict, start_token, end_token))
         }
+
+        // check file format and missing files
+        for (let param of job){
+            let [key, val] = param
+            let error = dgenies.run.check_file_format_and_presence(jobtype, key.image, val.image)
+            if (error !== undefined){
+                found.push({
+                    "message": error.message,
+                    "severity": error.severity,
+                    "from": CodeMirror.Pos(val.startLine - 1, val.startColumn-1),
+                    "to": CodeMirror.Pos(val.endLine - 1, val.endColumn)
+                })
+            }
+        }
+            
     }
     return found
 }
