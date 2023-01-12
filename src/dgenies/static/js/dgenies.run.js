@@ -1072,14 +1072,9 @@ dgenies.run._set_file_select_event = function(ftype) {
  * @param {string} tab id of the tab to show
  */
 dgenies.run.show_tab = function(tab) {
-    $(`#tabs #${tab}`).addClass("active");
-    $(`#tabs .tab:not(#${tab})`).removeClass("active");
-    $(`.tabx:not(${tab})`).hide();
-    $(`.tabx.${tab}`).show();
-    if(tab === "tab3" && dgenies.run.editor === null){
-        // delayed init else style broken
-        dgenies.run.init_codemirror();
-    }
+    $(`${tab}`).tab('show')
+    $(`.tabx:not(.${tab})`).hide()
+    $(`.tabx.${tab}`).show()
 };
 
 
@@ -1139,6 +1134,14 @@ dgenies.run.set_events = function() {
     $("#tabs .tab").click(function() {
         dgenies.run.show_tab($(this).attr("id"));
     });
+
+    // delayed codemirror init else style broken
+    $('#tab3').on('shown.bs.tab', function (e) {
+        if (dgenies.run.editor === null){
+            dgenies.run.init_codemirror();
+        }
+    });
+
     $("input[name=tool]").click(function() {
         dgenies.run.show_tool_options($(this).val());
     })
@@ -1154,20 +1157,20 @@ dgenies.run.set_events = function() {
 dgenies.run.change_fasta_type = function (fasta, type, keep_url=false) {
     let button = $("button#button-" + fasta);
     let input = $("input#" + fasta);
-    let container = $("div." + fasta + "-label");
+    //let container = $("div." + fasta + "-label");
     $("input.file-" + fasta).val("");
     if (type === "local") {
         button.show();
         input.prop("readonly", true);
         input.val("");
-        container.width(300);
+        //container.width(300);
     }
     else {
         button.hide();
         input.prop("readonly", false);
         if (!keep_url)
             input.val("");
-        container.width(348);
+        //container.width(348);
     }
     $("div.file-size." + fasta).html("");
 };

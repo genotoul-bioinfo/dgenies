@@ -8,7 +8,6 @@ body {
     padding-top: 20px;
 }
 
-
 pre {
     background-color: rgb(248, 249, 250);
     border: 1px solid #ccc;
@@ -429,6 +428,7 @@ h4.header-form {
 
 #tabs .tab {
     display: inline-block;
+    color: black;
     background-color: #c8c8c8;
     padding: 5px 25px 5px 25px;
     border-top-left-radius: 10px;
@@ -574,7 +574,7 @@ textarea {
     -moz-border-radius: 10px;
     -webkit-border-radius: 10px;
     border-radius: 10px;
-	max-width: 800px;
+	/*max-width: 800px;*/
 	min-height: 100px;
 	margin: 0 auto;
 	background-color: #e3f2ff;
@@ -715,7 +715,7 @@ div.submit-form table td label {
     margin-bottom: 5px;
 }
 
-div.submit-form table input#id_job, div.submit-form table input#email {
+div.submit-form input#id_job, div.submit-form input#email {
     width: 410px;
 }
 

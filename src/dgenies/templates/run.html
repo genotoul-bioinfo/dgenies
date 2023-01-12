@@ -75,174 +75,157 @@
                 {% endwith %}
             </ul>
         </div>
+
         <div class="submit-form">
             <fieldset>
-                <div>
-                    <table>
-                        <tbody>
-                            <tr class="id_job">
-                                <th>
-                                    <label for="id_job" class="id-job">Name of your job</label>
-                                </th>
-                                <td>
-                                    <input type="text" id="id_job" name="id_job" value="{{ id_job }}" autocomplete="Off" required/>
-                                </td>
-                            </tr>
-                            {% if mode == "webserver" %}
-                            <tr class="email">
-                                <th>
-                                    <label for="email" class="email">E-mail <sup><a href="#fn{{ fnote }}" id="ref{{ fnote }}">{{ fnote }}</a></sup>{% set fnote = fnote + 1 %}</label>
-                                </th>
-                                <td>
-                                    <input type="email" name="email" id="email" value="{{ email }}" required/>
-                                </td>
-                            </tr>
-                            {% endif %}
-                            <tr>
-                                <td colspan="3">
-                                    <div id="tabs">
-                                        <div class="tab active" id="tab1">New alignment</div>
-                                        <div class="tab" id="tab2">Plot alignment</div>
-                                        <div class="tab" id="tab3">Batch alignments</div>
-                                    </div>
-                                </td>
-                            </tr>
+                <div class="id_job form-group row">
+                    <label for="id_job" class="id-job col-sm-2 col-form-label">Name of your job</label>
+                    <div class="col-sm-10">
+                        <input type="text" id="id_job" name="id_job" class="form-control" value="{{ id_job }}" autocomplete="Off" required/>
+                    </div>
+                </div>
+                {% if mode == "webserver" %}
+                <div class="form-group row">
+                    <label for="email" class="email col-sm-2 col-form-label">E-mail <sup><a href="#fn{{ fnote }}" id="ref{{ fnote }}">{{ fnote }}</a></sup>{% set fnote = fnote + 1 %}</label>
+                    <div class="col-sm-10">
+                        <input type="email" class="form-control" id="email" value="{{ email }}" placeholder="name@example.com" required>
+                    </div>
+                </div>
+                {% endif %}
 
-                            {# Tab 1 #}
-                            <tr class="target tabx tab1">
-                                {% set fnote_tab = fnote %}
-                                <th>
-                                    <label for="file_target" class="file-target">Target fasta <sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup></label>
-                                </th>
-                                <td class="input-group">
-                                    <select class="select-type-input target">
+                <ul class="nav nav-tabs" id="tabs" role="tablist">
+                    <li class="nav-item">
+                        <a class="nav-link tab active" id="tab1" data-toggle="tab" href="#align-tab" role="tab" aria-controls="align" aria-selected="true">New alignment</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link tab" id="tab2" data-toggle="tab" href="#plot-tab" role="tab" aria-controls="plot" aria-selected="false">Plot alignment</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link tab" id="tab3" data-toggle="tab" href="#batch-tab" role="tab" aria-controls="batch" aria-selected="false">Batch alignments</a>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="tabContent">
+                    <div class="tab-pane fade show active" id="align-tab" role="tabpanel" aria-labelledby="align-tab">
+                        {# Tab 1 #}
+                        {% set fnote_tab = fnote %}
+                        <div class="form-group row">
+                            <label for="file_target" class="file-target col-sm-2 col-form-label">Target fasta <sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup></label>
+                            <div class="input-group col-sm-10" style="display: flex;">
+                                <div class="input-group-prepend">
+                                    <select class="form-control select-type-input target">
                                         <option value="0">Local</option>
                                         <option value="1">Url</option>
                                     </select>
-
-                                    <div class="target-label in-label" id="dropzone-target">
-                                        <div id="progress-target" class="progress">
-                                            <div class="bar" style="width: 0%;"></div>
-                                        </div>
-                                        <input id="target" name="target" class="form-control show-file" type="text" value=""/>
+                                </div>
+                                <div class="target-label in-label" id="dropzone-target">
+                                    <div id="progress-target" class="progress">
+                                        <div class="bar" style="width: 0%;"></div>
                                     </div>
-
-                                    <button class="btn btn-file" type="button" id="button-target" title="Select a file">
-                                        <span class="glyphicon glyphicon-folder-open"></span>&nbsp
-                                    </button>
+                                    <input id="target" name="target" class="form-control show-file" type="text" value="" aria-label="Target file"/>
+                                </div>
+                                <div class="input-group-append">
                                     <div class="loading-file target" style="display: none"></div>
                                     <div class="upload-success target" style="display: none"></div>
                                     <div class="file-size target"></div>
-                                </td>
-                            </tr>
-                            <tr class="query tabx tab1">
-                                <th>
-                                    <label for="file_query" class="file-query">Query fasta <sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup></label>
-                                </th>
-                                <td class="input-group">
-                                    <select class="select-type-input query">
+                                    <button class="btn btn-secondary" type="button" id="button-target" title="Select a file">
+                                        <span class="glyphicon glyphicon-folder-open"></span>&nbsp
+                                    </button>
+                                </div>
+                                <div>
+                                    <small id="targetHelp" class="form-text text-muted">
+                                        Mandatory. Can be gzipped. Must end with <code>.fa</code>, <code>.fasta</code>, <code>.fna</code>, <code>.fa.gz</code>, <code>.fasta.gz</code> or <code>.fna.gz</code>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label for="file_query" class="file-query col-sm-2 col-form-label">Query fasta <sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup></label>
+                            <div class="input-group col-sm-10" style="display: flex;">
+                                <div class="input-group-prepend">
+                                    <select class="form-control select-type-input query">
                                         <option value="0">Local</option>
                                         <option value="1">Url</option>
                                     </select>
-
-                                    <div class="query-label in-label" id="dropzone-query">
-                                        <div id="progress-query" class="progress">
-                                            <div class="bar" style="width: 0%;"></div>
-                                        </div>
-                                        <input id="query" name="query" class="form-control show-file" type="text" value="" readonly/>
+                                </div>
+                                <div class="query-label in-label" id="dropzone-query">
+                                    <div id="progress-query" class="progress">
+                                        <div class="bar" style="width: 0%;"></div>
                                     </div>
-
-                                    <button class="btn btn-file" type="button" id="button-query" title="Select a file">
+                                    <input id="query" name="query" class="form-control show-file" type="text" value="" aria-label="Query file"/>
+                                </div>
+                                <div class="input-group-append">
+                                    <div class="loading-file query hide"></div>
+                                    <div class="upload-success query hide"></div>
+                                    <div class="file-size query"></div>
+                                    <button class="btn btn-secondary" type="button" id="button-query" title="Select a file">
                                         <span class="glyphicon glyphicon-folder-open"></span>&nbsp
                                     </button>
-                                    <div class="loading-file query" style="display: none"></div>
-                                    <div class="upload-success query" style="display: none"></div>
-                                    <div class="file-size query"></div>
-                                </td>
-                            </tr>
-                            {% if tools | length > 1 %}
-                                <tr class="tabx tab1">
-                                    <th>
-                                        <label class="tools">Aligner</label>
-                                    </th>
-                                    <td>
-                                    {% for tool in tools_names %}
-                                        <label style="vertical-align: bottom; line-height: 35px;" class="radio-inline">
-                                            <input type="radio" id="tool-{{ tool }}" name="tool" value="{{ tool }}"
-                                            {% if loop.index0 == 0 %}checked{% endif %} style="vertical-align: top;"/>
-                                            {{ tools[tool].label | capitalize }}
-                                            <span class="glyphicon glyphicon-question-sign" style="color: #2aabd2"
-                                                  title="{{ tools[tool].help }}"></span>
-                                        </label>
-                                    {% endfor %}
-                                    </td>
-                                </tr>
-                            {% else %}
-                                <tr class="tabx tab1">
-                                <td colspan="2">
-                                    {% for tool in tools_names %}
-                                        <input type="radio" name="tool" id="tool" value="{{ tool }}" style="display: none;"
-                                         checked/>
-                                    {% endfor %}
-                                </td>
-                                </tr>
-                            {% endif %}
-                            {% if tools | length > 1 %}
+                                </div>
+                                <div>
+                                    <small id="queryHelp" class="form-text text-muted">
+                                        Optional. Can be gzipped. Must end with <code>.fa</code>, <code>.fasta</code>, <code>.fna</code>, <code>.fa.gz</code>, <code>.fasta.gz</code> or <code>.fna.gz</code>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        {% if tools | length > 1 %}
+                            <div class="form-group row">
+                                <label for="tool" class="file-query col-sm-2 col-form-label tools">Aligner</label>
+                                <div class="form-check col-sm-10">
                                 {% for tool in tools_names %}
-                                    {% set tool_loop = loop %}
-                                    <tr class="tabx tab1 optionx tool-options-{{tool}} {% if loop.index0 != 0 or not tools[tool].options %}hide{% endif %}">
-                                        <th colspan="2" style="vertical-align:top;">
-                                            <div id="tool-options-{{tool}}">
-                                                <label class="options">Options</label>
-                                            </div>
-                                        </th>
-                                    </tr>
-                                    {% if tools[tool].options %}
-                                        {% for opt in tools_options[tool] %}
-                                            <tr class="tabx tab1 optionx tool-options-{{tool}} {% if tool_loop.index0 != 0 %}hide{% endif %}">
-                                                {% set outer_loop = loop %}
-                                                <td style="vertical-align:top;">
-                                                    {{ opt.label }}&nbsp<span class="glyphicon glyphicon-question-sign" style="color: #2aabd2"
-                                                                              title="{{ opt.help }} (group: {{ opt.group }})"></span>
-                                                </td>
-                                                <td>
-                                                    {% for entry in opt['entries'] %}
-                                                        <div class="form-check">
-                                                            <input class="form-check-input"
-                                                                   type="{{ opt.type }}"
-                                                                   id="tool-options-{{tool}}-{{ opt.group }}:{{ entry.key }}"
-                                                                   name="tool-options-{{tool}}-{{ opt.group }}{% if opt.type != 'radio' %}:{{ entry.key }}{% endif %}"
-                                                                   value="{{ opt.group }}:{{ entry.key }}"
-                                                                   {% if entry.default %}checked{% endif %}/>
-                                                            <label class="form-check-label" style="vertical-align: bottom; line-height: 30px; font-weight: normal;"
-                                                                   for="tool-options-{{tool}}-{{ opt.group }}:{{ entry.key }}">
-                                                                {{ entry.label | capitalize }}&nbsp<span class="glyphicon glyphicon-question-sign" style="color: #2aabd2"
-                                                                      title="{{ entry.help }} (id: {{ opt.group }}:{{ entry.key }})"></span>
-                                                            </label>
-                                                        </div>
-                                                    {% endfor %}
-                                                </td>
-                                            </tr>
-                                        {% endfor %}
-                                    {% endif %}
+                                    <input class="form-check-input" type="radio" name="tool" id="tool-{{ tool }}" value="{{ tool }}" {% if loop.index0 == 0 %}checked{% endif %}>
+                                    <label class="form-check-label" for="tool-{{ tool }}">
+                                        {{ tools[tool].label | capitalize }} <span class="glyphicon glyphicon-question-sign" style="color: #2aabd2" title="{{ tools[tool].help }}">&nbsp</span>
+                                    </label>
                                 {% endfor %}
-                            {% else %}
-                                {% set tool = tools_names[0] %}
-                                <tr class="tabx tab1 optionx tool-options-{{tool}}" {% if not tools[tool].options %}style="display: none;"{% endif %}>
-                                    <td colspan="2" style="vertical-align:top;">
-                                        <div id="tool-options">
-                                            <label class="options">Options</label>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% if tools[tool].options %}
-                                <tr class="tabx tab1 optionx tool-options-{{tool}}" >
+                                </div>
+                            </div>
+                        {% else %}
+                            <input type="radio" name="tool" id="tool" value="{{ tool }}" style="display: none;" checked/>
+                        {% endif %}
+
+                        {% if tools | length > 1 %}
+                            {% for tool in tools_names %}
+                                {% set tool_loop = loop %}
+                                {% if tools[tool].options|length%}
+                                    <div class="form-group {% if loop.index0 != 0%}hide{% endif %}">
+                                        <label id="tool-options-{{tool}}" class="form-group options optionx tool-options-{{tool}}">Options</label>
+                                        {% for opt in tools_options[tool] %}
+                                            <div class="form-group row optionx tool-options-{{tool}}  {% if tool_loop.index0 != 0 %}hide{% endif %}">
+                                                <label class="col-sm-2 options">{{ opt.label }}&nbsp<span class="glyphicon glyphicon-question-sign" style="color: #2aabd2"
+                                                    title="{{ opt.help }}"></span></label>
+                                                {% for entry in opt['entries'] %}
+                                                    <div class="form-check">
+                                                        <input class="form-check-input"
+                                                            type="{{ opt.type }}"
+                                                            id="tool-options-{{tool}}-{{ opt.group }}:{{ entry.key }}"
+                                                            name="tool-options-{{tool}}-{{ opt.group }}{% if opt.type != 'radio' %}:{{ entry.key }}{% endif %}"
+                                                            value="{{ opt.group }}:{{ entry.key }}"
+                                                            {% if entry.default %}checked{% endif %}/>
+                                                        <label class="form-check-label" style="vertical-align: bottom; line-height: 30px; font-weight: normal;"
+                                                            for="tool-options-{{tool}}-{{ opt.group }}:{{ entry.key }}">
+                                                            {{ entry.label | capitalize }}&nbsp<span class="glyphicon glyphicon-question-sign" style="color: #2aabd2"
+                                                                title="{{ entry.help }}"></span>
+                                                        </label>
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            {% set tool = tools_names[0] %}
+                            {% if tools[tool].options %}
+                                <div id="tool-options-{{tool}}" class="form-group row">
+                                    <label class="form-check-label options">Options</label>
+                                </div>
+                                <div>
                                     {% for opt in tools[tool].options %}
-                                        <td style="vertical-align:top;">
-                                            {{ opt.label }}&nbsp<span class="glyphicon glyphicon-question-sign" style="color: #2aabd2"
-                                                                        title="{{ opt.help }} (group: {{ opt.group }})"></span>
-                                        </td>
-                                        <td>
+                                        <div class="form-group row optionx tool-options-{{tool}}">
+                                            <label class="options">{{ opt.label }}&nbsp<span class="glyphicon glyphicon-question-sign" style="color: #2aabd2"
+                                                title="{{ opt.help }} (group: {{ opt.group }})"></span></label>
                                             {% for entry in opt['entries'] %}
                                                 <div class="form-check">
                                                     <input class="form-check-input"
@@ -259,201 +242,205 @@
                                                     </label>
                                                 </div>
                                             {% endfor %}
-                                        </td>
+                                        </div>
                                         {% endfor %}
-                                    </tr>
-                                {% endif %}
+                                </div>
                             {% endif %}
-
-
-                            {# Tab 2 #}
-                            <tr class="alignfile tabx tab2">
-                                {% set fnote_tab = fnote %}
-                                <th>
-                                    <label for="file_align" class="file-align">Alignment file <sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup>{% set fnote_tab = fnote_tab + 1 %}</label>
-                                </th>
-                                <td class="input-group">
-                                    <select class="select-type-input alignfile">
+                        {% endif %}
+                    </div>
+                    <div class="tab-pane fade" id="plot-tab" role="tabpanel" aria-labelledby="plot-tab">
+                        {# Tab 2 #}
+                        {% set fnote_tab = fnote %}
+                        <div class="form-group row">
+                            <label for="file_align" class="file-align col-sm-2 col-form-label">Alignment file <sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup>{% set fnote_tab = fnote_tab + 1 %}</label>
+                            <div class="input-group col-sm-10" style="display: flex;">
+                                <div class="input-group-prepend">
+                                    <select class="form-control select-type-input alignfile">
                                         <option value="0">Local</option>
                                         <option value="1">Url</option>
                                     </select>
-
-                                    <div class="alignfile-label in-label" id="dropzone-alignfile">
-                                        <div id="progress-alignfile" class="progress">
-                                            <div class="bar" style="width: 0%;"></div>
-                                        </div>
-                                        <input id="alignfile" name="alignfile" class="form-control show-file" type="text" value="" readonly/>
+                                </div>
+                                <div class="alignfile-label in-label" id="dropzone-alignfile">
+                                    <div id="progress-alignfile" class="progress">
+                                        <div class="bar" style="width: 0%;"></div>
                                     </div>
-
-                                    <button class="btn btn-file" type="button" id="button-alignfile" title="Select a file">
-                                        <span class="glyphicon glyphicon-folder-open"></span>&nbsp
-                                    </button>
+                                    <input id="alignfile" name="alignfile" class="form-control show-file" type="text" value="" aria-label="Alignment file"/>
+                                </div>
+                                <div class="input-group-append">
                                     <div class="loading-file alignfile" style="display: none"></div>
                                     <div class="upload-success alignfile" style="display: none"></div>
                                     <div class="file-size alignfile"></div>
-                                </td>
-                            </tr>
-                            <tr class="targetidx tabx tab2">
-                                <th>
-                                    <label for="file_targetidx" class="file-targetidx">Target file<sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup></label>
-                                </th>
-                                <td class="input-group">
-                                    <select class="select-type-input targetidx">
+                                    <button class="btn btn-secondary" type="button" id="button-alignfile" title="Select a file">
+                                        <span class="glyphicon glyphicon-folder-open"></span>&nbsp
+                                    </button>
+                                </div>
+                                <div>
+                                    <small id="alignfileHelp" class="form-text text-muted">
+                                        In PAF or MAF format. Must end with <code>.paf</code> or <code>.maf</code>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label for="file_targetidx" class="file-targetidx col-sm-2 col-form-label">Target file <sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup></label>
+                            <div class="input-group col-sm-10" style="display: flex;">
+                                <div class="input-group-prepend">
+                                    <select class="form-control select-type-input targetidx">
                                         <option value="0">Local</option>
                                         <option value="1">Url</option>
                                     </select>
-
-                                    <div class="targetidx-label in-label" id="dropzone-targetidx">
-                                        <div id="progress-targetidx" class="progress">
-                                            <div class="bar" style="width: 0%;"></div>
-                                        </div>
-                                        <input id="targetidx" name="targetidx" class="form-control show-file" type="text" value="" readonly/>
+                                </div>
+                                <div class="targetidx-label in-label" id="dropzone-targetidx">
+                                    <div id="progress-targetidx" class="progress">
+                                        <div class="bar" style="width: 0%;"></div>
                                     </div>
-
-                                    <button class="btn btn-file" type="button" id="button-targetidx" title="Select a file">
-                                        <span class="glyphicon glyphicon-folder-open"></span>&nbsp
-                                    </button>
+                                    <input id="targetidx" name="targetidx" class="form-control show-file" type="text" value="" aria-label="Target file"/>
+                                </div>
+                                <div class="input-group-append">
                                     <div class="loading-file targetidx" style="display: none"></div>
                                     <div class="upload-success targetidx" style="display: none"></div>
                                     <div class="file-size targetidx"></div>
-                                </td>
-                            </tr>
-                            <tr class="queryidx tabx tab2">
-                                <th>
-                                    <label for="file_queryidx" class="file-queryidx">Query file<sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup>{% set fnote_tab = fnote_tab + 1 %}</label>
-                                </th>
-                                <td class="input-group">
-                                    <select class="select-type-input queryidx">
+                                    <button class="btn btn-secondary" type="button" id="button-targetidx" title="Select a file">
+                                        <span class="glyphicon glyphicon-folder-open"></span>&nbsp
+                                    </button>
+                                </div>
+                                <div>
+                                    <small id="targetidxHelp" class="form-text text-muted">
+                                        Fasta file or index built by <a href="https://raw.githubusercontent.com/genotoul-bioinfo/dgenies/v{{version}}/src/dgenies/bin/index.py" download="index.py">our tool</a>. Must end with <code>.fa</code>, <code>.fasta</code>, <code>.fna</code>, <code>.fa.gz</code>, <code>.fasta.gz</code>, <code>.fna.gz</code> or <code>.idx</code>.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label for="file_queryidx" class="file-queryidx col-sm-2 col-form-label">Query file <sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup>{% set fnote_tab = fnote_tab + 1 %}</label>
+                            <div class="input-group col-sm-10" style="display: flex;">
+                                <div class="input-group-prepend">
+                                    <select class="form-control select-type-input queryidx">
                                         <option value="0">Local</option>
                                         <option value="1">Url</option>
                                     </select>
-
-                                    <div class="queryidx-label in-label" id="dropzone-queryidx">
-                                        <div id="progress-queryidx" class="progress">
-                                            <div class="bar" style="width: 0%;"></div>
-                                        </div>
-                                        <input id="queryidx" name="queryidx" class="form-control show-file" type="text" value="" readonly/>
+                                </div>
+                                <div class="queryidx-label in-label" id="dropzone-queryidx">
+                                    <div id="progress-queryidx" class="progress">
+                                        <div class="bar" style="width: 0%;"></div>
                                     </div>
-
-                                    <button class="btn btn-file" type="button" id="button-queryidx" title="Select a file">
-                                        <span class="glyphicon glyphicon-folder-open"></span>&nbsp
-                                    </button>
+                                    <input id="queryidx" name="queryidx" class="form-control show-file" type="text" value="" aria-label="Query file"/>
+                                </div>
+                                <div class="input-group-append">
                                     <div class="loading-file queryidx" style="display: none"></div>
                                     <div class="upload-success queryidx" style="display: none"></div>
                                     <div class="file-size queryidx"></div>
-                                </td>
-                            </tr>
-                            <tr class="tabx tab2">
-                                <td colspan="2">
-                                    <h3 class="orsep">- or -</h3>
-                                </td>
-                            </tr>
-                            <tr class="backup tabx tab2">
-                                <th>
-                                    <label for="file_backup" class="file-backup">Backup file<sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup>{% set fnote_tab = fnote_tab + 1 %}</label>
-                                </th>
-                                <td class="input-group">
-                                    <select class="select-type-input backup">
+                                    <button class="btn btn-secondary" type="button" id="button-queryidx" title="Select a file">
+                                        <span class="glyphicon glyphicon-folder-open"></span>&nbsp
+                                    </button>
+                                </div>
+                                <div>
+                                    <small id="queryidxHelp" class="form-text text-muted">
+                                        Fasta file or index built by <a href="https://raw.githubusercontent.com/genotoul-bioinfo/dgenies/v{{version}}/src/dgenies/bin/index.py" download="index.py">our tool</a>. Must end with <code>.fa</code>, <code>.fasta</code>, <code>.fna</code>, <code>.fa.gz</code>, <code>.fasta.gz</code>, <code>.fna.gz</code> or <code>.idx</code>.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <h3 class="orsep">- or -</h3>
+
+                        <div class="form-group row">
+                            <label for="file_backup" class="file-backup col-sm-2 col-form-label">Backup file <sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup></label>
+                            <div class="input-group col-sm-10" style="display: flex;">
+                                <div class="input-group-prepend">
+                                    <select class="form-control select-type-input backup">
                                         <option value="0">Local</option>
                                         <option value="1">Url</option>
                                     </select>
-
-                                    <div class="backup-label in-label" id="dropzone-backup">
-                                        <div id="progress-backup" class="progress">
-                                            <div class="bar" style="width: 0%;"></div>
-                                        </div>
-                                        <input id="backup" name="backup" class="form-control show-file" type="text" value="" readonly/>
+                                </div>
+                                <div class="backup-label in-label" id="dropzone-backup">
+                                    <div id="progress-backup" class="progress">
+                                        <div class="bar" style="width: 0%;"></div>
                                     </div>
-
-                                    <button class="btn btn-file" type="button" id="button-backup" title="Select a file">
-                                        <span class="glyphicon glyphicon-folder-open"></span>&nbsp
-                                    </button>
+                                    <input id="backup" name="backup" class="form-control show-file" type="text" value="" aria-label="Backup file"/>
+                                </div>
+                                <div class="input-group-append">
                                     <div class="loading-file backup" style="display: none"></div>
                                     <div class="upload-success backup" style="display: none"></div>
                                     <div class="file-size backup"></div>
-                                </td>
-                            </tr>
-                            {# Tab 3 #}
-                            <tr class="batch tabx tab3">
-                                {% set fnote_tab = fnote %}
-
-                                <th style="vertical-align: top">
-                                    <label for="bname">Batch file<sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup>{% set fnote_tab = fnote_tab + 1 %}</label>
-                                </th>
-                                <td>
-                                    <input type="file" id="bname" name="bname">
-                                </td>
-                            </tr>
-                            <tr class="batch tabx tab3">
-                                <td colspan="2">
-                                    <textarea id="batch_content" rows="10"></textarea>
-                                </td>
-                            </tr>
-                            <tr class="batch tabx tab3">
-                                <th style="vertical-align: top">
-                                    <label id="listing-desc" for="batch-file-upload">User files</label>
-                                </th>
-                                <td>
-                                    <div class="input-container">
-                                        <div class="row fileupload-buttonbar">
-                                            <div class="left-wrapper">
-                                                <button type="button" id="multiple-files-btn" class="btn btn-success fileinput-button">
-                                                    <i class="glyphicon glyphicon-plus"></i>
-                                                    <span>Add files...</span>
-                                                </span>
-                                            </div>
-                                            <div class="right-wrapper">
-                                                <button type="button" id="delete-unused-btn" class="btn btn-warning cancel delete-btn">
-                                                    <i class="glyphicon glyphicon-trash"></i>
-                                                    <span>Remove unused</span>
-                                                </button>
-                                                <button type="button" id="delete-all-btn" class="btn btn-danger delete delete-btn">
-                                                    <i class="glyphicon glyphicon-trash"></i>
-                                                    <span>Clear All</span>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr class="batch tabx tab3">
-                                    <td colspan="2">
-                                        <div id="input-dropzone">
-                                            <table id="listing" aria-describedby="listing-desc">
-                                                <thead>
-                                                    <tr>
-                                                        <th scope="col">File</th>
-                                                        <th scope="col">Size</th>
-                                                        <th scope="col">State</th>
-                                                        <th scope="col">Actions</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                </tbody>
-                                            </table>            
-                                        </div>
-                                    </div> 
-                                </td>
-                            </tr>
-
-                            <tr class="batch tabx tab3">
-                                <td colspan="2" style="vertical-align:top;">
-                                    Possible values for <em>tool</em> and <em>options</em> keys
-                                </td>
-                            </tr>
-
-                            <tr class="batch tabx tab3">
-                                <th>Tool</th>
-                                <th>Option ids (to use with <em>options=</em>)<sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup>{% set fnote_tab = fnote_tab + 1 %}</th>
-                            </tr>
-                            {% for tool in tools_names %}
-                                <tr class="batch tabx tab3" style="border-top:1px solid black">
-                                    <td style="vertical-align:top;">
-                                        {{ tools[tool].label | capitalize }}
-                                            <span class="glyphicon glyphicon-question-sign" style="color: #2aabd2"
-                                                  title="{{ tools[tool].help }}"></span><br>(tool={{ tool }}</span>)
-                                    </td>
-                                    {% if tools[tool].options %}
-                                        <td>
+                                    <button class="btn btn-secondary" type="button" id="button-backup" title="Select a file">
+                                        <span class="glyphicon glyphicon-folder-open"></span>&nbsp
+                                    </button>
+                                </div>
+                                <div>
+                                    <small id="backupHelp" class="form-text text-muted">
+                                        TAR file from a previous run or built following <a href="/documentation/formats#backup-file"> this documentation</a>. Must ends with <code>.tar</code> or <code>.tar.gz</code>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="batch-tab" role="tabpanel" aria-labelledby="batch-tab">
+                        {# Tab 3 #}
+                        <!--
+                        <div class="input-group mb-3"  style="display: flex;">
+                            <div class="input-group-prepend">
+                              <span class="input-group-text">Batch file<sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup>{% set fnote_tab = fnote_tab + 1 %}</span>
+                            </div>
+                            <div class="custom-file">
+                              <input type="file" class="custom-file-input" id="bname">
+                              <label class="custom-file-label" for="bname">Choose file</label>
+                            </div>
+                        </div>
+                        -->
+                        {% set fnote_tab = fnote %}
+                        <div class="form-group row">
+                            <label for="file_batch" class="file-batch col-sm-2 col-form-label">Batch file<sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup>{% set fnote_tab = fnote_tab + 1 %}</label>
+                            <div class="input-group col-sm-10" style="display: flex;">
+                                <div class="custom-file" id="inputLocal">
+                                    <input type="file" class="custom-file-input" id="bname" name="bname">
+                                    <label class="custom-file-label" for="bname">Choose file</label>
+                                </div>
+                                <small id="targetHelp" class="form-text text-muted">
+                                    Text file following <a href="/documentation/formats#batch-file">batch format</a>. Must end with <code>.txt</code>
+                                </small>
+                            </div>
+                        </div>
+                        <div>
+                            <textarea id="batch_content" rows="10"></textarea>
+                        </div>
+                        <div class="row batch hide" style="display: flex;">
+                            <div class="col-1"></div>
+                            <div class="col-2"><strong>Tool</strong></div>
+                            <div class="col-1"></div>
+                            <div class="col-8"><strong>Options</strong></div>
+                        </div>
+                        <div id="input-dropzone">
+                            <table id="listing" aria-describedby="listing-desc">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">File</th>
+                                        <th scope="col">Size</th>
+                                        <th scope="col">State</th>
+                                        <th scope="col">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>            
+                        </div>
+                        <div class="row batch" style="display: flex;">
+                            <div class="col-3">
+                            <div class="list-group" id="list-tab" role="tablist">
+                                {% for tool in tools_names %}
+                                    <a class="list-group-item list-group-item-action {% if loop.index0 == 0 %}active{% endif %}" id="list-option-{{ tool }}-list" data-toggle="list" href="#list-option-{{ tool }}" role="tab" aria-controls="{{ tool }}">
+                                        tool={{ tool }}
+                                        <span class="glyphicon glyphicon-question-sign" title="{{ tools[tool].help }}"></span><br>
+                                        <small>{{ tools[tool].label | capitalize }}</small>
+                                    </a>
+                                {% endfor %}
+                            </div>
+                            </div>
+                            <div class="col-9">
+                            <div class="tab-content" id="nav-tabContent">
+                                {% for tool in tools_names %}
+                                    <div class="tab-pane fade show {% if loop.index0 == 0 %}active{% endif %}" id="list-option-{{ tool }}" role="tabpanel" aria-labelledby="list-option-{{ tool }}-list">
+                                        {% if tools[tool].options %}
                                             <ul>
                                             {% for opt in tools[tool].options %}
                                                 {% set outer_loop = loop %}
@@ -466,14 +453,14 @@
                                                 </ul>
                                             {% endfor %}
                                             </ul>
-                                        </td>
-                                    {% else %}
-                                        <td style="vertical-align:top; text-align: center;">No option</td>
-                                    {% endif %}
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                                        {% else %}
+                                            <td style="vertical-align:top; text-align: center;">No option</td>
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </fieldset>
             <div class="buttons">
