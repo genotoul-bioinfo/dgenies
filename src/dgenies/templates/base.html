@@ -80,8 +80,8 @@
                             <li class="nav-item{% if(menu == 'install') %} active{% endif %}"><a class="nav-link" href="/install">Install</a></li>
                             <li class="nav-item{% if(menu == 'contact') %} active{% endif %}"><a class="nav-link" href="/contact">Contact</a></li>
                             {% if mode == "webserver" and legal_pages %}
-                                <li class="nav-link dropdown legal {% if(menu == 'legal') %}active{% endif %}">
-                                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Legal<span
+                                <li class="nav-item dropdown legal {% if(menu == 'legal') %}active{% endif %}">
+                                    <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Legal<span
                                             class="caret"></span></a>
                                     <ul class="dropdown-menu" role="menu">
                                         {% for page in legal_pages %}

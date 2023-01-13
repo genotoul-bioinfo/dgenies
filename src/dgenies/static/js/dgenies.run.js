@@ -1157,20 +1157,20 @@ dgenies.run.set_events = function() {
 dgenies.run.change_fasta_type = function (fasta, type, keep_url=false) {
     let button = $("button#button-" + fasta);
     let input = $("input#" + fasta);
-    //let container = $("div." + fasta + "-label");
+    let container = $("div." + fasta + "-label");
     $("input.file-" + fasta).val("");
     if (type === "local") {
         button.show();
         input.prop("readonly", true);
         input.val("");
-        //container.width(300);
+        container.width(300);
     }
     else {
         button.hide();
         input.prop("readonly", false);
         if (!keep_url)
             input.val("");
-        //container.width(348);
+        container.width(348);
     }
     $("div.file-size." + fasta).html("");
 };

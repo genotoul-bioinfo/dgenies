@@ -351,7 +351,7 @@ label.input-checkbox-label input[type=checkbox]{
 }
 
 /* Submit form: */
-.form-group, .form-group input {
+.form-group {
     margin-bottom: 5px !important;
 }
 
@@ -564,12 +564,6 @@ textarea {
 	color: green;
 }
 
-.input-container {
-    max-width: 800px;
-    margin-left: auto;
-    margin-right: auto;
-}
-
 #input-dropzone {
     -moz-border-radius: 10px;
     -webkit-border-radius: 10px;
@@ -581,6 +575,7 @@ textarea {
 	overflow-x: auto;
 }
 
+/*
 .fileupload-buttonbar.row {
 	margin-left: 0;
 	margin-right: 0;
@@ -589,6 +584,7 @@ textarea {
 .fileupload-buttonbar.row::after, .fileupload-buttonbar.row::before {
 	content: none;
 }
+*/
 
 #listing {
 	width: 100%;
@@ -698,21 +694,8 @@ div.inforun.success {
     border-color: #13561e;
 }
 
-div.submit-form table td {
-    padding-bottom: 8px;
-    vertical-align: bottom;
-}
-
-div.submit-form table th label {
-    padding-right: 20px;
-    vertical-align: middle;
-    margin-bottom: 5px;
-}
-
-div.submit-form table td label {
-    padding-right: 20px;
-    vertical-align: middle;
-    margin-bottom: 5px;
+div.submit-form .input-label {
+    font-weight: bold;
 }
 
 div.submit-form input#id_job, div.submit-form input#email {
@@ -817,7 +800,7 @@ div.upload-success {
 }
 
 div.file-size {
-    display: inline-block;
+    display: inline;
     vertical-align: middle;
     margin-left: 10px;
 }
@@ -836,24 +819,19 @@ div.progress, input.show-file {
     width: 100% !important;
 }
 
-div.in-label {
-    width: 300px;
-}
-
 div.in-label.grp2 {
     width: 365px;
 }
 
-div.submit-form table input[type=text], div.submit-form table input[type=email] {
+div.submit-form input[type=text], div.submit-form input[type=email], div.submit-form input[type="button"]{
     border: 1px solid #A9A9A9;
     border-image: none;
 }
 
-div.submit-form table input, div.submit-form button, div.submit-form a.btn, div.submit-form select {
+div.submit-form input, div.submit-form button, div.submit-form a.btn, div.submit-form select {
     border-radius: 5px 5px 5px 5px !important;
     -moz-border-radius: 5px 5px 5px 5px !important;
     -webkit-border-radius: 5px 5px 5px 5px !important;
-    height: 30px;
     outline: none !important;
 }
 
