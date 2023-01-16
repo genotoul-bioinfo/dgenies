@@ -741,7 +741,7 @@ d3.dgenies.draw_legend = function () {
         .attr("x", 0)
         .attr("y", "50%")
         .attr("text-anchor", "middle")
-        .attr("transform", "translate(-" + (draw_w - 15) + "," + (draw_h / 2) + ")rotate(-90)")
+        .attr("transform", "translate(-" + (draw_w - 20) + "," + (draw_h / 2) + ")rotate(-90)")
         .attr("font-family", "sans-serif")
         .attr("font-size", "11.5pt")
         .attr("font-weight", "bold")

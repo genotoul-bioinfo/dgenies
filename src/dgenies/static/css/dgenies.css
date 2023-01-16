@@ -148,7 +148,7 @@ label.input-checkbox-label input[type=checkbox]{
 
 #sidebar {
     min-width: 120px;
-    max-width: 165px;
+    max-width: 175px;
 }
 
 #sidebar input[type=number] {
@@ -769,6 +769,7 @@ div.progress .bar {
 select.select-type-input, .input-group button, .input-group input {
     height: 30px;
     line-height: 30px;
+    border-color: #a9a9a9;
 }
 
 input.show-file {
