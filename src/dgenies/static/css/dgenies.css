@@ -744,13 +744,13 @@ div.in-label {
     position: relative;
     display: inline-block;
     width: 300px;
-    height: 30px;
+    /*height: 30px;*/
     vertical-align: middle;
 }
 
 div.progress {
     width: 300px;
-    height: 30px;
+    height: 38px;
     position: absolute;
     top: 0;
     left: 0;
@@ -767,7 +767,7 @@ div.progress .bar {
 }
 
 select.select-type-input, .input-group button, .input-group input {
-    height: 30px;
+/*    height: 30px; */
     line-height: 30px;
     border-color: #a9a9a9;
 }
@@ -1166,4 +1166,9 @@ div#nav-batch-help h5 {
     font-size: medium;
     font-style: italic;
     margin-left: 15px;
+}
+
+.local-files-buttons .btn{
+    padding-bottom: 0;
+    border-color: transparent;
 }

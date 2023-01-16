@@ -1011,7 +1011,7 @@ dgenies.run.fill_examples = function (tab) {
             "/example/batch",
             {},
             function (data) {
-                $("#bname").val('');
+                $('#bname')[0].nextElementSibling.innerText = 'Choose file';
                 dgenies.run.editor.setValue(data);
             }
         )
@@ -1099,6 +1099,12 @@ dgenies.run.set_events = function() {
     $.each(ftypes, function (i, ftype) {
         dgenies.run._set_file_event(ftype);
         dgenies.run._set_file_select_event(ftype);
+    });
+
+    $('#bname').change(function(e){
+        let fileName = $('#bname')[0].files[0].name;
+        let nextSibling = e.target.nextElementSibling
+        nextSibling.innerText = fileName
     });
 
     $("button#submit").click(function () {
