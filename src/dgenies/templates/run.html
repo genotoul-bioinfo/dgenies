@@ -86,13 +86,20 @@
                 </div>
                 {% if mode == "webserver" %}
                 <div class="row">
-                    <label for="email" class="email col-sm-2 col-form-label">E-mail <sup><a href="#fn{{ fnote }}" id="ref{{ fnote }}">{{ fnote }}</a></sup>{% set fnote = fnote + 1 %}</label>
-                    <div class="col-sm-10 d-flex align-items-center">
+                    <label for="email" class="email col-sm-2 col-form-label">E-mail</label>
+                    <div class="input-group col-sm-10 d-flex">
+                    <div class="align-items-center">
                         <input type="email" class="form-control" id="email" value="{{ email }}" placeholder="name@example.com" required>
+                    </div>
+                    <div class="w-100"></div>
+                    <div>
+                        <small id="emailHelp" class="form-text text-muted">
+                            We will send you results by mail
+                        </small>
+                    </div>
                     </div>
                 </div>
                 {% endif %}
-
                 <ul class="nav nav-tabs" id="tabs" role="tablist">
                     <li class="nav-item">
                         <a class="nav-link tab active" id="tab1" data-toggle="tab" href="#align-tab" role="tab" aria-controls="align" aria-selected="true">New alignment</a>
@@ -110,7 +117,7 @@
                         {# Tab 1 #}
                         {% set fnote_tab = fnote %}
                         <div class="row">
-                            <label for="file_target" class="file-target col-sm-2 col-form-label input-label">Target fasta <sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup></label>
+                            <label for="file_target" class="file-target col-sm-2 col-form-label input-label">Target fasta</label>
                             <div class="input-group col-sm-10 d-flex">
                                 <div class="input-group-prepend">
                                     <select class="form-control select-type-input target" size="1">
@@ -135,13 +142,13 @@
                                 <div class="w-100"></div>
                                 <div>
                                     <small id="targetHelp" class="form-text text-muted">
-                                        Mandatory. Can be gzipped. Must end with <code>.fa</code>, <code>.fasta</code>, <code>.fna</code>, <code>.fa.gz</code>, <code>.fasta.gz</code> or <code>.fna.gz</code>
+                                        Can be gzipped. Must end with <code>.fa</code>, <code>.fasta</code>, <code>.fna</code>, <code>.fa.gz</code>, <code>.fasta.gz</code> or <code>.fna.gz</code>
                                     </small>
                                 </div>
                             </div>
                         </div>
                         <div class="row">
-                            <label for="file_query" class="file-query col-sm-2 col-form-label input-label">Query fasta <sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup></label>
+                            <label for="file_query" class="file-query col-sm-2 col-form-label input-label">Query fasta</label>
                             <div class="input-group col-sm-10 d-flex">
                                 <div class="input-group-prepend">
                                     <select class="form-control select-type-input query" size="1">
@@ -166,7 +173,7 @@
                                 <div class="w-100"></div>
                                 <div>
                                     <small id="queryHelp" class="form-text text-muted">
-                                        Optional. Can be gzipped. Must end with <code>.fa</code>, <code>.fasta</code>, <code>.fna</code>, <code>.fa.gz</code>, <code>.fasta.gz</code> or <code>.fna.gz</code>
+                                        Can be gzipped. Must end with <code>.fa</code>, <code>.fasta</code>, <code>.fna</code>, <code>.fa.gz</code>, <code>.fasta.gz</code> or <code>.fna.gz</code>
                                     </small>
                                 </div>
                             </div>
@@ -258,7 +265,7 @@
                         {# Tab 2 #}
                         {% set fnote_tab = fnote %}
                         <div class="row">
-                            <label for="file_align" class="file-align col-sm-2 col-form-label input-label">Alignment file <sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup>{% set fnote_tab = fnote_tab + 1 %}</label>
+                            <label for="file_align" class="file-align col-sm-2 col-form-label input-label">Alignment file</label>
                             <div class="input-group col d-flex">
                                 <div class="input-group-prepend">
                                     <select class="form-control select-type-input alignfile" size="1">
@@ -283,13 +290,13 @@
                                 <div class="w-100"></div>
                                 <div>
                                     <small id="alignfileHelp" class="form-text text-muted">
-                                        In PAF or MAF format. Must end with <code>.paf</code> or <code>.maf</code>
+                                        In <a href="/documentation/formats#paf-pairwise-mapping-format">PAF</a> or <a href="/documentation/formats#maf-multiple-alignment-file">MAF</a> format. Must end with <code>.paf</code> or <code>.maf</code>
                                     </small>
                                 </div>
                             </div>
                         </div>
                         <div class="row">
-                            <label for="file_targetidx" class="file-targetidx col-sm-2 col-form-label input-label">Target file <sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup></label>
+                            <label for="file_targetidx" class="file-targetidx col-sm-2 col-form-label input-label">Target file</label>
                             <div class="input-group col-sm-10 d-flex">
                                 <div class="input-group-prepend">
                                     <select class="form-control select-type-input targetidx" size="1">
@@ -320,7 +327,7 @@
                             </div>
                         </div>
                         <div class="row d-flex align-items-top">
-                            <label for="file_queryidx" class="file-queryidx col-sm-2 col-form-label input-label">Query file <sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup>{% set fnote_tab = fnote_tab + 1 %}</label>
+                            <label for="file_queryidx" class="file-queryidx col-sm-2 col-form-label input-label">Query file</label>
                             <div class="input-group col-sm-10 d-flex">
                                 <div class="input-group-prepend">
                                     <select class="form-control select-type-input queryidx" size="1">
@@ -354,7 +361,7 @@
                         <h3 class="orsep">- or -</h3>
 
                         <div class="row">
-                            <label for="file_backup" class="file-backup col-sm-2 col-form-label input-label">Backup file <sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup></label>
+                            <label for="file_backup" class="file-backup col-sm-2 col-form-label input-label">Backup file</label>
                             <div class="input-group col-sm-10 d-flex">
                                 <div class="input-group-prepend">
                                     <select class="form-control select-type-input backup" size="1">
@@ -390,9 +397,9 @@
                         {% set fnote_tab = fnote %}
                         <div class="row">
                             <div class="col-sm-8">
-                                <div class="row">
-                                    <label for="file_batch" class="file-batch col-sm-2 col-form-label input-label">Batch file<sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup>{% set fnote_tab = fnote_tab + 1 %}</label>
-                                    <div class="input-group col-sm-10 d-flex">
+                                <div class="row mt-0">
+                                    <label for="file_batch" class="file-batch col-sm-3 col-form-label input-label">Batch file</label>
+                                    <div class="input-group col-sm d-flex">
                                         <div class="custom-file" id="inputLocal">
                                             <input type="file" class="custom-file-input" id="bname" name="bname">
                                             <label class="custom-file-label" for="bname">Choose file</label>
@@ -445,7 +452,7 @@
                                 </div>
                             </div>
                             <div class="col">
-                                <div class="row">
+                                <div class="row mt-0">
                                     <ul class="nav nav-pills">
                                         <li class="nav-item dropdown">
                                           <a id="batch-help-dropdown" class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Quick help for tools</a>
@@ -468,7 +475,7 @@
                                             <h4>Options<sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup></h4>
                                             {% if tools[tool].options %}
                                                 <p>Default options are displayed in <b>bold</b>.<br>
-                                                Please use <code>options=key1,key2,...</code></p>
+                                                Please use <code>options=key1,key2,...</code> where <code>keys</code> are:</p> 
                                                 {% for opt in tools[tool].options %}
                                                     {% set outer_loop = loop %}
                                                     <h5>{{ opt.label }}{% if opt.type == "radio" %} (mutually exclusive){% endif %}</h5>
@@ -508,28 +515,8 @@
             </div>
             <div class="footnotes">
                 {% set fnote = 1 %}
-                {% if mode == "webserver" %}
-                    <p class="afterworlff"><sup id="fn{{ fnote }}"><a href="#fn{{ fnote }}" id="ref{{ fnote }}">{{ fnote }}</a></sup> We will send you results by mail.</p>
-                    {% set fnote = fnote + 1 %}
-                {% endif %}
-                <div class="tabx tab1">
-                    {% set fnote_tab = fnote %}
-                    <p class="afterworlff"><sup id="fn{{ fnote_tab }}"><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup> Can be gzipped. Must end with <code>.fa</code>, <code>.fasta</code>, <code>.fna</code>, <code>.fa.gz</code>, <code>.fasta.gz</code> or <code>.fna.gz</code></p>
-                    {% set fnote_tab = fnote_tab + 1 %}
-                </div>
-                <div class="tabx tab2">
-                    {% set fnote_tab = fnote %}
-                    <p class="afterworlff"><sup id="fn{{ fnote_tab }}"><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup> In PAF or MAF format. Must end with <code>.paf</code> or <code>.maf</code></p>
-                    {% set fnote_tab = fnote_tab + 1 %}
-                    <p class="afterworlff"><sup id="fn{{ fnote_tab }}"><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup> Fasta file or index built by <a href="https://raw.githubusercontent.com/genotoul-bioinfo/dgenies/v{{version}}/src/dgenies/bin/index.py" download="index.py">our tool</a>. Must end with <code>.fa</code>, <code>.fasta</code>, <code>.fna</code>, <code>.fa.gz</code>, <code>.fasta.gz</code>, <code>.fna.gz</code> or <code>.idx</code>.</p>
-                    {% set fnote_tab = fnote_tab + 1 %}
-                    <p class="afterworlff"><sup id="fn{{ fnote_tab }}"><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup> TAR file from a previous run or built following <a href="/documentation/formats#backup-file"> this documentation</a>. Must ends with <code>.tar</code> or <code>.tar.gz</code>.</p>
-                    {% set fnote_tab = fnote_tab + 1 %}
-                </div>
                 <div class="tabx tab3">
                     {% set fnote_tab = fnote %}
-                    <p class="afterworlff"><sup id="fn{{ fnote_tab }}"><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup> Text file following <a href="/documentation/formats#batch-file">batch format</a>. Must end with <code>.txt</code></p>
-                    {% set fnote_tab = fnote_tab + 1 %}
                     <p class="afterworlff"><sup id="fn{{ fnote_tab }}"><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup> Look at the <a href="/documentation/formats#batch-file">batch format</a> page for full description. Default options are displayed in <b>bold</b></code></p>
                     {% set fnote_tab = fnote_tab + 1 %}
                 </div>
