@@ -1145,6 +1145,12 @@ dgenies.run.set_events = function() {
     $("input[name=tool]").click(function() {
         dgenies.run.show_tool_options($(this).val());
     })
+
+    // display help in batch mode 
+    $("[id|='batch-help-menu']").click(function() {
+        $(".batch-help").hide()
+        $(`#${$(this).attr("rel")}`).show()
+    })
 };
 
 /**

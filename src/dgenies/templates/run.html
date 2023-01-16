@@ -194,9 +194,11 @@
                                 {% set tool_loop = loop %}
                                 {% if tools[tool].options|length%}
                                     <div {% if loop.index0 != 0%}class="hide"{% endif %}>
-                                        <label id="tool-options-{{tool}}" class="input-label options optionx tool-options-{{tool}}">Options</label>
+                                        <div class="row">
+                                            <label id="tool-options-{{tool}}" class="col-sm-2 input-label options optionx tool-options-{{tool}}">Options</label>
+                                        </div>
                                         {% for opt in tools_options[tool] %}
-                                            <div class="row optionx tool-options-{{tool}}  {% if tool_loop.index0 != 0 %}hide{% endif %}">
+                                            <div class="row mt-0 optionx tool-options-{{tool}}  {% if tool_loop.index0 != 0 %}hide{% endif %}">
                                                 <legend class="col-form-label col-sm-2 pt-0 options">{{ opt.label }}&nbsp<span class="glyphicon glyphicon-question-sign" style="color: #2aabd2"
                                                     title="{{ opt.help }}"></span></legend>
                                                 <div class="col">
@@ -223,12 +225,12 @@
                         {% else %}
                             {% set tool = tools_names[0] %}
                             {% if tools[tool].options %}
-                                <div id="tool-options-{{tool}}" class="row">
-                                    <label class="form-check-label options">Options</label>
+                                <div class="row">
+                                    <label id="tool-options-{{tool}}" class="col-sm-2 input-label options tool-options-{{tool}}">Options</label>
                                 </div>
                                 <div>
                                     {% for opt in tools[tool].options %}
-                                        <div class="row optionx tool-options-{{tool}}">
+                                        <div class="row mt-0 optionx tool-options-{{tool}}">
                                             <label class="options">{{ opt.label }}&nbsp<span class="glyphicon glyphicon-question-sign" style="color: #2aabd2"
                                                 title="{{ opt.help }} (group: {{ opt.group }})"></span></label>
                                             {% for entry in opt['entries'] %}
@@ -387,98 +389,102 @@
                         {# Tab 3 #}
                         {% set fnote_tab = fnote %}
                         <div class="row">
-                            <label for="file_batch" class="file-batch col-sm-2 col-form-label input-label">Batch file<sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup>{% set fnote_tab = fnote_tab + 1 %}</label>
-                            <div class="input-group col-sm-10 d-flex">
-                                <div class="custom-file" id="inputLocal">
-                                    <input type="file" class="custom-file-input" id="bname" name="bname">
-                                    <label class="custom-file-label" for="bname">Choose file</label>
-                                </div>
-                                <div class="w-100"></div>
-                                <small id="targetHelp" class="form-text text-muted">
-                                    Text file following <a href="/documentation/formats#batch-file">batch format</a>. Must end with <code>.txt</code>
-                                </small>
-                            </div>
-                        </div>
-                        <div>
-                            <textarea id="batch_content" rows="10"></textarea>
-                        </div>
-                        <div class="form-row">
-                            <label id="listing-desc" for="input-dropzone" class="col-sm-2 col-form-label input-label file-batch">User files</label>
-                            <div class="input-group col-sm-10">
-                                <div class="btn-toolbar justify-content-between" role="toolbar" aria-label="Toolbar with button groups">
-                                    <div class="btn-group" role="group" aria-label="Add group">
-                                        <button type="button" id="multiple-files-btn" class="btn btn-success fileinput-button">
-                                            <i class="glyphicon glyphicon-plus"></i>
-                                            <span>Add files...</span>
-                                        </button>
-                                    </div>
-                                    <div class="btn-group" role="group" aria-label="Delete group">
-                                        <button type="button" id="delete-unused-btn" class="btn btn-warning cancel delete-btn">
-                                            <i class="glyphicon glyphicon-trash"></i>
-                                            <span>Remove unused</span>
-                                        </button>
-                                        <button type="button" id="delete-all-btn" class="btn btn-danger delete delete-btn">
-                                            <i class="glyphicon glyphicon-trash"></i>
-                                            <span>Clear All</span>
-                                        </button>
+                            <div class="col-sm-8">
+                                <div class="row">
+                                    <label for="file_batch" class="file-batch col-sm-2 col-form-label input-label">Batch file<sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup>{% set fnote_tab = fnote_tab + 1 %}</label>
+                                    <div class="input-group col-sm-10 d-flex">
+                                        <div class="custom-file" id="inputLocal">
+                                            <input type="file" class="custom-file-input" id="bname" name="bname">
+                                            <label class="custom-file-label" for="bname">Choose file</label>
+                                        </div>
+                                        <div class="w-100"></div>
+                                        <small id="targetHelp" class="form-text text-muted">
+                                            Text file following <a href="/documentation/formats#batch-file">batch format</a>. Must end with <code>.txt</code>
+                                        </small>
                                     </div>
                                 </div>
+                                <div class="border rounded">
+                                    <textarea id="batch_content" rows="10"></textarea>
+                                </div>
+                                <div class="row">
+                                    <label id="listing-desc" for="input-dropzone" class="col-sm-2 col-form-label input-label file-batch">User files</label>
+                                    <div class="input-group col-sm-10">
+                                        <div class="btn-toolbar justify-content-between" role="toolbar" aria-label="Toolbar with button groups">
+                                            <div class="btn-group" role="group" aria-label="Add group">
+                                                <button type="button" id="multiple-files-btn" class="btn btn-success fileinput-button">
+                                                    <i class="glyphicon glyphicon-plus"></i>
+                                                    <span>Add files...</span>
+                                                </button>
+                                            </div>
+                                            <div class="btn-group" role="group" aria-label="Delete group">
+                                                <button type="button" id="delete-unused-btn" class="btn btn-warning cancel delete-btn">
+                                                    <i class="glyphicon glyphicon-trash"></i>
+                                                    <span>Remove unused</span>
+                                                </button>
+                                                <button type="button" id="delete-all-btn" class="btn btn-danger delete delete-btn">
+                                                    <i class="glyphicon glyphicon-trash"></i>
+                                                    <span>Clear All</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="input-dropzone">
+                                    <table id="listing" aria-describedby="listing-desc">
+                                        <thead>
+                                            <tr>
+                                                <th scope="col">File</th>
+                                                <th scope="col">Size</th>
+                                                <th scope="col">State</th>
+                                                <th scope="col">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                        </tbody>
+                                    </table>            
+                                </div>
                             </div>
-                        </div>
-                        <div id="input-dropzone">
-                            <table id="listing" aria-describedby="listing-desc">
-                                <thead>
-                                    <tr>
-                                        <th scope="col">File</th>
-                                        <th scope="col">Size</th>
-                                        <th scope="col">State</th>
-                                        <th scope="col">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                </tbody>
-                            </table>            
-                        </div>
-                        <div class="row batch" style="display: flex;">
-                            <div class="col-1"></div>
-                            <div class="col-2"><strong>Tool</strong></div>
-                            <div class="col-1"></div>
-                            <div class="col-8"><strong>Options</strong></div>
-                        </div>
-                        <div class="row batch" style="display: flex;">
-                            <div class="col-3">
-                            <div class="list-group" id="list-tab" role="tablist">
-                                {% for tool in tools_names %}
-                                    <a class="list-group-item list-group-item-action {% if loop.index0 == 0 %}active{% endif %}" id="list-option-{{ tool }}-list" data-toggle="list" href="#list-option-{{ tool }}" role="tab" aria-controls="{{ tool }}">
-                                        tool={{ tool }}
-                                        <span class="glyphicon glyphicon-question-sign" title="{{ tools[tool].help }}"></span><br>
-                                        <small>{{ tools[tool].label | capitalize }}</small>
-                                    </a>
-                                {% endfor %}
-                            </div>
-                            </div>
-                            <div class="col-9">
-                            <div class="tab-content" id="nav-tabContent">
-                                {% for tool in tools_names %}
-                                    <div class="tab-pane fade show {% if loop.index0 == 0 %}active{% endif %}" id="list-option-{{ tool }}" role="tabpanel" aria-labelledby="list-option-{{ tool }}-list">
-                                        {% if tools[tool].options %}
-                                            <ul>
-                                            {% for opt in tools[tool].options %}
-                                                {% set outer_loop = loop %}
-                                                <li>{{ opt.label }}{% if opt.type == "radio" %} (mutually exclusive){% endif %}:</li>
-                                                <ul>
-                                                {% for entry in opt['entries'] %}
-                                                    <li {% if entry.default %}style="font-weight: bold"{% endif %}>{{ opt.group }}:{{ entry.key }} - {{ entry.label }}&nbsp<span class="glyphicon glyphicon-question-sign" style="color: #2aabd2"
-                                                        title="{{ entry.help }}"></span></li>
-                                                {% endfor %}
-                                                </ul>
+                            <div class="col">
+                                <div class="row">
+                                    <ul class="nav nav-pills">
+                                        <li class="nav-item dropdown">
+                                          <a id="batch-help-dropdown" class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Quick help for tools</a>
+                                          <div class="dropdown-menu">
+                                            {% for tool in tools_names %}
+                                                <a class="dropdown-item" id="batch-help-menu-{{ tool }}" rel="batch-help-{{ tool }}" href="#">
+                                                    {{ tools[tool].label | capitalize }}&nbsp<span class="glyphicon glyphicon-question-sign" title="{{ tools[tool].help }}"></span><br>
+                                                </a>
                                             {% endfor %}
-                                            </ul>
-                                        {% else %}
-                                            <td style="vertical-align:top; text-align: center;">No option</td>
-                                        {% endif %}
-                                    </div>
-                                {% endfor %}
+                                          </div>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="tab-content" id="nav-batch-help">
+                                    {% for tool in tools_names %}
+                                        <div class="tab-pane fade show batch-help {% if loop.index0 == 0 %}active{% endif %}" id="batch-help-{{ tool }}" role="tabpanel" aria-labelledby="nav-batch-options-{{ tool }}">
+                                            <h3>{{ tools[tool].label | capitalize }}</h3>
+                                            <p>{{ tools[tool].help }}<br>
+                                            Please use <code>tool={{ tool }}</code></p>
+                                            <h4>Options<sup><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup></h4>
+                                            {% if tools[tool].options %}
+                                                <p>Default options are displayed in <b>bold</b>.<br>
+                                                Please use <code>options=key1,key2,...</code></p>
+                                                {% for opt in tools[tool].options %}
+                                                    {% set outer_loop = loop %}
+                                                    <h5>{{ opt.label }}{% if opt.type == "radio" %} (mutually exclusive){% endif %}</h5>
+                                                    <ul>
+                                                    {% for entry in opt['entries'] %}
+                                                        <li {% if entry.default %}style="font-weight: bold"{% endif %}><code>{{ opt.group }}:{{ entry.key }}</code>&nbsp: {{ entry.label }}&nbsp<span class="glyphicon glyphicon-question-sign" style="color: #2aabd2"
+                                                            title="{{ entry.help }}"></span></li>
+                                                    {% endfor %}
+                                                    </ul>
+                                                {% endfor %}
+                                            {% else %}
+                                                <p>No option.</p>
+                                            {% endif %}
+                                        </div>
+                                    {% endfor %}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -524,7 +530,7 @@
                     {% set fnote_tab = fnote %}
                     <p class="afterworlff"><sup id="fn{{ fnote_tab }}"><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup> Text file following <a href="/documentation/formats#batch-file">batch format</a>. Must end with <code>.txt</code></p>
                     {% set fnote_tab = fnote_tab + 1 %}
-                    <p class="afterworlff"><sup id="fn{{ fnote_tab }}"><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup> Look at the <a href="/documentation/formats#batch-file">batch format</a> page for full description. Default options appear in <b>bold</b></code></p>
+                    <p class="afterworlff"><sup id="fn{{ fnote_tab }}"><a href="#fn{{ fnote_tab }}" id="ref{{ fnote_tab }}">{{ fnote_tab }}</a></sup> Look at the <a href="/documentation/formats#batch-file">batch format</a> page for full description. Default options are displayed in <b>bold</b></code></p>
                     {% set fnote_tab = fnote_tab + 1 %}
                 </div>
             </div>

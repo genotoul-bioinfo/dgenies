@@ -421,11 +421,12 @@ h4.header-form {
 }
 
 #tabs {
-    border-bottom: 2px solid black;
+    /*border-bottom: 2px solid black;*/
     margin-bottom: 10px;
     margin-top: 15px;
 }
 
+/*
 #tabs .tab {
     display: inline-block;
     color: black;
@@ -435,15 +436,16 @@ h4.header-form {
     border-top-right-radius: 10px;
     cursor: pointer;
 }
+*/
 
 #tabs .tab.active {
     background-color: #eeeeee;
     font-weight: bold;
 }
 
-#tabs .tab:hover {
+/*#tabs .tab:hover {
     background-color: #f7f7f7;
-}
+}*/
 
 div.buttons {
     margin-top: 20px;
@@ -700,6 +702,11 @@ div.submit-form .input-label {
 
 div.submit-form input#id_job, div.submit-form input#email {
     width: 410px;
+}
+
+
+div.submit-form .row {
+    margin-top: 15px;
 }
 
 .input-group {
@@ -1134,8 +1141,28 @@ div.jquery-modal div.modal {
     max-width: 100%;
 }
 
+/* Codemirror */
+
 .cm-s-dgenies.CodeMirror { color: #888888; }
 .cm-s-dgenies span.cm-affectation { color: #000000; line-height: 1em; font-weight: bold; }
 .cm-s-dgenies span.cm-key { color: #ba32cc; line-height: 1em; font-weight: bold; }
 .cm-s-dgenies span.cm-value { color: #5a9418; line-height: 1em; font-weight: bold; }
 .cm-s-dgenies span.cm-qvalue { color: #5a9418; line-height: 1em; font-weight: bold; }
+
+div#nav-batch-help h3 {
+    padding-top: 10px;
+    font-size: medium;
+    font-weight: bold;
+}
+
+div#nav-batch-help h4 {
+    font-size: medium;
+    font-weight: bold;
+}
+
+
+div#nav-batch-help h5 {
+    font-size: medium;
+    font-style: italic;
+    margin-left: 15px;
+}
