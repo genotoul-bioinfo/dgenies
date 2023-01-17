@@ -5,7 +5,7 @@
     <script type="text/x-tmpl" id="tmpl-listing">
         [% for (var i=0; i<o.length; i++) { %]
         <tr class="[%=o[i].state%]-file" data-index="[%=i%]">
-            <td>[%=o[i].name%]</td>
+            <td style="word-wrap: break-word;min-width: 160px;max-width: 160px;">[%=o[i].name%]</td>
             <td>[%=o[i].size%]</td>
             <td>[%=o[i].state%]</td>
             <td><button id="delete-btn-[%=i%]" type="button" class="btn btn-danger delete delete-btn"><i class="glyphicon glyphicon-trash"></i></button></td>
@@ -436,8 +436,8 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div id="input-dropzone">
-                                    <table id="listing" aria-describedby="listing-desc">
+                                <div class="table-responsive" id="input-dropzone">
+                                    <table id="listing" class="table table-borderless" aria-describedby="listing-desc">
                                         <thead>
                                             <tr>
                                                 <th scope="col">File</th>
@@ -448,7 +448,7 @@
                                         </thead>
                                         <tbody>
                                         </tbody>
-                                    </table>            
+                                    </table>
                                 </div>
                             </div>
                             <div class="col">
