@@ -577,17 +577,6 @@ textarea {
 	overflow-x: auto;
 }
 
-/*
-.fileupload-buttonbar.row {
-	margin-left: 0;
-	margin-right: 0;
-	padding-bottom: 5px;
-}
-.fileupload-buttonbar.row::after, .fileupload-buttonbar.row::before {
-	content: none;
-}
-*/
-
 #listing {
 	width: 100%;
 }
@@ -622,17 +611,7 @@ textarea {
 	width: 60px;
 }
 
-.fileupload-buttonbar {
-	display: flex;
-	justify-content: space-between;
-}
-
 .delete-btn {
-	display: inline-block;
-}
-
-.left-wrapper,
-.right-wrapper {
 	display: inline-block;
 }
 
