@@ -1140,6 +1140,7 @@ ul.nav ul.dropdown-menu {
 div.jquery-modal div.modal {
     /*white-space: nowrap;*/
     max-width: 100%;
+    height: fit-content;
 }
 
 /* Codemirror */
