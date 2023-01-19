@@ -313,7 +313,7 @@ dgenies.run.check_file_format_and_presence = function(type, key, val){
                 if(! uploaded_files.includes(val)){
                     return {
                         message : `Missing file in user files: ${val}`,
-                        severity: "warning"
+                        severity: "error"
                     }
                 }
         }

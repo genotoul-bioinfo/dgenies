@@ -618,6 +618,14 @@ textarea {
     background: transparent;
 }
 
+.duplicated-file {
+    text-decoration: red wavy underline;
+}
+
+.unused-file {
+    color: grey
+}
+
 .delete-btn {
 	display: inline-block;
 }
