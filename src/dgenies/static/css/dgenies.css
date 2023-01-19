@@ -567,8 +567,6 @@ textarea {
 }
 
 #input-dropzone {
-    -moz-border-radius: 10px;
-    -webkit-border-radius: 10px;
     border: 1px solid #dee2e6;
 	min-height: 100px;
 	margin: 0 auto;
@@ -587,9 +585,12 @@ textarea {
 	padding-top: 10px;
 }
 
-#listing td {
-  padding-left: 10px;
-  padding-right: 10px;
+
+#listing td span{
+    position: absolute;
+    z-index: 10;
+    right: 0;
+    padding-right: 3px;
 }
 
 #listing td:nth-child(1), #listing th:nth-child(1) {
@@ -598,17 +599,23 @@ textarea {
 
 #listing td:nth-child(2), #listing th:nth-child(2) {
 	text-align: right;
-	width: 100px;
+	width: 75px;
 }
 
 #listing td:nth-child(3), #listing th:nth-child(3) {
 	text-align: center;
-	width: 60px;
+	width: 75px;
 }
 
 #listing td:nth-child(4),#listing th:nth-child(4) {
 	text-align: center;
-	width: 60px;
+	width: 70px;
+}
+
+.batchfile .progress{
+    top: unset;
+    height: 1.5rem;
+    background: transparent;
 }
 
 .delete-btn {

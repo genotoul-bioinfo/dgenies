@@ -61,6 +61,7 @@ dgenies.run.KEYS_FOR_FILES = ["alignfile", "backup", "query", "target", "queryid
 dgenies.run.files_in_batch = new Array()
 // list of to be uploaded files: array of fileupload objects
 dgenies.run.files_for_batch = new Array()
+dgenies.run.batch_file_cpt = 0;
 // states for files: dict of str: array of strings
 dgenies.run.file_states = []
 dgenies.run.missing_files = []
@@ -162,8 +163,9 @@ dgenies.run.refresh_html_listing = function() {
     let list = []
     for (let i=0; i<dgenies.run.files_for_batch.length; i++){
         let data = {
+            "id": dgenies.run.files_for_batch[i].context_id,
             "name": dgenies.run.files_for_batch[i].files[0].name,
-            "size": dgenies.run.files_for_batch[i].files[0].size,
+            "size": dgenies.run.get_file_size_str(dgenies.run.files_for_batch[i].files[0].size),
             "state": dgenies.run.file_states[i],
         }
         list.push(data)
@@ -171,12 +173,12 @@ dgenies.run.refresh_html_listing = function() {
     
     // We update the html part
     $('#listing').find('tbody:first').html(tmpl('tmpl-listing', list))
-            // We reset the delete button events
-            $(":button[id^='delete-btn']").click(function() {
-                let i = $(this).parents("tr").data("index")
-                dgenies.run.files_for_batch.splice(i, 1)
-                dgenies.run.refresh_files_status()
-            })
+    // We reset the delete button events
+    $(":button[id^='delete-btn']").click(function() {
+        let i = $(this).parents("tr").data("index")
+        dgenies.run.files_for_batch.splice(i, 1)
+        dgenies.run.refresh_files_status()
+    })
 }
 
 /**
@@ -805,22 +807,22 @@ dgenies.run._init_multiple_fileupload = function(formats) {
         dropZone: $('#input-dropzone'),
         add: function (e, data) {
             // We add the file
+            data.context_id = "batchfile-" + dgenies.run.batch_file_cpt++; 
             dgenies.run.files_for_batch.push(data);
             // We refresh batch status
             dgenies.run.refresh_files_status()
         },
-        drop: function (e, data) {
-            $.each(data.files, function (index, file) {
-                console.log('Dropped file: ' + file.name);
-            });
-        },
-        change: function (e, data) {
-            $.each(data.files, function (index, file) {
-                console.log('Selected file: ' + file.name);
-            });
+        progress: function (e, data) {
+            let progress = parseInt(data.loaded / data.total * 100, 10);
+            $(`#${data.context_id}`).find('.bar').css(
+                'width',
+                progress + '%'
+            );
         },
         done: function (e, data) {
-            console.log('Upload finished.');
+            console.log(`Upload finished: ${data.files[0].name}`);
+            dgenies.run.hide_loading(data.context_id);
+            dgenies.run.show_success(data.context_id);
         },
         success: function (data, success) {
             console.log(data)
@@ -838,7 +840,7 @@ dgenies.run._init_multiple_fileupload = function(formats) {
             }
         },
         error: function (data, success) {
-            dgenies.notify("message" in data ? data["message"]: `An error has occured when uploading multiple files. Please contact us to report the bug!`,
+            dgenies.notify("message" in data ? data["message"]: `An error has occured when uploading ${data.files[0].name}. Please contact us to report the bug!`,
                     "danger");
             dgenies.run.enable_form();
         }
@@ -1446,38 +1448,57 @@ dgenies.run.valid_form = function () {
 /**
  * Show loading for a fasta uploading file
  *
- * @param {string} fasta uploading file type (query, target, ...)
+ * @param {string} ftype uploading file type (query, target, ...)
  */
-dgenies.run.show_loading = function(fasta) {
-    $(".loading-file." + fasta).show();
+dgenies.run.show_loading = function(ftype) {
+    $(".loading-file." + ftype).show();
 };
 
 /**
  * Hide loading for a fasta uploaded file
  *
- * @param {string} fasta uploaded file type (query, target, ...)
+ * @param {string} ftype uploaded file type (query, target, ...)
  */
-dgenies.run.hide_loading = function(fasta) {
-    $(".loading-file." + fasta).hide();
+dgenies.run.hide_loading = function(ftype) {
+    $(".loading-file." + ftype).hide();
 };
 
 /**
  * Show success: file uploaded successfully
  *
- * @param {string} fasta uploaded type of file (query, target, ...)
+ * @param {string} ftype uploaded type of file (query, target, ...)
  */
-dgenies.run.show_success = function(fasta) {
-    $(".upload-success." + fasta).show()
+dgenies.run.show_success = function(ftype) {
+    $(".upload-success." + ftype).show()
 };
 
 /**
  * Hide success on a file
  *
- * @param {string} fasta type of file (query, target, ...)
+ * @param {string} ftype type of file (query, target, ...)
  */
-dgenies.run.hide_success = function(fasta) {
-    $(".upload-success." + fasta).hide()
+dgenies.run.hide_success = function(ftype) {
+    $(".upload-success." + ftype).hide()
 };
+
+/**
+ * Show file state in batch listing
+ *
+ * @param {string} cls file
+ */
+dgenies.run.show_file_state = function(cls) {
+    $(".state-file." + cls).show()
+};
+
+/**
+ * Hide file state in batch listing
+ *
+ * @param {string} cls file
+ */
+dgenies.run.hide_file_state = function(cls) {
+    $(".state-file." + cls).hide()
+};
+
 
 /**
  * Remove all errors displayed
@@ -1570,10 +1591,9 @@ dgenies.run._has_upload = function(ftype, fname, is_multiple = false) {
     } else {
         // missing and duplicated files were checked before
         if (dgenies.run.file_states.some((element) => element === "available")){
-            has_uploads = true;
-            // TODO: hide/deactivate delete buttons?
-    
-            // TODO: show progress bar.
+            has_uploads = true;    
+            dgenies.run.hide_file_state("available-file");
+            dgenies.run.show_loading("available-file");
         }
     }
     return has_uploads;
