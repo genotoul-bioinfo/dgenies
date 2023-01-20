@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.5.0 (2023-0x-xx)
+
+### Major change
+
+- Update batch mode:
+	- Batch file checking in run interface.
+	- Upload of local files is possible.
+- Update from a mix composed of `boostrap 3.3.7` and `bootstarp 4.0beta3` to `bootstrap 4.6`
+- Batch file format has changed. Please read check to doc.
+- Tools config file format (`tools.yaml`) has changed. Please update it, if you use a custom one.
+- Basic logging.
+
+### Minor changes
+
+- Option keys have been change to be more comprehensible. Please check and update your `tools.yaml` files
+- For server mode, the number of download sessions in parallel, can be now set with `max_download_sessions` (default is alway `5`). Session delays can also be modified now.
+
+### Bugfix
+
+- Reinforce tar file checking
+- Fix file dropzones
+- Fix some bugs with Flask>=2
+	- add compatibility with Flask 2.2
+	- Some gzipped files where uncompressed by browser when downloaded.
+	- Backup file name was incomplete.
+
 ## 1.4.0 (2022-07-12)
 
 ### Major change
