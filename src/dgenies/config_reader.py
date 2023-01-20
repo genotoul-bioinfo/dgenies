@@ -1,14 +1,15 @@
-import logging
 import os
 import sys
 import re
 import inspect
 from pathlib import Path
+import logging
 from configparser import RawConfigParser, NoOptionError, NoSectionError
 from dgenies.lib.decorators import Singleton
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
 
 @Singleton
 class AppConfigReader:
@@ -44,7 +45,9 @@ class AppConfigReader:
         if len(config_file) == 0:
             raise FileNotFoundError("ERROR: application.properties not found.")
         self.reader = RawConfigParser()
-        logger.info("Loading {}".format(", ".join(config_file)))
+        for f in config_file:
+            print("Overriding config with {}".format(f))
+            logger.info("Overriding config with {}".format(f))
         self.reader.read(config_file)
         # Set attributes
         for attr in dir(self):

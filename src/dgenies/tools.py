@@ -1,10 +1,10 @@
-import logging
 import os
 import sys
 import platform
 import inspect
 from pathlib import Path
 import yaml
+import logging
 from dgenies.lib.decorators import Singleton
 from dgenies.lib.exceptions import DGeniesUnknownOptionError
 from dgenies.lib import parsers
@@ -187,7 +187,8 @@ class Tools:
         if yaml_file is None:
             raise FileNotFoundError("ERROR: tools.yaml not found.")
 
-        logger.info("Loading {}".format(yaml_file))
+        print("Loading tools config from {}".format(yaml_file))
+        logger.info("Loading tools config from {}".format(yaml_file))
         with open(yaml_file, "r") as yml_f:
             tools_dict = yaml.load(yml_f, Loader=yaml.FullLoader if trusted else yaml.SafeLoader)
             tools = {}

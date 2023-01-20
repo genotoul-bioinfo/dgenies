@@ -1,4 +1,3 @@
-import logging
 import os.path
 import inspect
 import yaml
@@ -40,7 +39,7 @@ class AllowedExtensions:
         if allowed_ext_file is None:
             raise Exception("Configuration file allowed_extensions.yaml not found")
 
-        logging.warning("Loading {}".format(allowed_ext_file))
+        logging.info("Loading {}".format(allowed_ext_file))
         with open(allowed_ext_file, "r") as yaml_stream:
             extensions = yaml.load(yaml_stream, Loader=yaml.Loader)
 
