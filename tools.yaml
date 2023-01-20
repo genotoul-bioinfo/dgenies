@@ -14,7 +14,7 @@ minimap2:
       group: repeat
       label: Repeatedness
       type: radio
-      help: "Ignore top fraction of most frequent minimizers"
+      help: "Trade-off between alignment precision and computation requirements (CPU Time + RAM) by ignoring the top fraction of most frequent minimizers"
       entries:
         -
           key: few
