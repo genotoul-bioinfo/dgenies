@@ -1435,7 +1435,7 @@ dgenies.run.valid_form = function () {
             has_batch_error = has_batch_error || error.severity == "error"
         }
         if (has_batch_error) {
-            dgenies.run.add_error("Batch file is incorrect");
+            dgenies.run.add_error("Batch file content is incorrect");
             has_errors = has_batch_error
         }
         // Check that no file in batch file is missing
