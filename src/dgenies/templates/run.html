@@ -7,7 +7,7 @@
         <tr id="[%=o[i].id%]" class="batchfile [%=o[i].state%]-file" data-index="[%=i%]">
             <td style="word-wrap: break-word;min-width: 160px;max-width: 160px;">[%=o[i].name%]</td>
             <td class="col">
-                <div >
+                <div>
                     <span>[%=o[i].size%]</span>
                     <div id="progress-[%=o[i].id%]" class="progress [%=o[i].id%]">
                         <div class="bar" style="width: 0%;"></div>
@@ -15,9 +15,9 @@
                 </div>
             </td>
             <td class="col">
-                <div class="state-file [%=o[i].state%]-file">[%=o[i].state%]</div>
-                <div class="loading-file [%=o[i].state%]-file [%=o[i].id%]" style="display: none"></div>
-                <div class="upload-success [%=o[i].id%]" style="display: none"></div>
+                <div class="state-file batchfile [%=o[i].state%]-file">[%=o[i].state%]</div>
+                <div class="loading-file batchfile [%=o[i].state%]-file [%=o[i].id%]" style="display: none"></div>
+                <div class="upload-success batchfile [%=o[i].id%]" style="display: none"></div>
             </td>
             <td class="col"><button id="delete-btn-[%=i%]" type="button" class="btn btn-danger delete delete-btn"><i class="glyphicon glyphicon-trash"></i></button></td>
         </tr>
@@ -136,7 +136,7 @@
                                         <option value="1">Url</option>
                                     </select>
                                 </div>
-                                <div class="target-label in-label" id="dropzone-target">
+                                <div class="target-label in-label dropzone" id="dropzone-target">
                                     <div id="progress-target" class="progress">
                                         <div class="bar" style="width: 0%;"></div>
                                     </div>
@@ -167,7 +167,7 @@
                                         <option value="1">Url</option>
                                     </select>
                                 </div>
-                                <div class="query-label in-label" id="dropzone-query">
+                                <div class="query-label in-label dropzone" id="dropzone-query">
                                     <div id="progress-query" class="progress">
                                         <div class="bar" style="width: 0%;"></div>
                                     </div>
@@ -284,7 +284,7 @@
                                         <option value="1">Url</option>
                                     </select>
                                 </div>
-                                <div class="alignfile-label in-label" id="dropzone-alignfile">
+                                <div class="alignfile-label in-label dropzone" id="dropzone-alignfile">
                                     <div id="progress-alignfile" class="progress">
                                         <div class="bar" style="width: 0%;"></div>
                                     </div>
@@ -315,7 +315,7 @@
                                         <option value="1">Url</option>
                                     </select>
                                 </div>
-                                <div class="targetidx-label in-label" id="dropzone-targetidx">
+                                <div class="targetidx-label in-label dropzone" id="dropzone-targetidx">
                                     <div id="progress-targetidx" class="progress">
                                         <div class="bar" style="width: 0%;"></div>
                                     </div>
@@ -346,7 +346,7 @@
                                         <option value="1">Url</option>
                                     </select>
                                 </div>
-                                <div class="queryidx-label in-label" id="dropzone-queryidx">
+                                <div class="queryidx-label in-label dropzone" id="dropzone-queryidx">
                                     <div id="progress-queryidx" class="progress">
                                         <div class="bar" style="width: 0%;"></div>
                                     </div>
@@ -380,7 +380,7 @@
                                         <option value="1">Url</option>
                                     </select>
                                 </div>
-                                <div class="backup-label in-label" id="dropzone-backup">
+                                <div class="backup-label in-label dropzone" id="dropzone-backup">
                                     <div id="progress-backup" class="progress">
                                         <div class="bar" style="width: 0%;"></div>
                                     </div>
@@ -425,7 +425,7 @@
                                     <textarea id="batch_content" rows="10"></textarea>
                                 </div>
                                 <div class="row">
-                                    <label id="listing-desc" for="input-dropzone" class="col-sm-2 col-form-label input-label file-batch">User files</label>
+                                    <label id="listing-desc" for="dropzone-localfiles" class="col-sm-2 col-form-label input-label file-batch">User files</label>
                                     <div class="input-group col-sm-10 local-files-buttons">
                                         <div class="btn-toolbar justify-content-between d-flex" role="toolbar" aria-label="Toolbar with button groups">
                                             <div class="btn-group" role="group" aria-label="Add group">
@@ -447,7 +447,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="table-responsive rounded border-top-0" id="input-dropzone">
+                                <div class="table-responsive rounded border-top-0 dropzone" id="dropzone-localfiles">
                                     <table id="listing" class="table table-striped" aria-describedby="listing-desc">
                                         <thead>
                                             <tr>
@@ -538,7 +538,7 @@
             <input type="file" name="file-targetidx" class="file-targetidx" data-url="/upload"/>
             <input type="file" name="file-queryidx" class="file-queryidx" data-url="/upload"/>
             <input type="file" name="file-backup" class="file-backup" data-url="/upload"/>
-            <input id="batch-multiple-files-upload" type="file" name="multiple-files[]" class="multiple-files" data-url="/upload" multiple/>
+            <input id="batch-multiple-files-upload" type="file" name="multiple-files[]" class="multiple-files batchfile file-localfiles" data-url="/upload" multiple/>
         </div>
     </form>
 {% endblock %}

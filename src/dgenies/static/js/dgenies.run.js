@@ -10,15 +10,14 @@ tmpl.regexp = /([\s'\\])(?!(?:[^[]|\[(?!%))*%\])|(?:\[%(=|#)([\s\S]+?)%\])|(\[%)
 dgenies.run.s_id = null;
 dgenies.run.allowed_ext = [];
 dgenies.run.max_upload_file_size = -1
-dgenies.run.files = [undefined, undefined, undefined, undefined, undefined, undefined, undefined];
+dgenies.run.files = [undefined, undefined, undefined, undefined, undefined, undefined];
 dgenies.run.files_nb = {
     "query": 0,
     "target": 1,
     "queryidx": 2,
     "targetidx": 3,
     "alignfile": 4,
-    "backup": 5,
-    "batch" : 6
+    "backup": 5
 };
 dgenies.run.allow_upload = false;
 dgenies.run.ping_interval = null;
@@ -685,10 +684,13 @@ dgenies.run.read_batch = function() {
  * Restore run form
  */
 dgenies.run.restore_form = function () {
-    let ftypes = ["query", "target", "queryidx", "targetidx", "alignfile", "backup", "batch"];
+    let ftypes = ["query", "target", "queryidx", "targetidx", "alignfile", "backup"];
     for (let f in ftypes) {
         let ftype = ftypes[f];
         dgenies.run.change_fasta_type(ftype, $(`select.${ftype}`).find(":selected").text().toLowerCase(), true);
+    }
+    if (dgenies.run.editor !== null){
+        dgenies.run.editor.setOption("readOnly", false);
     }
 };
 
@@ -804,7 +806,7 @@ dgenies.run._init_multiple_fileupload = function(formats) {
             "formats": formats
         },
         maxNumberOfFiles: 1, // max_files_for_a_job * number_of_jobs * 1.1 = 3 * 10 * 1.1
-        dropZone: $('#input-dropzone'),
+        dropZone: $('#dropzone-localfiles'),
         add: function (e, data) {
             // We add the file
             data.context_id = "batchfile-" + dgenies.run.batch_file_cpt++; 
@@ -1204,7 +1206,14 @@ dgenies.run.set_filename = function (name, fasta) {
  */
 dgenies.run.disable_form = function () {
     dgenies.run.enabled = false;
+    let ftypes = ["query", "target", "targetidx", "queryidx", "alignfile", "backup", "localfiles"];
+    for (let ftype of ftypes) {
+        dgenies.run.disable_dropzone(ftype)
+    }
     $("input, select, button").prop("disabled", true);
+    if (dgenies.run.editor !== null) {
+        dgenies.run.editor.setOption("readOnly", true);
+    }
 };
 
 /**
@@ -1217,13 +1226,13 @@ dgenies.run.enable_form = function () {
     $("input, select, button").prop("disabled", false);
     $("div#uploading-loading").hide();
     $("button#submit").show();
-    let ftypes = ["query", "target", "targetidx", "queryidx", "alignfile", "backup", "batch"];
-    for (let f in ftypes) {
-        let ftype = ftypes[f];
+    let ftypes = ["query", "target", "targetidx", "queryidx", "alignfile", "backup", "localfiles"];
+    for (let ftype of ftypes) {
         dgenies.run.hide_loading(ftype);
         dgenies.run.hide_success(ftype);
+        dgenies.run.enable_dropzone(ftype);
     }
-    dgenies.run.files = [undefined, undefined, undefined, undefined, undefined, undefined, undefined];
+    dgenies.run.files = [undefined, undefined, undefined, undefined, undefined, undefined];
     dgenies.run.restore_form();
     dgenies.run.enabled = true;
 };
@@ -1254,7 +1263,7 @@ dgenies.run.reset_file_form = function(tab, except_backup=false) {
         }
     }
     else if ("tab3" === tab) {
-        ftypes = ["batch"];
+        ftypes = ["batchfile"];
     }
     else {
         ftypes = ["query", "target"];
@@ -1498,6 +1507,26 @@ dgenies.run.show_file_state = function(cls) {
 dgenies.run.hide_file_state = function(cls) {
     $(".state-file." + cls).hide()
 };
+
+/**
+ * Enable dropzone for a file
+ *
+ * @param {string} ftype type of file (query, target, ...)
+ */
+dgenies.run.enable_dropzone = function(ftype) {
+    $(`input[type="file"].file-${ftype}`).fileupload('option', 'dropZone', "#dropzone-" + ftype)
+};
+
+
+/**
+ * Disable dropzones for a file
+ * 
+ * @param {string} ftype type of file (query, target, ...)
+ */
+dgenies.run.disable_dropzone = function(ftype) {
+    $(`input[type="file"].file-${ftype}`).fileupload('option', 'dropZone', null)
+};
+
 
 
 /**
