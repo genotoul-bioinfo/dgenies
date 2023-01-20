@@ -345,7 +345,6 @@ def launch_analysis():
         j["options"] = request.form.getlist(tool_options) if tool_options in request.form else []
         jobs.append(j)
 
-    print(jobs)
     # Check form
     # Client side must have sent correct message depending on the job type.
     # Here we check that everything was correctly transmitted.
@@ -382,7 +381,6 @@ def launch_analysis():
     for j in jobs:
         try:
             check_file_type_and_resolv_options(j)
-            print(j)
         except DGeniesJobCheckError as e:
             form_pass = False
             errors.append(e.message)

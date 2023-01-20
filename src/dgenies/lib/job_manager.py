@@ -44,7 +44,9 @@ from dgenies.allowed_extensions import AllowedExtensions
 import logging
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
+if DEBUG:
+    logger.setLevel(logging.DEBUG)
 
 if MODE == "webserver":
     from dgenies.database import Session, Gallery
@@ -2118,7 +2120,7 @@ class JobManager:
         :param sync: force sync
         :type sync: bool
         """
-        print(self.get_job_type())
+        logger.info(self.id_job + ": start " + self.get_job_type() + " job")
         if not os.path.exists(self.output_dir):
             os.mkdir(self.output_dir)
         self.set_status_standalone("submitted")
@@ -2131,7 +2133,7 @@ class JobManager:
         """
         Launch a job in webserver mode (asynchronously in a new thread)
         """
-        logger.info(self.id_job + ": start " + self.get_job_type() + "job")
+        logger.info(self.id_job + ": start " + self.get_job_type() + " job")
         with Job.connect():
             # Cleanup
             j1 = Job.select().where(Job.id_job == self.id_job)
