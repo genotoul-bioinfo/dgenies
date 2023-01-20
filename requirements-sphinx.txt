@@ -4,7 +4,7 @@ numpy
 requests>=2.20.1
 biopython>=1.70
 psutil>=5.6.6
-tendo==0.2.*
+tendo>=0.2.*
 matplotlib>=2.1.*
 intervaltree==3.*
 Markdown>=2.6.*
