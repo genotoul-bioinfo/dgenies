@@ -799,7 +799,7 @@ dgenies.run._init_fileupload = function(ftype, formats, position) {
 
 dgenies.run._init_multiple_fileupload = function(formats) {
     // batch file upload
-    $('#batch-multiple-files-upload').fileupload({
+    $('#batch-localfiles-upload').fileupload({
         dataType: 'json',
         formData: {
             "s_id": dgenies.run.s_id,
@@ -866,9 +866,9 @@ dgenies.run.init_fileuploads = function () {
 
     // We set add buton from multiple upload behavior
     dgenies.run._init_multiple_fileupload(["fasta", "idx", "map", "backup"]);
-    $(":button[id='multiple-files-btn']").click(function() 
+    $(":button[id='localfiles-btn']").click(function() 
     {
-        $("#batch-multiple-files-upload").trigger("click")
+        $("#batch-localfiles-upload").trigger("click")
     })
 
     // We set behavior of 'remove unused' button
@@ -1658,7 +1658,7 @@ dgenies.run.start_uploads = function() {
         dgenies.run.reset_file_form("tab1");
         dgenies.run.reset_file_form("tab2");
         // TODO add url checking?
-        inputs = [["batch-multiple-files-upload", `File listing`, true]];
+        inputs = [["batch-localfiles-upload", `File listing`, true]];
         dgenies.run.files_to_upload = []
         for (let i=0; i<dgenies.run.files_for_batch.length; i++){
             if (dgenies.run.file_states[i] === "available") {

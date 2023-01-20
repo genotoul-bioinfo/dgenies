@@ -429,7 +429,7 @@
                                     <div class="input-group col-sm-10 local-files-buttons">
                                         <div class="btn-toolbar justify-content-between d-flex" role="toolbar" aria-label="Toolbar with button groups">
                                             <div class="btn-group" role="group" aria-label="Add group">
-                                                <button type="button" id="multiple-files-btn" class="btn btn-success fileinput-button">
+                                                <button type="button" id="localfiles-btn" class="btn btn-success fileinput-button">
                                                     <i class="glyphicon glyphicon-plus"></i>
                                                     <span>Add files...</span>
                                                 </button>
@@ -538,7 +538,7 @@
             <input type="file" name="file-targetidx" class="file-targetidx" data-url="/upload"/>
             <input type="file" name="file-queryidx" class="file-queryidx" data-url="/upload"/>
             <input type="file" name="file-backup" class="file-backup" data-url="/upload"/>
-            <input id="batch-multiple-files-upload" type="file" name="multiple-files[]" class="multiple-files batchfile file-localfiles" data-url="/upload" multiple/>
+            <input id="batch-localfiles-upload" type="file" name="multiple-files[]" class="batchfile file-localfiles" data-url="/upload" multiple/>
         </div>
     </form>
 {% endblock %}
