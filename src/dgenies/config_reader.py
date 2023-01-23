@@ -46,7 +46,6 @@ class AppConfigReader:
             raise FileNotFoundError("ERROR: application.properties not found.")
         self.reader = RawConfigParser()
         for f in config_file:
-            print("Overriding config with {}".format(f))
             logger.info("Overriding config with {}".format(f))
         self.reader.read(config_file)
         # Set attributes

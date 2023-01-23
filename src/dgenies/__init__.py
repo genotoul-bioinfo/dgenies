@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
 import os
+import logging
 from flask import Flask
+from flask.logging import default_handler
 from .config_reader import AppConfigReader
 from .lib.crons import Crons
 
@@ -15,7 +17,9 @@ mailer = None
 app_folder = None
 MODE = "webserver"
 DEBUG = False
-
+logger = logging.getLogger(__name__)
+logger.addHandler(default_handler)
+logger.setLevel(logging.INFO)
 
 def launch(mode="webserver", debug=False):
     """

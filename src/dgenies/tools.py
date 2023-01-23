@@ -187,7 +187,6 @@ class Tools:
         if yaml_file is None:
             raise FileNotFoundError("ERROR: tools.yaml not found.")
 
-        print("Loading tools config from {}".format(yaml_file))
         logger.info("Loading tools config from {}".format(yaml_file))
         with open(yaml_file, "r") as yml_f:
             tools_dict = yaml.load(yml_f, Loader=yaml.FullLoader if trusted else yaml.SafeLoader)
