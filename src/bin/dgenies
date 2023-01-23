@@ -52,6 +52,8 @@ def parse_args():
                      const=True, nargs="?", required=False, default=False)
     run.add_argument("--no-browser", type=bool, const=True, nargs="?", required=False, default=False,
                      help="Do not start the browser (Start of browser is always disabled in debug mode)")
+    run.add_argument("--flask-config", metavar='config.py', type=str, required=False,
+                     help="Flask configuration file in python format")
 
     # Clear data or jobs:
     clear = subparsers.add_parser("clear", help="Clear data")
@@ -104,7 +106,8 @@ def parse_args():
     args = parser.parse_args()
 
     if args.subparser_name == "run":
-        return "run", [args.mode, args.debug, args.host, args.port, args.no_crons, args.no_browser]
+        return "run", [args.mode, args.debug, args.host, args.port, args.no_crons, args.no_browser,
+                       os.path.abspath(args.flask_config) if args.flask_config is not None else None]
     if args.subparser_name == "clear":
         if args.crons is False and args.logs is False and args.jobs is False and args.analytics is False:
             print("Nothing to do.")
@@ -150,7 +153,7 @@ def start_browser(host, port, app):
         print("App has not started. Cancel run of browser")
 
 
-def run(mode="standalone", debug=False, host="127.0.0.1", port=5000, no_crons=False, no_browser=False):
+def run(mode="standalone", debug=False, host="127.0.0.1", port=5000, no_crons=False, no_browser=False, flask_config=None):
     """
     Run server
 
@@ -171,7 +174,7 @@ def run(mode="standalone", debug=False, host="127.0.0.1", port=5000, no_crons=Fa
     if debug:
         os.environ['LOGS'] = "True"
     from dgenies import launch
-    app = launch(mode=mode, debug=debug)
+    app = launch(mode=mode, flask_config=flask_config, debug=debug)
     if not debug and not no_browser:
         thread = threading.Timer(1, start_browser, kwargs={
             "host": host,

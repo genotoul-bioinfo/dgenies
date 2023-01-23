@@ -21,13 +21,15 @@ logger = logging.getLogger(__name__)
 logger.addHandler(default_handler)
 logger.setLevel(logging.INFO)
 
-def launch(mode="webserver", debug=False):
+def launch(mode="webserver", flask_config=None, debug=False):
     """
     Launch the application
 
     :param mode: webserver or standalone
     :type mode: str
-    :param debug: True to enable debug mode
+    :param flask_config: flask config file
+    :type flask_config: str
+    :param debug: True to enable debug mode, override value set in flask_config
     :type debug: bool
     :return: flask app object
     :rtype: Flask
@@ -51,6 +53,9 @@ def launch(mode="webserver", debug=False):
     app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
     app.config['MAX_CONTENT_LENGTH'] = config_reader.max_upload_file_size
     app.config['SECRET_KEY'] = 'dsqdsq-255sdA-fHfg52-25Asd5'
+    if flask_config:
+        logger.info("Loading flask config {}".format(flask_config))
+        app.config.from_pyfile(flask_config)
 
     # Init mail:
     if MODE == "webserver":
