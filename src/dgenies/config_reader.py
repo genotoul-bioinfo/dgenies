@@ -42,6 +42,7 @@ class AppConfigReader:
             config_file.append(os.path.join(self.app_dir, "application-dev.properties"))
             config_file.append(os.path.join(self.app_dir, "application-dev.properties.local"))
 
+        config_file = [f for f in config_file if os.path.exists(f)]
         if len(config_file) == 0:
             raise FileNotFoundError("ERROR: application.properties not found.")
         self.reader = None
