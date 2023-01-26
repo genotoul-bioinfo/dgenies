@@ -17,38 +17,42 @@ class AppConfigReader:
     Store all configs
     """
 
-    def __init__(self):
+    def __init__(self, config_file=[]):
         """
         All "get_*" functions results are stored in the "self.*" corresponding attribute
         Example: results of the get_upload_folder function is stored in self.upload_folder
         """
         self.app_dir = os.path.dirname(inspect.getfile(self.__class__))
-        config_file = []
-        config_file_search = [os.path.join(os.path.abspath(os.sep), "dgenies", "application.properties"),
-                              "/etc/dgenies/application.properties",
-                              "/etc/dgenies/application.properties.local",
-                              os.path.join(str(Path.home()), ".dgenies", "application.properties"),
-                              os.path.join(str(Path.home()), ".dgenies", "application.properties.local"),
-                              os.path.join(self.app_dir, '..', 'etc', 'dgenies', 'application.properties')]
+        if not config_file:
+            config_file_search = [os.path.join(os.path.abspath(os.sep), "dgenies", "application.properties"),
+                                  "/etc/dgenies/application.properties",
+                                  "/etc/dgenies/application.properties.local",
+                                  os.path.join(str(Path.home()), ".dgenies", "application.properties"),
+                                  os.path.join(str(Path.home()), ".dgenies", "application.properties.local"),
+                                  os.path.join(self.app_dir, '..', 'etc', 'dgenies', 'application.properties')]
 
-        if os.name == "nt":
-            config_file.insert(1, os.path.join(sys.executable, '..', "application.properties"))
-            config_file.insert(1, os.path.join(sys.executable, '..', "application.properties.local"))
+            if os.name == "nt":
+                config_file.insert(1, os.path.join(sys.executable, '..', "application.properties"))
+                config_file.insert(1, os.path.join(sys.executable, '..', "application.properties.local"))
 
-        for my_config_file in config_file_search:
-            if os.path.exists(my_config_file):
-                config_file.append(my_config_file)
+            for my_config_file in config_file_search:
+                if os.path.exists(my_config_file):
+                    config_file.append(my_config_file)
 
-        config_file.append(os.path.join(self.app_dir, "application-dev.properties"))
-        config_file.append(os.path.join(self.app_dir, "application-dev.properties.local"))
+            config_file.append(os.path.join(self.app_dir, "application-dev.properties"))
+            config_file.append(os.path.join(self.app_dir, "application-dev.properties.local"))
 
         if len(config_file) == 0:
             raise FileNotFoundError("ERROR: application.properties not found.")
+        self.reader = None
+        self.reset_config(config_file)
+
+    def reset_config(self, config_files):
         self.reader = RawConfigParser()
-        for f in config_file:
-            logger.info("Overriding config with {}".format(f))
-        self.reader.read(config_file)
-        # Set attributes
+        logger.info("Reset config")
+        for f in config_files:
+            logger.info("Override config with {}".format(f))
+        self.reader.read(config_files)
         for attr in dir(self):
             attr_o = getattr(self, attr)
             if attr.startswith("_get_") and callable(attr_o):

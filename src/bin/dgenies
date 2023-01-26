@@ -16,6 +16,7 @@ import json
 from glob import glob
 import time
 import datetime
+import logging
 from dgenies.config_reader import AppConfigReader
 from dgenies.bin.clean_jobs import parse_data_folders, parse_database, parse_upload_folders
 import requests
@@ -24,7 +25,6 @@ from requests.exceptions import ConnectionError
 runned = False
 
 config = AppConfigReader()
-
 
 def parse_args():
     """
@@ -36,6 +36,7 @@ def parse_args():
         * [1] arguments object
     :rtype: (str, argparse.Namespace)
     """
+    global config
     parser = argparse.ArgumentParser(description="Manage dgenies application")
     subparsers = parser.add_subparsers(dest="subparser_name")
 
@@ -52,6 +53,8 @@ def parse_args():
                      const=True, nargs="?", required=False, default=False)
     run.add_argument("--no-browser", type=bool, const=True, nargs="?", required=False, default=False,
                      help="Do not start the browser (Start of browser is always disabled in debug mode)")
+    run.add_argument("--config", nargs="+", metavar='application.properties', type=str, required=False,
+                        help="D-Genies configuration file")
     run.add_argument("--flask-config", metavar='config.py', type=str, required=False,
                      help="Flask configuration file in python format")
 
@@ -69,7 +72,8 @@ def parse_args():
                        default=0)
     clear.add_argument("-w", "--web", help="Add this option with -j option, if you use the webserver mode", type=bool,
                        const=True, nargs="?", required=False, default=False)
-
+    clear.add_argument("--config", nargs="+", metavar='application.properties', type=str, required=False,
+                       help="D-Genies configuration file")
     # Gallery:
     gallery = subparsers.add_parser("gallery", help="Manage gallery")
     subparsers_gallery = gallery.add_subparsers()
@@ -83,7 +87,8 @@ def parse_args():
     gallery_add.add_argument("-q", "--query", type=str, required=True, help="Name of the query")
     gallery_add.add_argument("-t", "--target", type=str, required=True, help="Name of the target")
     gallery_add.add_argument("-p", "--pict", type=str, required=True, help="Name of the file that illustrate the job")
-
+    gallery_add.add_argument("--config", nargs="+", metavar='application.properties', type=str, required=False,
+                             help="D-Genies configuration file")
     # Gallery del:
     gallery_del = subparsers_gallery.add_parser("del", help="Delete a job from the gallery")
     gallery_del.set_defaults(which="del")
@@ -92,8 +97,9 @@ def parse_args():
     gallery_del.add_argument("-n", "--name", type=str, required=False,
                              help="Name of the job shown in the gallery")
     gallery_del.add_argument("--remove-pict", help="Remove picture file", action='store_const',
-                              const=True, default=False)
-
+                             const=True, default=False)
+    gallery_del.add_argument("--config", nargs="+", metavar='application.properties', type=str, required=False,
+                             help="D-Genies configuration file")
     # Run message
     inforun = subparsers.add_parser("inforun", help="Set a message at the top of the run page")
     inforun.set_defaults(which="inforun")
@@ -102,8 +108,12 @@ def parse_args():
                          help="Type of message")
     inforun.add_argument("-c", "--clear", help="Remove message", action='store_const',
                          const=True, default=False)
-
+    inforun.add_argument("--config", nargs="+", metavar='application.properties', type=str, required=False,
+                         help="D-Genies configuration file")
     args = parser.parse_args()
+
+    if args.config:
+        config.reset_config(args.config)
 
     if args.subparser_name == "run":
         return "run", [args.mode, args.debug, args.host, args.port, args.no_crons, args.no_browser,

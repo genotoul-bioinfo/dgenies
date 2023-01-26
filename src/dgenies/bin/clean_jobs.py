@@ -149,9 +149,12 @@ if __name__ == '__main__':
     parser.add_argument('-f', '--fake', type=bool, const=True, nargs="?", required=False, default=False,
                         help="Fake mode: don't really delete the files (ONLY for debug)")
     parser.add_argument("-d", "--max-age", type=int, required=False, help="Max age of jobs to delete", default=7)
+    parser.add_argument("--config", nargs="+", metavar='application.properties', type=str, required=False,
+                        help="D-Genies configuration file")
     args = parser.parse_args()
     fake = args.fake
-
+    if args.config:
+        config_reader.reset_config(args.config)
     upload_folder = config_reader.upload_folder
     app_data = config_reader.app_data
     now = time.time()

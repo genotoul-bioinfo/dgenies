@@ -301,7 +301,12 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Start local scheduler")
     parser.add_argument('-d', '--debug', type=str, required=False, help="Set to True to enable debug")
     parser.add_argument('-l', '--log-dir', type=str, required=False, help="Folder into store logs")
+    parser.add_argument("--config", nargs="+", metavar='application.properties', type=str, required=False,
+                        help="D-Genies configuration file")
     args = parser.parse_args()
+
+    if args.config:
+        config_reader.reset_config(args.config)
 
     if args.debug is not None:
         if args.debug.lower() == "true" or args.debug.lower == "1":
