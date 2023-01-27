@@ -422,10 +422,12 @@ class Paf:
         :type contigs_reoriented: list
         """
         contigs_reoriented = set(contigs_reoriented)
+        for c in contigs_reoriented:
+            self.q_reversed[c] = not self.q_reversed[c]
         with open(self.idx_q, "w") as idx:
             idx.write(self.name_q + "\n")
             for contig in self.q_order:
-                idx.write("\t".join([contig, str(self.q_contigs[contig]), "1" if contig in contigs_reoriented else "0"])
+                idx.write("\t".join([contig, str(self.q_contigs[contig]), "1" if self.q_reversed[contig] else "0"])
                           + "\n")
 
     def set_sorted(self, is_sorted):
