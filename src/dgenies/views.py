@@ -35,7 +35,7 @@ if MODE == "webserver":
 import logging
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG if DEBUG else logging.INFO)
 
 @app.context_processor
 def global_templates_variables():
@@ -761,6 +761,7 @@ def reverse_contig(id_res):
         idx1 = os.path.join(APP_DATA, id_res, "query.idx")
         idx2 = os.path.join(APP_DATA, id_res, "target.idx")
         paf = Paf(paf_file, idx1, idx2, False)
+        Path(os.path.join(APP_DATA, id_res, ".new-reversals")).touch()
         paf.reverse_contig(contig_name)
         if paf.parsed:
             res = paf.get_d3js_data()
@@ -801,22 +802,26 @@ def build_fasta(id_res):
     res_dir = os.path.join(APP_DATA, id_res)
     lock_query = os.path.join(res_dir, ".query-fasta-build")
     is_sorted = os.path.exists(os.path.join(res_dir, ".sorted"))
-    compressed = request.form["gzip"].lower() == "true"
-    query_fasta = Functions.get_fasta_file(res_dir, "query", is_sorted)
+    need_refresh = os.path.exists(os.path.join(res_dir, ".new-reversals"))
+    to_compress = request.form["gzip"].lower() == "true"
+    query_fasta = Functions.get_fasta_file(res_dir, "query", is_sorted and not need_refresh)
+    if need_refresh:
+        os.remove(os.path.join(res_dir, ".new-reversals"))
     if query_fasta is not None:
         if is_sorted and not query_fasta.endswith(".sorted"):
             # Do the sort
             Path(lock_query).touch()
-            if not compressed or MODE == "standalone":  # If compressed, it will took a long time, so not wait
+            if not to_compress or MODE == "standalone":  # If compressed, it will took a long time, so not wait
                 Path(lock_query + ".pending").touch()
             index_file = os.path.join(res_dir, "query.idx.sorted")
+            logger.debug("Sort file{}: {}".format(" and compress" if to_compress else "", query_fasta))
             if MODE == "webserver":
                 thread = threading.Timer(1, Functions.sort_fasta, kwargs={
                     "job_name": id_res,
                     "fasta_file": query_fasta,
                     "index_file": index_file,
                     "lock_file": lock_query,
-                    "compress": compressed,
+                    "compress": to_compress,
                     "mailer": mailer,
                     "mode": MODE
                 })
@@ -826,10 +831,10 @@ def build_fasta(id_res):
                                      fasta_file=query_fasta,
                                      index_file=index_file,
                                      lock_file=lock_query,
-                                     compress=compressed,
+                                     compress=to_compress,
                                      mailer=None,
                                      mode=MODE)
-            if not compressed or MODE == "standalone":
+            if not to_compress or MODE == "standalone":
                 if MODE == "webserver":
                     i = 0
                     time.sleep(5)
@@ -840,7 +845,7 @@ def build_fasta(id_res):
                 if os.path.exists(lock_query):
                     return jsonify({"success": True, "status": 1, "status_message": "In progress"})
                 return jsonify({"success": True, "status": 2, "status_message": "Done",
-                                "gzip": compressed})
+                                "gzip": to_compress})
             else:
                 return jsonify({"success": True, "status": 1, "status_message": "In progress"})
         elif is_sorted and os.path.exists(lock_query):
@@ -848,7 +853,9 @@ def build_fasta(id_res):
             return jsonify({"success": True, "status": 1, "status_message": "In progress"})
         else:
             # No sort to do or sort done
-            if compressed and not query_fasta.endswith(".gz.fasta"):
+            is_compressed = query_fasta.endswith(".gz") or query_fasta.endswith(".gz.sorted")
+            if to_compress and not is_compressed:
+                logger.debug("Compress file: {}".format(query_fasta))
                 # If compressed file is asked, we must compress it now if not done before...
                 Path(lock_query).touch()
                 thread = threading.Timer(1, Functions.compress_and_send_mail, kwargs={
@@ -861,7 +868,7 @@ def build_fasta(id_res):
                 thread.start()
                 return jsonify({"success": True, "status": 1, "status_message": "In progress"})
             return jsonify({"success": True, "status": 2, "status_message": "Done",
-                            "gzip": query_fasta.endswith(".gz") or query_fasta.endswith(".gz.sorted")})
+                            "gzip": is_compressed})
     else:
         return jsonify({"success": False,
                         "message": "Unable to get fasta file for query. Please contact us to report the bug"})
