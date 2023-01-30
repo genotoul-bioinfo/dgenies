@@ -163,32 +163,33 @@ class Tools:
                     self.default = n
         return self.default
 
-    def load_yaml(self, trusted=False):
+    def load_yaml(self, trusted=False, tool_config=None):
         app_dir = os.path.dirname(inspect.getfile(self.__class__))
-        yaml_file = None
-        config_file_search = [os.path.join(os.path.abspath(os.sep), "dgenies", "tools.yaml"),
-                              "/etc/dgenies/tools.yaml",
-                              "/etc/dgenies/tools.yaml.local",
-                              os.path.join(str(Path.home()), ".dgenies", "tools.yaml"),
-                              os.path.join(str(Path.home()), ".dgenies", "tools.yaml.local"),
-                              os.path.join(app_dir, '..', 'etc', 'dgenies', 'tools.yaml')]
+        if tool_config:
+            config_file_search = [tool_config]
+        else:
+            config_file_search = [os.path.join(os.path.abspath(os.sep), "dgenies", "tools.yaml"),
+                                  "/etc/dgenies/tools.yaml",
+                                  "/etc/dgenies/tools.yaml.local",
+                                  os.path.join(str(Path.home()), ".dgenies", "tools.yaml"),
+                                  os.path.join(str(Path.home()), ".dgenies", "tools.yaml.local"),
+                                  os.path.join(app_dir, '..', 'etc', 'dgenies', 'tools.yaml')]
 
-        if os.name == "nt":
-            config_file_search.insert(1, os.path.join(sys.executable, '..', "tools.yaml"))
-            config_file_search.insert(1, os.path.join(sys.executable, '..', "tools.yaml.local"))
+            if os.name == "nt":
+                config_file_search.insert(1, os.path.join(sys.executable, '..', "tools.yaml"))
+                config_file_search.insert(1, os.path.join(sys.executable, '..', "tools.yaml.local"))
 
-        config_file_search.append(os.path.join(app_dir, "tools-dev.yaml"))
-        config_file_search.append(os.path.join(app_dir, "tools-dev.yaml.local"))
-
+            config_file_search.append(os.path.join(app_dir, "tools-dev.yaml"))
+            config_file_search.append(os.path.join(app_dir, "tools-dev.yaml.local"))
         for my_config_file in reversed(config_file_search):
             if os.path.exists(my_config_file):
-                yaml_file = my_config_file
+                tool_config = my_config_file
                 break
-        if yaml_file is None:
+        if tool_config is None:
             raise FileNotFoundError("ERROR: tools.yaml not found.")
 
-        logger.info("Loading tools config from {}".format(yaml_file))
-        with open(yaml_file, "r") as yml_f:
+        logger.info("Load tools config from {}".format(tool_config))
+        with open(tool_config, "r") as yml_f:
             tools_dict = yaml.load(yml_f, Loader=yaml.FullLoader if trusted else yaml.SafeLoader)
             tools = {}
             for name, props in tools_dict.items():
