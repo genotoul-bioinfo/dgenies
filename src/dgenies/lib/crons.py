@@ -23,7 +23,7 @@ class Crons:
         """
         self.base_dir = base_dir
         self.debug = debug
-        self.my_cron = CronTab(user=getpass.getuser())
+        self.my_cron = CronTab(user=True)
         self.config = AppConfigReader()
         self.local_scheduler_pid_file = os.path.join(self.config.config_dir, ".local_scheduler_pid")
 
