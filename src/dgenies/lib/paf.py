@@ -351,6 +351,16 @@ class Paf:
         :return: True if well oriented, False else
         :rtype: bool
         """
+        # recall: a line is a list of tuple where each tuple is such as:
+        #  0. median_on_query,
+        #  1. squared length,
+        #  2. median_on_target,
+        #  3. x1,
+        #  4. x2,
+        #  5. y1,
+        #  6. y2,
+        #  7. length
+        #  (x : on target, y: on query)
         lines.sort(key=lambda x: -x[-1])
         max_len = lines[0][-1]
         i = 0
@@ -365,13 +375,15 @@ class Paf:
 
         # Check orientation of each line:
         if len(selected_lines) > 1:
-            selected_lines.sort(key=lambda x: x[0])
+            selected_lines.sort(key=lambda x: x[0])  # sort lines by median_on_query position
             orients = []
             for i in range(1, len(selected_lines)):
+                # Check if two consecutive sorted lines has the same slope direction by using median_on_target position
                 if selected_lines[i][2] > selected_lines[i-1][2]:
-                    orients.append(1)
+                    same_dir = 1
                 else:
-                    orients.append(-1)
+                    same_dir = -1
+                orients.append(same_dir)
             if mean(orients) > -0.1:  # We have a good orientation (-0.1 to ignore ambiguous cases)
                 return True
         elif len(selected_lines) == 1:
@@ -455,7 +467,6 @@ class Paf:
         This hypothesis needs to be checked.
 
         :return:
-
             * [0] gravity for each contig and each chromosome:
                 {contig1: {chr1: value, chr2: value, ...}, contig2: ...}
             * [1] For each block save lines inside:
