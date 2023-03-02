@@ -754,6 +754,32 @@ def sort_graph(id_res):
     return jsonify({"success": False, "message": "Sort is not available for All-vs-All mode"})
 
 
+@app.route('/reset-sort/<id_res>', methods=['POST'])
+def reset_sort(id_res):
+    """
+    Reset sort of dot plot
+
+    :param id_res: job id
+    :type id_res: str
+    """
+    to_remove = [".sorted", "map.paf.sorted", "query.idx.sorted"]
+    for f in to_remove:
+        if os.path.exists(os.path.join(APP_DATA, id_res, f)):
+            os.remove(os.path.join(APP_DATA, id_res, f))
+
+    paf = os.path.join(APP_DATA, id_res, "map.paf")
+    idx1 = os.path.join(APP_DATA, id_res, "query.idx")
+    idx2 = os.path.join(APP_DATA, id_res, "target.idx")
+
+    paf = Paf(paf, idx1, idx2)
+
+    if paf.parsed:
+        res = paf.get_d3js_data()
+        res["success"] = True
+        return jsonify(res)
+    return jsonify({"success": False, "message": paf.error})
+
+
 @app.route('/reverse-contig/<id_res>', methods=['POST'])
 def reverse_contig(id_res):
     """

@@ -82,9 +82,19 @@
                 <input type="range" min="0" max="3" value="1" step="1" id="stroke-width"/></label></p>
                 <p><label>Regions delimiters:<br/>
                 <input type="range" min="0" max="5" value="2" step="1" id="chroms-limits"/></label></p>
-                <p><input type="button" id="sort-contigs" value="Sort contigs"/></p>
-                <p><input type="button" id="hide-noise" value="Hide noise"/></p>
-                <p><input type="button" id="summary" value="Summary"/></p>
+                <p>
+                    <div class="btn-group w-100">
+                        <button id="sort-contigs" type="button" class="btn btn-outline-dark btn-sm w-100">Sort contigs</button>
+                        <button type="button" class="btn btn-sm btn-outline-dark dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <span class="sr-only">Toggle Dropdown</span>
+                        </button>
+                        <div class="dropdown-menu">
+                            <a id="reset-sort" class="dropdown-item" href="#">Reset</a>
+                        </div>
+                    </div>
+                </p>
+                <p><input type="button" id="hide-noise" class="btn btn-outline-dark btn-sm" value="Hide noise"/></p>
+                <p><input type="button" id="summary" class="btn btn-outline-dark btn-sm" value="Summary"/></p>
                 {% if not is_gallery %}
                     <p class="bottom"><input type="button" id="delete-job" value="Delete job"/></p>
                 {% endif %}

@@ -8,6 +8,7 @@ dgenies.result.controls = {};
  */
 dgenies.result.controls.init = function () {
     $("#sort-contigs").click(dgenies.result.controls.launch_sort_contigs);
+    $("#reset-sort").click(dgenies.result.controls.reset_sort_contig);
     $("#hide-noise").click(dgenies.result.controls.launch_hide_noise);
     $("#summary").click(dgenies.result.controls.summary);
     $("#delete-job").click(dgenies.result.controls.delete_job);
@@ -49,6 +50,34 @@ dgenies.result.controls.launch_sort_contigs = function () {
         dgenies.show_loading("Building...");
         window.setTimeout(() => {
             dgenies.post(`/sort/${dgenies.result.id_res}`,
+                {},
+                function (data) {
+                    if (data["success"]) {
+                        dgenies.reset_loading_message();
+                        window.setTimeout(() => {
+                            d3.dgenies.launch(data, true);
+                        }, 0);
+                    }
+                    else {
+                        dgenies.hide_loading();
+                        dgenies.notify(data["message"] || "An error occurred! Please contact us to report the bug", "danger");
+                    }
+                }
+            );
+        }, 0);
+    }, 0);
+};
+
+
+/**
+ * Reset contigs sort
+ */
+dgenies.result.controls.reset_sort_contig = function () {
+    d3.dgenies.zoom.reset_scale();
+    window.setTimeout(() => {
+        dgenies.show_loading("Building...");
+        window.setTimeout(() => {
+            dgenies.post(`/reset-sort/${dgenies.result.id_res}`,
                 {},
                 function (data) {
                     if (data["success"]) {

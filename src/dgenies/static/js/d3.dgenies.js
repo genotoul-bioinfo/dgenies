@@ -141,12 +141,12 @@ d3.dgenies.init = function (id_res=null, from_file=false) {
 d3.dgenies.launch = function(res, update=false, noise_change=false) {
     dgenies.fill_select_zones(res["x_order"], res["y_order"]);
     if (res["sorted"]) {
-        $("input#sort-contigs").val("Undo sort");
+        $("button#sort-contigs").text("Undo sort");
         $("#export").find("select option[value=4]").show();
         $("#export").find("select option[value=8]").show();
     }
     else {
-        $("input#sort-contigs").val("Sort contigs");
+        $("button#sort-contigs").text("Sort contigs");
         $("#export").find("select option[value=4]").hide();
         $("#export").find("select option[value=8]").hide();
     }
@@ -154,10 +154,10 @@ d3.dgenies.launch = function(res, update=false, noise_change=false) {
     d3.dgenies.name_y = res["name_y"];
 
     if (d3.dgenies.name_x === d3.dgenies.name_y) {
-        $("input#sort-contigs").hide();
+        $("button#sort-contigs").parent().hide();
     }
     else {
-        $("input#sort-contigs").show();
+        $("button#sort-contigs").parent().show();
     }
 
     d3.dgenies.lines = res["lines"];
