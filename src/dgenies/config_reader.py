@@ -395,6 +395,27 @@ class AppConfigReader:
         except (NoOptionError, NoSectionError):
             return self._get_cluster_memory()
 
+    def _get_cluster_walltime(self):
+        try:
+            walltime = self.reader.get("cluster", "walltime")
+            return walltime
+        except (NoOptionError, NoSectionError):
+            return "02:00:00"
+
+    def _get_cluster_walltime_prepare(self):
+        try:
+            walltime = self.reader.get("cluster", "walltime_prepare")
+            return walltime
+        except (NoOptionError, NoSectionError):
+            return self._get_cluster_walltime()
+
+    def _get_cluster_walltime_align(self):
+        try:
+            walltime = self.reader.get("cluster", "walltime_align")
+            return walltime
+        except (NoOptionError, NoSectionError):
+            return self._get_cluster_walltime()
+
     def _get_debug(self):
         try:
             return self.reader.get("debug", "enable").lower() == "true"

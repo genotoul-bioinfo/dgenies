@@ -754,16 +754,16 @@ dgenies.run.allowed_file = function (filename, formats) {
 dgenies.run._init_fileupload = function(ftype, formats, position) {
     $(`input.file-${ftype}`).fileupload({
         dataType: 'json',
-        dropZone: $(`#dropzone-${ftype}`),
+        dropZone: null,
         formData: {
             "s_id": dgenies.run.s_id,
             "formats": formats
         },
         add: function (e, data) {
             let filename = data.files[0].name;
-            if (dgenies.run.allowed_file(filename, formats))
+            if (dgenies.run.allowed_file(filename, formats)){
                 dgenies.run.files[position] = data;
-            else {
+            } else {
                 $(`input.file-${ftype}`).trigger("change"); // The value is null after fired
                 dgenies.notify(`File <b>${filename}</b> is not supported!`, "danger", 3000)
             }

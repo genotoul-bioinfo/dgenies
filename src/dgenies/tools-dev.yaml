@@ -15,6 +15,9 @@ minimap2:
       label: Repeatedness
       type: radio
       help: "Ignore top fraction of most frequent minimizers"
+      hint: |
+        For large genomes keep the "Repeatedness" parameter set to "Many repeats".
+        If not your job may be killed because of time limit or memory limit crossing.
       entries:
         -
           key: few

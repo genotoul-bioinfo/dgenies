@@ -1145,19 +1145,19 @@ div.jquery-modal div.modal {
 .cm-s-dgenies span.cm-value { color: #5a9418; line-height: 1em; font-weight: bold; }
 .cm-s-dgenies span.cm-qvalue { color: #5a9418; line-height: 1em; font-weight: bold; }
 
-div#nav-batch-help h3 {
+div.run-help h3 {
     padding-top: 10px;
     font-size: medium;
     font-weight: bold;
 }
 
-div#nav-batch-help h4 {
+div.run-help h4 {
     font-size: medium;
     font-weight: bold;
 }
 
 
-div#nav-batch-help h5 {
+div.run-help h5 {
     font-size: medium;
     font-style: italic;
     margin-left: 15px;

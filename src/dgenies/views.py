@@ -131,6 +131,13 @@ def run():
     return render_template("run.html", id_job=id_job, email=email,
                            menu="run", allowed_ext=extensions.allowed_extensions_per_format, s_id=s_id,
                            max_upload_file_size=config_reader.max_upload_file_size,
+                           limits={
+                               "upload_size": Functions.get_readable_size(config_reader.max_upload_file_size),
+                               "uncompressed_size_ava": Functions.get_readable_size(config_reader.max_upload_size_ava),
+                               "uncompressed_size": Functions.get_readable_size(config_reader.max_upload_size),
+                               "walltime_prepare": config_reader.cluster_walltime_prepare,
+                               "walltime_align": config_reader.cluster_walltime_align,
+                           },
                            example_align=config_reader.example_target != "",
                            target=os.path.basename(config_reader.example_target),
                            query=os.path.basename(config_reader.example_query),

@@ -783,9 +783,9 @@ class JobManager:
                         memory = 32
             if memory > self.tool.max_memory:
                 memory = self.tool.max_memory
-            return memory, self.tool.threads_cluster, "02:00:00"
+            return memory, self.tool.threads_cluster, self.config.cluster_walltime_align
         else:  # step == "prepare"
-            return 8, 1, "02:00:00"
+            return 8, 1, self.config.cluster_walltime_prepare
 
     def launch_to_cluster(self, step, runner_type, command, args, log_out, log_err, scheduled_status):
         """
