@@ -619,6 +619,11 @@ dgenies.run.adjust_job_list = function(jobs){
                 }
             }
         }
+        // correct the option listing
+        if ("options" in job){
+            job["tool_options"] = job["options"].split(",")
+            delete job["options"];
+        }
     }
 }
 
