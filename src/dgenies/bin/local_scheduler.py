@@ -4,6 +4,8 @@ import os
 import time
 import psutil
 import atexit
+import sys
+import logging
 from datetime import datetime
 from tendo import singleton
 import argparse
@@ -31,7 +33,12 @@ NB_RUN = config_reader.local_nb_runs  # Max number of jobs running locally
 NB_PREPARE = config_reader.nb_data_prepare  # Max number of data preparing jobs launched locally
 DEBUG = config_reader.debug
 
-LOG_FILE = "stdout"
+LOG_FILE = sys.stdout
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.WARNING)
+if DEBUG:
+    logger.setLevel(logging.DEBUG)
 
 
 def _printer(*messages):
@@ -41,12 +48,8 @@ def _printer(*messages):
     :param messages: messages to print
     """
     if DEBUG:
-        if LOG_FILE == "stdout":
-            print(*messages)
-        else:
-            with open(LOG_FILE, "a") as log_f:
-                print(*messages, file=log_f)
-
+        with open(LOG_FILE, "a") as log_f:
+            log_f.writelines(messages)
 
 def start_align(id_job, runner_type="local"):
     """
@@ -57,7 +60,7 @@ def start_align(id_job, runner_type="local"):
     :param runner_type: local, slurm or sge
     :type runner_type: str
     """
-    _printer("Start job", id_job)
+    logger.info("Start job: {}".format(id_job))
     with Job.connect():
         job = Job.get(Job.id_job == id_job)
         job.status = "starting"
@@ -110,7 +113,7 @@ def prepare_job(id_job):
     :param id_job: job id
     :type id_job: str
     """
-    _printer("Prepare data for job:", id_job)
+    logger.info("Prepare data for job: {}".format(id_job))
     with Job.connect():
         job = Job.get(Job.id_job == id_job)
         job.status = "preparing"
@@ -237,35 +240,35 @@ def parse_uploads_asks():
         # Get allowed:
         all_sessions = Session.select()
         nb_sessions = len(all_sessions)
-        _printer("All sessions:", nb_sessions)
+        logger.info("All sessions: {}".format(nb_sessions))
         sessions = Session.select().where(Session.status == "active")
         nb_active_dl = len(sessions)
-        _printer("Active_dl:", nb_active_dl)
+        logger.info("Active downloads: {}".format(nb_active_dl))
         for session in sessions:
             if not session.keep_active \
                     and (now - session.last_ping).total_seconds() > config_reader.delete_allowed_session_delay:
-                _printer("Delete 1 active session:", session.s_id)
+                logger.info("Delete 1 active session: {}".format(session.s_id))
                 session.delete_instance()  # We consider the user has left
                 nb_active_dl -= 1
         # Get pending:
         sessions = Session.select().where(Session.status == "pending").order_by(Session.date_created)
-        _printer("Pending:", len(sessions))
+        logger.info("Pending sessions: {}".format( len(sessions)))
         for session in sessions:
             delay = (now - session.last_ping).total_seconds()
             if delay > config_reader.reset_pending_session_delay:
                 session.status = "reset"  # Reset position, the user has probably left
                 session.save()
-                _printer("Reset 1 session:", session.s_id)
+                logger.info("Reset 1 session: {}".format(session.s_id))
             elif nb_active_dl < config_reader.max_concurrent_dl:
                 session.status = "active"
                 session.save()
                 nb_active_dl += 1
-                _printer("Enable 1 session:", session.s_id)
+                logger.info("Enable 1 session: {}".format(session.s_id))
         # Remove old sessions:
         for session in all_sessions:
             delay = (now - session.last_ping).total_seconds()
             if delay > config_reader.delete_session_delay:
-                _printer("Delete 1 outdated session:", session.s_id)
+                logger.info("Delete 1 outdated session: {}".format(session.s_id))
                 session.delete_instance()  # Session has expired
 
 
@@ -299,8 +302,10 @@ def parse_args():
     global DEBUG, LOG_FILE
 
     parser = argparse.ArgumentParser(description="Start local scheduler")
-    parser.add_argument('-d', '--debug', type=str, required=False, help="Set to True to enable debug")
-    parser.add_argument('-l', '--log-dir', type=str, required=False, help="Folder into store logs")
+    parser.add_argument('-d', '--debug', action="store_true", required=False, default=False,
+                        help="Set to True to enable debug")
+    parser.add_argument('-l', '--log-file', type=argparse.FileType('a'), required=False, default=sys.stdout,
+                        help="Log file (default: stdout)")
     parser.add_argument("--config", nargs="+", metavar='application.properties', type=str, required=False,
                         help="D-Genies configuration file")
     args = parser.parse_args()
@@ -308,52 +313,35 @@ def parse_args():
     if args.config:
         config_reader.reset_config(args.config)
 
-    if args.debug is not None:
-        if args.debug.lower() == "true" or args.debug.lower == "1":
-            DEBUG = True
-        elif args.debug.lower() == "false" or args.debug.lower == "0":
-            DEBUG = False
-        else:
-            raise Exception("Invalid value for debug: %s (valid values: True, False)" % args.debug)
-
-    if args.log_dir is not None:
-        log_dir = args.log_dir
-    else:
-        log_dir = config_reader.log_dir
-
-    if DEBUG:
-        if log_dir == "stdout":
-            LOG_FILE = "stdout"
-        else:
-            LOG_FILE = os.path.join(config_reader.log_dir, "local_scheduler.log")
+    DEBUG = args.debug
+    LOG_FILE = args.log_file
 
 
 if __name__ == '__main__':
     parse_args()
 
     while True:
-        _printer("Check uploads...")
+        logger.info("Check uploads...")
         parse_uploads_asks()
-        _printer("")
-        _printer("Checking jobs...")
+        logger.info("Check jobs...")
         # jobs ready to be run locally
         scheduled_jobs_local = get_scheduled_local_jobs()
         # jobs ready to be run on cluster
         scheduled_jobs_cluster = get_scheduled_cluster_jobs()
         # jobs ready to be prepared
         prep_scheduled_jobs = get_prep_scheduled_jobs()
-        _printer("Waiting for preparing:", len(prep_scheduled_jobs))
+        logger.info("Waiting for preparing: {}".format(len(prep_scheduled_jobs)))
         # number of jobs in preparation for local run
         nb_preparing_jobs = get_preparing_jobs_nb()
         # number of jobs in preparation for cluster run
         nb_preparing_jobs_cluster = get_preparing_jobs_cluster_nb()
-        _printer("Preparing:", nb_preparing_jobs, "(local)", "".join([str(nb_preparing_jobs_cluster[0]),
-                 "[", str(nb_preparing_jobs_cluster[1]), "]"]), "(cluster)")
-        _printer("Scheduled:", len(scheduled_jobs_local), "(local),", len(scheduled_jobs_cluster), "(cluster)")
+        logger.info("Preparing: {} (local) {}[{}] (cluster)".format(
+            len(prep_scheduled_jobs), nb_preparing_jobs_cluster[0], nb_preparing_jobs_cluster[1]))
+        logger.info("Scheduled: {} (local) {} (cluster)".format(len(scheduled_jobs_local), len(scheduled_jobs_cluster)))
         # started jobs locally and on cluster
         started_jobs, cluster_started_jobs = parse_started_jobs()
         nb_started = len(started_jobs)
-        _printer("Started:", nb_started, "(local),", len(cluster_started_jobs), "(cluster)")
+        logger.info("Started: {} (local) {} (cluster)".format(nb_started, len(cluster_started_jobs)))
 
         # Managing preparing jobs
         nj = 0
@@ -394,6 +382,5 @@ if __name__ == '__main__':
             start_align(job["job_id"], job["runner_type"])
 
         # Wait before return
-        _printer("Sleeping...")
+        logger.info("Sleeping for 15s...")
         time.sleep(15)
-        _printer("\n")
