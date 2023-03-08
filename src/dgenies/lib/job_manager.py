@@ -848,9 +848,11 @@ class JobManager:
         logger.info("Job {} ended".format(jobid))
         if retval.hasExited and (self.check_job_status_slurm() if runner_type == "slurm" else
         self.check_job_status_sge()):
+            logger.info("Job {} ended successfully".format(jobid))
             s.deleteJobTemplate(jt)
         else:
             error = self.find_error_in_log(log_err)
+            logger.info("Job {} ended with error: {}".format(jobid, error))
             s.deleteJobTemplate(jt)
             raise DGeniesClusterRunError(error)
 
@@ -875,7 +877,7 @@ class JobManager:
                                    log_err=self.logs,
                                    scheduled_status="scheduled-cluster")
             status = self.check_job_success()
-            logger.debug("Job ends with status: {}".format(status))
+            logger.debug("Job {} ends with status: {}".format(self.id_job, status))
             if status == "no-match":
                 self._set_analytics_job_status("no-match")
             self.update_job_status(status)
