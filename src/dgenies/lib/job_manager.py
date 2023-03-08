@@ -44,9 +44,6 @@ from dgenies.allowed_extensions import AllowedExtensions
 import logging
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-if DEBUG:
-    logger.setLevel(logging.DEBUG)
 
 if MODE == "webserver":
     from dgenies.database import Session, Gallery

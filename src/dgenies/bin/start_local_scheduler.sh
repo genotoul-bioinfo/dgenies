@@ -17,9 +17,9 @@ if [ -f "${pid_file}" ]; then
 fi
 
 if [ "$is_started" -eq "0" ]; then
-    args="-d False"
+    args=""
     if [ "${logs}" != "None" ]; then
-        args="-d True -l ${logs}"
+        args="-d -l ${logs}"
     fi
     echo "Starting scheduler..."
     ${python} bin/local_scheduler.py ${args} &> /dev/null &

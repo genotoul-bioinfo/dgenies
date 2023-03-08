@@ -39,6 +39,7 @@ def launch(mode="webserver", flask_config=None, debug=False):
 
     MODE = mode
     DEBUG = debug
+    logger.setLevel(logging.DEBUG if DEBUG else logging.INFO)
 
     # Init config reader:
     config_reader = AppConfigReader()

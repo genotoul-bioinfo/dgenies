@@ -10,7 +10,6 @@ from dgenies.lib.exceptions import DGeniesUnknownOptionError
 from dgenies.lib import parsers
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 
 class Tool:

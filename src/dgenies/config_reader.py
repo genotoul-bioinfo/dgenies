@@ -8,7 +8,6 @@ from configparser import RawConfigParser, NoOptionError, NoSectionError
 from dgenies.lib.decorators import Singleton
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 
 @Singleton

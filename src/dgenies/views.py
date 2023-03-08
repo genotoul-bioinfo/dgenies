@@ -35,7 +35,6 @@ if MODE == "webserver":
 import logging
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG if DEBUG else logging.INFO)
 
 @app.context_processor
 def global_templates_variables():

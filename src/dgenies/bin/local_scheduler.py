@@ -4,7 +4,6 @@ import os
 import time
 import psutil
 import atexit
-import sys
 import logging
 from datetime import datetime
 from tendo import singleton
@@ -17,6 +16,7 @@ from dgenies.lib.job_manager import JobManager
 # Allow only one instance:
 me = singleton.SingleInstance()
 
+logger = logging.getLogger("dgenies")
 config_reader = AppConfigReader()
 
 # Add DRMAA lib in env:
@@ -33,23 +33,7 @@ NB_RUN = config_reader.local_nb_runs  # Max number of jobs running locally
 NB_PREPARE = config_reader.nb_data_prepare  # Max number of data preparing jobs launched locally
 DEBUG = config_reader.debug
 
-LOG_FILE = sys.stdout
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.WARNING)
-if DEBUG:
-    logger.setLevel(logging.DEBUG)
-
-
-def _printer(*messages):
-    """
-    print messages to stdout or to a file (according to LOG_FILE global constant)
-
-    :param messages: messages to print
-    """
-    if DEBUG:
-        with open(LOG_FILE, "a") as log_f:
-            log_f.writelines(messages)
 
 def start_align(id_job, runner_type="local"):
     """
@@ -252,7 +236,7 @@ def parse_uploads_asks():
                 nb_active_dl -= 1
         # Get pending:
         sessions = Session.select().where(Session.status == "pending").order_by(Session.date_created)
-        logger.info("Pending sessions: {}".format( len(sessions)))
+        logger.info("Pending sessions: {}".format(len(sessions)))
         for session in sessions:
             delay = (now - session.last_ping).total_seconds()
             if delay > config_reader.reset_pending_session_delay:
@@ -296,25 +280,34 @@ def move_job_to_cluster(id_job):
 
 def parse_args():
     """
-    Parse command line arguments and define DEBUG and LOG_FILE constants
+    Parse command line arguments and define DEBUG constants
     """
 
-    global DEBUG, LOG_FILE
+    global DEBUG
 
     parser = argparse.ArgumentParser(description="Start local scheduler")
     parser.add_argument('-d', '--debug', action="store_true", required=False, default=False,
                         help="Set to True to enable debug")
-    parser.add_argument('-l', '--log-file', type=argparse.FileType('a'), required=False, default=sys.stdout,
+    parser.add_argument('-l', '--log-file', type=str, required=False, default=None,
                         help="Log file (default: stdout)")
     parser.add_argument("--config", nargs="+", metavar='application.properties', type=str, required=False,
                         help="D-Genies configuration file")
     args = parser.parse_args()
 
+    DEBUG = args.debug
+    logger.setLevel(logging.DEBUG) if DEBUG else logger.setLevel(logging.INFO)
+
+    if args.log_file:
+        handler = logging.FileHandler(args.log_file, mode='a')
+        if DEBUG:
+            handler.setLevel(logging.DEBUG)
+        formatter = logging.Formatter('[%(asctime)s] %(levelname)s in %(module)s (%(threadName)s): %(message)s')
+        handler.setFormatter(formatter)
+        logger.handlers.clear()
+        logger.addHandler(handler)
+
     if args.config:
         config_reader.reset_config(args.config)
-
-    DEBUG = args.debug
-    LOG_FILE = args.log_file
 
 
 if __name__ == '__main__':

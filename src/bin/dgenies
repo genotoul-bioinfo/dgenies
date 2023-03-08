@@ -16,7 +16,6 @@ import json
 from glob import glob
 import time
 import datetime
-import logging
 from dgenies.config_reader import AppConfigReader
 from dgenies.bin.clean_jobs import parse_data_folders, parse_database, parse_upload_folders
 import requests
