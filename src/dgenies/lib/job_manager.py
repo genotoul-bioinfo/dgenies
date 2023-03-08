@@ -1231,7 +1231,6 @@ class JobManager:
             # job.status = status
             # db.commit()
             self.update_job_status(status)
-            self.send_mail_post_if_allowed()
 
         except DGeniesClusterRunError as e:
             raise e
