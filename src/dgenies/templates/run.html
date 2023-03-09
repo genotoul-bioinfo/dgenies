@@ -179,8 +179,8 @@
                                             <button class="btn btn-outline-secondary" type="button" id="button-query" title="Select a file">
                                                 <span class="glyphicon glyphicon-folder-open align-middle"></span>&nbsp
                                             </button>
-                                            <div class="loading-file query hide"></div>
-                                            <div class="upload-success query hide"></div>
+                                            <div class="loading-file target" style="display: none"></div>
+                                            <div class="upload-success target" style="display: none"></div>
                                             <div class="file-size query"></div>
                                         </div>
                                         <div class="w-100"></div>
@@ -300,7 +300,7 @@
                                                 </ul>
                                             </li>
                                             <li>
-                                                Computation wall times are is set to (hh:mm:ss):
+                                                Computation wall times are set to (hh:mm:ss):
                                                 <ul>
                                                     <li>
                                                         <code>{{ limits.walltime_prepare }}</code> for preparation step,
