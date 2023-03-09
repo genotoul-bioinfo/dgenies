@@ -827,7 +827,7 @@ class JobManager:
         native_specs = self.config.drmaa_native_specs
         if runner_type == "slurm":
             if native_specs == "###DEFAULT###":
-                native_specs = "--mem-per-cpu={0} --mincpus={1} --time={2}"
+                native_specs = "--mem-per-cpu={0} --nodes=1 --mincpus={1} --time={2}"
             jt.nativeSpecification = native_specs.format(memory * 1000 // threads, threads, walltime)
         elif runner_type == "sge":
             if native_specs == "###DEFAULT###":
@@ -836,6 +836,7 @@ class JobManager:
         jt.workingDirectory = self.output_dir
 
         # submit job
+        logger.info("Submit {} job with native specs: {}".format(runner_type, jt.nativeSpecification))
         jobid = s.runJob(jt)
         self.id_process = jobid
         # TODO split here into submit_to_cluster -> s (above) and wait_cluster(s) in order to update job status outside
