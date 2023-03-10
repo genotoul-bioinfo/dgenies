@@ -1067,7 +1067,7 @@ class JobManager:
             file_size = self.get_file_size(datafile.get_path())
             datafile.set_file_size(file_size)
             if -1 < size_limit < file_size:
-                raise DGeniesUploadedFileSizeLimitError(input_type, max_upload_size_readable, unit="Mb",
+                raise DGeniesUploadedFileSizeLimitError(datafile.get_name(), max_upload_size_readable, unit="Mb",
                                                         compressed=False)
 
             if input_type == "align":
