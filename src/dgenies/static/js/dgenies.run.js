@@ -54,7 +54,7 @@ dgenies.run.FTYPES_REGEX = {
 
 // Keys in batch file that will use files
 dgenies.run.KEYS_FOR_FILES = ["alignfile", "backup", "query", "target", "queryidx", "targetidx"]
-//dgenies.run.FILE_STATES = ["available", "duplicated", "missing", "unused"]
+//dgenies.run.FILE_STATES = ["available", "duplicated", "missing", "unused", "oversize"]
 
 // list of files in batch file: array of strings
 dgenies.run.files_in_batch = new Array()
@@ -180,43 +180,6 @@ dgenies.run.refresh_html_listing = function() {
     })
 }
 
-/**
- * Check the state of uploaded files
- *
- * @param {array} needed_files list of filenames from batch file needed to upload
- * @param {array} uploaded_files list of filenames in upload field
- * @returns {array} a list of string with the same length than @uploaded_files
- **/
-dgenies.run.check_uploaded_files = function(needed_files, uploaded_files){
-    // list of states (following the order of list of files)
-    let states = []
-
-    // We count filename occurences
-    let count = new Map();
-    for (let f of uploaded_files.flat()) {
-        if (count.has(f)) {
-            count.set(f, count.get(f) + 1)
-        } else {
-            count.set(f, 1);
-        }
-    }
-
-    // We only check duplication for available files
-    for (let f of uploaded_files.flat()){
-        if (needed_files.includes(f)){
-            if (count.get(f) > 1) {
-                states.push("duplicated")
-            } else {
-                states.push("available")
-            }
-        } else {
-            states.push("unused")
-        }
-    }
-    return states
-}
-
-
 
 /**
  * Get the list of uploaded files
@@ -230,25 +193,42 @@ dgenies.run.get_uploaded_files = function(){
 
 
 /**
- * Check which files are missing in batch files
- *
- * @param {array} needed_files list of filenames from batch file needed to upload
- * @param {array} uploaded_files list of filenames in upload field
- * @returns {array} a list of string with the same length than @uploaded_files
- **/
-dgenies.run.check_missing_files = function(needed_files, uploaded_files){
-    return needed_files.filter(
-        function(x) { return uploaded_files.indexOf(x) < 0 }
-    );
-}
-
-/**
  * Compute states of files, both for uploaded ones and missing ones
  **/
 dgenies.run.check_files = function(){
-    let uploaded_files = dgenies.run.get_uploaded_files()
-    dgenies.run.file_states = dgenies.run.check_uploaded_files(dgenies.run.files_in_batch, uploaded_files)
-    dgenies.run.missing_files = dgenies.run.check_missing_files(dgenies.run.files_in_batch, uploaded_files)
+    dgenies.run.file_states = []
+
+    // We count for duplicate searching
+    let count = new Map();
+    for (let f of dgenies.run.files_for_batch) {
+        let name = f.files[0].name
+        if (count.has(name)) {
+            count.set(name, count.get(name) + 1)
+        } else {
+            count.set(name, 1);
+        }
+    }
+
+    // We put a state to each file
+    for (let f of dgenies.run.files_for_batch){
+        let name = f.files[0].name
+        let size = f.files[0].size
+        if (dgenies.run.files_in_batch.includes(name)){
+            if (count.get(name) > 1) {
+                dgenies.run.file_states.push("duplicated")
+            } else if (size > dgenies.run.max_upload_file_size) {
+                dgenies.run.file_states.push("oversize")
+            }
+            else {
+                dgenies.run.file_states.push("available")
+            }
+        } else {
+            dgenies.run.file_states.push("unused")
+        }
+    }
+    
+    // We look at missing files
+    dgenies.run.missing_files = dgenies.run.files_in_batch.filter(function(x) { return ! count.has(x) });
 }
 
 /**
@@ -1451,6 +1431,11 @@ dgenies.run.valid_form = function () {
         // Check that no file in multiple upload field is duplicated
         if (dgenies.run.file_states.some((element) => element === "duplicated")) {
             dgenies.run.add_error("Some input files are duplicated!");
+            has_errors = true;
+        }
+        // Check if no file is above the size limit 
+        if (dgenies.run.file_states.some((element) => element === "oversize")) {
+            dgenies.run.add_error("Some input files are above size limit!");
             has_errors = true;
         }
     }

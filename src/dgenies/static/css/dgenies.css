@@ -622,6 +622,10 @@ textarea {
     text-decoration: red wavy underline;
 }
 
+.oversize-file {
+    text-decoration: red wavy underline;
+}
+
 .unused-file {
     color: grey
 }
