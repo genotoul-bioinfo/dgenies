@@ -101,7 +101,7 @@ class DGeniesUploadedFileSizeLimitError(DGeniesFileCheckError):
         self.compressed = compressed
 
     def __str__(self):
-        return "{} file exceed size limit of {:d} {} ({}compressed)".format(self.filename, self.sizelimit, self.unit,
+        return "{} file exceed size limit of {:d} {} ({}compressed)".format(self.filename, int(self.sizelimit), self.unit,
                                                                             '' if self.compressed else 'un')
 
 
