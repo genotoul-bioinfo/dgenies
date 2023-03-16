@@ -1845,7 +1845,7 @@ class JobManager:
                     analytic.save()
 
     @staticmethod
-    def allowed_backup_files(members, allowed_files=[]):
+    def allowed_backup_files(members, allowed_files=[], ignored_files=[]):
         """
         Generator filter files to be extracted from tar file
 
@@ -1855,7 +1855,7 @@ class JobManager:
         :type allowed_files: list of str
         """
         for tarinfo in members:
-            if tarinfo.name in allowed_files:
+            if tarinfo.name in allowed_files and tarinfo.name not in ignored_files:
                 yield tarinfo
 
     def _unpack_backup(self, backup: DataFile, output_dir):
@@ -1873,16 +1873,17 @@ class JobManager:
             *[3]: align Datafile for "map.paf"
         :rtype: tuple
         """
-        allowed_files = {"map.paf", "query.idx", "target.idx"}
+        allowed_files = {"map.paf", "query.idx", "target.idx", "logs.txt"}
+        ignored_files = {"logs.txt"}
         try:
             with tarfile.open(backup.get_path(), "r:*") as tar:
                 members = tar.getmembers()
-                if len(members) != 3:
+                if not(3 <= len(members) <= 4):
                     raise DGeniesBackupUnpackError()
                 for m in members:
                     if m.name not in allowed_files or not m.isfile():
                         raise DGeniesBackupUnpackError()
-                tar.extractall(path=output_dir, members=self.allowed_backup_files(tar, allowed_files))
+                tar.extractall(path=output_dir, members=self.allowed_backup_files(tar, allowed_files, ignored_files))
                 align_path = os.path.join(output_dir, "map.paf")
                 if not validators.paf(align_path):
                     raise DGeniesBackupUnpackError()

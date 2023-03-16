@@ -36,6 +36,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 @app.context_processor
 def global_templates_variables():
     """
@@ -1117,6 +1118,9 @@ def get_backup_file(id_res):
     with xopen(tar, mode="wb", compresslevel=9) as gz_file:
         with tarfile.open(fileobj=gz_file, mode="w|") as tarf:
             for file in ("map.paf", "target.idx", "query.idx"):
+                tarf.add(os.path.join(res_dir, file), arcname=file)
+            file = "logs.txt"
+            if os.path.exists(os.path.join(res_dir, file)):
                 tarf.add(os.path.join(res_dir, file), arcname=file)
     response = send_from_directory(res_dir, filename, as_attachment=True)
     response.headers.remove('Content-Disposition')  # Restore flask<2 behavior (else file cannot be renamed by js side)
