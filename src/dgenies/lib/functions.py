@@ -153,12 +153,14 @@ class Functions:
             return None
 
     @staticmethod
-    def compress(filename):
+    def compress(filename, overwrite=False):
         """
         Compress a file with gzip
 
         :param filename: file to compress
         :type filename: str
+        :param overwrite: overwrite the compressed file if exists
+        :type overwrite: bool
         :return: path of the compressed file
         :rtype: str
         """
@@ -169,7 +171,7 @@ class Functions:
                 file_path = parts[0]
                 basename = parts[1]
                 n = 2
-                while os.path.exists(compressed):
+                while not overwrite and os.path.exists(compressed):
                     compressed = "%s/%d_%s" % (file_path, n, basename)
                     n += 1
                 with open(filename, "rb") as infile, xopen(compressed, mode="wb", format="gz") as outfile:
@@ -262,7 +264,8 @@ class Functions:
 
 
     @staticmethod
-    def sort_fasta(job_name, fasta_file, index_file, lock_file, compress=False, mailer=None, mode="webserver"):
+    def sort_fasta(job_name, fasta_file, index_file, lock_file, compress=False, mailer=None, mode="webserver",
+                   overwrite=False):
         """
         Sort fasta file according to the sorted index file
 
@@ -278,6 +281,8 @@ class Functions:
         :type compress: bool
         :param mailer: mailer object (to send mail)
         :type mailer: Mailer
+        :param overwrite: overwrite compressed file if exists
+        :type overwrite: bool
         :param mode: webserver or standalone
         :type mode: str
         """
@@ -303,13 +308,13 @@ class Functions:
         if is_compressed:
             os.remove(fasta_file)
         if compress:
-            Functions.compress(fasta_file_o)
+            Functions.compress(fasta_file_o, overwrite)
         os.remove(lock_file)
         if mode == "webserver" and mailer is not None and not os.path.exists(lock_file + ".pending"):
             Functions.send_fasta_ready(mailer, job_name, sample_name, compress)
 
     @staticmethod
-    def compress_and_send_mail(job_name, fasta_file, index_file, lock_file, mailer):
+    def compress_and_send_mail(job_name, fasta_file, index_file, lock_file, mailer, overwrite=False):
         """
         Compress fasta file and the send mail with its link to the client
 
@@ -321,6 +326,8 @@ class Functions:
         :type index_file: str
         :param lock_file: lock file path
         :type lock_file: str
+        :param overwrite: overwrite the compressed file if exists
+        :type overwrite: bool
         :param mailer: mailer object (to send mail)
         :type mailer: Mailer
         """

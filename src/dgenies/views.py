@@ -856,7 +856,8 @@ def build_fasta(id_res):
                     "lock_file": lock_query,
                     "compress": to_compress,
                     "mailer": mailer,
-                    "mode": MODE
+                    "mode": MODE,
+                    "overwrite": True
                 })
                 thread.start()
             else:
@@ -866,7 +867,8 @@ def build_fasta(id_res):
                                      lock_file=lock_query,
                                      compress=to_compress,
                                      mailer=None,
-                                     mode=MODE)
+                                     mode=MODE,
+                                     overwrite=True)
             if not to_compress or MODE == "standalone":
                 if MODE == "webserver":
                     i = 0
@@ -896,7 +898,8 @@ def build_fasta(id_res):
                     "fasta_file": query_fasta,
                     "index_file": os.path.join(res_dir, "query.idx.sorted"),
                     "lock_file": lock_query,
-                    "mailer": mailer
+                    "mailer": mailer,
+                    "overwrite": True
                 })
                 thread.start()
                 return jsonify({"success": True, "status": 1, "status_message": "In progress"})
