@@ -255,7 +255,7 @@ class Functions:
                   "Job %s - Download fasta\n\n" % job_name
         message += "Query fasta file for job %s (query: %s) is ready to download.\n" % (job_name, sample_name)
         message += "You can click on the link below to download it:\n\n"
-        message += "%s/fasta-query/%s/%s" % (web_url, job_name, sample_name + ".fasta" + (".gz" if compressed else ""))
+        message += "%s/%s/%s/%s" % (web_url, path, job_name, sample_name + ".fasta" + (".gz" if compressed else ""))
         mailer.send_mail([Functions.get_mail_for_job(job_name)], "Job %s - Download fasta" % job_name, message,
                          message_html)
 
