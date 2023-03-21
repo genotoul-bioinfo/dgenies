@@ -18,6 +18,7 @@ from matplotlib import pyplot as plt
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
+from datetime import datetime
 
 
 class Paf:
@@ -929,7 +930,9 @@ class Paf:
                 query_fasta = query_file.read().strip("\n")
             if not os.path.isfile(query_fasta):
                 raise Exception("Query fasta does not exists")
-            o_fasta = os.path.join(os.path.dirname(query_fasta), "as_reference_" + os.path.basename(query_fasta))
+            o_fasta = os.path.join(os.path.dirname(query_fasta),
+                                   datetime.utcnow().strftime('%Y%m%d%H%M%S') +
+                                   "_as_reference_" + os.path.basename(query_fasta))
             if o_fasta.endswith(".gz"):
                 o_fasta = o_fasta[:-3]
             if not os.path.exists(o_fasta):
