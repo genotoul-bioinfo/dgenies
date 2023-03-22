@@ -342,7 +342,7 @@ class Functions:
         :param mailer: mailer object (to send mail)
         :type mailer: Mailer
         """
-        Functions.compress(fasta_file)
+        Functions.compress(fasta_file, overwrite)
         os.remove(lock_file)
         index, sample_name = Functions.read_index(index_file)
         Functions.send_fasta_ready(mailer, job_name, sample_name, True)
