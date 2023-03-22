@@ -772,6 +772,8 @@ def reset_sort(id_res):
     idx2 = os.path.join(APP_DATA, id_res, "target.idx")
 
     paf = Paf(paf, idx1, idx2)
+    # Force refresh the sorted query file.
+    Path(os.path.join(APP_DATA, id_res, ".new-reversals")).touch()
 
     if paf.parsed:
         res = paf.get_d3js_data()
