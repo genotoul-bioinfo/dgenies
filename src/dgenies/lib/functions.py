@@ -22,6 +22,19 @@ class Functions:
     config = AppConfigReader()
 
     @staticmethod
+    def hardlink_or_copy(src, dest):
+        """
+        Try to hardlink file, else copy it if hardlink failed
+
+        :param src: src path
+        :param dest: dest path
+        """
+        try:
+            os.link(src, dest)
+        except OSError:
+            shutil.copy(src, dest)
+
+    @staticmethod
     def allowed_file(filename, file_formats=("fasta",)):
         """
         Check whether a file has a valid format
@@ -260,8 +273,6 @@ class Functions:
         message += "%s/%s/%s/%s" % (web_url, path, job_name, sample_name + ".fasta" + (".gz" if compressed else ""))
         mailer.send_mail([Functions.get_mail_for_job(job_name)], "Job %s - Download fasta" % job_name, message,
                          message_html)
-
-
 
     @staticmethod
     def sort_fasta(job_name, fasta_file, index_file, lock_file, compress=False, mailer=None, mode="webserver",

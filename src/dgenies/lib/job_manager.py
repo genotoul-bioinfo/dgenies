@@ -2005,8 +2005,8 @@ class JobManager:
                     while os.path.exists(new_path):
                         new_path = os.path.join(job.output_dir, "{}_".format(n) + os.path.basename(datafile.get_path()))
                         n += 1
-                    logger.info("Copy {f} to {j}...".format(f=datafile.get_path(), j=new_path))
-                    shutil.copy(datafile.get_path(), new_path)
+                    logger.info("Hardlink/copy {f} to {j}...".format(f=datafile.get_path(), j=new_path))
+                    Functions.hardlink_or_copy(datafile.get_path(), new_path)
                 new_datafile = datafile.clone()
                 new_datafile.set_path(new_path)
                 job.set_role(file_role, new_datafile)
