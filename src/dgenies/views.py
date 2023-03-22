@@ -838,11 +838,10 @@ def build_fasta(id_res):
     need_refresh = os.path.exists(os.path.join(res_dir, ".new-reversals"))
     to_compress = request.form["gzip"].lower() == "true"
     query_fasta = Functions.get_fasta_file(res_dir, "query", is_sorted and not need_refresh)
-    if need_refresh:
-        os.remove(os.path.join(res_dir, ".new-reversals"))
     if query_fasta is not None:
-        if is_sorted and not query_fasta.endswith(".sorted"):
+        if need_refresh:
             # Do the sort
+            os.remove(os.path.join(res_dir, ".new-reversals"))
             Path(lock_query).touch()
             if not to_compress or MODE == "standalone":  # If compressed, it will took a long time, so not wait
                 Path(lock_query + ".pending").touch()
@@ -855,6 +854,8 @@ def build_fasta(id_res):
                     "index_file": index_file,
                     "lock_file": lock_query,
                     "compress": to_compress,
+                    "with_date": True,
+                    "dot_file": os.path.join(res_dir, ".query.sorted"),
                     "mailer": mailer,
                     "mode": MODE,
                     "overwrite": True
@@ -862,10 +863,12 @@ def build_fasta(id_res):
                 thread.start()
             else:
                 Functions.sort_fasta(job_name=id_res,
-                                     fasta_file=query_fasta,
+                                     in_fasta_file=query_fasta,
                                      index_file=index_file,
                                      lock_file=lock_query,
                                      compress=to_compress,
+                                     with_date=False,
+                                     dot_file=None,
                                      mailer=None,
                                      mode=MODE,
                                      overwrite=True)
@@ -896,9 +899,9 @@ def build_fasta(id_res):
                 thread = threading.Timer(1, Functions.compress_and_send_mail, kwargs={
                     "job_name": id_res,
                     "fasta_file": query_fasta,
-                    "index_file": os.path.join(res_dir, "query.idx.sorted"),
                     "lock_file": lock_query,
                     "mailer": mailer,
+                    "dot_file": os.path.join(res_dir, ".query.sorted"),
                     "overwrite": True
                 })
                 thread.start()
@@ -982,16 +985,28 @@ def dl_fasta(id_res, filename):
     :type filename: str
     """
     res_dir = os.path.join(APP_DATA, id_res)
-    lock_query = os.path.join(res_dir, ".query-fasta-build")
-    is_sorted = os.path.exists(os.path.join(res_dir, ".sorted"))
-    if not os.path.exists(lock_query) or not is_sorted:
-        query_fasta = Functions.get_fasta_file(res_dir, "query", is_sorted)
-        if query_fasta is not None:
+    if filename:
+        # Link from email. Must always point to the same content.
+        query_fasta = os.path.join(res_dir, filename)
+        if os.path.exists(query_fasta):
             if query_fasta.endswith(".gz") or query_fasta.endswith(".gz.sorted"):
                 content = get_file(query_fasta, True)
                 return Response(content, mimetype="application/gzip")
             content = get_file(query_fasta)
             return Response(content, mimetype="text/plain")
+    else:
+        # Direct download from web interface. Must be the last version of the file.
+        lock_query = os.path.join(res_dir, ".query-fasta-build")
+        is_sorted = os.path.exists(os.path.join(res_dir, ".sorted"))
+        if not os.path.exists(lock_query) or not is_sorted:
+            query_fasta = Functions.get_fasta_file(res_dir, "query", is_sorted)
+            print(query_fasta)
+            if query_fasta is not None:
+                if query_fasta.endswith(".gz"):
+                    content = get_file(query_fasta, True)
+                    return Response(content, mimetype="application/gzip")
+                content = get_file(query_fasta)
+                return Response(content, mimetype="text/plain")
     abort(404)
 
 

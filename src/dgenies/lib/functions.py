@@ -6,6 +6,7 @@ import sys
 import re
 import traceback
 from collections import OrderedDict
+from datetime import datetime
 from Bio import SeqIO
 from jinja2 import Template
 from xopen import xopen
@@ -119,7 +120,11 @@ class Functions:
         """
         fasta_file = None
         try:
-            with open(os.path.join(res_dir, "." + type_f), "r") as save_name:
+            dot_file = os.path.join(res_dir, "." + type_f)
+            sorted_dot_file = os.path.join(res_dir, "." + type_f + ".sorted")
+            if is_sorted and os.path.exists(sorted_dot_file):
+                dot_file = sorted_dot_file
+            with open(dot_file, "r") as save_name:
                 fasta_file = save_name.readline().strip("\n")
         except IOError:
             print(res_dir + ": Unable to load saved name for " + type_f, file=sys.stderr)
@@ -129,7 +134,10 @@ class Functions:
             if fasta_file.endswith(".gz"):
                 fasta_file_uc = fasta_file[:-3]
             if is_sorted:
-                sorted_fasta = fasta_file_uc + ".sorted"
+                if os.path.exists(sorted_dot_file):
+                    sorted_fasta = fasta_file
+                else:
+                    sorted_fasta = fasta_file_uc + ".sorted"
                 if os.path.exists(sorted_fasta):
                     fasta_file = sorted_fasta
                 else:
@@ -166,7 +174,7 @@ class Functions:
             return None
 
     @staticmethod
-    def compress(filename, overwrite=False):
+    def compress(filename, overwrite=False, remove=True):
         """
         Compress a file with gzip
 
@@ -174,6 +182,8 @@ class Functions:
         :type filename: str
         :param overwrite: overwrite the compressed file if exists
         :type overwrite: bool
+        :param remove: remove original file
+        :type remove: bool
         :return: path of the compressed file
         :rtype: str
         """
@@ -189,7 +199,8 @@ class Functions:
                     n += 1
                 with open(filename, "rb") as infile, xopen(compressed, mode="wb", format="gz") as outfile:
                     shutil.copyfileobj(infile, outfile)
-                os.remove(filename)
+                if remove:
+                    os.remove(filename)
                 return compressed
             return filename
         except Exception as e:
@@ -275,8 +286,8 @@ class Functions:
                          message_html)
 
     @staticmethod
-    def sort_fasta(job_name, fasta_file, index_file, lock_file, compress=False, mailer=None, mode="webserver",
-                   overwrite=False):
+    def sort_fasta(job_name, fasta_file, index_file, lock_file, compress=False, with_date=False, dot_file=None,
+                   mailer=None, mode="webserver", overwrite=False):
         """
         Sort fasta file according to the sorted index file
 
@@ -290,6 +301,10 @@ class Functions:
         :type lock_file: str
         :param compress: compress result fasta file
         :type compress: bool
+        :param with_date: Add date prefix to sorted fasta filename
+        :type with_date: bool
+        :param dot_file: create/update given dotfile with sorted fasta filename
+        :type dot_file: str
         :param mailer: mailer object (to send mail)
         :type mailer: Mailer
         :param overwrite: overwrite compressed file if exists
@@ -301,7 +316,10 @@ class Functions:
         is_compressed = fasta_file.endswith(".gz")
         if is_compressed:
             fasta_file = Functions.uncompress(fasta_file)
-        fasta_file_o = fasta_file + ".sorted"
+        if with_date:
+            sample_name = datetime.utcnow().strftime('%Y%m%d%H%M%S') + "_" + sample_name
+        fasta_file_o = os.path.join(os.path.dirname(fasta_file), sample_name + ".fasta")
+        print(fasta_file_o)
         seq = SeqIO.index(fasta_file, "fasta")
         with open(fasta_file_o, "w") as fasta_out:
             for name, props in index.items():
@@ -319,13 +337,16 @@ class Functions:
         if is_compressed:
             os.remove(fasta_file)
         if compress:
-            Functions.compress(fasta_file_o, overwrite)
+            fasta_file_o = Functions.compress(fasta_file_o, overwrite)
+        if dot_file:
+            with open(dot_file, "w") as out:
+                out.write(fasta_file_o)
         os.remove(lock_file)
         if mode == "webserver" and mailer is not None and not os.path.exists(lock_file + ".pending"):
             Functions.send_fasta_ready(mailer, job_name, sample_name, compress)
 
     @staticmethod
-    def compress_and_send_mail(job_name, fasta_file, index_file, lock_file, mailer, overwrite=False):
+    def compress_and_send_mail(job_name, fasta_file, lock_file, mailer, dot_file=None, overwrite=False):
         """
         Compress fasta file and the send mail with its link to the client
 
@@ -333,18 +354,23 @@ class Functions:
         :type job_name: str
         :param fasta_file: fasta file path
         :type fasta_file: str
-        :param index_file: index file path
-        :type index_file: str
         :param lock_file: lock file path
         :type lock_file: str
         :param overwrite: overwrite the compressed file if exists
         :type overwrite: bool
+        :param dot_file: create/update given dotfile with sorted fasta filename
+        :type dot_file: str
         :param mailer: mailer object (to send mail)
         :type mailer: Mailer
         """
-        Functions.compress(fasta_file, overwrite)
+        sample_name = os.path.basename(fasta_file)
+        if sample_name.endswith(".fasta"):
+            sample_name = sample_name[:-6]
+        fasta_file_o = Functions.compress(fasta_file, overwrite, remove=False)
+        if dot_file:
+            with open(dot_file, "w") as out:
+                out.write(fasta_file_o)
         os.remove(lock_file)
-        index, sample_name = Functions.read_index(index_file)
         Functions.send_fasta_ready(mailer, job_name, sample_name, True)
 
     @staticmethod
