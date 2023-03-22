@@ -1998,21 +1998,25 @@ class JobManager:
         """
         for datafile in datafiles_with_contexts.get_datafiles():
             for job, file_role in datafiles_with_contexts.get_distinct(datafile, 'job', 'file_role'):
-                logger.info("Copy {f} to {j}...".format(f=datafile.get_path(), j=job.id_job))
                 new_path = os.path.join(job.output_dir, os.path.basename(datafile.get_path()))
                 if new_path != datafile.get_path():
-                    # We are in batch job
+                    # File is not in right place
+                    n = 2
+                    while os.path.exists(new_path):
+                        new_path = os.path.join(job.output_dir, "{}_".format(n) + os.path.basename(datafile.get_path()))
+                        n += 1
+                    logger.info("Copy {f} to {j}...".format(f=datafile.get_path(), j=new_path))
                     shutil.copy(datafile.get_path(), new_path)
                 new_datafile = datafile.clone()
                 new_datafile.set_path(new_path)
                 job.set_role(file_role, new_datafile)
-                #subjob._write_job()
+                # subjob._write_job()
                 if MODE == "webserver" and job.config.runner_type != "local" \
                         and hasattr(job.config, "min_%s_size" % file_role) \
                         and datafile.get_file_size() >= getattr(job.config, "min_%s_size" % file_role):
                     # We set a flag to tell job must run on cluster
                     Path(os.path.join(job.output_dir, '.should_not_be_local')).touch()
-        # os.remove(datafile.get_path())  # We remove uneeded files for batch dir
+        # os.remove(datafile.get_path())  # We remove unneeded files from batch dir
 
     def start_job(self):
         """
@@ -2262,7 +2266,6 @@ class DataFileContextManager:
         Create list of DatafilesContext for each Datafile in jobs
         """
         self.datafile_dict = dict()
-        config = AppConfigReader()
         for j in jobs:
             job_type = j.get_job_type()
             for file_role, datafile in j.get_datafiles():
