@@ -2016,7 +2016,7 @@ class JobManager:
                         and datafile.get_file_size() >= getattr(job.config, "min_%s_size" % file_role):
                     # We set a flag to tell job must run on cluster
                     Path(os.path.join(job.output_dir, '.should_not_be_local')).touch()
-        # os.remove(datafile.get_path())  # We remove unneeded files from batch dir
+        os.remove(datafile.get_path())  # We remove unneeded files from batch dir
 
     def start_job(self):
         """
