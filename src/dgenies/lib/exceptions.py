@@ -415,7 +415,7 @@ class DGeniesExampleInvalid(DGeniesMessageException):
     """
     Example file not valid
     """
-    def __init__(self, name, clear_job=False):
+    def __init__(self, name):
         """
         :param name: example name
         :type name: str
@@ -424,11 +424,6 @@ class DGeniesExampleInvalid(DGeniesMessageException):
         """
         super().__init__()
         self.name = name
-        self._clear_job = clear_job
-
-    @property
-    def clear_job(self):
-        return self._clear_job
 
     def __str__(self):
         return "Invalid example: example://{}".format(self.name)

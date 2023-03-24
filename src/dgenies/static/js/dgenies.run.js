@@ -250,6 +250,36 @@ dgenies.run.get_local_files = function(job_list){
 
 
 /**
+ * Check if example url point to a registered example.
+ * 
+ * @param {string} key the param key
+ * @param {string} val the param value
+ * @return a map
+ */
+dgenies.run.check_example = function(key, val) {
+    let example_urls = []
+    if (`${key}_example` in dgenies.run && !(dgenies.run[`${key}_example`] === "" || dgenies.run[`${key}_example`] === "")){
+        example_urls.push("example://" + dgenies.run[`${key}_example`])
+    }
+    if (key === "query" && !(dgenies.run.target_example === undefined || dgenies.run.target_example === "")) {
+        example_urls.push("example://" + dgenies.run.target_example);
+    } else if (key === "target" && !(dgenies.run.query_example === undefined || dgenies.run.query_example === "")) {
+        example_urls.push("example://" + dgenies.run.query_example);
+    }
+    if (example_urls.includes(val)){
+        return {
+            valid: true,
+            message: ""
+        }
+    } else {
+        return {
+            valid: false,
+            message: example_urls.length < 1 ? `No example url for "${key}"` : `Example link must be: "${example_urls.join('" or "')}"`
+        }
+    }
+}
+
+/**
  * Check if file has the right extension.
  * 
  * @param {string} type the job type
@@ -266,18 +296,10 @@ dgenies.run.check_file_format_and_presence = function(type, key, val){
     }
     if (dgenies.run.KEYS_FOR_FILES.includes(corrected_key) && (! dgenies.run.check_url(val, false))) {
         if (val.startsWith("example://")){
-            let example_urls = []
-            if (`${key}_example` in dgenies.run){
-                example_urls.push("example://" + dgenies.run[`${key}_example`])
-            }
-            if (key === "query" && dgenies.run.target_example !== undefined) {
-                example_urls.push("example://" + dgenies.run.target_example);
-            } else if (key === "target" && dgenies.run.query_example !== undefined) {
-                example_urls.push("example://" + dgenies.run.query_example);
-            }
-            if (! example_urls.includes(val)){
+            let res = dgenies.run.check_example(key, val)
+            if (! res.valid){
                 return {
-                    message: example_urls === [] ? `No example url for "${key}"` : `Example link must be: "${example_urls.join('" or "')}"`,
+                    message: res.message,
                     severity: "error"
                 }
             }
