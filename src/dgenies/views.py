@@ -11,6 +11,7 @@ import traceback
 import json
 from string import Template
 from flask import render_template, request, url_for, jsonify, Response, abort, send_file, send_from_directory, Markup
+from werkzeug.utils import secure_filename
 from pathlib import Path
 from dgenies.lib.paf import Paf
 from dgenies.lib.job_manager import JobManager
@@ -200,11 +201,10 @@ def create_datafile(f: str, f_type: str, upload_folder: str, example_paths: list
             f_name = os.path.splitext(re.sub(r"\.gz$", "", f))[0]
             f_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder, f)
             # Sanitize filename
-            # TODO: use secure_filename instead
             if os.path.exists(f_path):
                 if " " in f:
                     new_f_path = os.path.join(app.config["UPLOAD_FOLDER"], upload_folder,
-                                              f.replace(" ", "_"))
+                                              secure_filename(f.replace(" ", "_")))
                     shutil.move(f_path, new_f_path)
                     f_path = new_f_path
             else:

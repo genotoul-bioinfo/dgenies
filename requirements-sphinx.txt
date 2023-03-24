@@ -9,6 +9,7 @@ matplotlib>=2.1.*
 intervaltree==3.*
 Markdown>=2.6.*
 pyyaml>=5.4.1
+werkzeug>=2
 xopen>=1.0
 Flask-Mail==0.9.*
 peewee==3.*
