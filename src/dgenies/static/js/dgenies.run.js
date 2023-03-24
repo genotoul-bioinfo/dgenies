@@ -1402,39 +1402,102 @@ dgenies.run.valid_form = function () {
 
     let tab = $("#tabs .tab.active").attr("id");
 
+    let input_type;
+    let input_file;
     /* TAB 1 */
     if (tab === "tab1") {
         //Check input target:
-        if ($("input#target").val().length === 0) {
-            $("label.file-target").addClass("error");
+        input_type = "target";
+        input_file = $(`input#${input_type}`).val();
+        if (input_file.length === 0) {
+            $(`label.file-${input_type}`).addClass("error");
             dgenies.run.add_error("Target fasta is required!");
             has_errors = true;
+        } else if (input_file.startsWith("example://")) {
+            let res = dgenies.run.check_example(input_type, input_file);
+            if (!res.valid) {
+                has_errors = true
+                $(`label.file-${input_type}`).addClass("error");
+                dgenies.run.add_error(`Target fasta: ${res.message}`);
+            }
         }
 
         //Check input query:
         let tool = $("input[name=tool]:checked").val();
-        if (!dgenies.run.tool_has_ava[tool] && $("input#query").val().length === 0) {
-            $("label.file-query").addClass("error");
-            dgenies.run.add_error("Query fasta is required!");
-            has_errors = true;
+        input_type = "query";
+        input_file = $(`input#${input_type}`).val();
+        if (input_file.length === 0) {
+            if (!dgenies.run.tool_has_ava[tool] ) {
+                $(`label.file-${input_type}`).addClass("error");
+                $(`label.file-${input_type}-ava`).addClass("error");
+                dgenies.run.add_error("Query fasta is required!");
+                has_errors = true;
+            }
+        } else if (input_file.startsWith("example://")) {
+            let res = dgenies.run.check_example(input_type, input_file);
+            if (!res.valid) {
+                has_errors = true
+                $(`label.file-${input_type}`).addClass("error");
+                dgenies.run.add_error(`Query fasta: ${res.message}`);
+            }
         }
     }
 
     /* TAB 2 */
     else if (tab === "tab2")  {
-        if ($("input#backup").val().length !== 0) {
+        // manage backup
+        input_type = "backup";
+        input_file = $(`input#${input_type}`).val();
+        if (input_file.length !== 0) {
             dgenies.run.reset_file_form("tab2", true);
+            if (input_file.startsWith("example://")) {
+                let res = dgenies.run.check_example(input_type, input_file);
+                if (!res.valid) {
+                    has_errors = true
+                    $(`label.file-${input_type}`).addClass("error");
+                    dgenies.run.add_error(`Backup file: ${res.message}`);
+                }
+            }
         }
         else {
-            if ($("input#targetidx").val().length === 0) {
-                $("label.file-targetidx").addClass("error");
+            input_type = "targetidx";
+            input_file = $(`input#${input_type}`).val();
+            if (input_type.val().length === 0) {
+                $(`label.file-${input_type}`).addClass("error");
                 dgenies.run.add_error("Target file is required!");
                 has_errors = true;
+            } else if (input_file.startsWith("example://")) {
+                let res = dgenies.run.check_example(input_type, input_file);
+                if (!res.valid) {
+                    has_errors = true
+                    $(`label.file-${input_type}`).addClass("error");
+                    dgenies.run.add_error(`Target file: ${res.message}`);
+                }
             }
-            if ($("input#alignfile").val().length === 0) {
-                $("label.file-align").addClass("error");
+            input_type = "queryidx";
+            input_file = $(`input#${input_type}`).val();
+            if (input_file.startsWith("example://")) {
+                let res = dgenies.run.check_example(input_type, input_file);
+                if (!res.valid) {
+                    has_errors = true
+                    $(`label.file-${input_type}`).addClass("error");
+                    dgenies.run.add_error(`Query file: ${res.message}`);
+                }
+            }
+
+            input_type = "alignfile";
+            input_file = $(`input#${input_type}`).val();
+            if (input_file.length === 0) {
+                $(`label.file-${input_type}`).addClass("error");
                 dgenies.run.add_error("Alignment file is required!");
                 has_errors = true;
+            } else if (input_file.startsWith("example://")) {
+                let res = dgenies.run.check_example(input_type, input_file);
+                if (!res.valid) {
+                    has_errors = true
+                    $(`label.file-${input_type}`).addClass("error");
+                    dgenies.run.add_error(`Alignment file: ${res.message}`);
+                }
             }
         }
     }
