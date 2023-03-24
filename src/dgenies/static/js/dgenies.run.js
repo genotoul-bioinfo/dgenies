@@ -266,13 +266,18 @@ dgenies.run.check_file_format_and_presence = function(type, key, val){
     }
     if (dgenies.run.KEYS_FOR_FILES.includes(corrected_key) && (! dgenies.run.check_url(val, false))) {
         if (val.startsWith("example://")){
-            let example_url = ""
+            let example_urls = []
             if (`${key}_example` in dgenies.run){
-                example_url = dgenies.run[`${key}_example`]
+                example_urls.push("example://" + dgenies.run[`${key}_example`])
             }
-            if (("example://" + example_url) != val){
+            if (key === "query" && dgenies.run.target_example !== undefined) {
+                example_urls.push("example://" + dgenies.run.target_example);
+            } else if (key === "target" && dgenies.run.query_example !== undefined) {
+                example_urls.push("example://" + dgenies.run.query_example);
+            }
+            if (! example_urls.includes(val)){
                 return {
-                    message: example_url=="" ? `No example url for "${key}"` : `Example link must be: "example://${example_url}"`,
+                    message: example_urls === [] ? `No example url for "${key}"` : `Example link must be: "${example_urls.join('" or "')}"`,
                     severity: "error"
                 }
             }

@@ -411,6 +411,29 @@ class DGeniesExampleNotAvailable(DGeniesMessageException):
     pass
 
 
+class DGeniesExampleInvalid(DGeniesMessageException):
+    """
+    Example file not valid
+    """
+    def __init__(self, name, clear_job=False):
+        """
+        :param name: example name
+        :type name: str
+        :param clear_job: job must be cleaned when managing except if True, else not needed
+        :type clear_job: bool
+        """
+        super().__init__()
+        self.name = name
+        self._clear_job = clear_job
+
+    @property
+    def clear_job(self):
+        return self._clear_job
+
+    def __str__(self):
+        return "Invalid example: example://{}".format(self.name)
+
+
 class DGeniesDeleteGalleryJobForbidden(DGeniesMessageException):
 
     def __str__(self):

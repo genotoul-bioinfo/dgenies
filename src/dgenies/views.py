@@ -18,8 +18,8 @@ from dgenies.lib.functions import Functions
 from dgenies.allowed_extensions import AllowedExtensions
 from dgenies.lib.upload_file import UploadFile
 from dgenies.lib.datafile import DataFile
-from dgenies.lib.exceptions import DGeniesExampleNotAvailable, DGeniesJobCheckError, DGeniesMissingJobError,\
-    DGeniesDeleteGalleryJobForbidden, DGeniesUnknownToolError, DGeniesUnknownOptionError
+from dgenies.lib.exceptions import DGeniesExampleNotAvailable, DGeniesExampleInvalid, DGeniesJobCheckError,\
+    DGeniesMissingJobError, DGeniesDeleteGalleryJobForbidden, DGeniesUnknownToolError, DGeniesUnknownOptionError
 from dgenies.lib.latest import Latest
 from dgenies.tools import Tools
 from markdown import Markdown
@@ -165,7 +165,7 @@ def run_test():
     return abort(500)
 
 
-def create_datafile(f: str, f_type: str, upload_folder: str, example_path: str) -> DataFile:
+def create_datafile(f: str, f_type: str, upload_folder: str, example_paths: list) -> DataFile:
     """
     Create DataFile object. Raise an DGeniesExampleNotAvailable if example file does not exist
 
@@ -175,19 +175,22 @@ def create_datafile(f: str, f_type: str, upload_folder: str, example_path: str) 
    :type f_type: str
    :param upload_folder: upload folder
    :type upload_folder: str
-   :param example_path: example file path
-   :type example_path: str
+   :param example_paths: list of example file path
+   :type example_paths: str
    :return: Fasta object
    :rtype: DataFile
     """
     example = False
     f_name = None
     if f.startswith("example://"):
-        if example_path:
+        if example_paths:
             # File path is local example file
-            f_path = example_path
-            f_name = os.path.basename(f_path)
-            # TODO: check if re.sub(r"^example://", "", f) matches f_name
+            f_name = re.sub(r"^example://", "", f)
+            try:
+                example_index = [os.path.basename(f_example) for f_example in example_paths].index(f_name)
+                f_path = example_paths[example_index]
+            except ValueError:
+                raise DGeniesExampleInvalid(f_name)
             f_type = "local"
             example = True
         else:
@@ -267,22 +270,31 @@ def update_files(jobs: list, upload_folder: str):
     jobs:
     """
     # entries with a potential file
-    file_keys = ["query", "target", "align", "backup"]
+    file_roles = ["query", "target", "align", "backup"]
     # entries with a potential example
-    keys_with_example = {k: getattr(config_reader, "example_{}".format(k)) for k in ["query", "target", "backup"]}
+    roles_with_example = {k: getattr(config_reader, "example_{}".format(k)) for k in ["query", "target", "backup"]}
     datafiles = dict()  # cache for deduplication
     for j in jobs:
-        for k in file_keys:
-            if k in j and j[k]:
-                path = j[k]
+        for role in file_roles:
+            if role in j and j[role]:
+                path = j[role]
                 if path in datafiles:
                     f = datafiles[path]
                 else:
-                    file_type = j["{}_type".format(k)]
-                    f = create_datafile(path, file_type, upload_folder, keys_with_example.get(k, ""))
+                    file_type = j["{}_type".format(role)]
+                    example_files = []
+                    if role in roles_with_example:
+                        example_files.append(roles_with_example[role])
+                    if role == "query":
+                        if "target" in roles_with_example:
+                            example_files.append(roles_with_example["target"])
+                    elif role == "target":
+                        if "query" in roles_with_example:
+                            example_files.append(roles_with_example["query"])
+                    f = create_datafile(path, file_type, upload_folder, example_files)
                     datafiles[path] = f
-                j[k] = f
-                del j["{}_type".format(k)]
+                j[role] = f
+                del j["{}_type".format(role)]
 
 
 def create_batch_file(batch_path: str, jobs: list) -> DataFile:
@@ -408,14 +420,16 @@ def launch_analysis():
         # Transform files path into datafiles:
         try:
             update_files(jobs, upload_folder)
-            if form_pass:
-                # Launch job:
-                job = JobManager.create(id_job=id_job, job_type=job_type, jobs=jobs, email=email, mailer=mailer)
-                if MODE == "webserver":
-                    job.launch()
-                else:
-                    job.launch_standalone()
-                return jsonify({"success": True, "redirect": url_for(".status", id_job=id_job)})
+            # Launch job:
+            job = JobManager.create(id_job=id_job, job_type=job_type, jobs=jobs, email=email, mailer=mailer)
+            if MODE == "webserver":
+                job.launch()
+            else:
+                job.launch_standalone()
+            return jsonify({"success": True, "redirect": url_for(".status", id_job=id_job)})
+
+        except DGeniesExampleInvalid as e:
+            return jsonify({"success": False, "errors": [e.message]})
 
         except Exception:
             traceback.print_exc()
