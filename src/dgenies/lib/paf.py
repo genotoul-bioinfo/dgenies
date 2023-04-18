@@ -12,6 +12,8 @@ from dgenies.bin.index import Index
 from dgenies.config_reader import AppConfigReader
 from dgenies.lib.functions import Functions
 from intervaltree import IntervalTree
+from xopen import xopen
+import traceback
 import matplotlib as mpl
 mpl.use('Agg')
 from matplotlib import pyplot as plt
@@ -917,10 +919,12 @@ class Paf:
                 return json.loads(txt)
         return None
 
-    def build_query_chr_as_reference(self):
+    def build_query_chr_as_reference(self, compress=True):
         """
         Assemble query contigs like reference chromosomes
 
+        :param compress: compress output file
+        :type compress: bool
         :return: path of the fasta file
         """
         try:
@@ -935,10 +939,10 @@ class Paf:
                                    "_as_reference_" + os.path.basename(query_fasta))
             if o_fasta.endswith(".gz"):
                 o_fasta = o_fasta[:-3]
-            if not os.path.exists(o_fasta):
-                uncompressed = False
+            if (not compress and not os.path.exists(o_fasta)) or (compress and not os.path.exists(o_fasta + ".gz")):
+                uncompressed_query = False
                 if query_fasta.endswith(".gz"):
-                    uncompressed = True
+                    uncompressed_query = True
                     query_fasta = Functions.uncompress(query_fasta)
                 query_f = SeqIO.index(query_fasta, "fasta")
                 contigs_assoc = self.get_queries_on_target_association()
@@ -964,20 +968,24 @@ class Paf:
                             seq.id += "_unaligned"
                             SeqIO.write(seq, out, "fasta")
                 query_f.close()
-                if uncompressed:
+                if uncompressed_query:
                     os.remove(query_fasta)
+            if compress and not os.path.exists(o_fasta + ".gz"):
+                o_fasta = Functions.compress(o_fasta, overwrite=True, remove=True)
             status = "success"
         except Exception:
+            traceback.print_exc()
             o_fasta = "_._"
-            status="fail"
+            status = "fail"
 
         if MODE == "webserver":
-            parts = os.path.basename(o_fasta).rsplit(".", 1)
+            shift = int(compress)
+            parts = os.path.basename(o_fasta).rsplit(".", 1 + shift)
             Functions.send_fasta_ready(mailer=self.mailer,
                                        job_name=self.id_job,
                                        sample_name=parts[0],
                                        ext=parts[1],
-                                       compressed=False,
+                                       compressed=compress,
                                        path="download",
                                        status=status)
         return o_fasta

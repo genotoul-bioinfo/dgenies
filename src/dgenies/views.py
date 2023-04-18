@@ -373,9 +373,6 @@ def launch_analysis():
     form_pass = True
     errors = []
 
-    # No alignfile_type given for alignfile
-    batch_mode = job_type == "batch"
-
     # We check job header (id + email)
     if id_job == "":
         errors.append("Id of job not given")
@@ -942,10 +939,10 @@ def build_query_as_reference(id_res):
     paf = Paf(paf_file, idx1, idx2, False, mailer=mailer, id_job=id_res)
     paf.parse_paf(False, True)
     if MODE == "webserver":
-        thread = threading.Timer(0, paf.build_query_chr_as_reference)
+        thread = threading.Timer(0, paf.build_query_chr_as_reference, kwargs={"compress": True})
         thread.start()
         return True
-    return paf.build_query_chr_as_reference()
+    return paf.build_query_chr_as_reference(compress=False)
 
 
 @app.route('/build-query-as-reference/<id_res>', methods=['POST'])
