@@ -166,12 +166,16 @@
                     <p>{% if subjob.error == "" %}
                             Your job has failed.
                             Please try again.
-                            You can check <a href="{{ url_base }}/logs/{{ subjob.id_job }}"> logs file</a> for details.
+                            {% if subjob.has_logs %}
+                                You can check <a href="{{ url_base }}/logs/{{ subjob.id_job }}"> logs file</a> for details.
+                            {% endif %}
                             If the problem persists, please contact the support.
                         {% else %}
-                            {{ subjob.error | safe }}
-                            You can check <a href="{{ url_base }}/logs/{{ subjob.id_job }}"> logs file</a> for details.
-                        {% endif %}</p>
+                            {{ subjob.error | replace("<br/>", " ") | safe }}
+                            {% if subjob.has_logs %}
+                                You can check <a href="{{ url_base }}/logs/{{ subjob.id_job }}"> logs file</a> for details.
+                            {% endif %}
+                    {% endif %}</p>
                 {% else %}
                     <p>This job does not exists!</p>
                 {% endif %}
