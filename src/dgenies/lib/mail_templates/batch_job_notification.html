@@ -57,12 +57,12 @@
         {% else %}
             {% if subjob.error != "" %}
                 <p>{{ subjob.error | replace("#ID#",subjob.job_name) }}</p>
-                {% if has_logs %}
+                {% if subjob.has_logs %}
                     For more details, you can check the <a href="{{ url_base }}/logs/{{ job_name }}"> logs file</a>.</p>
                 {% endif %}
             {% else %}
                 <p>Your job {{ subjob.job_name }} has failed. You can try again.<br/>
-                {% if has_logs %}
+                {% if subjob.has_logs %}
                     For more details, you can check the <a href="{{ url_base }}/logs/{{ job_name }}"> logs file</a>.</p>
                 {% endif %}
                 If the problem persists, please contact the support.</p>
