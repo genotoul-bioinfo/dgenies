@@ -503,7 +503,8 @@ def result(id_res):
     res_dir = os.path.join(APP_DATA, id_res)
     return render_template("result.html", id=id_res, menu="result", current_result=id_res,
                            is_gallery=Functions.is_in_gallery(id_res, MODE),
-                           fasta_file=Functions.query_fasta_file_exists(res_dir))
+                           fasta_file=Functions.query_fasta_file_exists(res_dir),
+                           has_logs=Functions.has_logs(res_dir))
 
 
 @app.route("/gallery", methods=['GET'])

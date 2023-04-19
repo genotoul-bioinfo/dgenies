@@ -58,7 +58,7 @@
                 <option value="6">No match queries</option>
                 <option value="7">No match targets</option>
                 <option value="9">Backup file</option>
-                <option value="11">Logs file</option>
+                {% if has_logs %}<option value="11">Logs file</option>{% endif %}
             </select>
         </form>
     </div>

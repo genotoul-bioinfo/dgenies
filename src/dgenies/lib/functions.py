@@ -515,3 +515,16 @@ class Functions:
         """
         fasta_file = os.path.join(res_dir, ".query")
         return os.path.exists(fasta_file) and os.path.isfile(fasta_file)
+
+    @staticmethod
+    def has_logs(res_dir):
+        """
+        Check if a fasta file exists
+
+        :param res_dir: job result directory
+        :type res_dir: str
+        :return: True if file exists and is a regular file, else False
+        :rtype: bool
+        """
+        logs_file = os.path.join(res_dir, "logs.txt")
+        return os.path.exists(logs_file) and os.path.isfile(logs_file)
