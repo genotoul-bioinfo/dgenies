@@ -1158,6 +1158,21 @@ def get_backup_file(id_res):
     return response
 
 
+@app.route('/logs/<id_res>')
+def get_logs_file(id_res):
+    """
+    Download archive backup file of a job
+
+    :param id_res: job id
+    :type id_res: str
+    """
+    res_dir = os.path.join(APP_DATA, id_res)
+    filename = "logs.txt"
+    response = send_from_directory(res_dir, filename, as_attachment=True)
+    response.headers.remove('Content-Disposition')  # Restore flask<2 behavior (else file cannot be renamed by js side)
+    return response
+
+
 def get_filter_out(id_res, type_f):
     """
     Download filter fasta, when it has been filtered before job run

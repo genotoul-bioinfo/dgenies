@@ -112,6 +112,20 @@ dgenies.result.export.export_fasta = function(compress=false) {
 };
 
 /**
+ * Download log file
+ * @param {boolean} gzip if true, gzip the file
+ */
+dgenies.result.export.dl_logs = function () {
+    let export_div = $("div#export-pict");
+    export_div.html("");
+    export_div.append($("<a>").attr("href", `/logs/${dgenies.result.id_res}`)
+        .attr("download", d3.dgenies.name_y + ".logs.txt").attr("id", "my-download").text("download"));
+    dgenies.hide_loading();
+    document.getElementById('my-download').click();
+};
+
+
+/**
  * Show export dialog
  */
 dgenies.result.export.ask_export_fasta = function () {
@@ -326,6 +340,10 @@ dgenies.result.export.export = function () {
             }
             else if (selection === 10) {
                 dgenies.result.export.export_offline_viewer();
+                async = true;
+            }
+            else if (selection === 11) {
+                dgenies.result.export.dl_logs();
                 async = true;
             }
             else
