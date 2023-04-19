@@ -37,8 +37,14 @@
 {% else %}
     {% if error != "" %}
         <p>{{ error | replace("#ID#",job_name) }}</p>
+        {% if has_logs %}
+            For more details, you can check the <a href="{{ url_base }}/logs/{{ job_name }}"> logs file</a>.</p>
+        {% endif %}
     {% else %}
         <p>Your job {{ job_name }} has failed. You can try again.<br/>
+            {% if has_logs %}
+                For more details, you can check the <a href="{{ url_base }}/logs/{{ job_name }}"> logs file</a>.</p>
+            {% endif %}
             If the problem persists, please contact the support.</p>
     {% endif %}
 {% endif %}
@@ -65,5 +71,6 @@
     {% endif %}
 {% endif %}
 
+<p>-------------------------</p>
 <p>See you soon on D-Genies,</p>
 <p>The D-Genies team</p>

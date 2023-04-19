@@ -356,6 +356,7 @@ class JobManager:
         :param status: job status
         :type status: str
         :param target_name: name of target
+        :param target_name: name of target
         :type target_name: str
         :param query_name:  name of query
         :type query_name: str
@@ -374,6 +375,10 @@ class JobManager:
             else:
                 message += "Your job %s has failed. You can try again. " \
                            "If the problem persists, please contact the support.\n\n" % self.id_job
+            if os.path.exists(self.logs):
+                message += str("For more details, you can check the logs file:\n"
+                               "{1}/logs/{0}\n\n".format(self.id_job, self.config.web_url))
+
         if target_name is not None:
             message += "Sequences compared in this analysis:\n"
             if query_name is not None:
@@ -436,8 +441,9 @@ class JobManager:
             message += self.get_batch_mail_part(status)
         else:
             message += self.get_job_mail_part(status, target_name, query_name)
+        message += "-------------------------\n"
         message += "See you soon on D-Genies,\n"
-        message += "The team"
+        message += "The D-Genies team"
         return message
 
     def get_mail_content_html(self, status, target_name, query_name=None):
@@ -468,6 +474,7 @@ class JobManager:
                         "query_name": query_name if query_name is not None else "",
                         "target_name": target_name if target_name is not None else "",
                         "error": sj.error,
+                        "has_logs": os.path.exists(sj.logs),
                         "target_filtered": sj.is_target_filtered(),
                         "query_filtered": sj.is_query_filtered()
                     })
@@ -481,7 +488,7 @@ class JobManager:
                 return template.render(job_name=self.id_job, status=status, url_base=self.config.web_url,
                                        query_name=query_name if query_name is not None else "",
                                        target_name=target_name if target_name is not None else "",
-                                       error=self.error,
+                                       error=self.error, has_logs=os.path.exists(self.logs),
                                        target_filtered=self.is_target_filtered(),
                                        query_filtered=self.is_query_filtered())
 
@@ -839,10 +846,10 @@ class JobManager:
         logger.info("Submit {} job with native specs: {}".format(runner_type, jt.nativeSpecification))
         jobid = s.runJob(jt)
         self.id_process = jobid
+        logger.info("Job {} submitted".format(jobid))
         # TODO split here into submit_to_cluster -> s (above) and wait_cluster(s) in order to update job status outside
         #  of the function
         self.update_job_status(scheduled_status, jobid)
-        logger.info("Job {} submitted".format(jobid))
 
         # wait for job ending
         retval = s.wait(jobid, drmaa.Session.TIMEOUT_WAIT_FOREVER)

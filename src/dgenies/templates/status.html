@@ -59,9 +59,15 @@
             <p>{% if error == "" %}
                     Your job has failed.
                     Please try again.<br/>
+                    {% if has_log %}
+                        You can check <a href="{{ url_base }}/logs/{{ id_job }}"> logs file</a> for details.<br/>
+                    {% endif %}
                     If the problem persists, please contact the support.
                 {% else %}
                 {{ error | safe }}
+                    {% if has_log %}
+                        You can check <a href="{{ url_base }}/logs/{{ id_job }}"> logs file</a> for details.<br/>
+                    {% endif %}
                 {% endif %}</p>
         {% else %}
             <p>This job does not exists!</p>
@@ -160,9 +166,11 @@
                     <p>{% if error == "" %}
                             Your job has failed.
                             Please try again.
+                            You can check <a href="{{ url_base }}/logs/{{ subjob.id_job }}"> logs file</a> for details.
                             If the problem persists, please contact the support.
                         {% else %}
-                        {{ error | safe }}
+                            {{ error | safe }}
+                            You can check <a href="{{ url_base }}/logs/{{ subjob.id_job }}"> logs file</a> for details.
                         {% endif %}</p>
                 {% else %}
                     <p>This job does not exists!</p>

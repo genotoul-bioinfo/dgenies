@@ -459,6 +459,7 @@ def get_status(job):
     return {
         "status": j_status["status"],
         "error": j_status["error"].replace("#ID#", ""),
+        "has_logs": os.path.exists(job.logs),
         "id_job": job.id_job,
         "mem_peak": mem_peak,
         "time_elapsed": time_e
