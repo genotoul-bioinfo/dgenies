@@ -163,13 +163,13 @@
                 {% elif status == "no-match" %}
                     <p>Sorry, we didn't find any match between your query and your target.</p>
                 {% elif status == "fail" %}
-                    <p>{% if error == "" %}
+                    <p>{% if subjob.error == "" %}
                             Your job has failed.
                             Please try again.
                             You can check <a href="{{ url_base }}/logs/{{ subjob.id_job }}"> logs file</a> for details.
                             If the problem persists, please contact the support.
                         {% else %}
-                            {{ error | safe }}
+                            {{ subjob.error | safe }}
                             You can check <a href="{{ url_base }}/logs/{{ subjob.id_job }}"> logs file</a> for details.
                         {% endif %}</p>
                 {% else %}
