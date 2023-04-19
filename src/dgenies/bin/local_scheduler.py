@@ -34,7 +34,6 @@ NB_PREPARE = config_reader.nb_data_prepare  # Max number of data preparing jobs 
 DEBUG = config_reader.debug
 
 
-
 def start_align(id_job, runner_type="local"):
     """
     Start an align job (mapping step)
@@ -151,10 +150,11 @@ def update_batch_status():
             j = JobManager(id_job=job.id_job)
             status = j.refresh_batch_status()
             job.status = status
-            if job.status == "failed":
-                job.error = "<p>One of your job has failed.</p>"
+            if job.status == "fail":
+                job.error = "<p>At least one of your jobs has failed.</p>"
             job.save()
-            if status in {"success", "succeed", "failed"}:
+            if status in {"success", "succeed", "fail"}:
+                logger.info("{}: Send email".format(job.id_job))
                 j.send_mail_post_if_allowed()
 
 

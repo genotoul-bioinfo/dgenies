@@ -1594,9 +1594,9 @@ class JobManager:
             job = JobManager(i)
             status_list.append(job.status())
         is_finished = all(s["status"] in ("success", "fail", "no-match") for s in status_list)
-        is_successfull = all(s["status"] in ("success", "no-match") for s in status_list)
+        has_failed = any(s["status"] == "fail" for s in status_list)
         if is_finished:
-            status = "success" if is_successfull else "fail"
+            status = "fail" if has_failed else "success"
             self._set_analytics_job_status(status)
             return status
         return "started-batch"
