@@ -1404,7 +1404,7 @@ class JobManager:
             try:
                 logger.info("Index files: {} {}".format(self.tool.cluster_python_exec, str(args)))
                 with open(self.logs, "a") as logs:
-                    logs.write("Index files\n:".format(self.tool.label, self.tool.name))
+                    logs.write("Index files:\n".format(self.tool.label, self.tool.name))
                     logs.write("{0} {1}\n".format(self.tool.cluster_python_exec, " ".join(args)))
                 self.launch_to_cluster(step="prepare",
                                        runner_type=runner_type,
@@ -1439,7 +1439,7 @@ class JobManager:
         else:
             logger.info("Index target file: {}".format(self.target.get_path()))
             with open(self.logs, "a") as logs:
-                logs.write("Index target file: {}\n:".format(self.target.get_path()))
+                logs.write("Index target file: {}\n".format(self.target.get_path()))
             index_file(self.target.get_path(), self.target.get_name(), self.idx_t)
 
         # Prepare query index:
@@ -1451,7 +1451,7 @@ class JobManager:
             else:
                 logger.info("Index query file: {}".format(self.query.get_path()))
                 with open(self.logs, "a") as logs:
-                    logs.write("Index target file: {}\n:".format(self.query.get_path()))
+                    logs.write("Index target file: {}\n".format(self.query.get_path()))
                 index_file(self.query.get_path(), self.query.get_name(), self.idx_q)
         else:
             shutil.copy(self.idx_t, self.idx_q)
