@@ -1444,7 +1444,8 @@ dgenies.run.valid_form = function () {
     }
 
     /* TAB 2 */
-    else if (tab === "tab2")  {
+    else if (tab === "tab2") {
+        console.log(tab)
         // manage backup
         input_type = "backup";
         input_file = $(`input#${input_type}`).val();
@@ -1462,7 +1463,7 @@ dgenies.run.valid_form = function () {
         else {
             input_type = "targetidx";
             input_file = $(`input#${input_type}`).val();
-            if (input_type.val().length === 0) {
+            if (input_file.length === 0) {
                 $(`label.file-${input_type}`).addClass("error");
                 dgenies.run.add_error("Target file is required!");
                 has_errors = true;
@@ -1488,14 +1489,14 @@ dgenies.run.valid_form = function () {
             input_type = "alignfile";
             input_file = $(`input#${input_type}`).val();
             if (input_file.length === 0) {
-                $(`label.file-${input_type}`).addClass("error");
+                $(`label.file-align`).addClass("error");
                 dgenies.run.add_error("Alignment file is required!");
                 has_errors = true;
             } else if (input_file.startsWith("example://")) {
                 let res = dgenies.run.check_example(input_type, input_file);
                 if (!res.valid) {
                     has_errors = true
-                    $(`label.file-${input_type}`).addClass("error");
+                    $(`label.file-align`).addClass("error");
                     dgenies.run.add_error(`Alignment file: ${res.message}`);
                 }
             }
