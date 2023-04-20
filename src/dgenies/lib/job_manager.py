@@ -625,11 +625,14 @@ class JobManager:
         cmd += [exe]
         cmd += args.split(" ")
         logger.info("Will run: {}".format(" ".join(cmd)))
+        with open(self.logs, "a") as logs:
+            logs.write("Run {0} ({1}):\n".format(self.tool.label, self.tool.name))
+            logs.write("{0}\n".format(" ".join(cmd)))
         if out_file is None:
-            with open(self.logs, "w") as logs:
+            with open(self.logs, "a") as logs:
                 p = subprocess.Popen(cmd, stdout=logs, stderr=logs)
         else:
-            with open(self.logs, "w") as logs, open(out_file, "w") as out:
+            with open(self.logs, "a") as logs, open(out_file, "w") as out:
                 p = subprocess.Popen(cmd, stdout=out, stderr=logs)
         with Job.connect():
             status = "started"
@@ -877,6 +880,10 @@ class JobManager:
         exec, args, out_file = self.forge_align_command(default_out_file=self.logs)
         args = args.split(" ")
         try:
+            logger.info("Run align files: {} {}".format(self.tool.exec, str(args)))
+            with open(self.logs, "a") as logs:
+                logs.write("Run {0} ({1}):\n".format(self.tool.label, self.tool.name))
+                logs.write("{0} {1}\n".format(self.tool.exec, " ".join(args)))
             self.launch_to_cluster(step="start",
                                    runner_type=runner_type,
                                    command=self.tool.exec,
@@ -1227,6 +1234,10 @@ class JobManager:
                 args.append("--split")
 
         try:
+            logger.info("Prepare files: {} {}".format(self.tool.exec, str(args)))
+            with open(self.logs, "a") as logs:
+                logs.write("Prepare files:\n")
+                logs.write("{0} {1}\n".format(self.config.cluster_python_exec, " ".join(args)))
             self.launch_to_cluster(step="prepare",
                                    runner_type=runner_type,
                                    command=self.config.cluster_python_exec,
@@ -1249,6 +1260,8 @@ class JobManager:
         :return: True if job succeed, else False
         :rtype: bool
         """
+        with open(self.logs, "a") as logs:
+            logs.write("Prepare files\n")
         with open(self.preptime_file, "w") as ptime, Job.connect():
             self.set_job_status("preparing")
             ptime.write(str(round(time.time())) + "\n")
@@ -1389,7 +1402,10 @@ class JobManager:
 
         if not has_index:
             try:
-                logger.info("Index files: {}".format(str(args)))
+                logger.info("Index files: {} {}".format(self.tool.cluster_python_exec, str(args)))
+                with open(self.logs, "a") as logs:
+                    logs.write("Index files\n:".format(self.tool.label, self.tool.name))
+                    logs.write("{0} {1}\n".format(self.tool.cluster_python_exec, " ".join(args)))
                 self.launch_to_cluster(step="prepare",
                                        runner_type=runner_type,
                                        command=self.config.cluster_python_exec,
@@ -1422,6 +1438,8 @@ class JobManager:
             os.remove(os.path.join(self.output_dir, ".target"))
         else:
             logger.info("Index target file: {}".format(self.target.get_path()))
+            with open(self.logs, "a") as logs:
+                logs.write("Index target file: {}\n:".format(self.target.get_path()))
             index_file(self.target.get_path(), self.target.get_name(), self.idx_t)
 
         # Prepare query index:
@@ -1432,6 +1450,8 @@ class JobManager:
                 os.remove(os.path.join(self.output_dir, ".query"))
             else:
                 logger.info("Index query file: {}".format(self.query.get_path()))
+                with open(self.logs, "a") as logs:
+                    logs.write("Index target file: {}\n:".format(self.query.get_path()))
                 index_file(self.query.get_path(), self.query.get_name(), self.idx_q)
         else:
             shutil.copy(self.idx_t, self.idx_q)
