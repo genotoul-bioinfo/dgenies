@@ -1382,30 +1382,34 @@ class JobManager:
                 "-p", self.preptime_file, "--index-only"]
 
         target_format = os.path.splitext(self.target.get_path())[1][1:]
-        has_index = target_format == "idx"
-        if has_index:
+        all_is_index = target_format == "idx"
+        if all_is_index:
             shutil.move(self.target.get_path(), self.idx_t)
             os.remove(os.path.join(self.output_dir, ".target"))
         else:
             args += ["-t", self.target.get_path(),
                      "-m", self.target.get_name()]
+        logger.info("{} - Target is index: {}".format(self.id_job, all_is_index))
 
         if self.query is not None:
             query_format = os.path.splitext(self.query.get_path())[1][1:]
-            has_index = has_index and query_format == "idx"
-            if has_index:
+            target_is_index = query_format == "idx"
+            if target_is_index:
                 shutil.move(self.query.get_path(), self.idx_q)
                 os.remove(os.path.join(self.output_dir, ".query"))
             else:
                 args += ["-q", self.query.get_path(),
                          "-n", self.query.get_name()]
+            logger.info("{} - Query is index: {}".format(self.id_job, target_is_index))
+            all_is_index = all_is_index and target_is_index
 
-        if not has_index:
+        logger.info("{} - Must index files: {}".format(self.id_job, not all_is_index))
+        if not all_is_index:
+            logger.info("{} - Index files: {} {}".format(self.id_job, self.config.cluster_python_exec, str(args)))
             try:
-                logger.info("Index files: {} {}".format(self.tool.cluster_python_exec, str(args)))
                 with open(self.logs, "a") as logs:
-                    logs.write("Index files:\n".format(self.tool.label, self.tool.name))
-                    logs.write("{0} {1}\n".format(self.tool.cluster_python_exec, " ".join(args)))
+                    logs.write("Index files:\n")
+                    logs.write("{0} {1}\n".format(self.config.cluster_python_exec, " ".join(args)))
                 self.launch_to_cluster(step="prepare",
                                        runner_type=runner_type,
                                        command=self.config.cluster_python_exec,
