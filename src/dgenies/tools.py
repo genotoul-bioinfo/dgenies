@@ -148,10 +148,10 @@ class Tools:
     Load (from yaml file) and store available alignment tools
     """
 
-    def __init__(self):
+    def __init__(self, config_file=None):
         self.tools = {}
         self.default = None
-        self.load_yaml(trusted=True)
+        self.load_yaml(trusted=True, tool_config=config_file)
 
     def get_default(self):
         max_order = sys.maxsize

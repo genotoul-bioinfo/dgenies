@@ -21,12 +21,17 @@ logger = logging.getLogger(__name__)
 logger.addHandler(default_handler)
 logger.setLevel(logging.INFO)
 
-def launch(mode="webserver", flask_config=None, debug=False):
+
+def launch(mode="webserver", config=[], tools_config=None, flask_config=None, debug=False):
     """
     Launch the application
 
     :param mode: webserver or standalone
     :type mode: str
+    :param config: dgenies config files
+    :type config: list
+    :param tools_config: tools config file
+    :type tools_config: str
     :param flask_config: flask config file
     :type flask_config: str
     :param debug: True to enable debug mode, override value set in flask_config
@@ -42,7 +47,10 @@ def launch(mode="webserver", flask_config=None, debug=False):
     logger.setLevel(logging.DEBUG if DEBUG else logging.INFO)
 
     # Init config reader:
-    config_reader = AppConfigReader()
+    config_reader = AppConfigReader(config)
+    if tools_config:
+        from .tools import Tools
+        Tools(tools_config)
 
     UPLOAD_FOLDER = config_reader.upload_folder
     APP_DATA = config_reader.app_data

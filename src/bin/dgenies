@@ -53,8 +53,10 @@ def parse_args():
     run.add_argument("--no-browser", type=bool, const=True, nargs="?", required=False, default=False,
                      help="Do not start the browser (Start of browser is always disabled in debug mode)")
     run.add_argument("--config", nargs="+", metavar='application.properties', type=str, required=False,
-                        help="D-Genies configuration file")
-    run.add_argument("--flask-config", metavar='config.py', type=str, required=False,
+                     help="D-Genies configuration file")
+    run.add_argument("--tools-config", dest="tools_config", metavar='tools.yaml', type=str, required=False,
+                     help="D-Genies tools configuration file")
+    run.add_argument("--flask-config", dest="flask_config", metavar='config.py', type=str, required=False,
                      help="Flask configuration file in python format")
 
     # Clear data or jobs:
@@ -113,6 +115,9 @@ def parse_args():
 
     if args.config:
         config.reset_config(args.config)
+    if args.tools_config:
+        from dgenies.tools import Tools
+        Tools(args.tools_config)
 
     if args.subparser_name == "run":
         return "run", [args.mode, args.debug, args.host, args.port, args.no_crons, args.no_browser,

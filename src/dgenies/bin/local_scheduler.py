@@ -292,6 +292,8 @@ def parse_args():
                         help="Log file (default: stdout)")
     parser.add_argument("--config", nargs="+", metavar='application.properties', type=str, required=False,
                         help="D-Genies configuration file")
+    parser.add_argument("--tools-config", dest="tools_config", metavar='tools.yaml', type=str,
+                        required=False, help="D-Genies tools configuration file")
     args = parser.parse_args()
 
     DEBUG = args.debug
@@ -301,13 +303,17 @@ def parse_args():
         handler = logging.FileHandler(args.log_file, mode='a')
         if DEBUG:
             handler.setLevel(logging.DEBUG)
-        formatter = logging.Formatter('[%(asctime)s] %(levelname)s in %(module)s (%(threadName)s): %(message)s')
+        formatter = logging.Formatter('[%(asctime)s] %(levelname)s in %(module)s (%(threadName)s):'
+                                      '%(id_job)s %(message)s')
         handler.setFormatter(formatter)
         logger.handlers.clear()
         logger.addHandler(handler)
 
     if args.config:
         config_reader.reset_config(args.config)
+    if args.tools_config:
+        from dgenies.tools import Tools
+        Tools(args.tools_config)
 
 
 if __name__ == '__main__':
