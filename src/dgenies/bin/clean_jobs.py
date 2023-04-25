@@ -7,13 +7,14 @@ import time
 from _datetime import datetime, timedelta
 import traceback
 import argparse
+import logging
 
 from dgenies.config_reader import AppConfigReader
 import dgenies.database as database
 from dgenies.lib.functions import Functions
 
+logger = logging.getLogger("dgenies")
 config_reader = AppConfigReader()
-
 
 def parse_upload_folders(upload_folder, now, max_age, fake=False):
     """
@@ -36,15 +37,15 @@ def parse_upload_folders(upload_folder, now, max_age, fake=False):
         if age > max_age["uploads"]:
             try:
                 if os.path.isdir(file):
-                    print("Removing folder %s..." % file)
+                    logger.info("Removing folder %s..." % file)
                     if not fake:
                         shutil.rmtree(file)
                 else:
-                    print("Removing file %s..." % file)
+                    logger.info("Removing file %s..." % file)
                     if not fake:
                         os.remove(file)
             except OSError:
-                print(traceback.print_exc(), file=sys.stderr)
+                logger.exception(traceback.print_exc())
 
 
 def parse_database(app_data, max_age, fake=False):
@@ -75,13 +76,13 @@ def parse_database(app_data, max_age, fake=False):
             if is_gallery:
                 gallery_jobs.append(id_job)
             else:
-                print("Removing job %s..." % id_job)
+                logger.info("Removing job %s..." % id_job)
                 data_dir = os.path.join(app_data, id_job)
                 if os.path.exists(data_dir) and os.path.isdir(data_dir):
                     if not fake:
                         shutil.rmtree(data_dir)
                 else:
-                    print("Job %s has no data folder!" % id_job)
+                    logger.info("Job %s has no data folder!" % id_job)
                 if not fake:
                     job.delete_instance()
     return gallery_jobs
@@ -111,15 +112,15 @@ def parse_data_folders(app_data, gallery_jobs, now, max_age, fake=False):
             if age > max_age["data"]:
                 try:
                     if os.path.isdir(file):
-                        print("Removing folder %s..." % file)
+                        logger.info("Removing folder %s..." % file)
                         if not fake:
                             shutil.rmtree(file)
                     else:
-                        print("Removing file %s..." % file)
+                        logger.info("Removing file %s..." % file)
                         if not fake:
                             os.remove(file)
                 except OSError:
-                    print(traceback.print_exc())
+                    logger.exception(traceback.print_exc())
             elif os.path.isdir(file):
                 query_name_file = os.path.join(file, ".query")
                 if os.path.exists(query_name_file):
@@ -132,7 +133,7 @@ def parse_data_folders(app_data, gallery_jobs, now, max_age, fake=False):
                             create_date = os.path.getctime(sorted_file)
                             age = (now - create_date) / 86400  # Age in days
                             if age > max_age["fasta_sorted"]:
-                                print("Removing fasta file %s..." % sorted_file)
+                                logger.info("Removing fasta file %s..." % sorted_file)
                                 if not fake:
                                     os.remove(sorted_file)
                         query_reference = os.path.join(file, "as_reference_" + os.path.basename(query_filename))
@@ -140,24 +141,36 @@ def parse_data_folders(app_data, gallery_jobs, now, max_age, fake=False):
                             create_date = os.path.getctime(query_reference)
                             age = (now - create_date) / 86400  # Age in days
                             if age > max_age["fasta_sorted"]:
-                                print("Removing fasta file %s..." % query_reference)
+                                logger.info("Removing fasta file %s..." % query_reference)
                                 if not fake:
                                     os.remove(query_reference)
 
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser(description="Clean old jobs and files")
     parser.add_argument('-f', '--fake', type=bool, const=True, nargs="?", required=False, default=False,
                         help="Fake mode: don't really delete the files (ONLY for debug)")
     parser.add_argument("-d", "--max-age", type=int, required=False, help="Max age of jobs to delete", default=7)
+    parser.add_argument('-l', '--log-file', type=str, required=False, default=None,
+                        help="Log file (default: stderr)")
     parser.add_argument("--config", nargs="+", metavar='application.properties', type=str, required=False,
                         help="D-Genies configuration file")
     args = parser.parse_args()
     fake = args.fake
+
+    if args.log_file:
+        handler = logging.FileHandler(args.log_file, mode='a')
+        logger.setLevel(logging.INFO)
+        formatter = logging.Formatter('[%(asctime)s] %(levelname)s: %(message)s')
+        handler.setFormatter(formatter)
+        logger.handlers.clear()
+        logger.addHandler(handler)
+
+    logger.info("--- Start cleaning old jobs and files ---")
     if args.config:
         config_reader.reset_config(args.config)
-
     database.initialize()
+
     upload_folder = config_reader.upload_folder
     app_data = config_reader.app_data
     now = time.time()
@@ -169,33 +182,22 @@ if __name__ == '__main__':
         "fasta_sorted": 1
     }
 
-    print("#########################")
-    print("# Parsing Upload folder #")
-    print("#########################")
-    print("")
+    logger.info("Parsing Upload folder...")
     parse_upload_folders(
         upload_folder=upload_folder,
         now=now,
         max_age=max_age,
         fake=fake
     )
-    print("")
 
-    print("######################")
-    print("# Parsing Jobs in DB #")
-    print("######################")
-    print("")
+    logger.info("Parsing Jobs in DB...")
     gallery_jobs = parse_database(
         app_data=app_data,
         max_age=max_age,
         fake=fake
     )
-    print("")
 
-    print("#######################")
-    print("# Parsing Data folder #")
-    print("#######################")
-    print("")
+    logger.info("Parsing Data folder...")
     parse_data_folders(
         app_data=app_data,
         now=now,
@@ -203,4 +205,8 @@ if __name__ == '__main__':
         fake=fake,
         gallery_jobs=gallery_jobs
     )
-    print("")
+    logger.info("--- Done cleaning old jobs and files ---")
+
+
+if __name__ == '__main__':
+    main()
