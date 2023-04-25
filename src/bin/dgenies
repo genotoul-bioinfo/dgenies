@@ -17,6 +17,7 @@ from glob import glob
 import time
 import datetime
 from dgenies.config_reader import AppConfigReader
+import dgenies.database as database
 from dgenies.bin.clean_jobs import parse_data_folders, parse_database, parse_upload_folders
 import requests
 from requests.exceptions import ConnectionError
@@ -24,6 +25,7 @@ from requests.exceptions import ConnectionError
 runned = False
 
 config = AppConfigReader()
+
 
 def parse_args():
     """
@@ -115,6 +117,8 @@ def parse_args():
 
     if args.config:
         config.reset_config(args.config)
+    database.initialize()
+
     if args.tools_config:
         from dgenies.tools import Tools
         Tools(args.tools_config)

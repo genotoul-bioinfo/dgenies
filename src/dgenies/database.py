@@ -3,16 +3,18 @@ from dgenies import MODE
 import os
 from dgenies.config_reader import AppConfigReader
 from datetime import datetime
+import logging
+
+logger = logging.getLogger(__name__)
 
 ID_JOB_LENGTH = 50
 config = AppConfigReader()
 
 if MODE == "webserver":
-    from peewee import SqliteDatabase, Model, CharField, IntegerField, DateTimeField, BooleanField, MySQLDatabase, \
+    from peewee import DatabaseProxy, SqliteDatabase, Model, CharField, IntegerField, DateTimeField, BooleanField, MySQLDatabase, \
     OperationalError, ForeignKeyField, __exception_wrapper__
 
-    db_url = config.database_url
-    db_type = config.database_type
+    database_proxy = DatabaseProxy()
 
     # restore RetryOperationalError from peewee 2.10.x
     # https://github.com/coleifer/peewee/issues/1472
@@ -36,16 +38,6 @@ if MODE == "webserver":
     class MyRetryDB(RetryOperationalError, MySQLDatabase):
         pass
 
-
-    if db_type == "sqlite":
-        db = SqliteDatabase(db_url)
-    elif db_type == "mysql":
-        db = MyRetryDB(host=config.database_url, port=config.database_port, user=config.database_user,
-                       passwd=config.database_password, database=config.database_db)
-    else:
-        raise Exception("Unsupported database type: " + db_type)
-
-
     class Database:
 
         nb_open = 0
@@ -56,20 +48,20 @@ if MODE == "webserver":
         def __enter__(self):
             Database.nb_open += 1
             try:
-                db.connect()
+                database_proxy.connect()
             except OperationalError:
                 pass
 
         def __exit__(self, exc_type, exc_val, exc_tb):
             Database.nb_open -= 1
             if Database.nb_open == 0:
-                db.close()
+                database_proxy.close()
 
 
     class BaseModel(Model):
 
         class Meta:
-            database = db
+            database = database_proxy
 
         @classmethod
         def connect(cls):
@@ -157,17 +149,28 @@ if MODE == "webserver":
             status = CharField(max_length=20, default="unknown")
             tool = CharField(default="undefined", max_length=50, null=True)
 
-        if not Analytics.table_exists():
+    def initialize():
+        logger.info("Setting database: {}://{}".format(config.database_type, config.database_url))
+        if config.database_type == "sqlite":
+            db = SqliteDatabase(config.database_url)
+        elif config.database_type == "mysql":
+            db = MyRetryDB(host=config.database_url, port=config.database_port, user=config.database_user,
+                           passwd=config.database_password, database=config.database_db)
+        else:
+            raise Exception("Unsupported database type: " + config.database_db)
+        database_proxy.initialize(db)
+
+        if not Job.table_exists():
+            Job.create_table()
+
+        if not Gallery.table_exists():
+            Gallery.create_table()
+
+        if not Session.table_exists():
+            Session.create_table()
+
+        if config.analytics_enabled and not Analytics.table_exists():
             Analytics.create_table()
-
-    if not Job.table_exists():
-        Job.create_table()
-
-    if not Gallery.table_exists():
-        Gallery.create_table()
-
-    if not Session.table_exists():
-        Session.create_table()
 
 else:
 
@@ -189,3 +192,6 @@ else:
         @classmethod
         def connect(cls):
             return Database()
+
+    def initialize():
+        pass

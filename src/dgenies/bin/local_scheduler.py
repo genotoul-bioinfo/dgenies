@@ -9,8 +9,9 @@ from datetime import datetime
 from tendo import singleton
 import argparse
 
-from dgenies.database import Job, Session
 from dgenies.config_reader import AppConfigReader
+import dgenies.database as database
+from dgenies.database import Job, Session
 from dgenies.lib.job_manager import JobManager
 
 # Allow only one instance:
@@ -311,6 +312,7 @@ def parse_args():
 
     if args.config:
         config_reader.reset_config(args.config)
+    database.initialize()
     if args.tools_config:
         from dgenies.tools import Tools
         Tools(args.tools_config)

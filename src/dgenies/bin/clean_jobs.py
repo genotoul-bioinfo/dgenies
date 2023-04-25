@@ -9,6 +9,7 @@ import traceback
 import argparse
 
 from dgenies.config_reader import AppConfigReader
+import dgenies.database as database
 from dgenies.lib.functions import Functions
 
 config_reader = AppConfigReader()
@@ -155,6 +156,8 @@ if __name__ == '__main__':
     fake = args.fake
     if args.config:
         config_reader.reset_config(args.config)
+
+    database.initialize()
     upload_folder = config_reader.upload_folder
     app_data = config_reader.app_data
     now = time.time()

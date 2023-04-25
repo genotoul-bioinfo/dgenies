@@ -48,6 +48,8 @@ def launch(mode="webserver", config=[], tools_config=None, flask_config=None, de
 
     # Init config reader:
     config_reader = AppConfigReader(config)
+    from . import database
+    database.initialize()
     if tools_config:
         from .tools import Tools
         Tools(tools_config)
