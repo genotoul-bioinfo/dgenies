@@ -115,7 +115,7 @@ def parse_args():
                          help="D-Genies configuration file")
     args = parser.parse_args()
 
-    if args.config:
+    if 'config' in args and args.config:
         config.reset_config(args.config)
     database.initialize()
 
