@@ -119,12 +119,9 @@ def parse_args():
         config.reset_config(args.config)
     database.initialize()
 
-    if args.tools_config:
-        from dgenies.tools import Tools
-        Tools(args.tools_config)
-
     if args.subparser_name == "run":
         return "run", [args.mode, args.debug, args.host, args.port, args.no_crons, args.no_browser,
+                       os.path.abspath(args.tools_config) if args.tools_config is not None else None,
                        os.path.abspath(args.flask_config) if args.flask_config is not None else None]
     if args.subparser_name == "clear":
         if args.crons is False and args.logs is False and args.jobs is False and args.analytics is False:
@@ -171,7 +168,8 @@ def start_browser(host, port, app):
         print("App has not started. Cancel run of browser")
 
 
-def run(mode="standalone", debug=False, host="127.0.0.1", port=5000, no_crons=False, no_browser=False, flask_config=None):
+def run(mode="standalone", debug=False, host="127.0.0.1", port=5000, no_crons=False, no_browser=False,
+        tools_config=None, flask_config=None):
     """
     Run server
 
@@ -187,12 +185,16 @@ def run(mode="standalone", debug=False, host="127.0.0.1", port=5000, no_crons=Fa
     :type no_crons: bool
     :param no_browser: True to don't launch the browser after server starts
     :type no_browser: bool
+    :param tools_config: Path to tools config file (tools.yaml)
+    :type tools_config: str
+    :param flask_config: Path to flask config file (flask_config.py)
+    :type flask_config: bool
     """
     os.environ['DISABLE_CRONS'] = "True" if no_crons else "False"
     if debug:
         os.environ['LOGS'] = "True"
     from dgenies import launch
-    app = launch(mode=mode, flask_config=flask_config, debug=debug)
+    app = launch(mode=mode, tools_config=tools_config, flask_config=flask_config, debug=debug)
     if not debug and not no_browser:
         thread = threading.Timer(1, start_browser, kwargs={
             "host": host,
