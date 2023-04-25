@@ -304,8 +304,7 @@ def parse_args():
         handler = logging.FileHandler(args.log_file, mode='a')
         if DEBUG:
             handler.setLevel(logging.DEBUG)
-        formatter = logging.Formatter('[%(asctime)s] %(levelname)s in %(module)s (%(threadName)s):'
-                                      '%(id_job)s %(message)s')
+        formatter = logging.Formatter('[%(asctime)s] %(levelname)s in %(module)s (%(threadName)s): %(message)s')
         handler.setFormatter(formatter)
         logger.handlers.clear()
         logger.addHandler(handler)
