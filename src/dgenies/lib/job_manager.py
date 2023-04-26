@@ -857,9 +857,10 @@ class JobManager:
         # wait for job ending
         retval = s.wait(jobid, drmaa.Session.TIMEOUT_WAIT_FOREVER)
         logger.info("Job {} ended".format(jobid))
-        # copy logs
-        with open(log_err, "r") as cluster_log, open(self.logs, 'a') as log:
-            log.write(cluster_log.read())
+        # copy cluster logs to job log file
+        if log_err != self.logs:
+            with open(log_err, 'r') as cluster_log, open(self.logs, 'a') as logs:
+                logs.write(cluster_log.read())
         if retval.hasExited and (self.check_job_status_slurm() if runner_type == "slurm" else
         self.check_job_status_sge()):
             logger.info("Job {} ended successfully".format(jobid))
