@@ -857,6 +857,9 @@ class JobManager:
         # wait for job ending
         retval = s.wait(jobid, drmaa.Session.TIMEOUT_WAIT_FOREVER)
         logger.info("Job {} ended".format(jobid))
+        # copy logs
+        with open(log_err, "r") as cluster_log, open(self.logs, 'a') as log:
+            log.write(cluster_log.read())
         if retval.hasExited and (self.check_job_status_slurm() if runner_type == "slurm" else
         self.check_job_status_sge()):
             logger.info("Job {} ended successfully".format(jobid))
@@ -889,7 +892,7 @@ class JobManager:
                                    command=self.tool.exec,
                                    args=args,
                                    log_out=out_file,
-                                   log_err=self.logs,
+                                   log_err=self.logs + ".cluster",
                                    scheduled_status="scheduled-cluster")
             status = self.check_job_success()
             logger.debug("Job {} ends with status: {}".format(self.id_job, status))
@@ -1242,8 +1245,8 @@ class JobManager:
                                    runner_type=runner_type,
                                    command=self.config.cluster_python_exec,
                                    args=args,
-                                   log_out=self.logs,
-                                   log_err=self.logs,
+                                   log_out=self.logs + ".cluster",
+                                   log_err=self.logs + ".cluster",
                                    scheduled_status="prepare-scheduled")
             status = "prepared"
             # job = Job.get(id_job=self.id_job)
@@ -1414,8 +1417,8 @@ class JobManager:
                                        runner_type=runner_type,
                                        command=self.config.cluster_python_exec,
                                        args=args,
-                                       log_out=self.logs,
-                                       log_err=self.logs,
+                                       log_out=self.logs + ".cluster",
+                                       log_err=self.logs + ".cluster",
                                        scheduled_status="prepare-scheduled")
 
             except (DGeniesClusterRunError, DGeniesMissingParserError) as e:
