@@ -213,12 +213,12 @@
                                     {% for tool in tools_names %}
                                         {% set tool_loop = loop %}
                                         {% if tools[tool].options|length%}
-                                            <div {% if loop.index0 != 0%}class="hide"{% endif %}>
+                                            <div class= "optionx tool-options-{{tool}}{% if loop.index0 != 0%} hide{% endif %}">
                                                 <div class="row">
                                                     <label id="tool-options-{{tool}}" class="col-3 input-label options optionx tool-options-{{tool}}">Options</label>
                                                 </div>
                                                 {% for opt in tools_options[tool] %}
-                                                    <div class="row optionx tool-options-{{tool}}  {% if tool_loop.index0 != 0 %}hide{% endif %}">
+                                                    <div class="row optionx tool-options-{{tool}}">
                                                         <legend class="col-form-label col-3 pt-0 options">{{ opt.label }}&nbsp<span class="glyphicon glyphicon-question-sign" style="color: #2aabd2"
                                                             title="{{ opt.help }}"></span></legend>
                                                         <div class="col">
