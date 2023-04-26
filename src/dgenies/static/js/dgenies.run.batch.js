@@ -16,13 +16,15 @@ dgenies.run.batchParser = {};
 // AdditionOperator defines a Tokens hierarchy but only the leafs in this hierarchy define
 // actual Tokens that can appear in the text
 
+dgenies.run.batchParser.Comment = chevrotain.createToken({ name: "Comment", pattern: /#[^\n\r]*/, group: chevrotain.Lexer.SKIPPED})
+
 dgenies.run.batchParser.Affectation = chevrotain.createToken({ name: "Affectation", pattern: /=/ , push_mode: "value_mode" })
 
-dgenies.run.batchParser.Value = chevrotain.createToken({ name: "Value", pattern: /[^\s'"]+/, pop_mode: true })
+dgenies.run.batchParser.Value = chevrotain.createToken({ name: "Value", pattern: /[^#\s'"]+/, pop_mode: true })
 
-dgenies.run.batchParser.DQuotedValue = chevrotain.createToken({ name: "DQuotedValue", pattern: /"[^"\r\n]+"/, pop_mode: true })
+dgenies.run.batchParser.DQuotedValue = chevrotain.createToken({ name: "DQuotedValue", pattern: /"[^"#\r\n]+"/, pop_mode: true })
 
-dgenies.run.batchParser.SQuotedValue = chevrotain.createToken({ name: "SQuotedValue", pattern: /'[^'\r\n]+'/, pop_mode: true })
+dgenies.run.batchParser.SQuotedValue = chevrotain.createToken({ name: "SQuotedValue", pattern: /'[^'#\r\n]+'/, pop_mode: true })
 
 dgenies.run.batchParser.Key = chevrotain.createToken({ name: "Key", pattern: /(type|align|query|target|backup|tool|options|id_job)/ })
 
@@ -33,12 +35,14 @@ dgenies.run.batchParser.Spaces = chevrotain.createToken({ name: "Spaces", patter
 dgenies.run.batchParser.multiModeBatchLexerDefinition = {
   modes: {
     key_mode: [
+      dgenies.run.batchParser.Comment,
       dgenies.run.batchParser.Key,
       dgenies.run.batchParser.Affectation,
       dgenies.run.batchParser.Spaces,
       dgenies.run.batchParser.NewLines
     ],
     value_mode: [
+      dgenies.run.batchParser.Comment,
       dgenies.run.batchParser.DQuotedValue,
       dgenies.run.batchParser.SQuotedValue,
       dgenies.run.batchParser.Value,

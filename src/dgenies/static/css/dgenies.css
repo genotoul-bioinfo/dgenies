@@ -1144,10 +1144,12 @@ div.jquery-modal div.modal {
 /* Codemirror */
 
 .cm-s-dgenies.CodeMirror { color: #888888; }
-.cm-s-dgenies span.cm-affectation { color: #000000; line-height: 1em; font-weight: bold; }
-.cm-s-dgenies span.cm-key { color: #ba32cc; line-height: 1em; font-weight: bold; }
-.cm-s-dgenies span.cm-value { color: #5a9418; line-height: 1em; font-weight: bold; }
-.cm-s-dgenies span.cm-qvalue { color: #5a9418; line-height: 1em; font-weight: bold; }
+.cm-s-dgenies span { line-height: 1em; }
+.cm-s-dgenies span.cm-affectation { color: #000000; font-weight: bold; }
+.cm-s-dgenies span.cm-key { color: #ba32cc; font-weight: bold; }
+.cm-s-dgenies span.cm-value { color: #5a9418; font-weight: bold; }
+.cm-s-dgenies span.cm-qvalue { color: #5a9418; font-weight: bold; }
+.cm-s-dgenies span.cm-comment { color: #3241cc; font-style: italic; }
 
 div.run-help h3 {
     padding-top: 10px;

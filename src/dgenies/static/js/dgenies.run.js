@@ -905,17 +905,19 @@ dgenies.run.init_codemirror = function () {
     CodeMirror.defineSimpleMode("batch", {
         // The start state contains the rules that are initially used
         start: [
+            {regex: /#.*/, token: "comment"},
             {regex: /(?:type|align|query|target|backup|tool|options|id_job)\b/, token: "key"},
             {regex: /=/, token: "affectation", next: "value"},
         ],
         value: [
-            {regex: /[^\s'"]+/, token: "value", next: "start"},
-            {regex: /"[^"\r\n]+"/, token: "qvalue", next: "start"},
-            {regex: /'[^'\r\n]+'/, token: "qvalue", next: "start"}
+            {regex: /#.*/, token: "comment"},
+            {regex: /[^#\s'"]+/, token: "value", next: "start"},
+            {regex: /"[^"#\r\n]+"/, token: "qvalue", next: "start"},
+            {regex: /'[^'#\r\n]+'/, token: "qvalue", next: "start"}
         ],
         meta: {
-            dontIndentStates: ["start", "value"],
-            lineComment: "//"
+            dontIndentStates: ["start", "value", "comment"],
+            lineComment: "#"
         }
     });
 
