@@ -675,7 +675,7 @@ class JobManager:
             elapsed_full = list(map(int, status[2].split(":")))
             elapsed = elapsed_full[0] * 3600 + elapsed_full[1] * 60 + elapsed_full[2]
             with open(self.logs, "a") as logs:
-                logs.write("%s %d" % (elapsed, mem_peak))
+                logs.write("%s %d\n" % (elapsed, mem_peak))
 
         return success
 
@@ -711,7 +711,7 @@ class JobManager:
                 elapsed = end - start
                 elapsed = elapsed.seconds
                 with open(self.logs, "a") as logs:
-                    logs.write("%s %d" % (elapsed, mem_peak))
+                    logs.write("%s %d\n" % (elapsed, mem_peak))
 
         return status == "0"
 
@@ -881,7 +881,7 @@ class JobManager:
         :return: new status:either succeed, no-match or fail
         :rtype: str
         """
-        exec, args, out_file = self.forge_align_command(default_out_file=self.logs)
+        exec, args, out_file = self.forge_align_command(default_out_file=self.logs + ".cluster")
         args = args.split(" ")
         try:
             logger.info("Run align files: {} {}".format(self.tool.exec, str(args)))
@@ -1652,7 +1652,7 @@ class JobManager:
                     # We get the stats of the job
                     if MODE == "webserver":
                         job = Job.get(Job.id_job == self.id_job)
-                        with open(self.logs) as logs:
+                        with open(self.logs, "r") as logs:
                             measures = logs.readlines()[-1].strip("\n").split(" ")
                             map_elapsed = round(float(measures[0]))
                             job.mem_peak = int(measures[1])
