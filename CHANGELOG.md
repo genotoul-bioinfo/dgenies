@@ -4,26 +4,49 @@
 
 ### Major change
 
+If you run dgenies in webserver mode, database schema has changed.
+
+The column `batch_type` was changed to `runner_type` in `job` table. 
+You can update the database with following sql command:
+  ```
+  ALTER TABLE job RENAME COLUMN batch_type TO runner_type;
+  ```
+This change was also reflected for cluster configuration in `application.properties`, where `batch_system_type` was renamed to `runner_type`.
+
+For users:
 - Update batch mode:
-	- Batch file checking in run interface.
-	- Upload of local files is possible.
-- Update from a mix composed of `boostrap 3.3.7` and `bootstarp 4.0beta3` to `bootstrap 4.6`
-- Batch file format has changed. Please read check to doc.
-- Tools config file format (`tools.yaml`) has changed. Please update it, if you use a custom one.
-- Basic logging.
+	- Local files upload
+	- Batch content checked in web interface
+  - Single upload per file
+  - Batch file format has changed, in particular, option keys have been change to be more comprehensible. Please read the doc.
+- Job logs are now available to download and are included in backup file.
+- Update user interface to `bootstrap 4.6`
+
+For sysadmin
+- Tools config file format (`tools.yaml`) has changed. Please update it if you use a custom one.
+- Basic app logging.
+- Configuration files:
+  - In `application.properties`, `batch_system_type` was renamed to `runner_type` in order to avoid confusion with batch jobs intoduced with dgenies 1.4.
+  - In database, the column `batch_type` was changed to `runner_type` in `job` table. 
+  - It is possible to set config files directly when running dgenies with `--config` and `--tools-config` options. Please be careful to use the correct config files when managing a running instance of dgenies.
+  - It is now possible to use a the option `--flask-config` in order to set some flask options. You can use it to set some email server parameters.
 
 ### Minor changes
 
-- Option keys have been change to be more comprehensible. Please check and update your `tools.yaml` files
-- For server mode, the number of download sessions in parallel, can be now set with `max_download_sessions` (default is alway `5`). Session delays can also be modified now.
+- Dotplot:
+  - You can reset the sort (usefull when plying with manual contig reversal)
+  - 'Query as reference' download is now compressed in webserver mode.
+- For sysadmin:
+  - For server mode, the number of download sessions in parallel, can be now set with `max_download_sessions` (default is alway `5`). Session delays can also be modified now.
+  - Reinforce tar file checking
+  - Drop Flask<2
 
 ### Bugfix
 
-- Reinforce tar file checking
-- Fix file dropzones
+- When sorted, "Association table", "Query Fasta" and "Query assembled as reference" files match dotplot. Before, only the last reversed contig on dotplot was token in account.
 - Fix some bugs with Flask>=2
-	- add compatibility with Flask 2.2
-	- Some gzipped files where uncompressed by browser when downloaded.
+	- Add compatibility with Flask 2.2
+	- Some gzipped files were uncompressed by browser when downloaded.
 	- Backup file name was incomplete.
 
 ## 1.4.0 (2022-07-12)
