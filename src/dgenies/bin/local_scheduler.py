@@ -19,17 +19,7 @@ me = singleton.SingleInstance()
 
 logger = logging.getLogger("dgenies")
 config_reader = AppConfigReader()
-
-# Add DRMAA lib in env:
-if config_reader.drmaa_lib_path is not None and config_reader.runner_type != "local":
-    os.environ["DRMAA_LIBRARY_PATH"] = config_reader.drmaa_lib_path
-    try:
-        import drmaa
-        from dgenies.lib.drmaasession import DrmaaSession
-        DRMAA_SESSION = DrmaaSession()
-    except ImportError:
-        pass
-
+DRMAA_SESSION = None
 NB_RUN = config_reader.local_nb_runs  # Max number of jobs running locally
 NB_PREPARE = config_reader.nb_data_prepare  # Max number of data preparing jobs launched locally
 DEBUG = config_reader.debug
@@ -284,7 +274,7 @@ def parse_args():
     Parse command line arguments and define DEBUG constants
     """
 
-    global DEBUG
+    global DEBUG, NB_RUN, NB_PREPARE
 
     parser = argparse.ArgumentParser(description="Start local scheduler")
     parser.add_argument('-d', '--debug', action="store_true", required=False, default=False,
@@ -300,6 +290,14 @@ def parse_args():
     DEBUG = args.debug
     logger.setLevel(logging.DEBUG) if DEBUG else logger.setLevel(logging.INFO)
 
+    if args.config:
+        config_reader.reset_config(args.config)
+        DEBUG = DEBUG or config_reader.debug
+
+        # We update parameters in case config file has changed
+        NB_RUN = config_reader.local_nb_runs  # Max number of jobs running locally
+        NB_PREPARE = config_reader.nb_data_prepare  # Max number of data preparing jobs launched locally
+
     if args.log_file:
         handler = logging.FileHandler(args.log_file, mode='a')
         if DEBUG:
@@ -309,8 +307,6 @@ def parse_args():
         logger.handlers.clear()
         logger.addHandler(handler)
 
-    if args.config:
-        config_reader.reset_config(args.config)
     database.initialize()
     if args.tools_config:
         from dgenies.tools import Tools
@@ -319,6 +315,16 @@ def parse_args():
 
 if __name__ == '__main__':
     parse_args()
+
+    #  We set drmaa information if needed
+    if config_reader.drmaa_lib_path is not None and config_reader.runner_type != "local":
+        os.environ["DRMAA_LIBRARY_PATH"] = config_reader.drmaa_lib_path
+        try:
+            import drmaa
+            from dgenies.lib.drmaasession import DrmaaSession
+            DRMAA_SESSION = DrmaaSession()
+        except ImportError:
+            pass
 
     while True:
         logger.info("Check uploads...")
