@@ -1,0 +1,87 @@
+minimap2:
+  exec: default
+  label: "Minimap2 v2.24"
+  command_line: "{exe} -t {threads} {options} -o {out} {target} {query}"
+  all_vs_all: "{exe} -t {threads} {options} -o {out} -X {target} {target}"
+  max_memory: 40
+  threads: 4
+  parser: !!null
+  split_before: True
+  help: "Better for low similar fasta files"
+  order: 0
+  options:
+    -
+      group: repeat
+      label: Repeatedness
+      type: radio
+      help: "Ignore top fraction of most frequent minimizers"
+      hint: |
+        For large genomes keep the "Repeatedness" parameter set to "Many repeats".
+        If not your job may be killed because of time limit or memory limit crossing.
+      entries:
+        -
+          key: few
+          label: "few repeats"
+          value: "-f 0.0002"
+          help: "-f 0.0002"
+        -
+          key: some
+          label: "some repeats"
+          value: "-f 0.002"
+          help: "-f 0.002"
+        -
+          key: many
+          label: "many repeats"
+          value: "-f 0.02"
+          help: "-f 0.02"
+          default: True
+    -
+      group: annot
+      label: Annotations
+      type: checkbox
+      help: "Generate some annotations"
+      entries:
+        -
+          key: cigar
+          label: Cigar
+          value: "-c"
+          help: "Enable/Disable CIGAR annotations. Side effect is that the alignment strategy done by minimap2 is changed"
+
+wfmash:
+  exec: default
+  label: "Wfmash v0.10.3"
+  command_line: "{exe} {target} {query} -t {threads} > {out}"
+  all_vs_all: "{exe} {target} {query} -X -t {threads} > {out}"
+  max_memory: 20
+  threads: 4
+  parser: !!null
+  split_before: False
+  uncompress_before: True
+  help: "Variant of MashMap that finds large-scale sequence homologies"
+  order: 1
+  options:
+    -
+      group: mapping
+      label: Mapping
+      type: checkbox
+      help: "Mapping strategy"
+      entries:
+        -
+          key: approximate
+          label: Approximate
+          value: "-m"
+          help: "Speed-up mapping by skipping base-level alignment, producing an approximate mapping (-m option)"
+          default: True
+
+mashmap:
+  exec: default
+  label: "Mashmap v2.0"
+  command_line: "{exe} -t {threads} -r {target} -q {query} -o {out}"
+  all_vs_all: !!null
+  max_memory: 20
+  threads: 4
+  parser: mashmap2paf
+  split_before: False
+  help: "Faster for high similar fasta files"
+  order: 2
+  options: !!null

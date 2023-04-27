@@ -9,7 +9,7 @@ from filter_contigs import Filter
 from index import index_file
 
 
-def index_fasta(name, filepath, out_dir, type_f, dofilter = True):
+def index_fasta(name, filepath, out_dir, type_f, dofilter = True, remove_uncompressed=True):
     """
     Index and filter fasta
 
@@ -43,7 +43,7 @@ def index_fasta(name, filepath, out_dir, type_f, dofilter = True):
                 os.remove(filepath)
                 with open(os.path.join(out_dir, "." + type_f), "w") as save_file:
                     save_file.write(uncompressed)
-            else:
+            elif remove_uncompressed:
                 os.remove(uncompressed)
 
     else:
@@ -66,9 +66,11 @@ parser.add_argument('-s', '--size', type=int, required=False, default=10,
                     help="Max size of contigs (Mb) - for query split")
 parser.add_argument('-p', '--preptime-file', type=str, required=True, help="File into save prep times")
 parser.add_argument('--split', type=bool, const=True, nargs="?", required=False, default=False,
-                        help="Split query")
+                    help="Split query")
 parser.add_argument('--index-only', type=bool, const=True, nargs="?", required=False, default=False,
-                        help="Index files only. No split, no filter.")
+                    help="Index files only. No split, no filter.")
+parser.add_argument('--keep-uncompressed', type=bool, const=True, nargs="?", required=False, default=False,
+                    help="Keep uncompressed fasta files")
 args = parser.parse_args()
 
 if args.index_only and args.split:
@@ -103,11 +105,11 @@ with open(args.preptime_file, "w") as ptime:
         else:
             print("Indexing query...")
             index_fasta(name=args.query_name, filepath=args.query, out_dir=out_dir, type_f="query",
-                        dofilter=not args.index_only)
+                        dofilter=not args.index_only, remove_uncompressed=not args.keep_uncompressed)
     if args.target is not None:
         print("Indexing target...")
         index_fasta(name=args.target_name, filepath=args.target, out_dir=out_dir, type_f="target",
-                    dofilter=not args.index_only)
+                    dofilter=not args.index_only, remove_uncompressed=not args.keep_uncompressed)
 
     ptime.write(str(round(time.time())) + "\n")
 

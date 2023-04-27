@@ -1,0 +1,29 @@
+#!/bin/bash
+
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && (pwd -W 2>/dev/null || pwd))
+#echo "${SCRIPT_DIR}"
+WFMASH_BIN="${SCRIPT_DIR}/wfmash"
+WFMASH_BIN="wfmash"
+SAMTOOLS_BIN="samtools"
+
+TARGET="$1"
+QUERY="$2"
+AVA=false
+for arg in "${@}"; do
+    echo "${arg}"
+    if [[ "${arg}" == "-X" ]] || [[ "${arg}" == "--skip-self" ]]; then
+        AVA=true
+    fi
+done
+
+if [[ -n "${TARGET}" ]]; then
+    echo >&2 "${SAMTOOLS_BIN}" faidx "${TARGET}"
+    "${SAMTOOLS_BIN}" faidx "${TARGET}"
+fi
+if [[ ${AVA} == false ]] && [[ -n "${QUERY}" ]] && [[ "${QUERY}" != "${TARGET}" ]]; then
+    echo >&2 "${SAMTOOLS_BIN}" faidx "${QUERY}"
+    "${SAMTOOLS_BIN}" faidx "${QUERY}"
+fi
+
+echo >&2 "${WFMASH_BIN}" "$@"
+"${WFMASH_BIN}" "$@"

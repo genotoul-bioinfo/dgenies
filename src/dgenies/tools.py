@@ -15,7 +15,8 @@ logger = logging.getLogger(__name__)
 class Tool:
 
     def __init__(self, name, exec, command_line, all_vs_all, max_memory, label=None, threads=1, exec_cluster=None,
-                 threads_cluster=None, parser=None, split_before=False, help=None, order=None, options=None):
+                 threads_cluster=None, parser=None, split_before=False, uncompress_before=False, help=None, order=None,
+                 options=None):
         """
         Create a new tool
 
@@ -99,6 +100,12 @@ class Tool:
             self.split_before = split_before
         else:
             raise ValueError("Tools: split_before must be a boolean (True or False)")
+
+        # uncompress_before:
+        if isinstance(uncompress_before, bool):
+            self.uncompress_before = uncompress_before
+        else:
+            raise ValueError("Tools: uncompress_before must be a boolean (True or False)")
 
         # Help:
         self.help = help

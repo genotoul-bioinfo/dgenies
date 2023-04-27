@@ -1235,7 +1235,10 @@ class JobManager:
                      "-u", self.get_query_split(),
                      "-n", self.query.get_name()]
             if self.tool.split_before:
+                # split produces uncompressed files
                 args.append("--split")
+            elif self.tool.uncompress_before:
+                args.append("--keep-uncompressed")
 
         try:
             logger.info("{} - Prepare files: {} {}".format(self.id_job, self.tool.exec, str(args)))
@@ -1250,6 +1253,19 @@ class JobManager:
                                    log_err=self.logs + ".cluster",
                                    scheduled_status="prepare-scheduled")
             status = "prepared"
+            # We update fasta files to uncompressed ones
+            if self.target.get_path().endswith(".gz") and self.tool.uncompress_before:
+                os.remove(self.target.get_path())
+                self.target.set_path(self.target.get_path()[:-3])
+                with open(os.path.join(self.output_dir, ".target"), "w") as save_file:
+                    save_file.write(self.target.get_path())
+            if self.query is not None and self.query.get_path().endswith(".gz") and not self.tool.split_before\
+                    and self.tool.uncompress_before:
+                os.remove(self.query.get_path())
+                self.query.set_path(self.query.get_path()[:-3])
+                with open(os.path.join(self.output_dir, ".query"), "w") as save_file:
+                    save_file.write(self.query.get_path())
+
             # job = Job.get(id_job=self.id_job)
             # job.status = status
             # db.commit()
@@ -1272,7 +1288,7 @@ class JobManager:
             if self.query is not None:
                 fasta_in = self.query.get_path()
                 if self.tool.split_before:
-                    logger.info("{} - Split query file: {}".format(self.id_job, fasta_in))
+                    logger.info("{} - Split query file: {} into {}".format(self.id_job, fasta_in, self.get_query_split()))
                     split = True
                     splitter = Splitter(input_f=fasta_in, name_f=self.query.get_name(), output_f=self.get_query_split(),
                                         query_index=self.query_index_split, debug=DEBUG)
@@ -1290,6 +1306,8 @@ class JobManager:
                     in_fasta = self.query.get_path()
                     if uncompressed is not None:
                         in_fasta = uncompressed
+                        with open(os.path.join(self.output_dir, ".query"), "w") as save_file:
+                            save_file.write(uncompressed)
                 if success:
                     logger.info("{} - Filter query file: {}".format(self.id_job, self.query.get_path()))
                     filtered_fasta = os.path.join(os.path.dirname(self.get_query_split()), "filtered_" +
@@ -1324,7 +1342,7 @@ class JobManager:
                                   replace_fa=True)
                 is_filtered = filter_f.filter()
                 if uncompressed is not None:
-                    if is_filtered:
+                    if is_filtered or self.tool.uncompress_before:
                         # replace original fasta file with filtered one
                         os.remove(self.target.get_path())
                         self.target.set_path(uncompressed)
@@ -2024,7 +2042,6 @@ class JobManager:
                 v = cache[v]
             res[p] = v
         return job_type, res
-
 
     def distribute_files(self, datafiles_with_contexts):
         """
