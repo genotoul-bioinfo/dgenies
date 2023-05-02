@@ -252,7 +252,7 @@ def cleaner():
     """
     Exit DRMAA session at program exit
     """
-    if "DRMAA_SESSION" in globals():
+    if "DRMAA_SESSION" in globals() and DRMAA_SESSION:
         DRMAA_SESSION.exit()
 
 
