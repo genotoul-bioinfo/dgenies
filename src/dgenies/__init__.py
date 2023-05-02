@@ -19,7 +19,6 @@ MODE = "webserver"
 DEBUG = False
 logger = logging.getLogger(__name__)
 logger.addHandler(default_handler)
-logger.setLevel(logging.INFO)
 
 
 def launch(mode="webserver", config=[], tools_config=None, flask_config=None, debug=False):
@@ -48,8 +47,9 @@ def launch(mode="webserver", config=[], tools_config=None, flask_config=None, de
 
     # Init config reader:
     config_reader = AppConfigReader(config)
-    from . import database
-    database.initialize()
+    if mode == "webserver":
+        from . import database
+        database.initialize()
     if tools_config:
         from .tools import Tools
         Tools(tools_config)

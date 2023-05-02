@@ -17,7 +17,6 @@ from glob import glob
 import time
 import datetime
 from dgenies.config_reader import AppConfigReader
-import dgenies.database as database
 from dgenies.bin.clean_jobs import parse_data_folders, parse_database, parse_upload_folders
 import requests
 from requests.exceptions import ConnectionError
@@ -117,7 +116,9 @@ def parse_args():
 
     if 'config' in args and args.config:
         config.reset_config(args.config)
-    database.initialize()
+    if args.mode == "webserver":
+        import dgenies.database as database
+        database.initialize()
 
     if args.subparser_name == "run":
         return "run", [args.mode, args.debug, args.host, args.port, args.no_crons, args.no_browser,

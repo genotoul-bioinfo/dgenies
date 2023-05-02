@@ -10,11 +10,11 @@ import argparse
 import logging
 
 from dgenies.config_reader import AppConfigReader
-import dgenies.database as database
 from dgenies.lib.functions import Functions
 
 logger = logging.getLogger("dgenies")
 config_reader = AppConfigReader()
+
 
 def parse_upload_folders(upload_folder, now, max_age, fake=False):
     """
@@ -169,7 +169,11 @@ def main():
     logger.info("--- Start cleaning old jobs and files ---")
     if args.config:
         config_reader.reset_config(args.config)
-    database.initialize()
+    try:
+        import dgenies.database as database
+        database.initialize()
+    except ImportError:
+        pass
 
     upload_folder = config_reader.upload_folder
     app_data = config_reader.app_data
