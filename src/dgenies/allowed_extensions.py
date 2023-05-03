@@ -1,12 +1,9 @@
 import os.path
 import inspect
+import logging
 import yaml
 from pathlib import Path
-import logging
 from dgenies.lib.decorators import Singleton
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 
 @Singleton
@@ -16,6 +13,7 @@ class AllowedExtensions:
     """
 
     def __init__(self):
+        self.logger = logging.getLogger(__name__)
         self.app_dir = os.path.dirname(inspect.getfile(self.__class__))
 
         # register the tag handler to join list
@@ -39,7 +37,7 @@ class AllowedExtensions:
         if allowed_ext_file is None:
             raise Exception("Configuration file allowed_extensions.yaml not found")
 
-        logging.info("Loading {}".format(allowed_ext_file))
+        self.logger.info("Loading {}".format(allowed_ext_file))
         with open(allowed_ext_file, "r") as yaml_stream:
             extensions = yaml.load(yaml_stream, Loader=yaml.Loader)
 

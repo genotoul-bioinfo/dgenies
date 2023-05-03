@@ -7,8 +7,6 @@ import logging
 from configparser import RawConfigParser, NoOptionError, NoSectionError
 from dgenies.lib.decorators import Singleton
 
-logger = logging.getLogger(__name__)
-
 
 @Singleton
 class AppConfigReader:
@@ -21,6 +19,7 @@ class AppConfigReader:
         All "get_*" functions results are stored in the "self.*" corresponding attribute
         Example: results of the get_upload_folder function is stored in self.upload_folder
         """
+        self.logger = logging.getLogger(__name__)
         self.app_dir = os.path.dirname(inspect.getfile(self.__class__))
         if not config_file:
             config_file_search = [os.path.join(os.path.abspath(os.sep), "dgenies", "application.properties"),
@@ -49,9 +48,9 @@ class AppConfigReader:
 
     def reset_config(self, config_files):
         self.reader = RawConfigParser()
-        logger.info("Reset config")
+        self.logger.info("Reset config")
         for f in config_files:
-            logger.info("Override config with {}".format(f))
+            self.logger.info("Override config with {}".format(f))
         self.reader.read(config_files)
         for attr in dir(self):
             attr_o = getattr(self, attr)

@@ -1,11 +1,12 @@
-#!/usr/bin/env python3
-
 import os
 import logging
+from logging.config import dictConfig
 from flask import Flask
-from flask.logging import default_handler
-from .config_reader import AppConfigReader
 from .lib.crons import Crons
+from .config_reader import AppConfigReader
+# Do not display log unless a logger is defined
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
 
 VERSION = "1.4.0"
 
@@ -17,8 +18,34 @@ mailer = None
 app_folder = None
 MODE = "webserver"
 DEBUG = False
-logger = logging.getLogger(__name__)
-logger.addHandler(default_handler)
+
+
+def set_logger(level='INFO'):
+    dictConfig({
+        'version': 1,
+        'formatters': {
+            'default': {
+                'format': '[%(asctime)s] %(levelname)s in %(module)s: %(message)s',
+            }
+        },
+        'handlers': {
+            'stderr': {
+                'class': 'logging.StreamHandler',
+                'stream': 'ext://sys.stderr',
+                'formatter': 'default'
+            }
+        },
+        'loggers': {
+            __name__: {
+                'level': level,
+                'handlers': ['stderr']
+            },
+            'werkzeug': {
+                'level': level,
+                'handlers': ['stderr']
+            }
+        }
+    })
 
 
 def launch(mode="webserver", config=[], tools_config=None, flask_config=None, debug=False):
@@ -43,7 +70,7 @@ def launch(mode="webserver", config=[], tools_config=None, flask_config=None, de
 
     MODE = mode
     DEBUG = debug
-    logger.setLevel(logging.DEBUG if DEBUG else logging.INFO)
+    set_logger(level=logging.DEBUG if DEBUG else logging.INFO)
 
     # Init config reader:
     config_reader = AppConfigReader(config)
