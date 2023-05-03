@@ -78,13 +78,15 @@ Example:
 
 ## Backup file
 
-Backup file is a TAR archive that can be gzipped. It contains three files:
+Backup file is a TAR archive that can be gzipped. It contains four files:
 
 * The alignment file, in paf format, named `map.paf`.
 * The target index, named `target.idx`.
 * The query index, named `query.idx`.
+* The log file, named `logs.txt`.
 
 Names of files must be kept. Otherwise, the backup file will not be accepted by the run form.
+When uploading a backup file for a plot job, `logs.txt` can be omitted.
 
 ## Batch file
 
@@ -94,11 +96,15 @@ Each job parameter is described by a `key=value` syntax. Parameters must be sepa
 
 Job type is defined by the key `type`. It can be either an new align job or a plot job. The key takes value respectively `align` or `plot`.
 
+When a file is used, it can be either a local file name in `User files` listing, or an url.
+
+Comments starts with a `#` and ends at the end of the line. 
+
 ### New align job
 
 A new align job is descibed with the following template.
 
-    type=align target=<target_url> query=<query_url> tool=<tool_id> options=<option_id1>,<option_id2> ...
+    type=align target=<target_file> query=<query_file> tool=<tool_id> options=<option_id1>,<option_id2> ...
 
 *Mandatory parameters*:
 
@@ -118,18 +124,18 @@ For `options` key, `option_id` values must be separated by a coma. The possible 
 
 A plot job can use two possible patterns:
 
-    type=plot align=<paf_url> target=<target_url> query=<query_url> ...
+    type=plot align=<paf_file> target=<target_file> query=<query_file> ...
 
 or
 
-    type=plot backup="<backup_url>" ...
+    type=plot backup="<backup_file>" ...
 
 *Mandatory parameters*:
 
 - `type=plot`: we set the job type to plot job
 - exclusive:
-    - `align`, `target` and `query`: respectively an alignment file in [paf format](paf-pairwise-mapping-format), a [target index](#index-file), and a [query index](#index-file)
-    - `backup`: a [backup file](#backup-file) 
+    - `align`, `target` and `query`: respectively an alignment file in [paf format](paf-pairwise-mapping-format), a [target index](#index-file) or target fasta, and a [query index](#index-file) or query fasta.
+    - `backup`: a [backup file](#backup-file).
 
 *Optional parameters*:
 

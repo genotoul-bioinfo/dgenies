@@ -250,7 +250,7 @@ Configuration file location:
 
 A good practice, when editing the D-Genies configuration, is to copy `application.properties` to `application.properties.local` (at the same location), and modify `application.properties.local`. It avoids to erase of the file on upgrades.
 
-The configuration file is divided in 9 sections described below.
+The configuration file is divided in 10 sections described below. The configuration file is also fully commented.
 
 ### Global
 
@@ -265,7 +265,6 @@ Main parameters are stored into this section:
 - `max_upload_file_size`: max size of the uploaded size (real size of the file, compressed or not, -1 to avoid the limit).
 - `max_nb_lines`: Maximum number of lines displayed for paf file (default: 100000).
 - `max_nb_jobs_in_batch_mode`: Maximum number of jobs allowed for batch mode
-- `max_download_sessions`: Maximum number of download sessions (one session per job) for downloading distant data (if user gives url as input).
 
 For webserver mode only (ignored in standalone mode):
 
@@ -321,6 +320,16 @@ If type is mysql, some other parameters must be filled:
 - `db`: name of the database.
 - `user`: username to connect to the database.
 - `password`: the associated password.
+
+### Session
+
+This section defines sessions limits
+
+You can define the maximum number of download sessions (one session per job) for downloading distant data (if user gives url as input).
+
+- `max_download_sessions`: Maximum number of download sessions (one session per job) for downloading distant data (if user gives url as input).
+
+You can also change some delay for webserver mode (for expert, just left them by default else)
 
 ### Mail
 
