@@ -8,7 +8,7 @@ from .config_reader import AppConfigReader
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
-VERSION = "1.4.0"
+VERSION = "1.5.0"
 
 app = None
 app_title = None
