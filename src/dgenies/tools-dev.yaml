@@ -43,7 +43,7 @@ minimap2:
       entries:
         -
           key: cigar
-          label: Enable
+          label: Cigar
           value: "-c"
           help: "Enable/Disable CIGAR annotations. Side effect is that the alignment strategy done by minimap2 is changed"
 
