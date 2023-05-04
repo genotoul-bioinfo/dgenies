@@ -116,7 +116,7 @@ def parse_args():
 
     if 'config' in args and args.config:
         config.reset_config(args.config)
-    if args.mode == "webserver":
+    if 'mode' in args and args.mode == "webserver":
         import dgenies.database as database
         database.initialize()
 
