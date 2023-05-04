@@ -17,6 +17,7 @@ if os.name == "posix":
 
     data_files = [(config_dir, ['application.properties']),
                   (config_dir, ['allowed_extensions.yaml']),
+                  (config_dir, ['flask_config.py']),
                   (config_dir, ['tools.yaml']),
                   (wsgi_dir, ['dgenies.wsgi'])]
 
