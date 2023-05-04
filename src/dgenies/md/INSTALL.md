@@ -302,8 +302,9 @@ Other parameters:
 - `python3_exec`: path to python3 executable on the cluster.
 - `memory`: max memory to reserve on the cluster.
 - `memory_ava`: max memory to reserve on the cluster in all-vs-all mode (should be higher than memory).
-- `walltime_prepare`: max running time on cluster for prepare step. Only avaible with slurm.
-- `walltime_align`: max running time on cluster for align step. Only avaible with slurm.
+- `walltime`: max running time on cluster for any step. Only avaible with slurm.
+- `walltime_prepare`: max running time on cluster for prepare step. Only avaible with slurm. Overides `walltime`.
+- `walltime_align`: max running time on cluster for align step. Only avaible with slurm. Overides `walltime`.
 
 ### Database
 

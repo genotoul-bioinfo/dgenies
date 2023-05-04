@@ -6,9 +6,9 @@ How to run a job?
 Launch a new mapping between two fasta files and dot plot it.
 
 {% if mode == "webserver" %}
-![illustrating](/static/images/D-GENIES-run_na.png)
+<img src="/static/images/D-GENIES-run_na.png" alt="illustrating" width="100%"/>
 {% else %}
-![illustrating](/static/images/D-GENIES-run-standalone_na.png)
+<img src="/static/images/D-GENIES-run-standalone_na.png" alt="illustrating" width="100%"/>
 {% endif %}
 
 {% set puce=1 %}
@@ -65,20 +65,25 @@ Max file size: {{size}} ({{size_unc}} once uncompressed)
 
 #### ({{puce}}) Aligner
 
-You can choose aligner to use for mapping. By default, it's minimap2.
+You can choose aligner to use for mapping. By default, it's `minimap2`.
 
-If your job fails due to memory limit reached, you can try mashmap. It uses less resources. But is only suitable for highly similar genomes as it only detect matches with more than 75% of identity.
+If your job fails due to memory limit reached, you can try `mashmap`. It uses less resources. But is only suitable for highly similar genomes as it only detect matches with more than 75% of identity.
 
 {% set puce=puce+1 %}
+#### ({{puce}}) Aligner options
+
+If the aligner as some options, you can choose some. For `minimap2`, we provide a `repeatedness` option which is related to number of repetitions found in sequences. By default, it is set to `few repeats` which is the current minimap2 default (`-k 0.0002` in minimap2 parameters). 
+
+If your job fails due to memory limit or computation walltime reached, you can use `some repeats` (`-k 0.002`) or `many repeats` (`-k 0.02`) as an alternative to `mashmap`.
 
 ### Plot alignment mode
 
 Dot plot an existing alignment file.
 
 {% if mode == "webserver" %}
-![illustrating](/static/images/D-GENIES-run_pa.png)
+<img src="/static/images/D-GENIES-run_pa.png" alt="illustrating" width="100%"/>
 {% else %}
-![illustrating](/static/images/D-GENIES-run-standalone_pa.png)
+<img src="/static/images/D-GENIES-run-standalone_pa.png" alt="illustrating" width="100%"/>
 {% endif %}
 
 {% if mode == "webserver" %}
@@ -134,3 +139,63 @@ Optional field
 If you downloaded the backup file from a previous job, you can enter it here to restore the dot plot. In this case, don't fill previous fields, only this one is required.
 
 With the selector at the left, you can choose to select a local file or enter an URL. For a local file, click on the button at the right to select it.
+
+{% set puce=puce+1 %}
+
+### Batch mode
+
+Launch a batch of jobs, composed of a new alignments and plots.
+
+{% if mode == "webserver" %}
+<img src="/static/images/D-GENIES-run_ba.png" alt="illustrating" width="100%"/>
+{% else %}
+<img src="/static/images/D-GENIES-run-standalone_ba.png" alt="illustrating" width="100%"/>
+{% endif %}
+
+For numbers from 1 to {% if mode == "webserver" %}3{% else %}2{% endif %}, see previous section.
+
+{% if mode == "webserver" %}
+{% set puce=4 %}
+{% else %}
+{% set puce=3 %}
+{% endif %}
+
+#### ({{puce}}) Batch file
+
+Optional field
+
+Load a text file that will populate the text box field under. Syntax describing jobs can be found at [batch format description](/documentation/formats#batch-file) page.
+
+{% set puce=puce+1 %}
+
+#### ({{puce}}) Batch jobs
+
+Required field
+
+Batch jobs described in as text. Expected syntax can be found at [batch format description](/documentation/formats#batch-file) page.
+
+It can be populate by loading a file in `Batch file` field, but also by copy-pasting text directly or drag-dropping text file on it.
+
+Some text editor shortcuts, like `CTRL+Z` for undo or `CTRL+SHIT+Z` for redo, can be use in this text box.
+
+{% set puce=puce+1 %}
+
+#### ({{puce}}) User files
+
+Optional field, depending of `Batch jobs` field content.
+
+
+Local files must be added here either by clicking on `Add files...` button or by drag-dropping files or directories on file listing. 
+
+Each files can be removed individually by clicking on its trash button in the listing.
+
+Unused files can be directly removed from listing by clicking on `Remove unused` and all files can be removed by clicking on `Clear All` button.   
+
+
+{% set puce=puce+1 %}
+
+#### ({{puce}}) Quick help for tools
+
+Not an input field
+
+This menu describes the syntax expected for tools and their options .
