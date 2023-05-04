@@ -2,7 +2,7 @@
 
 ## 1.5.0 (2023-0x-xx)
 
-### Major change
+### Changes
 
 If you run dgenies in webserver mode, database schema has changed.
 
@@ -19,25 +19,24 @@ For users:
 	- Batch content checked in web interface
   - Single upload per file
   - Batch file format has changed, in particular, option keys have been change to be more comprehensible. Please read the doc.
+- Dotplot:
+  - Files generated through "Query Fasta" and "Query assembled as reference" are updated if new sorting and contig reversal are done.
+  - Files linked in email are stable until the job is cleanned. They dont change if sort and contig reversal are updated.
+  - You can reset the sort (usefull when playing with manual contig reversal)
+  - "Query assembled as reference" file is now compressed in webserver mode.
 - Job logs are now available to download and are included in backup file.
 - Update user interface to `bootstrap 4.6`
 
-For sysadmin
+For sysadmin:
 - Tools config file format (`tools.yaml`) has changed. Please update it if you use a custom one.
 - Basic app logging.
 - Configuration files:
   - In `application.properties`, `batch_system_type` was renamed to `runner_type` in order to avoid confusion with batch jobs intoduced with dgenies 1.4.
+  - Cluster `walltime` can be set in the config file.
   - In database, the column `batch_type` was changed to `runner_type` in `job` table. 
   - It is possible to set config files directly when running dgenies with `--config` and `--tools-config` options. Please be careful to use the correct config files when managing a running instance of dgenies.
   - It is now possible to use a the option `--flask-config` in order to set some flask options. You can use it to set some email server parameters.
-
-### Minor changes
-
-- Dotplot:
-  - You can reset the sort (usefull when plying with manual contig reversal)
-  - 'Query as reference' download is now compressed in webserver mode.
-- For sysadmin:
-  - For server mode, the number of download sessions in parallel, can be now set with `max_download_sessions` (default is alway `5`). Session delays can also be modified now.
+  - For server mode, the number of download sessions in parallel can be now set with `max_download_sessions` (default is alway `5`). Session delays can also be modified now.
   - Reinforce tar file checking
   - Drop Flask<2
 
