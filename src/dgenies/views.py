@@ -1233,9 +1233,11 @@ def get_viewer_html(id_res):
         res = paf.get_d3js_data()
         res["success"] = True
         percents = paf.get_summary_stats()
-        with open(os.path.join(app_folder, "static", "js", "dgenies-offline-result.min.js"), "r") as js_min:
+        with open(os.path.join(app_folder, "static", "js", "dgenies-offline-result.min.js"), "r", encoding="utf-8") \
+                as js_min:
             js = js_min.read()
-        with open(os.path.join(app_folder, "static", "css", "dgenies-offline-result.min.css"), "r") as css_min:
+        with open(os.path.join(app_folder, "static", "css", "dgenies-offline-result.min.css"), "r", encoding="utf-8") \
+                as css_min:
             css = css_min.read()
         return render_template("map_offline.html", json=json.dumps(res), version=VERSION, js=js, css=css,
                                percents=percents)
