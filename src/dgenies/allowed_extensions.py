@@ -26,7 +26,7 @@ class AllowedExtensions:
             "/etc/dgenies/allowed_extensions.yaml",
             "/etc/dgenies/allowed_extensions.yaml.local",
             os.path.join(app_dir, "..", "etc", "dgenies", "allowed_extensions.yaml"),
-            os.path.join(app_dir, "allowed_extensions-dev.yaml"),
+            os.path.join(app_dir, "allowed_extensions.yaml"),
         )
 
         allowed_ext_file = None
