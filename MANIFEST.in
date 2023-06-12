@@ -15,6 +15,6 @@ recursive-include src *.woff2
 recursive-include src *.md
 include src/dgenies/bin/*
 include requirements.txt
-include allowed_extensions.yaml
+include src/dgenies/allowed_extensions.yaml
 include LICENSE.txt
 include README.md
