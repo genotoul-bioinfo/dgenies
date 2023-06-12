@@ -40,42 +40,42 @@ d3.dgenies.color_idy = {
         "2": "#2ebd40",
         "1": "#d5670b",
         "0": "#ffd84b",
-        "-1": "#fff"
+//        "-1": "#fff"
     },
     "colorblind": {
         "3": "#000",
         "2": "#006DDB",
         "1": "#DB6E00",
         "0": "#FFB677",
-        "-1": "#fff"
+//        "-1": "#fff"
     },
     "black&white": {
         "3": "#000",
         "2": "#626262",
         "1": "#9c9c9c",
         "0": "#DDDCDC",
-        "-1": "#fff"
+//        "-1": "#fff"
     },
     "r_default": {
         "3": "#7fff65",
         "2": "#238d31",
         "1": "#78410d",
         "0": "#3b080a",
-        "-1": "#fff"
+//        "-1": "#fff"
     },
     "r_colorblind": {
         "3": "#8c8c8c",
         "2": "#006DDB",
         "1": "#783c00",
         "0": "#312515",
-        "-1": "#fff"
+//        "-1": "#fff"
     },
     "allblack": {
         "3": "#000",
         "2": "#000",
         "1": "#000",
         "0": "#000",
-        "-1": "#fff"
+//        "-1": "#fff"
     }
 };
 d3.dgenies.limit_idy = null;
@@ -873,8 +873,7 @@ d3.dgenies._sort_lines_by_idy = function(l1, l2) {
 d3.dgenies.__lineFunction = function(d, min_size=0, max_size=null, x_len, y_len) {
     d = d.sort(d3.dgenies._sort_lines_by_idy);
     let path = [];
-    for (let i=0; i < d.length; i++) {
-        let d_i = d[i];
+    for (let d_i of d) {
         let x1 = d_i[0] / x_len * d3.dgenies.scale;
         let x2 = d_i[1] / x_len * d3.dgenies.scale;
         let y1 = d3.dgenies.scale - (d_i[2] / y_len * d3.dgenies.scale);
