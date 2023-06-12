@@ -1112,6 +1112,8 @@ h2.batch {
 
 div#sidebar {
     position: relative;
+    /* padding for delete button */
+    padding-bottom: 50px;
 }
 
 div#sidebar p.bottom {
