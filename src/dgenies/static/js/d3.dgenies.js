@@ -29,6 +29,7 @@ d3.dgenies.old_translate = null;
 
 //Graphical parameters:
 d3.dgenies.scale = 1000;
+d3.dgenies.axis_length = 500;
 d3.dgenies.content_lines_width = d3.dgenies.scale / 400;
 d3.dgenies.break_lines_width = d3.dgenies.scale / 1500;
 d3.dgenies.color_idy_theme = "default";
@@ -88,6 +89,12 @@ d3.dgenies.break_lines_show = true;
 d3.dgenies.zoom_scale_lines = 1; // Zoom scale used for lines width
 d3.dgenies.tick_width = 0.5;
 d3.dgenies.color_mixes = "#969696";
+
+//Container sizes (relative ones on a 100 scale)
+d3.dgenies.container_axis_thickness = 5;
+d3.dgenies.container_track_thickness = 3;
+d3.dgenies.container_dotplot_width = 100 - d3.dgenies.container_axis_thickness - d3.dgenies.container_track_thickness;
+d3.dgenies.container_dotplot_height = d3.dgenies.container_dotplot_width;
 
 //Filter sizes:
 d3.dgenies.min_sizes = [0, 0.01, 0.02, 0.03, 0.05, 1, 2];
@@ -269,9 +276,11 @@ d3.dgenies.select_zone = function (x=null, y=null, x_zone=null, y_zone=null, for
             let pseudo_x_zones = {};
             pseudo_x_zones[x_zone] = [0, d3.dgenies.x_len];
             d3.dgenies.draw_top_axis(pseudo_x_zones);
+            d3.dgenies.draw_top_track(pseudo_x_zones);
             let pseudo_y_zones = {};
             pseudo_y_zones[y_zone] = [0, d3.dgenies.y_len];
             d3.dgenies.draw_right_axis(pseudo_y_zones);
+            d3.dgenies.draw_right_track(pseudo_y_zones);
 
             d3.dgenies.zoom_enabled = false;
         }
@@ -310,16 +319,16 @@ d3.dgenies.get_human_readable_size = function (nbases, precision=1, space=" ") {
  * @param {int} y_min min value of y on the Y axis
  */
 d3.dgenies.draw_left_axis = function (y_max, y_min = 0) {
-    let axis_length = 500;
+    let axis_length = d3.dgenies.axis_length;
 
     $("svg.left-axis").remove(); //Remove previous axis (if any)
 
     let svg_left = d3.dgenies.svgsupercontainer.append("svg:svg")
         .attr("class", "axis left-axis")
-        .attr("width", 5)
-        .attr("height", 90)
+        .attr("width", d3.dgenies.container_axis_thickness)
+        .attr("height", d3.dgenies.container_dotplot_height - d3.dgenies.container_axis_thickness)
         .attr("x", 0)
-        .attr("y", 5)
+        .attr("y", d3.dgenies.container_axis_thickness + d3.dgenies.container_track_thickness)
         .attr("viewBox", "0 0 20 " + axis_length)
         .attr("preserveAspectRatio", "none");
 
@@ -360,16 +369,16 @@ d3.dgenies.draw_left_axis = function (y_max, y_min = 0) {
  */
 d3.dgenies.draw_bottom_axis = function (x_max, x_min = 0) {
 
-    let axis_length = 500;
+    let axis_length = d3.dgenies.axis_length;
 
     $("svg.bottom-axis").remove(); //Remove previous axis (if any)
 
     let svg_bottom = d3.dgenies.svgsupercontainer.append("svg:svg")
         .attr("class", "axis bottom-axis")
-        .attr("width", 90)
-        .attr("height", 5)
-        .attr("x", 5)
-        .attr("y", 95)
+        .attr("width", d3.dgenies.container_dotplot_width - d3.dgenies.container_axis_thickness)
+        .attr("height", d3.dgenies.container_axis_thickness)
+        .attr("x", d3.dgenies.container_axis_thickness)
+        .attr("y", d3.dgenies.container_dotplot_height + d3.dgenies.container_track_thickness)
         .attr("viewBox", "0 0 " + axis_length + " 20")
         .attr("preserveAspectRatio", "none");
 
@@ -450,12 +459,12 @@ d3.dgenies.draw_top_axis = function (x_zones=d3.dgenies.x_zones) {
     let sc_regex = /scale\(([^,)]+)(,([^)]+))?\)/;
     let scale = parseFloat(transform.match(sc_regex)[1]);
 
-    let axis_length = 500;
+    let axis_length = d3.dgenies.axis_length;
     let svg_top = d3.dgenies.svgsupercontainer.append("svg:svg")
-        .attr("class", "top-axis axis")
-        .attr("width", 90)
-        .attr("height", 5)
-        .attr("x", 5)
+        .attr("class", "axis top-axis")
+        .attr("width", d3.dgenies.container_dotplot_width - d3.dgenies.container_axis_thickness)
+        .attr("height", d3.dgenies.container_axis_thickness)
+        .attr("x", d3.dgenies.container_axis_thickness)
         .attr("y", 0)
         .attr("viewBox", "0 0 " + axis_length + " 20")
         .attr("preserveAspectRatio", "none");
@@ -544,13 +553,13 @@ d3.dgenies.draw_right_axis = function (y_zones=d3.dgenies.y_zones) {
     let sc_regex = /scale\(([^,)]+)(,([^)]+))?\)/;
     let scale = parseFloat(transform.match(sc_regex)[3] !== undefined ? transform.match(sc_regex)[3] : transform.match(sc_regex)[1]);
 
-    let axis_length = 500;
+    let axis_length = d3.dgenies.axis_length;
     let svg_right = d3.dgenies.svgsupercontainer.append("svg:svg")
-        .attr("class", "right-axis")
-        .attr("width", 5)
-        .attr("height", 90)
-        .attr("x", 95)
-        .attr("y", 5)
+        .attr("class", "axis right-axis")
+        .attr("width", d3.dgenies.container_axis_thickness)
+        .attr("height", d3.dgenies.container_dotplot_height - d3.dgenies.container_axis_thickness)
+        .attr("x", d3.dgenies.container_dotplot_width + d3.dgenies.container_track_thickness)
+        .attr("y", d3.dgenies.container_axis_thickness + d3.dgenies.container_track_thickness)
         .attr("viewBox", "0 0 20 " + axis_length)
         .attr("preserveAspectRatio", "none");
 
@@ -625,6 +634,68 @@ d3.dgenies.draw_right_axis = function (y_zones=d3.dgenies.y_zones) {
         nb_zone--;
     }
 };
+
+
+/**
+ * Draw top track
+ *
+ * @param {object} x_zones name of contigs of the query
+ */
+d3.dgenies.draw_top_track = function (x_zones = d3.dgenies.x_zones) {
+
+    let axis_length = d3.dgenies.axis_length;
+
+    $("svg.top-track").remove();  //Remove previous track (if any)
+
+    let svg_top = d3.dgenies.svgsupercontainer.append("svg:svg")
+        .attr("class", "track top-track")
+        .attr("width", d3.dgenies.container_dotplot_width - d3.dgenies.container_axis_thickness)
+        .attr("height", d3.dgenies.container_track_thickness)
+        .attr("x", d3.dgenies.container_axis_thickness)
+        .attr("y", d3.dgenies.container_axis_thickness)
+        .attr("viewBox", "0 0 " + axis_length + " 20")
+        .attr("preserveAspectRatio", "none");
+
+    svg_top.append("rect")
+        .attr("x", 0)
+        .attr("y", 0)
+        .attr("width", "100%")
+        .attr("height", "100%")
+        .attr("fill", "#ff0000")
+        .attr("stroke", "none")
+}
+
+
+/**
+ * Draw right track
+ *
+ * @param {object} x_zones name of contigs of the query
+ */
+d3.dgenies.draw_right_track = function (x_zones = d3.dgenies.x_zones) {
+
+    let axis_length = d3.dgenies.axis_length;
+
+    $("svg.right-track").remove();  //Remove previous track (if any)
+
+    let svg_right = d3.dgenies.svgsupercontainer.append("svg:svg")
+        .attr("class", "track right-track")
+        .attr("width", d3.dgenies.container_track_thickness)
+        .attr("height", d3.dgenies.container_dotplot_height - d3.dgenies.container_axis_thickness)
+        .attr("x", d3.dgenies.container_dotplot_width)
+        .attr("y", d3.dgenies.container_axis_thickness + d3.dgenies.container_track_thickness)
+        .attr("viewBox", "0 0 " + axis_length + " 20")
+        .attr("preserveAspectRatio", "none");
+
+    svg_right.append("rect")
+        .attr("x", 0)
+        .attr("y", 0)
+        .attr("width", "100%")
+        .attr("height", "100%")
+        .attr("fill", "#00ff00")
+        .attr("stroke", "none")
+}
+
+
 
 /**
  * Draw backgrounds of all axis
@@ -930,10 +1001,10 @@ d3.dgenies.draw = function (x_contigs, x_order, y_contigs, y_order) {
         .attr("fill", "white");
     d3.dgenies.svgcontainer = drawcontainer.append("svg:svg")
         .attr("class", "svgcontainer")
-        .attr("width", 90)
-        .attr("height", 90)
-        .attr("x", 5)
-        .attr("y", 5)
+        .attr("width", d3.dgenies.container_dotplot_width - d3.dgenies.container_axis_thickness)
+        .attr("height", d3.dgenies.container_dotplot_height - d3.dgenies.container_axis_thickness)
+        .attr("x", d3.dgenies.container_axis_thickness)
+        .attr("y", d3.dgenies.container_axis_thickness + d3.dgenies.container_track_thickness)
         .attr("viewBox", "0 0 " + d3.dgenies.scale + " " + d3.dgenies.scale)
         .attr("preserveAspectRatio", "none");
 
@@ -999,6 +1070,8 @@ d3.dgenies.draw = function (x_contigs, x_order, y_contigs, y_order) {
     d3.dgenies.draw_bottom_axis(d3.dgenies.x_len);
     d3.dgenies.draw_top_axis(d3.dgenies.x_zones);
     d3.dgenies.draw_right_axis(d3.dgenies.y_zones);
+    d3.dgenies.draw_top_track(d3.dgenies.x_zones);
+    d3.dgenies.draw_right_track(d3.dgenies.y_zones);
 
     window.setTimeout(() => {
         //Data:
