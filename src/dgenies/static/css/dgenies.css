@@ -1123,9 +1123,6 @@ div#sidebar p.bottom {
     width: 100px;
 }
 
-div#sidebar p.bottom input#delete-job {
-    background: #ffbba8 !important;
-}
 
 ul.nav ul.dropdown-menu {
     max-height: 300px;
