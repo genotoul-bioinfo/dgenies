@@ -17,10 +17,12 @@ from dgenies.lib.paf import Paf
 from dgenies.lib.job_manager import JobManager
 from dgenies.lib.functions import Functions
 from dgenies.allowed_extensions import AllowedExtensions
+from dgenies.lib.track import Track, DGeniesIncorrectTrackFileError
 from dgenies.lib.upload_file import UploadFile
 from dgenies.lib.datafile import DataFile
-from dgenies.lib.exceptions import DGeniesExampleNotAvailable, DGeniesExampleInvalid, DGeniesJobCheckError,\
-    DGeniesMissingJobError, DGeniesDeleteGalleryJobForbidden, DGeniesUnknownToolError, DGeniesUnknownOptionError
+from dgenies.lib.exceptions import DGeniesExampleNotAvailable, DGeniesExampleInvalid, DGeniesJobCheckError, \
+    DGeniesMissingJobError, DGeniesDeleteGalleryJobForbidden, DGeniesUnknownToolError, DGeniesUnknownOptionError, \
+    DGeniesMessageException
 from dgenies.lib.latest import Latest
 from dgenies.tools import Tools
 from markdown import Markdown
@@ -270,7 +272,7 @@ def update_files(jobs: list, upload_folder: str):
     jobs:
     """
     # entries with a potential file
-    file_roles = ["query", "target", "align", "backup"]
+    file_roles = ["query", "target", "query_track", "target_track",  "align", "backup"]
     # entries with a potential example
     roles_with_example = {k: getattr(config_reader, "example_{}".format(k)) for k in ["query", "target", "backup"]}
     datafiles = dict()  # cache for deduplication
@@ -348,6 +350,10 @@ def launch_analysis():
                 ("query_type", "query_type"),
                 ("target", "target"),
                 ("target_type", "target_type"),
+                ("query_track", "querytrack"),
+                ("query_track_type", "querytrack_type"),
+                ("target_track", "targettrack"),
+                ("target_track_type", "targettrack_type"),
                 ("tool", "tool"),
                 ("align", "alignfile"),
                 ("align_type", "alignfile_type"),
@@ -734,15 +740,32 @@ def get_graph():
     idx2 = os.path.join(APP_DATA, id_f, "target.idx")
 
     paf = Paf(paf, idx1, idx2)
+    try:
+        if paf.parsed:
+            valid = os.path.join(APP_DATA, id_f, ".valid")
+            if not os.path.exists(valid):
+                Path(valid).touch()
+            res = paf.get_d3js_data()
 
-    if paf.parsed:
-        valid = os.path.join(APP_DATA, id_f, ".valid")
-        if not os.path.exists(valid):
-            Path(valid).touch()
-        res = paf.get_d3js_data()
-        res["success"] = True
-        return jsonify(res)
-    return jsonify({"success": False, "message": paf.error})
+            track1_file = os.path.join(APP_DATA, id_f, ".query_track")
+            track1 = Track.load(track1_file, idx1)
+            if track1:
+                res["y_track"] = track1.get_d3js_data()
+
+            track2_file = os.path.join(APP_DATA, id_f, ".target_track")
+            track2 = Track.load(track2_file, idx2)
+            if track2:
+                res["x_track"] = track2.get_d3js_data()
+
+            res["success"] = True
+            return jsonify(res)
+        return jsonify({"success": False, "message": paf.error})
+    except DGeniesMessageException as e:
+        logger.exception(e.message, exc_info=True)
+        return jsonify({"success": False, "message": e.message})
+    except BaseException as e:
+        logger.exception(e, exc_info=True)
+        return jsonify({"success": False, "message": "Unknown error appended"})
 
 
 @app.route('/sort/<id_res>', methods=['POST'])
@@ -753,18 +776,35 @@ def sort_graph(id_res):
     :param id_res: job id
     :type id_res: str
     """
-    if not os.path.exists(os.path.join(APP_DATA, id_res, ".all-vs-all")):
-        paf_file = os.path.join(APP_DATA, id_res, "map.paf")
-        idx1 = os.path.join(APP_DATA, id_res, "query.idx")
-        idx2 = os.path.join(APP_DATA, id_res, "target.idx")
-        paf = Paf(paf_file, idx1, idx2, False)
-        paf.sort()
-        if paf.parsed:
-            res = paf.get_d3js_data()
-            res["success"] = True
-            return jsonify(res)
-        return jsonify({"success": False, "message": paf.error})
-    return jsonify({"success": False, "message": "Sort is not available for All-vs-All mode"})
+    try:
+        if not os.path.exists(os.path.join(APP_DATA, id_res, ".all-vs-all")):
+            paf_file = os.path.join(APP_DATA, id_res, "map.paf")
+            idx1 = os.path.join(APP_DATA, id_res, "query.idx")
+            idx2 = os.path.join(APP_DATA, id_res, "target.idx")
+            paf = Paf(paf_file, idx1, idx2, False)
+            paf.sort()
+            if paf.parsed:
+                res = paf.get_d3js_data()
+                track1_file = os.path.join(APP_DATA, id_res, ".query_track")
+                track1 = Track.load(track1_file, idx1)
+                if track1:
+                    res["y_track"] = track1.get_d3js_data()
+
+                track2_file = os.path.join(APP_DATA, id_res, ".target_track")
+                track2 = Track.load(track2_file, idx2)
+                if track2:
+                    res["x_track"] = track2.get_d3js_data()
+
+                res["success"] = True
+                return jsonify(res)
+            return jsonify({"success": False, "message": paf.error})
+        return jsonify({"success": False, "message": "Sort is not available for All-vs-All mode"})
+    except DGeniesMessageException as e:
+        logger.exception(e.message, exc_info=True)
+        return jsonify({"success": False, "message": e.message})
+    except BaseException as e:
+        logger.exception(e, exc_info=True)
+        return jsonify({"success": False, "message": "Unknown error appended"})
 
 
 @app.route('/reset-sort/<id_res>', methods=['POST'])
@@ -787,12 +827,30 @@ def reset_sort(id_res):
     paf = Paf(paf, idx1, idx2)
     # Force refresh the sorted query file.
     Path(os.path.join(APP_DATA, id_res, ".new-reversals")).touch()
+    try:
+        if paf.parsed:
+            res = paf.get_d3js_data()
 
-    if paf.parsed:
-        res = paf.get_d3js_data()
-        res["success"] = True
-        return jsonify(res)
-    return jsonify({"success": False, "message": paf.error})
+            track1_file = os.path.join(APP_DATA, id_res, ".query_track")
+            track1 = Track.load(track1_file, idx1)
+            if track1:
+                res["y_track"] = track1.get_d3js_data()
+
+            track2_file = os.path.join(APP_DATA, id_res, ".target_track")
+            track2 = Track.load(track2_file, idx2)
+            if track2:
+                res["x_track"] = track2.get_d3js_data()
+
+            res["success"] = True
+            return jsonify(res)
+        return jsonify({"success": False, "message": paf.error})
+    except DGeniesMessageException as e:
+        logger.exception(e.message, exc_info=True)
+        return jsonify({"success": False, "message": e.message})
+    except BaseException as e:
+        logger.exception(e, exc_info=True)
+        return jsonify({"success": False, "message": "Unknown error appended"})
+
 
 
 @app.route('/reverse-contig/<id_res>', methods=['POST'])
@@ -804,19 +862,37 @@ def reverse_contig(id_res):
     :type id_res: str
     """
     contig_name = request.form["contig"]
-    if not os.path.exists(os.path.join(APP_DATA, id_res, ".all-vs-all")):
-        paf_file = os.path.join(APP_DATA, id_res, "map.paf")
-        idx1 = os.path.join(APP_DATA, id_res, "query.idx")
-        idx2 = os.path.join(APP_DATA, id_res, "target.idx")
-        paf = Paf(paf_file, idx1, idx2, False)
-        Path(os.path.join(APP_DATA, id_res, ".new-reversals")).touch()
-        paf.reverse_contig(contig_name)
-        if paf.parsed:
-            res = paf.get_d3js_data()
-            res["success"] = True
-            return jsonify(res)
-        return jsonify({"success": False, "message": paf.error})
-    return jsonify({"success": False, "message": "Sort is not available for All-vs-All mode"})
+    try:
+        if not os.path.exists(os.path.join(APP_DATA, id_res, ".all-vs-all")):
+            paf_file = os.path.join(APP_DATA, id_res, "map.paf")
+            idx1 = os.path.join(APP_DATA, id_res, "query.idx")
+            idx2 = os.path.join(APP_DATA, id_res, "target.idx")
+            paf = Paf(paf_file, idx1, idx2, False)
+            Path(os.path.join(APP_DATA, id_res, ".new-reversals")).touch()
+            paf.reverse_contig(contig_name)
+            if paf.parsed:
+                res = paf.get_d3js_data()
+
+                track1_file = os.path.join(APP_DATA, id_res, ".query_track")
+                track1 = Track.load(track1_file, idx1)
+                if track1:
+                    res["y_track"] = track1.get_d3js_data()
+
+                track2_file = os.path.join(APP_DATA, id_res, ".target_track")
+                track2 = Track.load(track2_file, idx2)
+                if track2:
+                    res["x_track"] = track2.get_d3js_data()
+
+                res["success"] = True
+                return jsonify(res)
+            return jsonify({"success": False, "message": paf.error})
+        return jsonify({"success": False, "message": "Sort is not available for All-vs-All mode"})
+    except DGeniesMessageException as e:
+        logger.exception(e.message, exc_info=True)
+        return jsonify({"success": False, "message": e.message})
+    except BaseException as e:
+        logger.exception(e, exc_info=True)
+        return jsonify({"success": False, "message": "Unknown error appended"})
 
 
 @app.route('/freenoise/<id_res>', methods=['POST'])

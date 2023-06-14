@@ -54,7 +54,9 @@ class JobManager:
     """
 
     def __init__(self, id_job, email=None, query: DataFile = None, target: DataFile = None, mailer=None,
-                 tool="minimap2", align: DataFile = None, backup: DataFile = None, batch=None, options=None):
+                 tool="minimap2", align: DataFile = None, query_track: DataFile = None, target_track: DataFile = None,
+                 backup: DataFile = None,
+                 batch=None, options=None):
         """
         This object will be used in two states:
          - A full state for creating, launching jobs, send emails
@@ -93,6 +95,12 @@ class JobManager:
             self.aln_format = self.get_align_format(align.get_path())
         self.backup = backup
         self.batch = batch
+        self.query_track = query_track
+        if query_track is not None:
+            self.query_track_format = self.get_track_format(query_track.get_path())
+        self.target_track = target_track
+        if target_track is not None:
+            self.target_track_format = self.get_track_format(target_track.get_path())
         self.error = ""
         self.id_process = "-1"
         # Get configs:
@@ -125,15 +133,20 @@ class JobManager:
             target = jobs[0].get("target", None)
             tool = jobs[0].get("tool", None)
             options = jobs[0].get("options", None)
+            query_track = jobs[0].get("query_track", None)
+            target_track = jobs[0].get("target_track", None)
             return JobManager(id_job=id_job, email=email, query=query, target=target,
+                              query_track=query_track, target_track=target_track,
                               mailer=mailer, tool=tool, options=options)
         elif job_type == "plot":
             query = jobs[0].get("query", None)
             target = jobs[0].get("target", None)
             align = jobs[0].get("align", None)
             backup = jobs[0].get("backup", None)
-            return JobManager(id_job=id_job, email=email, query=query, target=target,
-                              align=align, backup=backup, mailer=mailer)
+            query_track = jobs[0].get("query_track", None)
+            target_track = jobs[0].get("target_track", None)
+            return JobManager(id_job=id_job, email=email, query=query, target=target, align=align,
+                              query_track=query_track, target_track=target_track, backup=backup, mailer=mailer)
         else:  # batch
             # We create subjobs
             batch = []
@@ -211,6 +224,10 @@ class JobManager:
 
     @staticmethod
     def get_align_format(filepath):
+        return os.path.splitext(filepath)[1][1:]
+
+    @staticmethod
+    def get_track_format(filepath):
         return os.path.splitext(filepath)[1][1:]
 
     @staticmethod
@@ -292,6 +309,31 @@ class JobManager:
                     type_f="local"
                 )
                 self.aln_format = os.path.splitext(file_path)[1][1:]
+
+        query_track_file = os.path.join(res_dir, ".query_track")
+        if os.path.exists(query_track_file):
+            with open(query_track_file) as a_f:
+                file_path = a_f.readline()
+                self.logger.debug("{} - Set query track file to {}".format(self.id_job, file_path))
+                self.query_track = DataFile(
+                    name="query_track",
+                    path=file_path,
+                    type_f="local"
+                )
+                self.query_track_format = self.get_track_format(self.query_track.get_path())
+
+        target_track_file = os.path.join(res_dir, ".target_track")
+        if os.path.exists(target_track_file):
+            with open(target_track_file) as a_f:
+                file_path = a_f.readline()
+                self.logger.debug("{} - Set target track file to {}".format(self.id_job, file_path))
+                self.target_track = DataFile(
+                    name="target_track",
+                    path=file_path,
+                    type_f="local"
+                )
+                self.target_track_format = self.get_track_format(self.target_track.get_path())
+
         batch_file = os.path.join(res_dir, ".jobs")
         if os.path.exists(batch_file):
             # WARNING: Files in jobs are not Datafiles here.
@@ -1446,7 +1488,7 @@ class JobManager:
             shutil.move(self.target.get_path(), self.idx_t)
             os.remove(os.path.join(self.output_dir, ".target"))
         else:
-            self.logger.info("{} - Index target file: {}".format(self.id_job, self.target.get_path()))
+            self.logger.info("{} - IndexJobManager target file: {}".format(self.id_job, self.target.get_path()))
             with open(self.logs, "a") as logs:
                 logs.write("Index target file: {}\n".format(self.target.get_path()))
             index_file(self.target.get_path(), self.target.get_name(), self.idx_t)

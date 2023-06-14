@@ -44,6 +44,19 @@ class DGeniesUnknownToolError(DGeniesMessageException):
         return "Tool unavailable: {}".format(self.key)
 
 
+class DGeniesFileDoesNotExist(DGeniesMessageException):
+    """
+    Exception raise when bed file is Incorrectly formated
+    """
+
+    def __init__(self, message):
+        super().__init__()
+        self.message = message
+
+    def __str__(self):
+        return self.message
+
+
 class DGeniesFileCheckError(DGeniesMessageException):
     """
     Exception raise when an error append while testing local files
@@ -164,7 +177,7 @@ class DGeniesIndexFileInvalid(DGeniesFileCheckError):
 
 class DGeniesFastaFileInvalid(DGeniesFileCheckError):
     """
-    Exception raise index file content is invalid
+    Exception raise fasta file content is invalid
     """
 
     def __init__(self, filename, error):

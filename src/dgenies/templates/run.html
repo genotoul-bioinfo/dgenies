@@ -417,7 +417,70 @@
                                         </div>
                                     </div>
                                 </div>
-                                
+                                <div class="row d-flex align-items-top">
+                                    <label for="file_targettrack" class="file-targettrack col-3 col-form-label input-label">Target track file</label>
+                                    <div class="input-group col d-flex">
+                                        <div class="input-group-prepend">
+                                            <select class="form-control select-type-input targettrack">
+                                                <option value="0">Local</option>
+                                                <option value="1">Url</option>
+                                            </select>
+                                        </div>
+                                        <div class="targettrack-label in-label dropzone" id="dropzone-targettrack">
+                                            <div id="progress-targettrack" class="progress">
+                                                <div class="bar" style="width: 0%;"></div>
+                                            </div>
+                                            <input id="targettrack" name="targettrack" class="form-control show-file" type="text" value="" aria-label="Query file"/>
+                                        </div>
+                                        <div class="input-group-append">
+                                            <button class="btn btn-outline-secondary" type="button" id="button-targettrack" title="Select a file">
+                                                <span class="glyphicon glyphicon-folder-open align-middle"></span>&nbsp
+                                            </button>
+                                            <div class="loading-file targettrack" style="display: none"></div>
+                                            <div class="upload-success targettrack" style="display: none"></div>
+                                            <div class="file-size targettrack"></div>
+                                        </div>
+                                        <div class="w-100"></div>
+                                        <div>
+                                            <small id="targettrackHelp" class="form-text text-muted">
+                                                Target track file. Must end with <code>.bed</code>.
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row d-flex align-items-top">
+                                    <label for="file_querytrack" class="file-querytrack col-3 col-form-label input-label">Query track file</label>
+                                    <div class="input-group col d-flex">
+                                        <div class="input-group-prepend">
+                                            <select class="form-control select-type-input querytrack">
+                                                <option value="0">Local</option>
+                                                <option value="1">Url</option>
+                                            </select>
+                                        </div>
+                                        <div class="querytrack-label in-label dropzone" id="dropzone-querytrack">
+                                            <div id="progress-querytrack" class="progress">
+                                                <div class="bar" style="width: 0%;"></div>
+                                            </div>
+                                            <input id="querytrack" name="querytrack" class="form-control show-file" type="text" value="" aria-label="Query file"/>
+                                        </div>
+                                        <div class="input-group-append">
+                                            <button class="btn btn-outline-secondary" type="button" id="button-querytrack" title="Select a file">
+                                                <span class="glyphicon glyphicon-folder-open align-middle"></span>&nbsp
+                                            </button>
+                                            <div class="loading-file querytrack" style="display: none"></div>
+                                            <div class="upload-success querytrack" style="display: none"></div>
+                                            <div class="file-size querytrack"></div>
+                                        </div>
+                                        <div class="w-100"></div>
+                                        <div>
+                                            <small id="querytrackHelp" class="form-text text-muted">
+                                                Query track file. Must end with <code>.bed</code>.
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+
+
                                 <h3 class="orsep">- or -</h3>
 
                                 <div class="row">
@@ -613,6 +676,8 @@
             <input type="file" name="file-targetidx" class="file-targetidx" data-url="/upload"/>
             <input type="file" name="file-queryidx" class="file-queryidx" data-url="/upload"/>
             <input type="file" name="file-backup" class="file-backup" data-url="/upload"/>
+            <input type="file" name="file-targettrack" class="file-targettrack" data-url="/upload"/>
+            <input type="file" name="file-querytrack" class="file-querytrack" data-url="/upload"/>
             <input id="batch-localfiles-upload" type="file" name="multiple-files[]" class="batchfile file-localfiles" data-url="/upload" multiple/>
         </div>
     </form>

@@ -10,14 +10,16 @@ tmpl.regexp = /([\s'\\])(?!(?:[^[]|\[(?!%))*%\])|(?:\[%(=|#)([\s\S]+?)%\])|(\[%)
 dgenies.run.s_id = null;
 dgenies.run.allowed_ext = [];
 dgenies.run.max_upload_file_size = -1
-dgenies.run.files = [undefined, undefined, undefined, undefined, undefined, undefined];
+dgenies.run.files = [undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined];
 dgenies.run.files_nb = {
     "query": 0,
     "target": 1,
     "queryidx": 2,
     "targetidx": 3,
     "alignfile": 4,
-    "backup": 5
+    "backup": 5,
+    "querytrack": 6,
+    "targettrack": 7,
 };
 dgenies.run.allow_upload = false;
 dgenies.run.ping_interval = null;
@@ -41,6 +43,8 @@ dgenies.run.FTYPES = {
     "alignfile": {"formats": ["map"]},
     "backup": {"formats": ["backup"]},
     "batch": {"formats": ["batch"]},
+    "querytrack": {"formats": ["track"]},
+    "targettrack": {"formats": ["track"]},
 }
 
 dgenies.run.FTYPES_REGEX = {
@@ -49,6 +53,7 @@ dgenies.run.FTYPES_REGEX = {
     "map": /^.+\.paf$/,
     "backup": /^.+\.tar(\.gz)?$/,
     "batch": /^.+\.(tab|tsv|txt)$/,
+    "track": /^.+\.(bed|wig)$/,
 }
 
 
@@ -696,7 +701,7 @@ dgenies.run.read_batch = function() {
  * Restore run form
  */
 dgenies.run.restore_form = function () {
-    let ftypes = ["query", "target", "queryidx", "targetidx", "alignfile", "backup"];
+    let ftypes = ["query", "target", "queryidx", "targetidx", "alignfile", "backup", "querytrack", "targettrack"];
     for (let f in ftypes) {
         let ftype = ftypes[f];
         dgenies.run.change_fasta_type(ftype, $(`select.${ftype}`).find(":selected").text().toLowerCase(), true);
@@ -1113,7 +1118,7 @@ dgenies.run.show_tool_options = function(tool) {
  * Initialise events
  */
 dgenies.run.set_events = function() {
-    let ftypes = ["query", "target", "alignfile", "queryidx", "targetidx", "backup", "batch"];
+    let ftypes = ["query", "target", "alignfile", "queryidx", "targetidx", "backup", "batch", "querytrack", "targettrack"];
     $.each(ftypes, function (i, ftype) {
         dgenies.run._set_file_event(ftype);
         dgenies.run._set_file_select_event(ftype);
@@ -1220,7 +1225,7 @@ dgenies.run.set_filename = function (name, fasta) {
  */
 dgenies.run.disable_form = function () {
     dgenies.run.enabled = false;
-    let ftypes = ["query", "target", "targetidx", "queryidx", "alignfile", "backup", "localfiles"];
+    let ftypes = ["query", "target", "targetidx", "queryidx", "alignfile", "backup", "querytrack", "targettrack", "localfiles"];
     for (let ftype of ftypes) {
         dgenies.run.disable_dropzone(ftype)
     }
@@ -1240,7 +1245,7 @@ dgenies.run.enable_form = function () {
     $("input, select, button").prop("disabled", false);
     $("div#uploading-loading").hide();
     $("button#submit").show();
-    let ftypes = ["query", "target", "targetidx", "queryidx", "alignfile", "backup", "localfiles"];
+    let ftypes = ["query", "target", "targetidx", "queryidx", "alignfile", "backup", "querytrack", "targettrack", "localfiles"];
     for (let ftype of ftypes) {
         dgenies.run.hide_loading(ftype);
         dgenies.run.hide_success(ftype);
@@ -1271,7 +1276,7 @@ dgenies.run.reset_file_form = function(tab, except_backup=false) {
     let ftypes = [];
     let i = 0;
     if ("tab2" === tab) {
-        ftypes = ["alignfile", "queryidx", "targetidx"];
+        ftypes = ["alignfile", "queryidx", "targetidx", "querytrack", "targettrack"];
         if (!except_backup) {
             ftypes.push("backup");
         }
@@ -1323,6 +1328,10 @@ dgenies.run.do_submit = function () {
             "query_type": $("select.queryidx").find(":selected").text().toLowerCase(),
             "target": $("input#targetidx").val(),
             "target_type": $("select.targetidx").find(":selected").text().toLowerCase(),
+            "querytrack": $("input#querytrack").val(),
+            "querytrack_type": $("select.querytrack").find(":selected").text().toLowerCase(),
+            "targettrack": $("input#targettrack").val(),
+            "targettrack_type": $("select.targettrack").find(":selected").text().toLowerCase(),
             "backup": $("input#backup").val(),
             "backup_type": $("select.backup").find(":selected").text().toLowerCase(),
         }));
@@ -1485,6 +1494,28 @@ dgenies.run.valid_form = function () {
                     has_errors = true
                     $(`label.file-${input_type}`).addClass("error");
                     dgenies.run.add_error(`Query file: ${res.message}`);
+                }
+            }
+
+            input_type = "querytrack";
+            input_file = $(`input#${input_type}`).val();
+            if (input_file.startsWith("example://")) {
+                let res = dgenies.run.check_example(input_type, input_file);
+                if (!res.valid) {
+                    has_errors = true
+                    $(`label.file-${input_type}`).addClass("error");
+                    dgenies.run.add_error(`Query track file: ${res.message}`);
+                }
+            }
+
+            input_type = "targettrack";
+            input_file = $(`input#${input_type}`).val();
+            if (input_file.startsWith("example://")) {
+                let res = dgenies.run.check_example(input_type, input_file);
+                if (!res.valid) {
+                    has_errors = true
+                    $(`label.file-${input_type}`).addClass("error");
+                    dgenies.run.add_error(`Target track file: ${res.message}`);
                 }
             }
 
@@ -1694,7 +1725,7 @@ dgenies.run._has_upload = function(ftype, fname, is_multiple = false) {
         }
         else {
             dgenies.run.files[dgenies.run.files_nb[ftype]] = undefined;
-            if (fasta_val !== "" && !dgenies.run.check_url(fasta_val)) {
+            if (fasta_val !== "" && fasta_val !== undefined && !dgenies.run.check_url(fasta_val)) {
                 dgenies.run.add_error(`${fname} file: invalid URL`, "error");
                 dgenies.run.enable_form();
                 return false;
@@ -1734,7 +1765,7 @@ dgenies.run.start_uploads = function() {
     else if (tab === "tab2") {
         dgenies.run.reset_file_form("tab1");
         dgenies.run.reset_file_form("tab3");
-        inputs = [["queryidx", "Query", false], ["targetidx", "Target", false], ["alignfile", "Alignment", false], ["backup", "Backup", false]];
+        inputs = [["queryidx", "Query", false], ["targetidx", "Target", false], ["alignfile", "Alignment", false],  ["querytrack", "Query track", false],  ["targettrack", "Target track", false], ["backup", "Backup", false]];
         dgenies.run.files_to_upload = dgenies.run.files;
     }
     else {
