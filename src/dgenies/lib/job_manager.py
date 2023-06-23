@@ -1141,7 +1141,8 @@ class JobManager:
                 if datafile.get_path().endswith(".idx"):
                     if not validators.v_idx(datafile.get_path()):
                         raise DGeniesIndexFileInvalid(input_type.capitalize())
-                if self.config.runner_type != "local" and file_size >= getattr(self.config, "min_%s_size" % input_type):
+                if input_type in ("query", "target") and self.config.runner_type != "local" and \
+                    file_size >= getattr(self.config, "min_%s_size" % input_type):
                     should_be_local = False
         self.logger.info('{} - Done check file: {}'.format(self.id_job, datafile.get_path()))
 
