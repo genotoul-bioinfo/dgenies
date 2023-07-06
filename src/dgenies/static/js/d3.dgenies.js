@@ -6,6 +6,8 @@ d3.dgenies = {};
 //GLOBAL VARIABLES:
 d3.dgenies.svgcontainer = null;
 d3.dgenies.container = null;
+d3.dgenies.top_track_container = null;
+d3.dgenies.right_track_container = null;
 d3.dgenies.svgsupercontainer = null;
 d3.dgenies.name_x = null;
 d3.dgenies.name_y = null;
@@ -289,8 +291,8 @@ d3.dgenies.select_zone = function (x=null, y=null, x_zone=null, y_zone=null, for
             d3.dgenies.draw_right_axis(pseudo_y_zones);
 
             //Update tracks:
-            d3.dgenies.draw_top_track();
-            d3.dgenies.draw_right_track();
+            d3.dgenies.zoom_top_track();
+            d3.dgenies.zoom_right_track();
 
             d3.dgenies.zoom_enabled = false;
         }
@@ -378,7 +380,6 @@ d3.dgenies.draw_left_axis = function (y_max, y_min = 0) {
  * @param {int} x_min min value of x on the X axis
  */
 d3.dgenies.draw_bottom_axis = function (x_max, x_min = 0) {
-
     let axis_length = d3.dgenies.axis_length;
 
     $("svg.bottom-axis").remove(); //Remove previous axis (if any)
@@ -651,24 +652,13 @@ d3.dgenies.draw_right_axis = function (y_zones=d3.dgenies.y_zones) {
  */
 d3.dgenies.draw_top_track = function () {
 
-    $("svg.top-track").remove();  //Remove previous track (if any)
-
-    let transform = d3.dgenies.container.attr("transform");
-    if (transform === null) {
-        transform = "translate(0,0)scale(1)";
-    }
-    let tr_regex = /translate\(([^,]+),([^)]+)\)/;
-    let translate = parseFloat(transform.match(tr_regex)[1]);
-    let sc_regex = /scale\(([^,)]+)(,([^)]+))?\)/;
-    let scale = parseFloat(transform.match(sc_regex)[1]);
-
     let svg_top = d3.dgenies.svgsupercontainer.append("svg:svg")
         .attr("class", "track top-track")
         .attr("width", d3.dgenies.container_dotplot_width - d3.dgenies.container_axis_thickness)
         .attr("height", d3.dgenies.container_track_thickness)
         .attr("x", d3.dgenies.container_axis_thickness)
         .attr("y", d3.dgenies.container_axis_thickness)
-        .attr("viewBox", "0 0 1000 1000")
+        .attr("viewBox", "0 0 " + d3.dgenies.scale + " 1000")
         .attr("preserveAspectRatio", "none");
 
     svg_top.append("rect")
@@ -677,31 +667,33 @@ d3.dgenies.draw_top_track = function () {
         .attr("width", "100%")
         .attr("height", "100%")
         .attr("fill", "#ffffff")
-        .attr("stroke", "none")
+        .attr("stroke", "black")
+
+    d3.dgenies.top_track_container = svg_top.append("svg:g")
+        .attr("class", "top-track-container")
 
     if (d3.dgenies.x_track !== null) {
         const track_type = d3.dgenies.x_track.type;
         let x_track = d3.dgenies.x_track.data;
         for (let x_id in x_track) {
-            if (x_track !== undefined) {
-                for (let feat of x_track[x_id]) {
-                    let f_start = feat[0];
-                    let f_len = feat[1];
-                    let f_rep = feat[2];
-                    let f_val = feat[3];
-                    let f_comment = feat[4];
-                    start = translate + scale * feat[0] / d3.dgenies.x_len * d3.dgenies.scale;
-                    length = scale * feat[1] / d3.dgenies.x_len * (d3.dgenies.scale);
-                    let block = svg_top.append("rect")
-                        .attr("x", start)
-                        .attr("y", 0)
-                        .attr("width", length)
-                        .attr("height", "100%")
-                        .attr("fill", "#0000ff")
-                        .attr("stroke", "none");
-                    if (f_val != "") {
-                        block.attr("fill", f_val);
-                    }
+            for (let feat of x_track[x_id]) {
+                let f_start = feat[0];
+                let f_len = feat[1];
+                let f_rep = feat[2];
+                let f_val = feat[3];
+                let f_comment = feat[4];
+                let start = f_start / d3.dgenies.x_len * d3.dgenies.scale;
+                length = f_len / d3.dgenies.x_len * d3.dgenies.scale;
+                let block = d3.dgenies.top_track_container.
+                    append("rect")
+                    .attr("x", start)
+                    .attr("y", 0)
+                    .attr("width", length)
+                    .attr("height", "100%")
+                    .attr("fill", "#0000ff")
+                    .attr("stroke", "none");
+                if (f_val != "") {
+                    block.attr("fill", f_val);
                 }
             }
         }
@@ -713,19 +705,6 @@ d3.dgenies.draw_top_track = function () {
  * Draw right track
  */
 d3.dgenies.draw_right_track = function () {
-    $("svg.right-track").remove();  //Remove previous track (if any)
-
-    let transform = d3.dgenies.container.attr("transform");
-    if (transform === null) {
-        transform = "translate(0,0)scale(1)";
-    }
-    let tr_regex = /translate\(([^,]+),([^)]+)\)/;
-    let translate = parseFloat(transform.match(tr_regex)[2]);
-    let sc_regex = /scale\(([^,)]+)(,([^)]+))?\)/;
-    let scale = parseFloat(transform.match(sc_regex)[1]);
-
-    let y_max = d3.dgenies.y_len + translate / d3.dgenies.scale * d3.dgenies.y_len / scale;
-    let y_min = y_max - d3.dgenies.y_len / scale;
 
     let svg_right = d3.dgenies.svgsupercontainer.append("svg:svg")
         .attr("class", "track right-track")
@@ -733,46 +712,85 @@ d3.dgenies.draw_right_track = function () {
         .attr("height", d3.dgenies.container_dotplot_height - d3.dgenies.container_axis_thickness)
         .attr("x", d3.dgenies.container_dotplot_width)
         .attr("y", d3.dgenies.container_axis_thickness + d3.dgenies.container_track_thickness)
-        .attr("viewBox", "0 0 1000 1000")
-        .attr("preserveAspectRatio", "none")
-
+        .attr("viewBox", "0 0 1000 " + d3.dgenies.scale)
+        .attr("preserveAspectRatio", "none");
+    
     svg_right.append("rect")
         .attr("x", 0)
         .attr("y", 0)
         .attr("width", "100%")
         .attr("height", "100%")
-        .attr("fill", "#ffffff");
+        .attr("fill", "#ffffff")
+        .attr("stroke", "black");
+    
+    d3.dgenies.right_track_container = svg_right.append("svg:g")
+        .attr("class", "right-track-container")
 
     if (d3.dgenies.y_track !== null) {
         const track_type = d3.dgenies.y_track.type;
         let y_track = d3.dgenies.y_track.data;
         for (let y_id in y_track) {
-            if (y_track !== undefined) {
-                for (let feat of y_track[y_id]) {
-                    let f_start = feat[0];
-                    let f_len = feat[1];
-                    let f_rep = feat[2];
-                    let f_val = feat[3];
-                    let f_comment = feat[4];
-                    start = translate + scale * (d3.dgenies.y_len - feat[0] - feat[1]) / d3.dgenies.y_len * d3.dgenies.scale;
-                    length = scale * feat[1] / d3.dgenies.y_len * (d3.dgenies.scale);
-                    let block = svg_right.append("rect")
-                        .attr("x", 0)
-                        .attr("y", start)
-                        .attr("width", "100%")
-                        .attr("height", length)
-                        .attr("fill", "#0000ff")
-                        .attr("stroke", "none");
-                    if (f_val != "") {
-                        block.attr("fill", f_val);
-                    }
+            for (let feat of y_track[y_id]) {
+                let f_start = feat[0];
+                let f_len = feat[1];
+                let f_rep = feat[2];
+                let f_val = feat[3];
+                let f_comment = feat[4];
+                let start = (d3.dgenies.y_len - f_start - f_len) / d3.dgenies.y_len * d3.dgenies.scale;
+                let length = f_len / d3.dgenies.y_len * d3.dgenies.scale;
+                let block = d3.dgenies.right_track_container
+                    .append("rect")
+                    .attr("x", 0)
+                    .attr("y", start)
+                    .attr("width", "100%")
+                    .attr("height", length)
+                    .attr("fill", "#0000ff")
+                    .attr("stroke", "none");
+                if (f_val != "") {
+                    block.attr("fill", f_val);
                 }
             }
         }
     }
 }
 
+/**
+ * Zoom top track
+ * 
+ * @param {object} scale_correction correction to apply to translate when zooming with the scroll
+ */
+d3.dgenies.zoom_top_track = function (scale_correction = 1) {
+    let transform = d3.dgenies.container.attr("transform");
+    if (transform === null) {
+        transform = "translate(0,0)scale(1)";
+    }
+    let tr_regex = /translate\(([^,]+),([^)]+)\)/;
+    let translate_x = parseFloat(transform.match(tr_regex)[1]);
+    let sc_regex = /scale\(([^,)]+)(,([^)]+))?\)/;
+    let scale_x = parseFloat(transform.match(sc_regex)[1]);
 
+    d3.dgenies.top_track_container
+        .attr("transform", "scale(" + scale_x + ", 1)translate(" + translate_x / scale_correction + ",0)");
+}
+
+/**
+ * Zoom right track
+ * @param {object} scale_correction correction to apply to translate when zooming with the scroll
+ */
+d3.dgenies.zoom_right_track = function (scale_correction = 1) {
+    let transform = d3.dgenies.container.attr("transform");
+    if (transform === null) {
+        transform = "translate(0,0)scale(1)";
+    }
+    let tr_regex = /translate\(([^,]+),([^)]+)\)/;
+    let translate_y = parseFloat(transform.match(tr_regex)[2]);
+    let sc_regex = /scale\(([^,)]+)(,([^)]+))?\)/;
+    let scale_y = parseFloat(transform.match(sc_regex)[3] !== undefined ? transform.match(sc_regex)[3] : transform.match(sc_regex)[1]);
+
+    d3.dgenies.right_track_container
+        .attr("transform", "scale(1," + scale_y + ")translate(0," + translate_y / scale_correction + ")");
+    //    .attr("transform","translate(0," + translate_y + ")scale(1," + scale_y + ")");
+}
 
 /**
  * Draw backgrounds of all axis
@@ -1034,7 +1052,7 @@ d3.dgenies.draw_lines = function (lines=d3.dgenies.lines, x_len=d3.dgenies.x_len
 
     //Remove old lines (if any):
     $("path.content-lines").remove();
-
+    console.log(x_len, y_len)
     //lines = lines.sort(d3.dgenies._sort_lines);
     for (let i=0; i <4; i++) {
         d3.dgenies.__draw_idy_lines(i.toString(), lines, x_len, y_len)
@@ -1146,12 +1164,12 @@ d3.dgenies.draw = function (x_contigs, x_order, y_contigs, y_order) {
     d3.dgenies.draw_bottom_axis(d3.dgenies.x_len);
     d3.dgenies.draw_top_axis(d3.dgenies.x_zones);
     d3.dgenies.draw_right_axis(d3.dgenies.y_zones);
-    d3.dgenies.draw_top_track();
-    d3.dgenies.draw_right_track();
 
     window.setTimeout(() => {
         //Data:
         d3.dgenies.draw_lines();
+        d3.dgenies.draw_top_track();
+        d3.dgenies.draw_right_track();
 
         $("#restore-all").click(function () {
             if (d3.dgenies.zoom.reset_scale(false, null, false)) {

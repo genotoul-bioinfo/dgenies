@@ -114,9 +114,9 @@ d3.dgenies.zoom.translate = function () {
         d3.dgenies.zoom_bottom_axis();
         d3.dgenies.zoom_left_axis();
         
-        //Update traxks:
-        d3.dgenies.draw_top_track();
-        d3.dgenies.draw_right_track();
+        //Update tracks:
+        d3.dgenies.zoom_top_track();
+        d3.dgenies.zoom_right_track();
     }
     else if(d3.dgenies.translate_start !== null) {
         let help_trans = $("#help-trans");
@@ -212,8 +212,8 @@ d3.dgenies.zoom.zoom = function () {
             d3.dgenies.draw_right_axis();
             d3.dgenies.zoom_bottom_axis();
             d3.dgenies.zoom_left_axis();
-            d3.dgenies.draw_top_track();
-            d3.dgenies.draw_right_track();
+            d3.dgenies.zoom_top_track(new_scale);
+            d3.dgenies.zoom_right_track(new_scale);
 
             if ((translate_x <= 0.00001 && translate_x >= -0.00001) &&
                 (translate_y <= 0.00001 && translate_y >= -0.00001) && new_scale === 1) {
@@ -300,8 +300,8 @@ d3.dgenies.zoom.reset_scale = function (temp=false, after=null, force=true) {
             d3.dgenies.draw_right_axis();
 
             //Update tracks:
-            d3.dgenies.draw_right_track();
-            d3.dgenies.draw_top_track();
+            d3.dgenies.zoom_right_track();
+            d3.dgenies.zoom_top_track();
 
             if (!temp)
                 d3.dgenies.zone_selected = false;
