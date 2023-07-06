@@ -38,6 +38,7 @@ d3.dgenies.content_lines_width = d3.dgenies.scale / 400;
 d3.dgenies.break_lines_width = d3.dgenies.scale / 1500;
 d3.dgenies.color_idy_theme = "default";
 d3.dgenies.color_idy_themes = ["default", "colorblind", "black&white", "r_default", "r_colorblind", "allblack"];
+d3.dgenies.color_background = ["#ffffff", "#f9f9f9"]
 d3.dgenies.color_idy = {
     "default": {
         "3": "#094b09",
@@ -792,6 +793,59 @@ d3.dgenies.zoom_right_track = function (scale_correction = 1) {
     //    .attr("transform","translate(0," + translate_y + ")scale(1," + scale_y + ")");
 }
 
+d3.dgenies.draw_x_lines = function (x_order) {
+    let x_zones = d3.dgenies.x_zones
+    for (let x of x_order) {
+        d3.dgenies.container.append("line")
+            .attr("x1", x_zones[x][0])
+            .attr("y1", d3.dgenies.scale)
+            .attr("x2", x_zones[x][0])
+            .attr("y2", 0)
+            .attr("class", "break-lines")
+            .attr("stroke-width", d3.dgenies.break_lines_width)
+            .attr("stroke", d3.dgenies.break_lines_color)
+            .style("stroke-dasharray", d3.dgenies.break_lines_dash);
+    }
+}
+
+d3.dgenies.draw_y_lines = function (y_order) {
+    let y_zones = d3.dgenies.y_zones
+    for (let y of y_order) {
+        d3.dgenies.container.append("line")
+            .attr("x1", 0)
+            .attr("y1", d3.dgenies.scale - y_zones[y][1])
+            .attr("x2", d3.dgenies.scale)
+            .attr("y2", d3.dgenies.scale - y_zones[y][1])
+            .attr("class", "break-lines")
+            .attr("stroke-width", d3.dgenies.break_lines_width)
+            .attr("stroke", d3.dgenies.break_lines_color)
+            .style("stroke-dasharray", d3.dgenies.break_lines_dash);
+    }
+}
+
+d3.dgenies.draw_background = function (x_order, y_order) {
+    let x_zones = d3.dgenies.x_zones,
+        y_zones = d3.dgenies.y_zones;
+    console.log(x_zones, y_zones)
+    for (let i = 0; i < x_order.length; i++) {
+        let x = x_order[i];
+        let color_shift = i % d3.dgenies.color_background.length;
+        for (let j = 0; j < y_order.length; j++) {
+            let y = y_order[j];
+            let color_idx = (color_shift + j) % d3.dgenies.color_background.length;
+            d3.dgenies.container.append("rect")
+                .attr("x", x_zones[x][0])
+                .attr("y", d3.dgenies.scale - y_zones[y][1])
+                .attr("width", x_zones[x][1] - x_zones[x][0])
+                .attr("height", y_zones[y][1] - y_zones[y][0])
+                .attr("stroke", "none")
+                .attr("fill", d3.dgenies.color_background[color_idx]);
+        }
+    }
+
+}
+
+
 /**
  * Draw backgrounds of all axis
  */
@@ -1052,7 +1106,6 @@ d3.dgenies.draw_lines = function (lines=d3.dgenies.lines, x_len=d3.dgenies.x_len
 
     //Remove old lines (if any):
     $("path.content-lines").remove();
-    console.log(x_len, y_len)
     //lines = lines.sort(d3.dgenies._sort_lines);
     for (let i=0; i <4; i++) {
         d3.dgenies.__draw_idy_lines(i.toString(), lines, x_len, y_len)
@@ -1112,6 +1165,7 @@ d3.dgenies.draw = function (x_contigs, x_order, y_contigs, y_order) {
         .attr("height", "100%")
         .attr("stroke", "none")
         .attr("fill", "white");
+    
 
     //X axis:
     d3.dgenies.x_zones = {};
@@ -1121,18 +1175,10 @@ d3.dgenies.draw = function (x_contigs, x_order, y_contigs, y_order) {
         let x_contig_len = x_contigs[x_id] / d3.dgenies.x_len * d3.dgenies.scale;
         d3.dgenies.x_zones[x_id] = [sum, sum + x_contig_len];
         sum += x_contig_len;
-
-        d3.dgenies.container.append("line")
-            .attr("x1", sum)
-            .attr("y1", d3.dgenies.scale)
-            .attr("x2", sum)
-            .attr("y2", 0)
-            .attr("class", "break-lines")
-            .attr("stroke-width", d3.dgenies.break_lines_width)
-            .attr("stroke", d3.dgenies.break_lines_color)
-            .style("stroke-dasharray", d3.dgenies.break_lines_dash);
     }
+
     d3.dgenies.x_zones[x_order[x_order.length - 1]] = [sum, d3.dgenies.scale];
+
 
     //Y axis:
     d3.dgenies.y_zones = {};
@@ -1142,18 +1188,12 @@ d3.dgenies.draw = function (x_contigs, x_order, y_contigs, y_order) {
         let y_contig_len = y_contigs[y_id] / d3.dgenies.y_len * d3.dgenies.scale;
         d3.dgenies.y_zones[y_id] = [sum, sum + y_contig_len];
         sum += y_contig_len;
-
-        d3.dgenies.container.append("line")
-            .attr("x1", 0)
-            .attr("y1", d3.dgenies.scale - sum)
-            .attr("x2", d3.dgenies.scale)
-            .attr("y2", d3.dgenies.scale - sum)
-            .attr("class", "break-lines")
-            .attr("stroke-width", d3.dgenies.break_lines_width)
-            .attr("stroke", d3.dgenies.break_lines_color)
-            .style("stroke-dasharray", d3.dgenies.break_lines_dash);
     }
     d3.dgenies.y_zones[y_order[y_order.length - 1]] = [sum, d3.dgenies.scale];
+
+    d3.dgenies.draw_background(x_order, y_order);
+    d3.dgenies.draw_x_lines(x_order);
+    d3.dgenies.draw_y_lines(y_order);
 
     if (!d3.dgenies.break_lines_show) {
         d3.selectAll("line.break-lines").style("visibility", "hidden");
