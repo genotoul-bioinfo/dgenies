@@ -121,7 +121,7 @@ $.fn.mousetip = function(my_tip, relative_to=null, x=20, y=20) {
                     else {
                         idy_class = "-1"
                     }
-                    css.background = d3.dgenies.color_idy[d3.dgenies.color_idy_theme][idy_class];
+                    css.background = d3.dgenies.color_idy[d3.dgenies.color_idy_theme]["palette"][idy_class];
                     css.color = d3.dgenies.mousetip.getColorByBgColor(css.background)
                 }
 
