@@ -38,7 +38,7 @@ d3.dgenies.content_lines_width = d3.dgenies.scale / 400;
 d3.dgenies.break_lines_width = d3.dgenies.scale / 1500;
 d3.dgenies.color_idy_theme = "default";
 d3.dgenies.color_idy_themes = ["default", "colorblind", "greyscale", "r_default", "r_colorblind", "allblack"];
-d3.dgenies.color_background = ["#ffffff", "#f9f9f9"]
+d3.dgenies.color_background = ["#ffffff", "#fbfbfb"]
 d3.dgenies.color_idy = {
     "default": {
         "type": "normal",
@@ -764,9 +764,8 @@ d3.dgenies.draw_top_track = function () {
             for (let feat of x_track[x_id]) {
                 let f_start = feat[0];
                 let f_len = feat[1];
-                let f_rep = feat[2];
-                let f_val = feat[3];
-                let f_comment = feat[4];
+                let f_val = feat[2];
+                let f_comment = feat[3];
                 let start = f_start / d3.dgenies.x_len * d3.dgenies.scale;
                 length = f_len / d3.dgenies.x_len * d3.dgenies.scale;
                 let block = d3.dgenies.top_track_container.
@@ -820,9 +819,8 @@ d3.dgenies.draw_right_track = function () {
             for (let feat of y_track[y_id]) {
                 let f_start = feat[0];
                 let f_len = feat[1];
-                let f_rep = feat[2];
-                let f_val = feat[3];
-                let f_comment = feat[4];
+                let f_val = feat[2];
+                let f_comment = feat[3];
                 let start = (d3.dgenies.y_len - f_start - f_len) / d3.dgenies.y_len * d3.dgenies.scale;
                 let length = f_len / d3.dgenies.y_len * d3.dgenies.scale;
                 let block = d3.dgenies.right_track_container

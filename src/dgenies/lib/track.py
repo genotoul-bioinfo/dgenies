@@ -2,7 +2,7 @@
 import os
 import re
 from abc import ABC, abstractmethod
-from typing import Union
+from typing import Union, Sequence
 from dgenies.bin.index import Index
 from dgenies.lib.exceptions import DGeniesMessageException, DGeniesFileDoesNotExist
 
@@ -14,7 +14,7 @@ class DGeniesUnknownTrackType(DGeniesMessageException):
 
 class DGeniesIncorrectTrackFileError(DGeniesMessageException):
     """
-    Exception raise when bed file is Incorrectly formated
+    Exception raise when trach file is Incorrectly formated
     """
 
     def __init__(self, error):
@@ -22,7 +22,7 @@ class DGeniesIncorrectTrackFileError(DGeniesMessageException):
         self.error = error
 
     def __str__(self):
-        return "Incorrect bed file: {}".format(self.error)
+        return "Incorrect track file: {}".format(self.error)
 
 
 class Track(ABC):
@@ -65,6 +65,8 @@ class Track(ABC):
                 track_path = infile.readline().rstrip('\n')
                 if track_path.endswith(".bed"):
                     return Bed(track_path, idx)
+                elif track_path.endswith(".wig"):
+                    return Wiggle(track_path, idx)
                 else:
                     raise DGeniesUnknownTrackType("Unknown track file type")
         else:
@@ -76,12 +78,12 @@ class Track(ABC):
         except IOError:
             raise DGeniesFileDoesNotExist("Index file does not exist")
 
-    def add_feature(self, chrom: str, start: int, length: int, rep: int = 1,
+    def add_feature(self, chrom: str, start: int, length: int,
                     value: Union[int, str] = "", comment: str = ""):
         entry = (
-            start,  # start
+            self.abs_start[chrom] + self.contigs[chrom] - (start + length) if self.reversed[chrom] \
+                else self.abs_start[chrom] + start,  # start
             length,  # length
-            rep,  # repetition
             value,  # value/color
             comment  # comment for tooltip
         )
@@ -153,10 +155,8 @@ class Bed(Track):
             coord = (min(chrom_start, chrom_end), max(chrom_start, chrom_end))
             self.add_feature(
                 chrom,
-                self.abs_start[chrom] - coord[1] + self.contigs[chrom] if self.reversed[chrom] \
-                    else self.abs_start[chrom] + coord[0],  # start
+                coord[0],  # start
                 coord[1] - coord[0],  # length
-                1,  # repetition
                 self.rgb_to_hex(itemrgb) if itemrgb else "",  # value/color
                 name if name else ""  # comment for tooltip
             )
@@ -182,7 +182,7 @@ class Bed(Track):
                         row = re.split(r'[ \t]', line)
                         col_count = len(row)
                         if not (3 <= col_count <= 12):
-                            raise Exception("Invalid bed file")
+                            raise DGeniesIncorrectTrackFileError("Invalid bed file")
                         self._add_feature(row)
 
                 # Get remaining data from columns
@@ -193,8 +193,101 @@ class Bed(Track):
                         # data
                         row = re.split(r'[ \t]', line)
                         if len(row) != col_count:
-                            raise Exception("Invalid line: {}".format(line_count))
+                            raise DGeniesIncorrectTrackFileError("Invalid line: {}".format(line_count))
                         self._add_feature(row)
+        except IOError:
+            raise DGeniesFileDoesNotExist("Track file does not exist")
+
+
+class Wiggle(Track):
+    """
+    Wiggle file specific functions
+    """
+    ignore_line_pattern = re.compile(r'^#')
+    _type = "wig"
+
+    def __init__(self, track: str, idx: str, auto_parse: bool = True):
+        """
+
+        :param track: Wiggle file path
+        :type track: str
+        :param idx: seq index file path
+        :param auto_parse: if True, parse PAF file at initialisation
+        :type auto_parse: bool
+        """
+        super().__init__(track, idx, auto_parse)
+
+    @property
+    def type(self):
+        return self._type
+
+    class VariableStep:
+        def __init__(self, chrom: str, span: int = 1):
+            self.chrom = chrom
+            self.span = span
+
+        def get_feature(self, data: Sequence[str]) -> list:
+            start = int(data[0]) - 1
+            value = float(data[1])
+            res = [
+                self.chrom,
+                start,
+                self.span,
+                value,
+                "{}".format(value)
+            ]
+            return res
+
+    class FixStep:
+        def __init__(self, chrom: str, start: int, step: int = 1, span: int = 1):
+            self.chrom = chrom
+            self.start = start - 1
+            self.step = step
+            self.span = span
+
+        def get_feature(self, data: Sequence[str]) -> list:
+            value = float(data[0])
+            res = [
+                self.chrom,
+                self.start,
+                self.span,
+                value,
+                "{}".format(value)]
+            self.start += self.step
+            return res
+
+    def parse_track(self):
+        # Load index
+        self._parse_index()
+        try:
+            with open(self.track, "rt") as infile:
+                add_step = None
+                for line in infile.readlines():
+                    line = line.rstrip('\n')
+
+                    if line.startswith("track type="):
+                        raise DGeniesIncorrectTrackFileError("Track type not supported in wiggle file")
+                    if not self.ignore_line_pattern.match(line):
+                        row = line.split()
+                        if row[0] == "variableStep":
+                            if len(row) < 2:
+                                raise DGeniesIncorrectTrackFileError("Incorrect wiggle file")
+                            d = {k: v for k, v in (tuple(e.split("=")) for e in row[1:])}
+                            chrom = d["chrom"]
+                            span = int(d.get("span", 1))
+                            track_step = self.VariableStep(chrom, span)
+                        elif row[0] == "fixedStep":
+                            if len(row) < 4:
+                                raise DGeniesIncorrectTrackFileError("Incorrect wiggle file")
+                            d = {k: v for k, v in (tuple(e.split("=")) for e in row[1:])}
+                            chrom = d["chrom"]
+                            span = int(d.get("span", 1))
+                            start = int(d["start"])
+                            step = int(d["step"])
+                            track_step = self.FixStep(chrom, start, span, step)
+                        else:
+                            # data
+                            self.add_feature(*track_step.get_feature(row))
         except IOError:
             raise DGeniesFileDoesNotExist("Track file does not exist")
 
