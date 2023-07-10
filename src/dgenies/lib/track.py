@@ -47,13 +47,16 @@ class Track(ABC):
             self.parse_track()
 
     @abstractmethod
-    def parse_track(self):
+    def parse_track(self) -> None:
         pass
 
     @property
     @abstractmethod
-    def type(self):
+    def type(self) -> str:
         pass
+
+    def additional_properties(self) -> dict:
+        return {}
 
     @staticmethod
     def load(track: str, idx: str):
@@ -93,10 +96,12 @@ class Track(ABC):
             self.data[chrom] = [entry]
 
     def get_d3js_data(self):
-        return {
+        res = {
             "type": self.type,
             "data": self.data
         }
+        res.update(self.additional_properties())
+        return res
 
 
 class Bed(Track):
@@ -205,6 +210,8 @@ class Wiggle(Track):
     """
     ignore_line_pattern = re.compile(r'^#')
     _type = "wig"
+    min_value = 0
+    max_value = 0
 
     def __init__(self, track: str, idx: str, auto_parse: bool = True):
         """
@@ -220,6 +227,11 @@ class Wiggle(Track):
     @property
     def type(self):
         return self._type
+
+    def additional_properties(self) -> dict:
+        return {
+            "range": [self.min_value, self.max_value]
+        }
 
     class VariableStep:
         def __init__(self, chrom: str, span: int = 1):
@@ -287,7 +299,10 @@ class Wiggle(Track):
                             track_step = self.FixStep(chrom, start, span, step)
                         else:
                             # data
-                            self.add_feature(*track_step.get_feature(row))
+                            data = track_step.get_feature(row)
+                            self.min_value = min(self.min_value, data[3])
+                            self.max_value = max(self.max_value, data[3])
+                            self.add_feature(*data)
         except IOError:
             raise DGeniesFileDoesNotExist("Track file does not exist")
 

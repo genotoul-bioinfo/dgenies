@@ -36,71 +36,132 @@ d3.dgenies.scale = 1000;
 d3.dgenies.axis_length = 500;
 d3.dgenies.content_lines_width = d3.dgenies.scale / 400;
 d3.dgenies.break_lines_width = d3.dgenies.scale / 1500;
+
+/**
+ * Convert rgb to greyscale based on https://css-tricks.com/converting-color-spaces-in-javascript/
+ * @param {string} hex color in hex format
+ * @returns {string} color in hsl format
+ */
+d3.dgenies.hex_to_greyscale = function(hex) {
+    // Convert hex to RGB first
+    let r = 0, g = 0, b = 0;
+    if (hex.length == 4) {
+        r = "0x" + hex[1] + hex[1];
+        g = "0x" + hex[2] + hex[2];
+        b = "0x" + hex[3] + hex[3];
+    } else if (hex.length == 7) {
+        r = "0x" + hex[1] + hex[2];
+        g = "0x" + hex[3] + hex[4];
+        b = "0x" + hex[5] + hex[6];
+    }
+    // Then to HSL
+    r /= 255;
+    g /= 255;
+    b /= 255;
+    let cmin = Math.min(r,g,b),
+        cmax = Math.max(r,g,b),
+        delta = cmax - cmin,
+        h = 0,
+        s = 0,
+        l = 0;
+
+    if (delta == 0)
+        h = 0;
+    else if (cmax == r)
+        h = ((g - b) / delta) % 6;
+    else if (cmax == g)
+        h = (b - r) / delta + 2;
+    else
+        h = (r - g) / delta + 4;
+
+    h = Math.round(h * 60);
+
+    if (h < 0)
+        h += 360;
+
+    l = (cmax + cmin) / 2;
+    //s = delta == 0 ? 0 : delta / (1 - Math.abs(2 * l - 1));
+    //s = +(s * 100).toFixed(1);
+    l = +(l * 100).toFixed(1);
+
+    return "hsl(" + 0 + "," + 0 + "%," + l + "%)";
+}
+
+//Color theme parameters:
 d3.dgenies.color_idy_theme = "default";
 d3.dgenies.color_idy_themes = ["default", "colorblind", "greyscale", "r_default", "r_colorblind", "allblack"];
 d3.dgenies.color_background = ["#ffffff", "#fbfbfb"]
 d3.dgenies.color_idy = {
     "default": {
-        "type": "normal",
         "palette": {
             "3": "#094b09",
             "2": "#2ebd40",
             "1": "#d5670b",
             "0": "#ffd84b",
             "-1": "#fff"
-        }
+        },
+        "track_color": (val) => {return val},
+        "track_heatmap": d3.interpolateReds
     },
     "colorblind": {
-        "type": "colorblind",
         "palette": {
             "3": "#000",
             "2": "#006DDB",
             "1": "#DB6E00",
             "0": "#FFB677",
             "-1": "#fff"
-        }
+        },
+        "track_color": (val) => {return val},
+        "track_heatmap": d3.interpolateViridis
     },
     "greyscale": {
-        "type": "greyscale",
         "palette": {
             "3": "#000",
             "2": "#626262",
             "1": "#9c9c9c",
             "0": "#DDDCDC",
             "-1": "#fff"
-        }
+        },
+        "track_color": d3.dgenies.hex_to_greyscale,
+        "track_heatmap": d3.interpolateGreys
     },
     "r_default": {
-        "type": "normal",
         "palette": {
             "3": "#7fff65",
             "2": "#238d31",
             "1": "#78410d",
             "0": "#3b080a",
             "-1": "#fff"
-        }
+        },
+        "track_color": (val) => {return val},
+        "track_heatmap": d3.interpolateBlues
     },
     "r_colorblind": {
-        "type": "colorblind",
         "palette": {
             "3": "#8c8c8c",
             "2": "#006DDB",
             "1": "#783c00",
             "0": "#312515",
             "-1": "#fff"
-        }
+        },
+        "track_color": (val) => {return val},
+        "track_heatmap": d3.interpolateViridis
     },
     "allblack": {
-        "type": "bw",
         "palette": {
             "3": "#000",
             "2": "#000",
             "1": "#000",
             "0": "#000",
             "-1": "#fff"
-        }
+        },
+        "track_color": (_) => { return "#000000" },
+        "track_heatmap": (t) => { return "#000000" }
     }
 };
+d3.dgenies.track_default_color = "#0000ff"
+d3.dgenies.right_track_color = null;
+d3.dgenies.top_track_color = null;
 d3.dgenies.limit_idy = null;
 d3.dgenies.min_idy_draw = 0;
 d3.dgenies.min_size = 0;
@@ -221,56 +282,6 @@ d3.dgenies.launch = function(res, update=false, noise_change=false) {
     d3.dgenies.mousetip.init();
 };
 
-
-/**
- * Convert rgb to greyscale using Neumann07 approch from http://cadik.posvete.cz/color_to_gray_evaluation/
- * @param {*} x 
- * @returns 
- */
-d3.dgenies.hex_to_greyscale = function(hex) {
-    // Convert hex to RGB first
-    let r = 0, g = 0, b = 0;
-    if (hex.length == 4) {
-        r = "0x" + hex[1] + hex[1];
-        g = "0x" + hex[2] + hex[2];
-        b = "0x" + hex[3] + hex[3];
-    } else if (hex.length == 7) {
-        r = "0x" + hex[1] + hex[2];
-        g = "0x" + hex[3] + hex[4];
-        b = "0x" + hex[5] + hex[6];
-    }
-    // Then to HSL
-    r /= 255;
-    g /= 255;
-    b /= 255;
-    let cmin = Math.min(r,g,b),
-        cmax = Math.max(r,g,b),
-        delta = cmax - cmin,
-        h = 0,
-        s = 0,
-        l = 0;
-
-    if (delta == 0)
-        h = 0;
-    else if (cmax == r)
-        h = ((g - b) / delta) % 6;
-    else if (cmax == g)
-        h = (b - r) / delta + 2;
-    else
-        h = (r - g) / delta + 4;
-
-    h = Math.round(h * 60);
-
-    if (h < 0)
-        h += 360;
-
-    l = (cmax + cmin) / 2;
-    //s = delta == 0 ? 0 : delta / (1 - Math.abs(2 * l - 1));
-    //s = +(s * 100).toFixed(1);
-    l = +(l * 100).toFixed(1);
-
-    return "hsl(" + 0 + "," + 0 + "%," + l + "%)";
-}
 
 /**
  * Find target chromosome where the user click
@@ -717,22 +728,6 @@ d3.dgenies.draw_right_axis = function (y_zones=d3.dgenies.y_zones) {
 };
 
 /**
- * Apply color theme on track color
- * @param {*} value color given for track
- * @returns the value corrected for the theme if needed, the given value else.
- */
-d3.dgenies.apply_theme_on_track = function (hex) {
-    let theme_type = d3.dgenies.color_idy[d3.dgenies.color_idy_theme]["type"];
-    if (theme_type == "bw") {
-        return "#000000"
-    }
-    if (theme_type == "greyscale") {
-        return d3.dgenies.hex_to_greyscale(hex)
-    }
-    return hex
-}
-
-/**
  * Draw top track
  */
 d3.dgenies.draw_top_track = function () {
@@ -758,7 +753,8 @@ d3.dgenies.draw_top_track = function () {
         .attr("class", "top-track-container")
 
     if (d3.dgenies.x_track !== null) {
-        const track_type = d3.dgenies.x_track.type;
+        d3.dgenies.set_top_track_color_tmpl()
+
         let x_track = d3.dgenies.x_track.data;
         for (let x_id in x_track) {
             for (let feat of x_track[x_id]) {
@@ -774,13 +770,10 @@ d3.dgenies.draw_top_track = function () {
                     .attr("y", 0)
                     .attr("width", length)
                     .attr("height", "100%")
-                    .attr("fill", "#0000ff")
                     .attr("stroke", "none")
-                    .attr("class", "track");
-                if (f_val != "") {
-                    block.attr("fill_origin", f_val);
-                    block.attr("fill", f_val);
-                }
+                    .attr("class", "track")
+                    .attr("fill", d3.dgenies.top_track_color(d3.dgenies.set_track_color(f_val)))
+                    .attr("fill_origin", f_val);
             }
         }
     }
@@ -813,7 +806,8 @@ d3.dgenies.draw_right_track = function () {
         .attr("class", "right-track-container")
 
     if (d3.dgenies.y_track !== null) {
-        const track_type = d3.dgenies.y_track.type;
+        d3.dgenies.set_right_track_color_tmpl()
+
         let y_track = d3.dgenies.y_track.data;
         for (let y_id in y_track) {
             for (let feat of y_track[y_id]) {
@@ -829,13 +823,10 @@ d3.dgenies.draw_right_track = function () {
                     .attr("y", start)
                     .attr("width", "100%")
                     .attr("height", length)
-                    .attr("fill", "#0000ff")
                     .attr("stroke", "none")
-                    .attr("class", "track");
-                if (f_val != "") {
-                    block.attr("fill_origin", f_val);
-                    block.attr("fill", f_val);
-                }
+                    .attr("class", "track")
+                    .attr("fill", d3.dgenies.right_track_color(d3.dgenies.set_track_color(f_val)))
+                    .attr("fill_origin", f_val);
             }
         }
     }
@@ -879,6 +870,10 @@ d3.dgenies.zoom_right_track = function (scale_correction = 1) {
     //    .attr("transform","translate(0," + translate_y + ")scale(1," + scale_y + ")");
 }
 
+/**
+ * Draw vertical lines separation contigs
+ * @param {*} x_order order of query contigs
+ */
 d3.dgenies.draw_x_lines = function (x_order) {
     let x_zones = d3.dgenies.x_zones
     for (let x of x_order) {
@@ -894,6 +889,10 @@ d3.dgenies.draw_x_lines = function (x_order) {
     }
 }
 
+/**
+ * Draw horizontal lines separation contigs
+ * @param {*} y_order order of target contigs
+ */
 d3.dgenies.draw_y_lines = function (y_order) {
     let y_zones = d3.dgenies.y_zones
     for (let y of y_order) {
@@ -909,6 +908,11 @@ d3.dgenies.draw_y_lines = function (y_order) {
     }
 }
 
+/**
+ * Draw dotplot brackground with alternating colors per contig mapping zones
+ * @param {array} x_order order of query contigs
+ * @param {array} y_order order of target contigs
+ */
 d3.dgenies.draw_background = function (x_order, y_order) {
     let x_zones = d3.dgenies.x_zones,
         y_zones = d3.dgenies.y_zones;
@@ -1147,6 +1151,7 @@ d3.dgenies.__draw_idy_lines = function (idy, lines, x_len, y_len) {
     }
 };
 
+
 /**
  * Switch to next color theme
  */
@@ -1164,6 +1169,40 @@ d3.dgenies.switch_color_theme = function () {
     }
 };
 
+
+d3.dgenies.set_track_color = function(val) {
+        if (val != "") return val
+        else return d3.dgenies.track_default_color
+    }
+
+/**
+ * Set track color template for right track
+ */
+d3.dgenies.set_right_track_color_tmpl = function() {
+    if (d3.dgenies.y_track.type == 'wig') {
+        let color_theme = d3.dgenies.color_idy[d3.dgenies.color_idy_theme]["track_heatmap"]
+        d3.dgenies.right_track_color = d3.scaleSequential()
+            .interpolator(color_theme)
+            .domain(d3.dgenies.y_track.range)
+    } else {
+        d3.dgenies.right_track_color = d3.dgenies.color_idy[d3.dgenies.color_idy_theme]["track_color"]
+    }
+}
+
+/**
+ * Set track color template for top track
+ */
+d3.dgenies.set_top_track_color_tmpl = function() {
+    if (d3.dgenies.x_track.type == 'wig') {
+        let color_theme = d3.dgenies.color_idy[d3.dgenies.color_idy_theme]["track_heatmap"]
+        d3.dgenies.top_track_color = d3.scaleSequential()
+            .interpolator(color_theme)
+            .domain(d3.dgenies.x_track.range)
+    } else {
+        d3.dgenies.top_track_color = d3.dgenies.color_idy[d3.dgenies.color_idy_theme]["track_color"]
+    }
+}
+
 /**
  * Change color theme to the given one
  *
@@ -1178,16 +1217,23 @@ d3.dgenies.change_color_theme = function (theme) {
         d3.dgenies.container.selectAll("path.idy_" + idy.toString())
             .attr("stroke", d3.dgenies.color_idy[d3.dgenies.color_idy_theme]["palette"][idy])
     }
+
+    // Update top track
+    d3.dgenies.set_top_track_color_tmpl()
     d3.dgenies.top_track_container.selectAll("rect.track")
         .each(function (d, i) {
             self = d3.select(this)
-            self.attr('fill', d3.dgenies.apply_theme_on_track(self.attr('fill_origin')));
-  })
+            self.attr('fill', d3.dgenies.top_track_color(d3.dgenies.set_track_color(self.attr('fill_origin'))));
+        })
+
+    // Update right track
+    d3.dgenies.set_right_track_color_tmpl()
     d3.dgenies.right_track_container.selectAll("rect.track")
         .each(function (d, i) {
             self = d3.select(this)
-            self.attr('fill', d3.dgenies.apply_theme_on_track(self.attr('fill_origin')));
-  })
+            self.attr('fill', d3.dgenies.right_track_color(d3.dgenies.set_track_color(self.attr('fill_origin'))));
+        })
+
     d3.dgenies.draw_legend();
 };
 
