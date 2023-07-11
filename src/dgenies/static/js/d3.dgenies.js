@@ -257,10 +257,10 @@ d3.dgenies.launch = function(res, update=false, noise_change=false) {
     d3.dgenies.min_idy = res["min_idy"];
     d3.dgenies.max_idy = res["max_idy"];
     d3.dgenies.limit_idy = res["limit_idy"];
-    if (res["x_track"] !== undefined) {
+    if (res["x_track"] != undefined) {
         d3.dgenies.x_track = res["x_track"];
     }
-    if (res["y_track"] !== undefined) {
+    if (res["y_track"] != undefined) {
         d3.dgenies.y_track = res["y_track"];
     }
     if (!noise_change) {
@@ -752,7 +752,7 @@ d3.dgenies.draw_top_track = function () {
     d3.dgenies.top_track_container = svg_top.append("svg:g")
         .attr("class", "top-track-container")
 
-    if (d3.dgenies.x_track !== null) {
+    if (d3.dgenies.x_track != null) {
         d3.dgenies.set_top_track_color_tmpl()
 
         let x_track = d3.dgenies.x_track.data;
@@ -805,7 +805,7 @@ d3.dgenies.draw_right_track = function () {
     d3.dgenies.right_track_container = svg_right.append("svg:g")
         .attr("class", "right-track-container")
 
-    if (d3.dgenies.y_track !== null) {
+    if (d3.dgenies.y_track != null) {
         d3.dgenies.set_right_track_color_tmpl()
 
         let y_track = d3.dgenies.y_track.data;
