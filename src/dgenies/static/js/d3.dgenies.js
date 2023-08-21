@@ -1371,7 +1371,7 @@ d3.dgenies.add_restore_all = function () {
     $("#rowColor button")
         .addClass("btn btn-sm")
         .attr("id", "xpickr")
-        .after(`<label for="xpickr">Row</label>`); 
+        .after(`<label for="xpickr">Column</label>`); 
     d3.dgenies.y_pickr = d3.dgenies.create_pickr("#ypickr", d3.dgenies.y_background_color)
         .on('change', (color, source, instance) => {
             console.log('Event: "change"', color, source, instance);
@@ -1383,7 +1383,7 @@ d3.dgenies.add_restore_all = function () {
     $("#columnColor button")
         .addClass("btn btn-sm")
         .attr("id", "ypickr")
-        .after(`<label for="ypickr">Column</label>`);
+        .after(`<label for="ypickr">Row</label>`);
 }
 
 /**
