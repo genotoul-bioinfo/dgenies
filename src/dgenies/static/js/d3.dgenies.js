@@ -927,7 +927,7 @@ d3.dgenies.draw_background = function (x_order, y_order) {
     let x_zones = d3.dgenies.x_zones,
         y_zones = d3.dgenies.y_zones;
     
-    const x_background = ["rgba(255,255,255,0)", d3.dgenies.x_background_color];
+    const x_background = [d3.dgenies.x_background_color, "rgba(255,255,255,0)"];
     // d3.dgenies.x_pickr.getColor().toRGBA().toString()
     const y_background = ["rgba(255,255,255,0)", d3.dgenies.y_background_color];
     $("#dotplot-background > rect").remove()
