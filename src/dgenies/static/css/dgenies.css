@@ -39,19 +39,23 @@ pre {
 }
 
 .glyphicon-question-sign:before {
-    content:"\e085"
+    content:"\e085";
 }
 
 .glyphicon-trash:before {
-    content:"\e020"
+    content:"\e020";
 }
 
 .glyphicon-plus:before {
-    content:"\002b"
+    content:"\002b";
 }
 
 .glyphicon-folder-open:before {
-    content:"\e118"
+    content: "\e118";
+}
+
+.glyphicon-menu-hamburger:before {
+    content: "\e236";
 }
 
 #main-error {
@@ -182,22 +186,38 @@ label.input-checkbox-label input[type=checkbox]{
     position: absolute;
 }
 
-#restore-all {
+.restore-all {
     width: 5% !important;
     height: 5% !important;
-    top:0;
-    right:0;
+    top: 0;
+    right: 0;
     position: absolute;
-    background: #ffffff url("images/reset.svg") no-repeat 6.5px 7.5px;
+}
+
+.restore-all .btn-group {
+    background: #ffffff;
+    height: 100%;
+    width: 100%;
+}
+
+#restore-all {
+    background: #ffffff url("images/reset.svg") no-repeat 5px 8px;
     background-size: 65% 65%;
-    cursor: pointer;
-    border: solid 1px black;
-    border-radius: 0 15px 0 0;
+}
+
+#restore-all:disabled   {
+    background: #ffffff url("images/reset_disabled.svg") no-repeat 5px 8px;
+    background-size: 65% 65%;
 }
 
 #restore-all:hover {
-    background: #000000 url("images/reset_hover.svg") no-repeat 6.5px 7.5px;
+    background: #000000 url("images/reset_hover.svg") no-repeat 5px 8px;
     background-size: 65% 65%;
+}
+
+.pickr label {
+    padding-left: 0.5rem;
+    margin-bottom: unset;
 }
 
 #draw {

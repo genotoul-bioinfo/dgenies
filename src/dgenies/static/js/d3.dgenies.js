@@ -187,6 +187,10 @@ d3.dgenies.min_sizes = [0, 0.01, 0.02, 0.03, 0.05, 1, 2];
 d3.dgenies.help_zoom = "/static/images/ctrl_plus_mouse.png";
 d3.dgenies.help_trans = "/static/images/ctrl_plus_click.png";
 
+//Color pickers
+d3.dgenies.xpickr = null
+d3.dgenies.ypickr = null
+
 /**
  * Initialize dotplot
  *
@@ -377,7 +381,7 @@ d3.dgenies.select_zone = function (x=null, y=null, x_zone=null, y_zone=null, for
 
             d3.dgenies.zoom_enabled = false;
         }
-        $("#restore-all").show();
+        $("#restore-all").prop("disabled", false);
         dgenies.hide_loading();
     }, 0);
 };
@@ -1179,7 +1183,7 @@ d3.dgenies.set_track_color = function(val) {
  * Set track color template for right track
  */
 d3.dgenies.set_right_track_color_tmpl = function() {
-    if (d3.dgenies.y_track.type == 'wig') {
+    if (d3.dgenies.y_track && d3.dgenies.y_track.type == 'wig') {
         let color_theme = d3.dgenies.color_idy[d3.dgenies.color_idy_theme]["track_heatmap"]
         d3.dgenies.right_track_color = d3.scaleSequential()
             .interpolator(color_theme)
@@ -1193,7 +1197,7 @@ d3.dgenies.set_right_track_color_tmpl = function() {
  * Set track color template for top track
  */
 d3.dgenies.set_top_track_color_tmpl = function() {
-    if (d3.dgenies.x_track.type == 'wig') {
+    if (d3.dgenies.x_track && d3.dgenies.x_track.type == 'wig') {
         let color_theme = d3.dgenies.color_idy[d3.dgenies.color_idy_theme]["track_heatmap"]
         d3.dgenies.top_track_color = d3.scaleSequential()
             .interpolator(color_theme)
@@ -1248,13 +1252,136 @@ d3.dgenies.draw_lines = function (lines=d3.dgenies.lines, x_len=d3.dgenies.x_len
 
     //Remove old lines (if any):
     $("path.content-lines").remove();
-    //lines = lines.sort(d3.dgenies._sort_lines);
     for (let i=0; i <4; i++) {
         d3.dgenies.__draw_idy_lines(i.toString(), lines, x_len, y_len)
     }
 
     d3.dgenies.events.filter_size(d3.dgenies.min_size);
 };
+
+d3.dgenies.create_pickr = function (el, default_color = '#FFFFFF00') {
+    return new Pickr({
+        el: el,
+        default: default_color,
+        theme: 'nano',
+        lockOpacity: false,
+
+        swatches: [
+            'rgba(244, 67, 54, 1)',
+            'rgba(233, 30, 99, 0.95)',
+            'rgba(156, 39, 176, 0.9)',
+            'rgba(103, 58, 183, 0.85)',
+            'rgba(63, 81, 181, 0.8)',
+            'rgba(33, 150, 243, 0.75)',
+            'rgba(3, 169, 244, 0.7)',
+            'rgba(0, 188, 212, 0.7)',
+            'rgba(0, 150, 136, 0.75)',
+            'rgba(76, 175, 80, 0.8)',
+            'rgba(139, 195, 74, 0.85)',
+            'rgba(205, 220, 57, 0.9)',
+            'rgba(255, 235, 59, 0.95)',
+            'rgba(255, 193, 7, 1)'
+        ],
+
+        components: {
+            preview: true,
+            opacity: true,
+            hue: true,
+
+            interaction: {
+                hex: true,
+                rgba: true,
+                hsva: true,
+                input: true,
+                clear: true,
+                save: true
+            }
+        }
+    });
+}
+
+d3.dgenies.add_restore_all = function () {
+    let draw = $("#draw");
+    draw.append(
+        $("<div>")
+            .attr("class", "restore-all")
+            .html(`
+                <div class="btn-group dropright" id="dropdown-dotplot">
+                    <button id="restore-all" title="Unzoom" class="btn btn-sm btn-outline-dark w-100" disabled="disabled">&nbsp</button>
+                    <button id="track-menu-btn" title="Track menu" type="button" class="btn btn-sm btn-outline-dark dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" data-reference="parent" aria-expanded="false">
+                        <span class="sr-only">Toggle Dropdown</span>
+                    </button>
+                    <div class="dropdown-menu" onclick="event.stopPropagation()">
+                        <form class="px-4">
+                            <h6 class="dropdown-header">Alternate background</h6>
+                            <div class="form-group">
+                                <div id="rowColor" class="pickr-container">
+                                    <div id="xpickr"></div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div id="columnColor" class="pickr-container">
+                                    <div id="ypickr"></div>
+                                </div>
+                            </div>
+                            <div class="dropdown-divider"></div>
+                            <h6 class="dropdown-header">Tracks</h6>
+                            <div class="form-group">
+                                <div class="custom-control custom-switch">
+                                    <input type="checkbox" class="custom-control-input" id="targetTrackSwitch" checked>
+                                    <label class="custom-control-label" for="targetTrackSwitch">Target (X)</label>
+                                </div>
+                                <div class="custom-control custom-switch">
+                                    <input type="checkbox" class="custom-control-input" id="queryTrackSwitch" checked>
+                                    <label class="custom-control-label" for="queryTrackSwitch">Query (Y)</label>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                `)
+        );
+    d3.dgenies.xpickr = d3.dgenies.create_pickr("#xpickr");
+    $("#rowColor button")
+        .addClass("btn btn-sm")
+        .attr("id", "xpickr")
+        .after(`<label for="xpickr">Row</label>`);    
+    d3.dgenies.ypickr = d3.dgenies.create_pickr("#ypickr");
+    $("#columnColor button")
+        .addClass("btn btn-sm")
+        .attr("id", "ypickr")
+        .after(`<label for="ypickr">Column</label>`);
+
+}
+
+
+d3.dgenies.add_restore_all2 = function () {
+    let draw = $("#draw");
+    draw.append(
+            $("<div>")
+                .attr("class", "restore-all")
+                .html(`
+                    <div class="btn-group dropright">
+                    <button id="restore-all" title="Unzoom" class="btn btn-sm btn-outline-dark w-100" disabled="disabled">&nbsp</button>
+                    <button title="Track menu" type="button" class="btn btn-sm btn-outline-dark dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" data-reference="parent" aria-expanded="false">
+                    <span class="sr-only">Toggle Dropdown</span>
+                    </button>
+                    <div class="dropdown-menu">
+                        <h6 class="dropdown-header">Background</h6>
+                        <a class="dropdown-item" href="#">Alternate line colors</a>
+                        <a class="dropdown-item" href="#">Alternate column color</a>
+                        <div class="dropdown-divider"></div>
+                        <h6 class="dropdown-header">Target track (X)</h6>
+                        <a class="dropdown-item" href="#">Hide</a>
+                        <div class="dropdown-divider"></div>
+                        <h6 class="dropdown-header">Query track (Y)</h6>
+                        <a class="dropdown-item" href="#">Hide</a>
+                    </div>
+                    </div>
+                    `)
+        );
+}
+
 
 /**
  * Draw dot plot
@@ -1271,8 +1398,7 @@ d3.dgenies.draw = function (x_contigs, x_order, y_contigs, y_order) {
         .height(height);
     let draw = $("#draw");
     draw.empty();
-    draw.append($("<div>")
-        .attr("id", "restore-all").css("display", "none").attr("title", "Unzoom"));
+    d3.dgenies.add_restore_all();
     let draw_in = draw.append($("<div>").attr("id", "draw-in"));
     d3.dgenies.svgsupercontainer = d3.select("#draw-in").append("svg:svg")
         .attr("width", "100%")
@@ -1355,14 +1481,14 @@ d3.dgenies.draw = function (x_contigs, x_order, y_contigs, y_order) {
 
         $("#restore-all").click(function () {
             if (d3.dgenies.zoom.reset_scale(false, null, false)) {
-                $(this).hide();
+                $(this).prop("disabled", true);
             }
         });
 
         $(document).on("keyup", function(e) {
             if (e.keyCode === 27) {
                 if(d3.dgenies.zoom.reset_scale(false, null, false)) {
-                    $("#restore-all").hide();
+                    $("#restore-all").prop("disabled", true);
                 }
             }
         });

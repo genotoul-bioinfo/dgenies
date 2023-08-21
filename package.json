@@ -8,10 +8,10 @@
     "minify:dgenies:run": "cd src/dgenies/static/js/ && babel -o dgenies.run.min.js --compact --minified dgenies.run.js dgenies.run.batch.js",
     "minify:dgenies:status": "cd src/dgenies/static/js/ && babel -o dgenies.status.min.js --compact --minified dgenies.status.js",
     "minify:dgenies:doc": "cd src/dgenies/static/js/ && babel -o dgenies.documentation.min.js --compact --minified dgenies.documentation.js",
-    "minify:dgenies:offline": "cd src/dgenies/static/js/ && babel -o dgenies-offline-result.min.js --compact --minified jquery-3.2.1.min.js popper.min.js bootstrap.min.js bootstrap-notify.min.js jquery-ui.min.js jquery.cookie-1.4.1.min.js dgenies.min.js chosen.jquery.min.js FileSaver.min.js canvg.min.js d3.min.js dgenies.result.min.js BootstrapMenu.min.js",
+    "minify:dgenies:offline": "cd src/dgenies/static/js/ && babel -o dgenies-offline-result.min.js --compact --minified jquery-3.2.1.min.js popper.min.js bootstrap.min.js bootstrap-notify.min.js jquery-ui.min.js jquery.cookie-1.4.1.min.js dgenies.min.js chosen.jquery.min.js FileSaver.min.js canvg.min.js d3.min.js dgenies.result.min.js BootstrapMenu.min.js pickr.min.js",
     "minify:js": "npm run minify:dgenies && npm run minify:dgenies:result && npm run minify:jquery:fileupload && npm run minify:dgenies:run && npm run minify:dgenies:status && npm run minify:dgenies:doc && npm run minify:dgenies:offline",
     "minify:dgenies:css": "cd src/dgenies/static/css/ && sass --no-source-map --style=compressed dgenies.css:dgenies.min.css",
-    "minify:dgenies:offline:css": "cd src/dgenies/static/css/ && cat chosen.min.css animate.css jquery-ui.min.css bootstrap.min.css dgenies.min.css | sass --no-source-map --style=compressed --stdin dgenies-offline-result.min.css",
+    "minify:dgenies:offline:css": "cd src/dgenies/static/css/ && cat chosen.min.css animate.css jquery-ui.min.css bootstrap.min.css dgenies.min.css pickr/nano.min.css | sass --no-source-map --style=compressed --stdin dgenies-offline-result.min.css",
     "minify:css": "npm run minify:dgenies:css && npm run minify:dgenies:offline:css",
     "minify": "npm run minify:js && npm run minify:css"
   },

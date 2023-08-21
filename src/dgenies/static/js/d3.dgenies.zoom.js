@@ -102,10 +102,10 @@ d3.dgenies.zoom.translate = function () {
         d3.dgenies.container.attr("transform", new_transform);
 
         if (translate[0] !== 0 || translate[1] !== 0) {
-            $("#restore-all").show();
+            $("#restore-all").prop("disabled", false);
         }
         else {
-            $("#restore-all").hide();
+            $("#restore-all").prop("disabled", true);
         }
 
         //Update axis:
@@ -217,10 +217,10 @@ d3.dgenies.zoom.zoom = function () {
 
             if ((translate_x <= 0.00001 && translate_x >= -0.00001) &&
                 (translate_y <= 0.00001 && translate_y >= -0.00001) && new_scale === 1) {
-                $("#restore-all").hide();
+                $("#restore-all").prop("disabled", true);
             }
             else {
-                $("#restore-all").show();
+                $("#restore-all").prop("disabled", false);
             }
         }
     }
