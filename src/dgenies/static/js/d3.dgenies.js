@@ -6,6 +6,7 @@ d3.dgenies = {};
 //GLOBAL VARIABLES:
 d3.dgenies.svgcontainer = null;
 d3.dgenies.container = null;
+d3.dgenies.background = null;
 d3.dgenies.top_track_container = null;
 d3.dgenies.right_track_container = null;
 d3.dgenies.svgsupercontainer = null;
@@ -18,6 +19,8 @@ d3.dgenies.x_zones = null;
 d3.dgenies.y_zones = null;
 d3.dgenies.x_track = null;
 d3.dgenies.y_track = null;
+d3.dgenies.x_order = null;
+d3.dgenies.y_order = null;
 d3.dgenies.zoom_enabled = true;
 d3.dgenies.all_disabled = false;
 d3.dgenies.min_idy = 0;
@@ -90,7 +93,6 @@ d3.dgenies.hex_to_greyscale = function(hex) {
 //Color theme parameters:
 d3.dgenies.color_idy_theme = "default";
 d3.dgenies.color_idy_themes = ["default", "colorblind", "greyscale", "r_default", "r_colorblind", "allblack"];
-d3.dgenies.color_background = ["#ffffff", "#fbfbfb"]
 d3.dgenies.color_idy = {
     "default": {
         "palette": {
@@ -188,8 +190,10 @@ d3.dgenies.help_zoom = "/static/images/ctrl_plus_mouse.png";
 d3.dgenies.help_trans = "/static/images/ctrl_plus_click.png";
 
 //Color pickers
-d3.dgenies.xpickr = null
-d3.dgenies.ypickr = null
+d3.dgenies.x_pickr = null
+d3.dgenies.y_pickr = null
+d3.dgenies.x_background_color = "rgba(255,255,255,0)"
+d3.dgenies.y_background_color = "rgba(255,255,255,0)"
 
 /**
  * Initialize dotplot
@@ -233,8 +237,10 @@ d3.dgenies.init = function (id_res=null, from_file=false) {
  * @param {boolean} update if true, just update the existing dot plot (don't initialize events)
  * @param {boolean} noise_change if false, set noise to true
  */
-d3.dgenies.launch = function(res, update=false, noise_change=false) {
-    dgenies.fill_select_zones(res["x_order"], res["y_order"]);
+d3.dgenies.launch = function (res, update = false, noise_change = false) {
+    d3.dgenies.x_order = res["x_order"];
+    d3.dgenies.y_order = res["y_order"];
+    dgenies.fill_select_zones(d3.dgenies.x_order, d3.dgenies.y_order);
     if (res["sorted"]) {
         $("button#sort-contigs").text("Undo sort");
         $("#export").find("select option[value=4]").show();
@@ -271,7 +277,7 @@ d3.dgenies.launch = function(res, update=false, noise_change=false) {
         dgenies.noise = true;
     }
     $("#hide-noise").val(dgenies.noise ? "Hide noise" : "Show noise");
-    d3.dgenies.draw(res["x_contigs"], res["x_order"], res["y_contigs"], res["y_order"]);
+    d3.dgenies.draw(res["x_contigs"], d3.dgenies.x_order, res["y_contigs"], d3.dgenies.y_order);
     if (!update) {
         $("div#draw").resizable({
             aspectRatio: true
@@ -920,23 +926,33 @@ d3.dgenies.draw_y_lines = function (y_order) {
 d3.dgenies.draw_background = function (x_order, y_order) {
     let x_zones = d3.dgenies.x_zones,
         y_zones = d3.dgenies.y_zones;
-    console.log(x_zones, y_zones)
+    
+    const x_background = ["rgba(255,255,255,0)", d3.dgenies.x_background_color];
+    // d3.dgenies.x_pickr.getColor().toRGBA().toString()
+    const y_background = ["rgba(255,255,255,0)", d3.dgenies.y_background_color];
+    $("#dotplot-background > rect").remove()
     for (let i = 0; i < x_order.length; i++) {
         let x = x_order[i];
-        let color_shift = i % d3.dgenies.color_background.length;
-        for (let j = 0; j < y_order.length; j++) {
-            let y = y_order[j];
-            let color_idx = (color_shift + j) % d3.dgenies.color_background.length;
-            d3.dgenies.container.append("rect")
-                .attr("x", x_zones[x][0])
-                .attr("y", d3.dgenies.scale - y_zones[y][1])
-                .attr("width", x_zones[x][1] - x_zones[x][0])
-                .attr("height", y_zones[y][1] - y_zones[y][0])
-                .attr("stroke", "none")
-                .attr("fill", d3.dgenies.color_background[color_idx]);
-        }
+        let color_idx = i % x_background.length;
+        d3.dgenies.background.append("rect")
+            .attr("x", x_zones[x][0])
+            .attr("y", 0)
+            .attr("width", x_zones[x][1] - x_zones[x][0])
+            .attr("height", d3.dgenies.scale)
+            .attr("stroke", "none")
+            .attr("fill", x_background[color_idx]);
     }
-
+    for (let j = 0; j < y_order.length; j++) {
+        let y = y_order[j];
+        let color_idx = j % y_background.length;
+        d3.dgenies.background.append("rect")
+            .attr("x", 0)
+            .attr("y", d3.dgenies.scale - y_zones[y][1])
+            .attr("width", d3.dgenies.scale)
+            .attr("height", y_zones[y][1] - y_zones[y][0])
+            .attr("stroke", "none")
+            .attr("fill", y_background[color_idx]);
+    }
 }
 
 
@@ -1341,47 +1357,26 @@ d3.dgenies.add_restore_all = function () {
                 </div>
                 `)
         );
-    d3.dgenies.xpickr = d3.dgenies.create_pickr("#xpickr");
+    d3.dgenies.x_pickr = d3.dgenies.create_pickr("#xpickr", d3.dgenies.x_background_color)
+        .on('save', (color, instance) => {
+            //console.log('Event: "save"', color, instance);
+            d3.dgenies.x_background_color = color.toRGBA().toString();
+            d3.dgenies.draw_background(d3.dgenies.x_order, d3.dgenies.y_order);
+        });
     $("#rowColor button")
         .addClass("btn btn-sm")
         .attr("id", "xpickr")
-        .after(`<label for="xpickr">Row</label>`);    
-    d3.dgenies.ypickr = d3.dgenies.create_pickr("#ypickr");
+        .after(`<label for="xpickr">Row</label>`); 
+    d3.dgenies.y_pickr = d3.dgenies.create_pickr("#ypickr", d3.dgenies.y_background_color);
     $("#columnColor button")
         .addClass("btn btn-sm")
         .attr("id", "ypickr")
         .after(`<label for="ypickr">Column</label>`);
-
+    d3.dgenies.y_pickr.on('save', (color, instance) => {
+        d3.dgenies.y_background_color = color.toRGBA().toString();
+        d3.dgenies.draw_background(d3.dgenies.x_order, d3.dgenies.y_order);
+    });
 }
-
-
-d3.dgenies.add_restore_all2 = function () {
-    let draw = $("#draw");
-    draw.append(
-            $("<div>")
-                .attr("class", "restore-all")
-                .html(`
-                    <div class="btn-group dropright">
-                    <button id="restore-all" title="Unzoom" class="btn btn-sm btn-outline-dark w-100" disabled="disabled">&nbsp</button>
-                    <button title="Track menu" type="button" class="btn btn-sm btn-outline-dark dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" data-reference="parent" aria-expanded="false">
-                    <span class="sr-only">Toggle Dropdown</span>
-                    </button>
-                    <div class="dropdown-menu">
-                        <h6 class="dropdown-header">Background</h6>
-                        <a class="dropdown-item" href="#">Alternate line colors</a>
-                        <a class="dropdown-item" href="#">Alternate column color</a>
-                        <div class="dropdown-divider"></div>
-                        <h6 class="dropdown-header">Target track (X)</h6>
-                        <a class="dropdown-item" href="#">Hide</a>
-                        <div class="dropdown-divider"></div>
-                        <h6 class="dropdown-header">Query track (Y)</h6>
-                        <a class="dropdown-item" href="#">Hide</a>
-                    </div>
-                    </div>
-                    `)
-        );
-}
-
 
 /**
  * Draw dot plot
@@ -1459,6 +1454,8 @@ d3.dgenies.draw = function (x_contigs, x_order, y_contigs, y_order) {
     }
     d3.dgenies.y_zones[y_order[y_order.length - 1]] = [sum, d3.dgenies.scale];
 
+    d3.dgenies.background = d3.dgenies.container.append("svg:g")
+        .attr("id", "dotplot-background")
     d3.dgenies.draw_background(x_order, y_order);
     d3.dgenies.draw_x_lines(x_order);
     d3.dgenies.draw_y_lines(y_order);
