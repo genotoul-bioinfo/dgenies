@@ -1281,6 +1281,7 @@ d3.dgenies.create_pickr = function (el, default_color = '#FFFFFF00') {
         default: default_color,
         theme: 'nano',
         lockOpacity: false,
+        position: 'bottom-start',
 
         swatches: [
             'rgba(244, 67, 54, 0.2)',
@@ -1296,7 +1297,9 @@ d3.dgenies.create_pickr = function (el, default_color = '#FFFFFF00') {
             'rgba(139, 195, 74, 0.2)',
             'rgba(205, 220, 57, 0.2)',
             'rgba(255, 235, 59, 0.2)',
-            'rgba(255, 193, 7, 0.2)'
+            'rgba(255, 193, 7, 0.2)',
+            'rgba(128, 128, 128, 0.2)',
+            'rgba(255, 255, 255, 0)'
         ],
 
         components: {
@@ -1310,7 +1313,7 @@ d3.dgenies.create_pickr = function (el, default_color = '#FFFFFF00') {
                 rgba: false,
                 hsva: false,
                 input: false,
-                clear: true,
+                clear: false,
                 save: false
             }
         }
