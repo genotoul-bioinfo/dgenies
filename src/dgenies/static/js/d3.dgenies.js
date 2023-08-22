@@ -280,8 +280,8 @@ d3.dgenies.launch = function (res, update = false, noise_change = false) {
     d3.dgenies.draw(res["x_contigs"], d3.dgenies.x_order, res["y_contigs"], d3.dgenies.y_order);
     if (!update) {
         $("div#draw").resizable({
-            aspectRatio: true
-        });
+            aspectRatio: true,
+            maxWidth: $("#body-container").width() - parseFloat($("#sidebar").css("min-width"))        });
         d3.dgenies.events.init();
         dgenies.result.controls.init();
     }

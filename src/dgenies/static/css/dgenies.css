@@ -210,7 +210,7 @@ label.input-checkbox-label input[type=checkbox]{
     background-size: 65% 65%;
 }
 
-#restore-all:hover {
+#restore-all:hover:not(:disabled) {
     background: #000000 url("images/reset_hover.svg") no-repeat 5px 8px;
     background-size: 65% 65%;
 }
