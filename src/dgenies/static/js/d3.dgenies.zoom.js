@@ -98,7 +98,7 @@ d3.dgenies.zoom.translate = function () {
         else if (translate[1] > min_tr[1]) {
             translate[1] = min_tr[1];
         }
-        let new_transform = `translate(${translate[0]}, ${translate[1]}) scale(${scale_x}, ${scale_y})`;
+        let new_transform = `scale(${scale_x}, ${scale_y})translate(${translate[0]/scale_x}, ${translate[1]/scale_y}) `;
         d3.dgenies.container.attr("transform", new_transform);
 
         if (translate[0] !== 0 || translate[1] !== 0) {
