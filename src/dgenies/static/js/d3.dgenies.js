@@ -743,11 +743,9 @@ d3.dgenies.draw_right_axis = function (y_zones=d3.dgenies.y_zones) {
 
 d3.dgenies.display_track_container = function () {
     // we display tracks
-    d3.dgenies.container_dotplot_width = d3.dgenies.container_dotplot_base - d3.dgenies.container_axis_thickness - d3.dgenies.container_track_thickness;
-    d3.dgenies.container_dotplot_height = d3.dgenies.container_dotplot_width;
     $("svg.svgcontainer")
-        .attr("width", d3.dgenies.container_dotplot_width + d3.dgenies.container_axis_thickness - d3.dgenies.container_track_thickness)
-        .attr("height", d3.dgenies.container_dotplot_height + d3.dgenies.container_axis_thickness - d3.dgenies.container_track_thickness)
+        .attr("width", d3.dgenies.container_dotplot_width - d3.dgenies.container_axis_thickness)
+        .attr("height", d3.dgenies.container_dotplot_height - d3.dgenies.container_axis_thickness)
         .attr("x", d3.dgenies.container_axis_thickness)
         .attr("y", d3.dgenies.container_axis_thickness + d3.dgenies.container_track_thickness);
 
@@ -764,17 +762,16 @@ d3.dgenies.display_track_container = function () {
     $("svg.top-track")
         .attr("height", d3.dgenies.container_track_thickness);
     $("svg.right-track")
-        .attr("width", d3.dgenies.container_track_thickness);
+        .attr("width", d3.dgenies.container_axis_thickness + d3.dgenies.container_track_thickness);
 }
 
 
 d3.dgenies.hide_track_container = function () {
-    d3.dgenies.container_dotplot_width = d3.dgenies.container_dotplot_base - d3.dgenies.container_axis_thickness;
-    d3.dgenies.container_dotplot_height = d3.dgenies.container_dotplot_width;
+    console.log(d3.dgenies.container_dotplot_base, d3.dgenies.container_axis_thickness, d3.dgenies.container_track_thickness)
     // we hide tracks
     $("svg.svgcontainer")
-        .attr("width", d3.dgenies.container_dotplot_width + d3.dgenies.container_axis_thickness - d3.dgenies.container_track_thickness)
-        .attr("height", d3.dgenies.container_dotplot_height + d3.dgenies.container_axis_thickness - d3.dgenies.container_track_thickness)
+        .attr("width", d3.dgenies.container_dotplot_width - d3.dgenies.container_axis_thickness + d3.dgenies.container_track_thickness)
+        .attr("height", d3.dgenies.container_dotplot_height - d3.dgenies.container_axis_thickness + d3.dgenies.container_track_thickness)
         .attr("x", d3.dgenies.container_axis_thickness)
         .attr("y", d3.dgenies.container_axis_thickness);
 
@@ -794,80 +791,10 @@ d3.dgenies.hide_track_container = function () {
 }
 
 /**
- * Toggle display track
- * @param {bool} force_state force the state of the track to be displayed or hidden. If undefined: just toogle, if true: force display, if false: force hide
- */
-
-d3.dgenies.toggle_top_track = function (force_status) {
-    if ($("#targetTrackSwitch").is(":checked")) {
-        // display top track
-        console.log("Display top track")
-        $("svg.top-track").removeAttr("visibility")
-        if (!$("#queryTrackSwitch").is(":checked")) {
-            // display track container
-            d3.dgenies.display_track_container()
-        }
-    } else {
-        console.log("Hide top track")
-        if (!$("#queryTrackSwitch").is(":checked")) {
-            // hide track container
-            d3.dgenies.hide_track_container()
-        }
-        // hide top track
-        $("svg.top-track").attr("visibility", "hidden")
-    }
-    //else nothing to do
-}
-
-/**
- * Toggle display track
- * @param {bool} force_state force the state of the track to be displayed or hidden. If undefined: just toogle, if true: force display, if false: force hide
- */
-
-d3.dgenies.toggle_right_track = function (force_status) {
-    if ($("#queryTrackSwitch").is(":checked")) {
-        // display right track
-        console.log("Display right track")
-        $("svg.right-track").removeAttr("visibility")
-        if (!$("#targetTrackSwitch").is(":checked")) {
-            // display track container
-            d3.dgenies.display_track_container()
-        }
-    } else {
-        console.log("Hide right track")
-        if (!$("#targetTrackSwitch").is(":checked")) {
-            // hide track container
-            d3.dgenies.hide_track_container()
-        }
-        // hide right track
-        $("svg.right-track").attr("visibility", "hidden")
-    }
-}
-
-/**
  * Draw top track
  */
 d3.dgenies.draw_top_track = function () {
 
-    let svg_top = d3.dgenies.svgsupercontainer.append("svg:svg")
-        .attr("class", "top-track track-container")
-        .attr("width", d3.dgenies.container_dotplot_width - d3.dgenies.container_axis_thickness)
-        .attr("height", d3.dgenies.container_track_thickness)
-        .attr("x", d3.dgenies.container_axis_thickness)
-        .attr("y", d3.dgenies.container_axis_thickness)
-        .attr("viewBox", "0 0 " + d3.dgenies.scale + " 1000")
-        .attr("preserveAspectRatio", "none");
-
-    svg_top.append("rect")
-        .attr("x", 0)
-        .attr("y", 0)
-        .attr("width", "100%")
-        .attr("height", "100%")
-        .attr("fill", "#ffffff")
-        .attr("stroke", "black")
-
-    d3.dgenies.top_track_container = svg_top.append("svg:g")
-        .attr("class", "top-track-container")
 
     if (d3.dgenies.x_track != null) {
         d3.dgenies.set_top_track_color_tmpl()
@@ -901,26 +828,6 @@ d3.dgenies.draw_top_track = function () {
  * Draw right track
  */
 d3.dgenies.draw_right_track = function () {
-
-    let svg_right = d3.dgenies.svgsupercontainer.append("svg:svg")
-        .attr("class", "right-track track-container")
-        .attr("width", d3.dgenies.container_track_thickness)
-        .attr("height", d3.dgenies.container_dotplot_height - d3.dgenies.container_axis_thickness)
-        .attr("x", d3.dgenies.container_dotplot_width)
-        .attr("y", d3.dgenies.container_axis_thickness + d3.dgenies.container_track_thickness)
-        .attr("viewBox", "0 0 1000 " + d3.dgenies.scale)
-        .attr("preserveAspectRatio", "none");
-    
-    svg_right.append("rect")
-        .attr("x", 0)
-        .attr("y", 0)
-        .attr("width", "100%")
-        .attr("height", "100%")
-        .attr("fill", "#ffffff")
-        .attr("stroke", "black");
-    
-    d3.dgenies.right_track_container = svg_right.append("svg:g")
-        .attr("class", "right-track-container")
 
     if (d3.dgenies.y_track != null) {
         d3.dgenies.set_right_track_color_tmpl()
@@ -1433,6 +1340,8 @@ d3.dgenies.add_restore_all = function () {
             .attr("class", "restore-all")
             .html(`
                 <div class="btn-group dropright" id="dropdown-dotplot">
+                    <!-- <button id="restore-all" title="Unzoom" class="btn btn-sm btn-outline-dark w-100" disabled="disabled"><span class="glyphicon glyphicon-refresh"><span></button> -->
+                    <!-- <button id="restore-all" title="Unzoom" class="btn btn-sm btn-outline-dark w-100" disabled="disabled"><span class="reload"><span></button> -->
                     <button id="restore-all" title="Unzoom" class="btn btn-sm btn-outline-dark w-100" disabled="disabled">&nbsp</button>
                     <button id="track-menu-btn" title="Track menu" type="button" class="btn btn-sm btn-outline-dark dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" data-reference="parent" aria-expanded="false">
                         <span class="sr-only">Toggle Dropdown</span>
@@ -1491,13 +1400,52 @@ d3.dgenies.add_restore_all = function () {
         .attr("id", "ypickr")
         .after(`<label for="ypickr">Row</label>`);
     if (d3.dgenies.x_track != null) {
-        $("#targetTrackSwitch").bind("change", d3.dgenies.toggle_right_track);
+        $("#targetTrackSwitch").on("change", function () {
+            console.log($("#targetTrackSwitch"))
+            if ($("#targetTrackSwitch").is(":checked")) {
+                // display top track
+                console.log("Display top track")
+                $("svg.top-track").removeAttr("visibility")
+                if (!$("#queryTrackSwitch").is(":checked")) {
+                    // display track container
+                    d3.dgenies.display_track_container()
+                }
+            } else {
+                console.log("Hide top track")
+                if (!$("#queryTrackSwitch").is(":checked")) {
+                    // hide track container
+                    d3.dgenies.hide_track_container()
+                }
+                // hide top track
+                $("svg.top-track").attr("visibility", "hidden")
+            }
+            //else nothing to do
+        });
     } else {
         $("#targetTrackSwitch").prop('checked', false).prop("disabled", true);
         //setTimeout(() => { $("#targetTrackSwitch").prop("disabled", true) }, 1000);
     }
     if (d3.dgenies.y_track != null) {
-        $("#queryTrackSwitch").bind( "change", d3.dgenies.toggle_top_track);
+        $("#queryTrackSwitch").on("change", function () {
+            console.log($("#queryTrackSwitch"))
+            if ($("#queryTrackSwitch").is(":checked")) {
+                // display right track
+                console.log("Display right track")
+                $("svg.right-track").removeAttr("visibility")
+                if (!$("#targetTrackSwitch").is(":checked")) {
+                    // display track container
+                    d3.dgenies.display_track_container()
+                }
+            } else {
+                console.log("Hide right track")
+                if (!$("#targetTrackSwitch").is(":checked")) {
+                    // hide track container
+                    d3.dgenies.hide_track_container()
+                }
+                // hide right track
+                $("svg.right-track").attr("visibility", "hidden")
+            }
+        });
     } else {
         $("#queryTrackSwitch").prop('checked', false).prop("disabled", true);
     }
@@ -1554,6 +1502,31 @@ d3.dgenies.draw = function (x_contigs, x_order, y_contigs, y_order) {
         .attr("stroke", "none")
         .attr("fill", "white");
     
+    if (d3.dgenies.x_track !== null) {
+        let svg_top = d3.dgenies.svgsupercontainer.append("svg:svg")
+            .attr("class", "top-track track-container")
+            .attr("width", d3.dgenies.container_dotplot_width - d3.dgenies.container_axis_thickness)
+            .attr("height", d3.dgenies.container_track_thickness)
+            .attr("x", d3.dgenies.container_axis_thickness)
+            .attr("y", d3.dgenies.container_axis_thickness)
+            .attr("viewBox", "0 0 " + d3.dgenies.scale + " 1000")
+            .attr("preserveAspectRatio", "none");
+        d3.dgenies.top_track_container = svg_top.append("svg:g")
+            .attr("class", "top-track-container")
+    }
+
+    if (d3.dgenies.y_track !== null) {
+        let svg_right = d3.dgenies.svgsupercontainer.append("svg:svg")
+            .attr("class", "right-track track-container")
+            .attr("width", d3.dgenies.container_track_thickness)
+            .attr("height", d3.dgenies.container_dotplot_height - d3.dgenies.container_axis_thickness)
+            .attr("x", d3.dgenies.container_dotplot_width)
+            .attr("y", d3.dgenies.container_axis_thickness + d3.dgenies.container_track_thickness)
+            .attr("viewBox", "0 0 1000 " + d3.dgenies.scale)
+            .attr("preserveAspectRatio", "none");
+        d3.dgenies.right_track_container = svg_right.append("svg:g")
+            .attr("class", "right-track-container")
+    }
 
     //X axis:
     d3.dgenies.x_zones = {};
