@@ -27,6 +27,7 @@ d3.dgenies.min_idy = 0;
 d3.dgenies.max_idy = 0;
 d3.dgenies.zone_selected = false;
 d3.dgenies.query_selected = null;
+d3.dgenies.are_hidden_tracks = [false, false]
 
 //For translations:
 d3.dgenies.translate_start = null;
@@ -179,7 +180,8 @@ d3.dgenies.color_mixes = "#969696";
 //Container sizes (relative ones on a 100 scale)
 d3.dgenies.container_axis_thickness = 5;
 d3.dgenies.container_track_thickness = 3;
-d3.dgenies.container_dotplot_width = 100 - d3.dgenies.container_axis_thickness - d3.dgenies.container_track_thickness;
+d3.dgenies.container_dotplot_base = 100
+d3.dgenies.container_dotplot_width = d3.dgenies.container_dotplot_base - d3.dgenies.container_axis_thickness - d3.dgenies.container_track_thickness;
 d3.dgenies.container_dotplot_height = d3.dgenies.container_dotplot_width;
 
 //Filter sizes:
@@ -281,7 +283,8 @@ d3.dgenies.launch = function (res, update = false, noise_change = false) {
     if (!update) {
         $("div#draw").resizable({
             aspectRatio: true,
-            maxWidth: $("#body-container").width() - parseFloat($("#sidebar").css("min-width"))        });
+            maxWidth: $("#body-container").width() - parseFloat($("#sidebar").css("min-width"))
+        });
         d3.dgenies.events.init();
         dgenies.result.controls.init();
     }
@@ -737,13 +740,117 @@ d3.dgenies.draw_right_axis = function (y_zones=d3.dgenies.y_zones) {
     }
 };
 
+
+d3.dgenies.display_track_container = function () {
+    // we display tracks
+    d3.dgenies.container_dotplot_width = d3.dgenies.container_dotplot_base - d3.dgenies.container_axis_thickness - d3.dgenies.container_track_thickness;
+    d3.dgenies.container_dotplot_height = d3.dgenies.container_dotplot_width;
+    $("svg.svgcontainer")
+        .attr("width", d3.dgenies.container_dotplot_width + d3.dgenies.container_axis_thickness - d3.dgenies.container_track_thickness)
+        .attr("height", d3.dgenies.container_dotplot_height + d3.dgenies.container_axis_thickness - d3.dgenies.container_track_thickness)
+        .attr("x", d3.dgenies.container_axis_thickness)
+        .attr("y", d3.dgenies.container_axis_thickness + d3.dgenies.container_track_thickness);
+
+    /*
+    $("svg.left-axis")
+        .attr("height", d3.dgenies.container_dotplot_height - d3.dgenies.container_axis_thickness)
+        .attr("y", d3.dgenies.container_axis_thickness + d3.dgenies.container_track_thickness)
+
+    $("svg.bottom-axis")
+        .attr("height", d3.dgenies.container_axis_thickness)
+        .attr("y", d3.dgenies.container_dotplot_height + d3.dgenies.container_track_thickness)
+    */
+    
+    $("svg.top-track")
+        .attr("height", d3.dgenies.container_track_thickness);
+    $("svg.right-track")
+        .attr("width", d3.dgenies.container_track_thickness);
+}
+
+
+d3.dgenies.hide_track_container = function () {
+    d3.dgenies.container_dotplot_width = d3.dgenies.container_dotplot_base - d3.dgenies.container_axis_thickness;
+    d3.dgenies.container_dotplot_height = d3.dgenies.container_dotplot_width;
+    // we hide tracks
+    $("svg.svgcontainer")
+        .attr("width", d3.dgenies.container_dotplot_width + d3.dgenies.container_axis_thickness - d3.dgenies.container_track_thickness)
+        .attr("height", d3.dgenies.container_dotplot_height + d3.dgenies.container_axis_thickness - d3.dgenies.container_track_thickness)
+        .attr("x", d3.dgenies.container_axis_thickness)
+        .attr("y", d3.dgenies.container_axis_thickness);
+
+    /*
+    $("svg.left-axis")
+        .attr("height", d3.dgenies.container_dotplot_height - d3.dgenies.container_axis_thickness)
+        .attr("y", d3.dgenies.container_axis_thickness)
+
+    $("svg.bottom-axis")
+        .attr("width", d3.dgenies.container_dotplot_width - d3.dgenies.container_axis_thickness)
+        .attr("y", d3.dgenies.container_dotplot_height)
+    */
+    $("svg.top-track")
+        .attr("height", 0);
+    $("svg.right-track")
+        .attr("width", 0);
+}
+
+/**
+ * Toggle display track
+ * @param {bool} force_state force the state of the track to be displayed or hidden. If undefined: just toogle, if true: force display, if false: force hide
+ */
+
+d3.dgenies.toggle_top_track = function (force_status) {
+    if ($("#targetTrackSwitch").is(":checked")) {
+        // display top track
+        console.log("Display top track")
+        $("svg.top-track").removeAttr("visibility")
+        if (!$("#queryTrackSwitch").is(":checked")) {
+            // display track container
+            d3.dgenies.display_track_container()
+        }
+    } else {
+        console.log("Hide top track")
+        if (!$("#queryTrackSwitch").is(":checked")) {
+            // hide track container
+            d3.dgenies.hide_track_container()
+        }
+        // hide top track
+        $("svg.top-track").attr("visibility", "hidden")
+    }
+    //else nothing to do
+}
+
+/**
+ * Toggle display track
+ * @param {bool} force_state force the state of the track to be displayed or hidden. If undefined: just toogle, if true: force display, if false: force hide
+ */
+
+d3.dgenies.toggle_right_track = function (force_status) {
+    if ($("#queryTrackSwitch").is(":checked")) {
+        // display right track
+        console.log("Display right track")
+        $("svg.right-track").removeAttr("visibility")
+        if (!$("#targetTrackSwitch").is(":checked")) {
+            // display track container
+            d3.dgenies.display_track_container()
+        }
+    } else {
+        console.log("Hide right track")
+        if (!$("#targetTrackSwitch").is(":checked")) {
+            // hide track container
+            d3.dgenies.hide_track_container()
+        }
+        // hide right track
+        $("svg.right-track").attr("visibility", "hidden")
+    }
+}
+
 /**
  * Draw top track
  */
 d3.dgenies.draw_top_track = function () {
 
     let svg_top = d3.dgenies.svgsupercontainer.append("svg:svg")
-        .attr("class", "top-track")
+        .attr("class", "top-track track-container")
         .attr("width", d3.dgenies.container_dotplot_width - d3.dgenies.container_axis_thickness)
         .attr("height", d3.dgenies.container_track_thickness)
         .attr("x", d3.dgenies.container_axis_thickness)
@@ -796,7 +903,7 @@ d3.dgenies.draw_top_track = function () {
 d3.dgenies.draw_right_track = function () {
 
     let svg_right = d3.dgenies.svgsupercontainer.append("svg:svg")
-        .attr("class", "right-track")
+        .attr("class", "right-track track-container")
         .attr("width", d3.dgenies.container_track_thickness)
         .attr("height", d3.dgenies.container_dotplot_height - d3.dgenies.container_axis_thickness)
         .attr("x", d3.dgenies.container_dotplot_width)
@@ -877,7 +984,6 @@ d3.dgenies.zoom_right_track = function (scale_correction = 1) {
 
     d3.dgenies.right_track_container
         .attr("transform", "scale(1," + scale_y + ")translate(0," + translate_y / scale_correction + ")");
-    //    .attr("transform","translate(0," + translate_y + ")scale(1," + scale_y + ")");
 }
 
 /**
@@ -1384,6 +1490,17 @@ d3.dgenies.add_restore_all = function () {
         .addClass("btn btn-sm")
         .attr("id", "ypickr")
         .after(`<label for="ypickr">Row</label>`);
+    if (d3.dgenies.x_track != null) {
+        $("#targetTrackSwitch").bind("change", d3.dgenies.toggle_right_track);
+    } else {
+        $("#targetTrackSwitch").prop('checked', false).prop("disabled", true);
+        //setTimeout(() => { $("#targetTrackSwitch").prop("disabled", true) }, 1000);
+    }
+    if (d3.dgenies.y_track != null) {
+        $("#queryTrackSwitch").bind( "change", d3.dgenies.toggle_top_track);
+    } else {
+        $("#queryTrackSwitch").prop('checked', false).prop("disabled", true);
+    }
 }
 
 /**
@@ -1483,6 +1600,10 @@ d3.dgenies.draw = function (x_contigs, x_order, y_contigs, y_order) {
         d3.dgenies.draw_lines();
         d3.dgenies.draw_top_track();
         d3.dgenies.draw_right_track();
+
+        if (d3.dgenies.x_track == null && d3.dgenies.y_track == null) {
+            d3.dgenies.hide_track_container()
+        }
 
         $("#restore-all").click(function () {
             if (d3.dgenies.zoom.reset_scale(false, null, false)) {
