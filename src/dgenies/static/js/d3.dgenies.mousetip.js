@@ -181,8 +181,9 @@ $.fn.mousetip_track_x = function (my_tip, relative_to = null, x = 20, y = 20) {
             }
             tip.html(html);
             let css = { top: mouseY, left: mouseX };
+            console.log(tip)
 
-            if (!hidden && ((!e.ctrlKey && !d3.dgenies.zone_selected) || match !== null)) {
+            if (!hidden && ((!e.ctrlKey && !d3.dgenies.zone_selected) && match !== null)) {
                 tip.show().css(css);
             }
 
@@ -233,7 +234,7 @@ $.fn.mousetip_track_y = function(my_tip, relative_to = null, x = 20, y = 20) {
             tip.html(html);
             let css = { top: mouseY, left: mouseX };
 
-            if (!hidden && ((!e.ctrlKey && !d3.dgenies.zone_selected) || match !== null)) {
+            if (!hidden && ((!e.ctrlKey && !d3.dgenies.zone_selected) && match !== null)) {
                 tip.show().css(css);
             }
 
@@ -359,7 +360,7 @@ d3.dgenies.mousetip.dotplot.get_match = function(e) {
  * Initialise tooltip for dotplot
  */
 d3.dgenies.mousetip.track_x.init = function () {
-    $("svg.top-track").mousetip_track_x(".tip", "#draw");
+    $("g.top-track-container").mousetip_track_x(".tip", "#draw");
 };
 
 /**
@@ -370,7 +371,7 @@ d3.dgenies.mousetip.track_x.init = function () {
  */
 d3.dgenies.mousetip.track_x.get_match = function (e) {
     // Get DOM object coordinates the mouse cursor is over.
-    let rect = $("svg.top-track")[0].getBoundingClientRect();
+    let rect = $("g.top-track-container")[0].getBoundingClientRect();
     let posX = rect.left + window.scrollX,
         posY = rect.top + window.scrollY,
         width_c = rect.width,
@@ -380,6 +381,7 @@ d3.dgenies.mousetip.track_x.get_match = function (e) {
     // Transform into coordinates in data
     let c_x = (e.pageX - posX) / width_c * d3.dgenies.scale
     c_x = c_x / d3.dgenies.scale * d3.dgenies.x_len;
+    console.log(c_x)
 
     let error_x = d3.dgenies.content_lines_width / d3.dgenies.scale * d3.dgenies.x_len;
     // let error_x = 0,
@@ -408,7 +410,7 @@ d3.dgenies.mousetip.track_x.get_match = function (e) {
  * Initialise tooltip for dotplot
  */
 d3.dgenies.mousetip.track_y.init = function () {
-    $("svg.right-track").mousetip_track_y(".tip", "#draw");
+    $("g.right-track-container").mousetip_track_y(".tip", "#draw");
 };
 
 /**
@@ -419,12 +421,11 @@ d3.dgenies.mousetip.track_y.init = function () {
  */
 d3.dgenies.mousetip.track_y.get_match = function (e) {
     // Get DOM object coordinates the mouse cursor is over.
-    let rect = $("svg.right-track")[0].getBoundingClientRect();
+    let rect = $("g.right-track-container")[0].getBoundingClientRect();
     let posX = rect.left + window.scrollX,
         posY = rect.top + window.scrollY,
         width_c = rect.width,
         height_c = rect.height;
-    console.log(posX, posY, width_c, height_c)
 
     // Transform into coordinates in data
     let c_y = d3.dgenies.scale - ((e.pageY - posY) / height_c * d3.dgenies.scale);

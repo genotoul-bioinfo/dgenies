@@ -1517,6 +1517,13 @@ d3.dgenies.draw = function (x_contigs, x_order, y_contigs, y_order) {
             .attr("preserveAspectRatio", "none");
         d3.dgenies.top_track_container = svg_top.append("svg:g")
             .attr("class", "top-track-container")
+        d3.dgenies.top_track_container.append("rect")
+            .attr("x", 0)
+            .attr("y", 0)
+            .attr("width", "100%")
+            .attr("height", "100%")
+            .attr("stroke", "none")
+            .attr("fill", "white");
     }
 
     if (d3.dgenies.y_track !== null) {
@@ -1530,6 +1537,13 @@ d3.dgenies.draw = function (x_contigs, x_order, y_contigs, y_order) {
             .attr("preserveAspectRatio", "none");
         d3.dgenies.right_track_container = svg_right.append("svg:g")
             .attr("class", "right-track-container")
+        d3.dgenies.right_track_container.append("rect")
+            .attr("x", 0)
+            .attr("y", 0)
+            .attr("width", "100%")
+            .attr("height", "100%")
+            .attr("stroke", "none")
+            .attr("fill", "white");
     }
 
     //X axis:
