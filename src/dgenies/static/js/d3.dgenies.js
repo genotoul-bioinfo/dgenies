@@ -765,6 +765,49 @@ d3.dgenies.display_track_container = function () {
         .attr("width", d3.dgenies.container_axis_thickness + d3.dgenies.container_track_thickness);
 }
 
+/**
+ * Toggle display top track
+ */
+d3.dgenies.toggle_top_track = function () {
+    if ($("#targetTrackSwitch").is(":checked")) {
+        // display top track
+        $("svg.top-track").removeAttr("visibility")
+        if (!$("#queryTrackSwitch").is(":checked")) {
+            // display track container
+            d3.dgenies.display_track_container()
+        }
+    } else {
+        if (!$("#queryTrackSwitch").is(":checked")) {
+            // hide track container
+            d3.dgenies.hide_track_container()
+        }
+        // hide top track
+        $("svg.top-track").attr("visibility", "hidden")
+    }
+    //else nothing to do
+}
+
+/**
+ * Toggle display right track
+ */
+d3.dgenies.toggle_right_track = function () {
+    if ($("#queryTrackSwitch").is(":checked")) {
+        // display right track
+        $("svg.right-track").removeAttr("visibility")
+        if (!$("#targetTrackSwitch").is(":checked")) {
+            // display track container
+            d3.dgenies.display_track_container()
+        }
+    } else {
+        if (!$("#targetTrackSwitch").is(":checked")) {
+            // hide track container
+            d3.dgenies.hide_track_container()
+        }
+        // hide right track
+        $("svg.right-track").attr("visibility", "hidden")
+    }
+}
+
 
 d3.dgenies.hide_track_container = function () {
     console.log(d3.dgenies.container_dotplot_base, d3.dgenies.container_axis_thickness, d3.dgenies.container_track_thickness)
@@ -1400,52 +1443,13 @@ d3.dgenies.add_restore_all = function () {
         .attr("id", "ypickr")
         .after(`<label for="ypickr">Row</label>`);
     if (d3.dgenies.x_track != null) {
-        $("#targetTrackSwitch").on("change", function () {
-            console.log($("#targetTrackSwitch"))
-            if ($("#targetTrackSwitch").is(":checked")) {
-                // display top track
-                console.log("Display top track")
-                $("svg.top-track").removeAttr("visibility")
-                if (!$("#queryTrackSwitch").is(":checked")) {
-                    // display track container
-                    d3.dgenies.display_track_container()
-                }
-            } else {
-                console.log("Hide top track")
-                if (!$("#queryTrackSwitch").is(":checked")) {
-                    // hide track container
-                    d3.dgenies.hide_track_container()
-                }
-                // hide top track
-                $("svg.top-track").attr("visibility", "hidden")
-            }
-            //else nothing to do
-        });
+        $("#targetTrackSwitch").on("change", d3.dgenies.toggle_top_track);
     } else {
         $("#targetTrackSwitch").prop('checked', false).prop("disabled", true);
         //setTimeout(() => { $("#targetTrackSwitch").prop("disabled", true) }, 1000);
     }
     if (d3.dgenies.y_track != null) {
-        $("#queryTrackSwitch").on("change", function () {
-            console.log($("#queryTrackSwitch"))
-            if ($("#queryTrackSwitch").is(":checked")) {
-                // display right track
-                console.log("Display right track")
-                $("svg.right-track").removeAttr("visibility")
-                if (!$("#targetTrackSwitch").is(":checked")) {
-                    // display track container
-                    d3.dgenies.display_track_container()
-                }
-            } else {
-                console.log("Hide right track")
-                if (!$("#targetTrackSwitch").is(":checked")) {
-                    // hide track container
-                    d3.dgenies.hide_track_container()
-                }
-                // hide right track
-                $("svg.right-track").attr("visibility", "hidden")
-            }
-        });
+        $("#queryTrackSwitch").on("change", d3.dgenies.toggle_right_track);
     } else {
         $("#queryTrackSwitch").prop('checked', false).prop("disabled", true);
     }
