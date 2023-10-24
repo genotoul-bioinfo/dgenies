@@ -142,7 +142,6 @@ $.fn.mousetip_dotplot = function(my_tip, relative_to=null, x=20, y=20) {
 
 $.fn.mousetip_track_x = function (my_tip, relative_to = null, x = 20, y = 20) {
     let $this = $(this);
-    console.log($this)
     let tip = relative_to === null ? $(my_tip, this) : $(my_tip, relative_to);
     let hidden = true;
 
@@ -175,13 +174,12 @@ $.fn.mousetip_track_x = function (my_tip, relative_to = null, x = 20, y = 20) {
 
             let html = "";
             if (match !== null) {
-                html = `<strong>Target:</strong> ${match.contig}<br/>(${match.feature[0]} - ${match.feature[0] + match.feature[1]})<br/>
+                html = `<strong>Target:</strong> ${match.contig}<br/>(${match.feature[0] - match.contig_start} - ${match.feature[0] + match.feature[1] - match.contig_start})<br/>
                         <strong>Value:</strong> ${match.feature[2]}<br/>
                         <strong>Comment:</strong> ${match.feature[3]}`
             }
             tip.html(html);
             let css = { top: mouseY, left: mouseX };
-            console.log(tip)
 
             if (!hidden && ((!e.ctrlKey && !d3.dgenies.zone_selected) && match !== null)) {
                 tip.show().css(css);
@@ -194,7 +192,6 @@ $.fn.mousetip_track_x = function (my_tip, relative_to = null, x = 20, y = 20) {
 
 $.fn.mousetip_track_y = function(my_tip, relative_to = null, x = 20, y = 20) {
     let $this = $(this);
-    console.log($this)
     let tip = relative_to === null ? $(my_tip, this) : $(my_tip, relative_to);
     let hidden = true;
 
@@ -227,7 +224,7 @@ $.fn.mousetip_track_y = function(my_tip, relative_to = null, x = 20, y = 20) {
 
             let html = "";
             if (match !== null) {
-                html = `<strong>Query:</strong> ${match.contig}<br/>(${match.feature[0]} - ${match.feature[0] + match.feature[1]})<br/>
+                html = `<strong>Query:</strong> ${match.contig}<br/>(${match.feature[0] - match.contig_start} - ${match.feature[0] + match.feature[1] - match.contig_start})<br/>
                         <strong>Value:</strong> ${match.feature[2]}<br/>
                         <strong>Comment:</strong> ${match.feature[3]}`
             }
@@ -376,12 +373,10 @@ d3.dgenies.mousetip.track_x.get_match = function (e) {
         posY = rect.top + window.scrollY,
         width_c = rect.width,
         height_c = rect.height;
-    console.log(posX, posY, width_c, height_c)
 
     // Transform into coordinates in data
     let c_x = (e.pageX - posX) / width_c * d3.dgenies.scale
     c_x = c_x / d3.dgenies.scale * d3.dgenies.x_len;
-    console.log(c_x)
 
     let error_x = d3.dgenies.content_lines_width / d3.dgenies.scale * d3.dgenies.x_len;
     // let error_x = 0,
@@ -389,17 +384,25 @@ d3.dgenies.mousetip.track_x.get_match = function (e) {
     let match = null;
     let found = false;
     let x_track = d3.dgenies.x_track.data;
-    for (let x_id in x_track) {
-        for (let feat of x_track[x_id]) {
-            let f_start = feat[0];
-            let f_len = feat[1];
-            if (f_start <= c_x && c_x <= f_start + f_len) {
-                match = { contig: x_id, feature: feat };
-                found = true;
-                break;
+    let contig_start = 0; // from where the contig starts
+    for (let x_id in d3.dgenies.x_order) {
+        if (x_id in x_track){
+            for (let feat of x_track[x_id]) {
+                let f_start = feat[0];
+                let f_len = feat[1];
+                if (f_start <= c_x && c_x <= f_start + f_len) {
+                    match = {
+                        contig: x_id,
+                        contig_start: contig_start,
+                        feature: feat
+                    };
+                    found = true;
+                    break;
+                }
             }
+            if (found) { break; }
+            contig_start += d3.dgenies.x_contigs[x_id]
         }
-        if (found) { break; }
     }
 
     return match;
@@ -436,18 +439,26 @@ d3.dgenies.mousetip.track_y.get_match = function (e) {
 
     let match = null;
     let found = false;
-    let x_track = d3.dgenies.y_track.data;
-    for (let x_id in x_track) {
-        for (let feat of x_track[x_id]) {
-            let f_start = feat[0];
-            let f_len = feat[1];
-            if (f_start <= c_y && c_y <= f_start + f_len) {
-                match = { contig: x_id, feature: feat };
-                found = true;
-                break;
+    let y_track = d3.dgenies.y_track.data;
+    let contig_start = 0; // from where the contig starts
+    for (let y_id in y_track) {
+        if (y_id in y_track) {
+            for (let feat of y_track[y_id]) {
+                let f_start = feat[0];
+                let f_len = feat[1];
+                if (f_start <= c_y && c_y <= f_start + f_len) {
+                    match = {
+                        contig: y_id,
+                        contig_start: contig_start,
+                        feature: feat
+                    };
+                    found = true;
+                    break;
+                }
             }
+            if (found) { break; }
+            contig_start += d3.dgenies.y_contigs[y_id]
         }
-        if (found) { break; }
     }
 
     return match;

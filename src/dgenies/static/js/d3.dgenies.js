@@ -21,6 +21,8 @@ d3.dgenies.x_track = null;
 d3.dgenies.y_track = null;
 d3.dgenies.x_order = null;
 d3.dgenies.y_order = null;
+d3.dgenies.x_contigs = null;
+d3.dgenies.y_contigs = null;
 d3.dgenies.zoom_enabled = true;
 d3.dgenies.all_disabled = false;
 d3.dgenies.min_idy = 0;
@@ -242,6 +244,8 @@ d3.dgenies.init = function (id_res=null, from_file=false) {
 d3.dgenies.launch = function (res, update = false, noise_change = false) {
     d3.dgenies.x_order = res["x_order"];
     d3.dgenies.y_order = res["y_order"];
+    d3.dgenies.x_contigs = res["x_contigs"];
+    d3.dgenies.y_contigs = res["y_contigs"];
     dgenies.fill_select_zones(d3.dgenies.x_order, d3.dgenies.y_order);
     if (res["sorted"]) {
         $("button#sort-contigs").text("Undo sort");
@@ -279,7 +283,7 @@ d3.dgenies.launch = function (res, update = false, noise_change = false) {
         dgenies.noise = true;
     }
     $("#hide-noise").val(dgenies.noise ? "Hide noise" : "Show noise");
-    d3.dgenies.draw(res["x_contigs"], d3.dgenies.x_order, res["y_contigs"], d3.dgenies.y_order);
+    d3.dgenies.draw(d3.dgenies.x_contigs, d3.dgenies.x_order, d3.dgenies.y_contigs, d3.dgenies.y_order);
     if (!update) {
         $("div#draw").resizable({
             aspectRatio: true,
