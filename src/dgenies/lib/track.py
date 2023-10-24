@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 from typing import Union, Sequence
 from dgenies.bin.index import Index
 from dgenies.lib.exceptions import DGeniesMessageException, DGeniesFileDoesNotExist
+from dgenies.config_reader import AppConfigReader
 
 
 class DGeniesUnknownTrackType(DGeniesMessageException):
@@ -30,6 +31,8 @@ class Track(ABC):
     Functions applied to Track files
     """
 
+    entries_limit = None
+
     def __init__(self, track: str, idx: str, auto_parse: bool = True):
         """
 
@@ -42,10 +45,9 @@ class Track(ABC):
         self.track = track
         self.idx = idx
         self.contigs = {}
-        self.data = dict()
+        self.entries = []
         if auto_parse:
             self.parse_track()
-
     @abstractmethod
     def parse_track(self) -> None:
         pass
@@ -83,22 +85,32 @@ class Track(ABC):
 
     def add_feature(self, chrom: str, start: int, length: int,
                     value: Union[int, str] = "", comment: str = ""):
-        entry = (
+        self.entries.append((
+            chrom,
             self.abs_start[chrom] + self.contigs[chrom] - (start + length) if self.reversed[chrom] \
                 else self.abs_start[chrom] + start,  # start
             length,  # length
             value,  # value/color
             comment  # comment for tooltip
-        )
-        try:
-            self.data[chrom].append(entry)
-        except KeyError:
-            self.data[chrom] = [entry]
+        ))
+
+    def _get_data(self) -> dict:
+        data = {}
+        if self.entries_limit is not None and len(self.entries) > self.entries_limit:
+            self.entries.sort(key=lambda e: e[2], reverse=True)  # keep the longest entries
+            self.entries = self.entries[:self.entries_limit]
+        for entry in self.entries:
+            chrom = entry[0]
+            try:
+                data[chrom].append(entry[1:])
+            except KeyError:
+                data[chrom] = [entry[1:]]
+        return data
 
     def get_d3js_data(self):
         res = {
             "type": self.type,
-            "data": self.data
+            "data": self._get_data()
         }
         res.update(self.additional_properties())
         return res
@@ -112,6 +124,8 @@ class Bed(Track):
     # Comment or blank line in bed file
     ignore_line_pattern = re.compile(r'^#|[ \t]+$')
     _type = "bed"
+    config = AppConfigReader()
+    entries_limit = config.max_bed_lines
 
     def __init__(self, track: str, idx: str, auto_parse: bool = True):
         """

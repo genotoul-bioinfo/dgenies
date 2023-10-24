@@ -372,6 +372,15 @@ class AppConfigReader:
         except (NoOptionError, NoSectionError):
             return 0
 
+    def _get_max_bed_lines(self):
+        try:
+            val = int(self.reader.get("global", "max_bed_lines"))
+            if val > 0:
+                return val
+            return None
+        except (NoOptionError, NoSectionError):
+            return 1000
+
     def _get_cluster_prepare_script(self):
         try:
             return self._replace_vars(self.reader.get("cluster", "prepare_script"))
