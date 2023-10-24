@@ -174,7 +174,7 @@ $.fn.mousetip_track_x = function (my_tip, relative_to = null, x = 20, y = 20) {
 
             let html = "";
             if (match !== null) {
-                html = `<strong>Target:</strong> ${match.contig}<br/>(${match.feature[0] - match.contig_start} - ${match.feature[0] + match.feature[1] - match.contig_start})<br/>
+                html = `<strong>Target:</strong> ${match.contig}<br/>(${d3.dgenies.get_human_readable_size(match.feature[0] - match.contig_start)} - ${d3.dgenies.get_human_readable_size(match.feature[0] + match.feature[1] - match.contig_start)})<br/>
                         <strong>Value:</strong> ${match.feature[2]}<br/>
                         <strong>Comment:</strong> ${match.feature[3]}`
             }
@@ -224,7 +224,7 @@ $.fn.mousetip_track_y = function(my_tip, relative_to = null, x = 20, y = 20) {
 
             let html = "";
             if (match !== null) {
-                html = `<strong>Query:</strong> ${match.contig}<br/>(${match.feature[0] - match.contig_start} - ${match.feature[0] + match.feature[1] - match.contig_start})<br/>
+                html = `<strong>Query:</strong> ${match.contig}<br/>(${d3.dgenies.get_human_readable_size(match.feature[0] - match.contig_start)} - ${d3.dgenies.get_human_readable_size(match.feature[0] + match.feature[1] - match.contig_start)})<br/>
                         <strong>Value:</strong> ${match.feature[2]}<br/>
                         <strong>Comment:</strong> ${match.feature[3]}`
             }
