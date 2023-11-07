@@ -1,4 +1,4 @@
-Flask>=2
+Flask~=2
 Jinja2
 numpy
 requests>=2.20.1
