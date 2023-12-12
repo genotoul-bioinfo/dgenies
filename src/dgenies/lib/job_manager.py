@@ -1,3 +1,5 @@
+import math
+
 from dgenies import MODE, DEBUG
 
 import os
@@ -665,14 +667,14 @@ class JobManager:
 
         :return: True if the job has successfully ended, else False
         """
-        status = subprocess.check_output("sacct -p -n --format=state,maxvmsize,elapsed -j %s.batch" % self.id_process,
+        status = subprocess.check_output("sacct -p -n --format=state,maxvmsize,elapsed --units=K -j %s.batch" % self.id_process,
                                          shell=True).decode("utf-8").strip("\n")
 
         status = status.split("|")
 
         success = status[0] == "COMPLETED"
         if success:
-            mem_peak = int(status[1][:-1])  # Remove the K letter
+            mem_peak = math.floor(float(status[1] if status[1][-1] != 'K' else status[1][:-1])) # Remove the K letter if needed
             elapsed_full = list(map(int, status[2].split(":")))
             elapsed = elapsed_full[0] * 3600 + elapsed_full[1] * 60 + elapsed_full[2]
             with open(self.logs, "a") as logs:
