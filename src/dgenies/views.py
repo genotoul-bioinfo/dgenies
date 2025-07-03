@@ -10,7 +10,8 @@ import threading
 import traceback
 import json
 from string import Template
-from flask import render_template, request, url_for, jsonify, Response, abort, send_file, send_from_directory, Markup
+from flask import render_template, request, url_for, jsonify, Response, abort, send_file, send_from_directory
+from markupsafe import Markup
 from werkzeug.utils import secure_filename
 from pathlib import Path
 from dgenies.lib.paf import Paf
