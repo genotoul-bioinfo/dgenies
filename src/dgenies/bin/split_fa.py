@@ -67,7 +67,7 @@ class Splitter:
                         self.flush_contig(fasta_str, chr_name, self.size_c, enc, index_f)
                     elif chr_name is not None:
                         return False, "Error: contig is empty: %s" % chr_name
-                    chr_name = re.split("\s", line[1:])[0]
+                    chr_name = re.split(r"\s", line[1:])[0]
                     fasta_str = ""
                     if self.debug:
                         print("Parsing contig \"%s\"... " % chr_name, end="")

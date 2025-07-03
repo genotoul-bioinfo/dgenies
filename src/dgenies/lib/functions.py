@@ -222,7 +222,7 @@ class Functions:
         index = OrderedDict()
         with open(index_file, "r") as index_f:
             # Sample name without special chars:
-            sample_name = re.sub('[^A-Za-z0-9_\-.]+', '', index_f.readline().strip("\n").replace(" ", "_"))
+            sample_name = re.sub(r'[^A-Za-z0-9_\-.]+', '', index_f.readline().strip("\n").replace(" ", "_"))
             for line in index_f:
                 if line != "":
                     parts = line.strip("\n").split("\t")

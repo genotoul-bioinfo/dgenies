@@ -404,7 +404,7 @@ def launch_analysis():
     # Form pass
     if form_pass:
         # Get final job id (sanitize and avoid collision):
-        id_job = re.sub('[^A-Za-z0-9_\-]+', '', id_job.replace(" ", "_"))
+        id_job = re.sub(r'[^A-Za-z0-9_\-]+', '', id_job.replace(" ", "_"))
         id_job_orig = id_job
         i = 2
         while os.path.exists(os.path.join(APP_DATA, id_job)):
