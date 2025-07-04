@@ -12,7 +12,7 @@ formats:
     extensions: &backup [tar, tar.gz]
     description: a backup file
   batch:
-    extensions: &batch [txt, tab, tsv]
+    extensions: &batch [txt]
     description: a batch file
 job:
   new:
