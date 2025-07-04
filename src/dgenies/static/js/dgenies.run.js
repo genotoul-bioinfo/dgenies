@@ -43,14 +43,16 @@ dgenies.run.FTYPES = {
     "batch": {"formats": ["batch"]},
 }
 
+
 dgenies.run.FTYPES_REGEX = {
+    /* filled during init
     "fasta": /^.+\.(fa|fna|fasta)(\.gz)?$/,
     "idx": /^.+\.idx(\.gz)?$/,
     "map": /^.+\.paf$/,
     "backup": /^.+\.tar(\.gz)?$/,
-    "batch": /^.+\.(tab|tsv|txt)$/,
+    "batch": /^.+\.(txt)$/,
+    */
 }
-
 
 // Keys in batch file that will use files
 dgenies.run.KEYS_FOR_FILES = ["alignfile", "backup", "query", "target", "queryidx", "targetidx"]
@@ -118,6 +120,14 @@ dgenies.run.init = function(s_id, allowed_ext, max_upload_file_size=1073741824, 
     dgenies.run.restore_form();
     dgenies.run.set_events();
     dgenies.run.init_fileuploads();
+
+    // generated extension regex checking
+    for (const key in dgenies.run.allowed_ext in dgenies.run.allowed_ext) {
+      if (dgenies.run.allowed_ext.hasOwnProperty(key)) {
+        dgenies.run.FTYPES_REGEX[key] = new RegExp("^.+\\.(?:" + dgenies.run.allowed_ext[key].join('|').replaceAll('.','\\.') +")$")
+      }
+    }
+
 };
 
 

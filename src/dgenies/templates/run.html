@@ -56,6 +56,9 @@
     dgenies.run.init('{{ s_id }}', {{ allowed_ext }}, {{ max_upload_file_size }}, '{{ target }}', '{{ query }}',
     '{{ backup }}', '{{ batch }}', {{ tools_names }}, {{ tools_ava }}, {{ tools_checking }}, {{ max_batch_jobs }});
 {% endblock %}
+{% macro display_extensions(extensions) %}
+    Must end with {% for ext in extensions %}<code>.{{ ext }}</code>{% if loop.revindex0 == 0  %}{% elif loop.revindex0 == 1 +%} or {%+  else %}, {%+ endif %} {% endfor %}
+{% endmacro %}
 {% block content %}
     {% set fnote = 1 %}
     <style>
@@ -155,7 +158,7 @@
                                         <div class="w-100"></div>
                                         <div>
                                             <small id="targetHelp" class="form-text text-muted">
-                                                Can be gzipped. Must end with <code>.fa</code>, <code>.fasta</code>, <code>.fna</code>, <code>.fa.gz</code>, <code>.fasta.gz</code> or <code>.fna.gz</code>
+                                                Can be gzipped. {% set extensions=allowed_ext.fasta %}{{ display_extensions(extensions) }}
                                             </small>
                                         </div>
                                     </div>
@@ -186,7 +189,7 @@
                                         <div class="w-100"></div>
                                         <div>
                                             <small id="queryHelp" class="form-text text-muted">
-                                                Can be gzipped. Must end with <code>.fa</code>, <code>.fasta</code>, <code>.fna</code>, <code>.fa.gz</code>, <code>.fasta.gz</code> or <code>.fna.gz</code>
+                                                Can be gzipped. {%  set extensions=allowed_ext.fasta %}{{ display_extensions(extensions) }}
                                             </small>
                                         </div>
                                     </div>
@@ -350,7 +353,7 @@
                                         <div class="w-100"></div>
                                         <div>
                                             <small id="alignfileHelp" class="form-text text-muted">
-                                                In <a href="/documentation/formats#paf-pairwise-mapping-format">PAF</a> or <a href="/documentation/formats#maf-multiple-alignment-file">MAF</a> format. Must end with <code>.paf</code> or <code>.maf</code>
+                                                In <a href="/documentation/formats#paf-pairwise-mapping-format">PAF</a> or <a href="/documentation/formats#maf-multiple-alignment-file">MAF</a> format. {% set extensions=allowed_ext.map %}{{ display_extensions(extensions) }}
                                             </small>
                                         </div>
                                     </div>
@@ -381,7 +384,7 @@
                                         <div class="w-100"></div>
                                         <div>
                                             <small id="targetidxHelp" class="form-text text-muted">
-                                                Fasta file or index built by <a href="https://raw.githubusercontent.com/genotoul-bioinfo/dgenies/v{{version}}/src/dgenies/bin/index.py" download="index.py">our tool</a>. Must end with <code>.fa</code>, <code>.fasta</code>, <code>.fna</code>, <code>.fa.gz</code>, <code>.fasta.gz</code>, <code>.fna.gz</code> or <code>.idx</code>.
+                                                Fasta file or index built by <a href="https://raw.githubusercontent.com/genotoul-bioinfo/dgenies/v{{version}}/src/dgenies/bin/index.py" download="index.py">our tool</a>. Can be gzipped. {% set extensions=[allowed_ext.fasta, allowed_ext.idx] | sum(start=[]) %}{{ display_extensions(extensions) }}
                                             </small>
                                         </div>
                                     </div>
@@ -412,7 +415,7 @@
                                         <div class="w-100"></div>
                                         <div>
                                             <small id="queryidxHelp" class="form-text text-muted">
-                                                Fasta file or index built by <a href="https://raw.githubusercontent.com/genotoul-bioinfo/dgenies/v{{version}}/src/dgenies/bin/index.py" download="index.py">our tool</a>. Must end with <code>.fa</code>, <code>.fasta</code>, <code>.fna</code>, <code>.fa.gz</code>, <code>.fasta.gz</code>, <code>.fna.gz</code> or <code>.idx</code>.
+                                                Fasta file or index built by <a href="https://raw.githubusercontent.com/genotoul-bioinfo/dgenies/v{{version}}/src/dgenies/bin/index.py" download="index.py">our tool</a>. Can be gzipped. {% set extensions=[allowed_ext.fasta, allowed_ext.idx] | sum(start=[]) %}{{ display_extensions(extensions) }}
                                             </small>
                                         </div>
                                     </div>
@@ -446,7 +449,7 @@
                                         <div class="w-100"></div>
                                         <div>
                                             <small id="backupHelp" class="form-text text-muted">
-                                                TAR file from a previous run or built following <a href="/documentation/formats#backup-file"> this documentation</a>. Must ends with <code>.tar</code> or <code>.tar.gz</code>
+                                                TAR file from a previous run or built following <a href="/documentation/formats#backup-file"> this documentation</a>. Can be gzipped. {%  set extensions=allowed_ext.backup %}{{ display_extensions(extensions) }}
                                             </small>
                                         </div>
                                     </div>
@@ -490,7 +493,7 @@
                                         </div>
                                         <div class="w-100"></div>
                                         <small id="targetHelp" class="form-text text-muted">
-                                            Text file following <a href="/documentation/formats#batch-file">batch format</a>. Must end with <code>.txt</code>
+                                            Text file following <a href="/documentation/formats#batch-file">batch format</a>. {% set extensions=allowed_ext.batch %}{{ display_extensions(extensions) }}
                                         </small>
                                     </div>
                                 </div>
