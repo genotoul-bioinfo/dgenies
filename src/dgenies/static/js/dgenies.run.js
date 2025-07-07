@@ -122,8 +122,9 @@ dgenies.run.init = function(s_id, allowed_ext, max_upload_file_size=1073741824, 
     dgenies.run.init_fileuploads();
 
     // generated extension regex checking
-    for (const key in dgenies.run.allowed_ext in dgenies.run.allowed_ext) {
+    for (const key in dgenies.run.allowed_ext) {
       if (dgenies.run.allowed_ext.hasOwnProperty(key)) {
+        console.log(key)
         dgenies.run.FTYPES_REGEX[key] = new RegExp("^.+\\.(?:" + dgenies.run.allowed_ext[key].join('|').replaceAll('.','\\.') +")$")
       }
     }
