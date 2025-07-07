@@ -1,9 +1,11 @@
 Flask~=3.1
+flask-openapi3[async,dotenv,swagger,yaml] ~=4.2
 Jinja2~=3.1
 numpy
 requests>=2.32.4
 biopython>=1.70
 psutil>=5.6.6
+pydantic
 tendo>=0.2
 matplotlib>=2.1
 intervaltree==3.*

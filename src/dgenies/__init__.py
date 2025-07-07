@@ -84,10 +84,15 @@ def launch(mode="webserver", config=[], tools_config=None, flask_config=None, de
     UPLOAD_FOLDER = config_reader.upload_folder
     APP_DATA = config_reader.app_data
 
+    from flask_openapi3 import OpenAPI
+
     app_title = "D-GENIES - Dotplot large Genomes in an Interactive, Efficient and Simple way"
 
     # Init Flask:
-    app = Flask(__name__, static_url_path='/static')
+    app = OpenAPI(__name__, static_url_path='/static')
+    from .api import api
+    app.register_api(api)
+
     app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
     app.config['MAX_CONTENT_LENGTH'] = config_reader.max_upload_file_size
     app.config['SECRET_KEY'] = 'dsqdsq-255sdA-fHfg52-25Asd5'

@@ -111,19 +111,9 @@ def run():
     extensions = AllowedExtensions()
 
     # We create working dirs
-    if MODE == "webserver":
-        with Session.connect():
-            s_id = Session.new()
-    else:
-        upload_folder = Functions.random_string(20)
-        tmp_dir = config_reader.upload_folder
-        upload_folder_path = os.path.join(tmp_dir, upload_folder)
-        while os.path.exists(upload_folder_path):
-            upload_folder = Functions.random_string(20)
-            upload_folder_path = os.path.join(tmp_dir, upload_folder)
-        s_id = upload_folder
+    s_id = Functions.get_session()
 
-    id_job = Functions.random_string(5) + "_" + datetime.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S')
+    id_job = Functions.random_job_id()
     if "id_job" in request.args:
         id_job = request.args["id_job"]
     email = ""
@@ -380,7 +370,7 @@ def launch_analysis():
         form_pass = False
 
     # An email is required in webserver mode
-    if MODE == "webserver":
+    if Functions.is_email_mandatory():
         if email == "":
             errors.append("Email not given")
             form_pass = False

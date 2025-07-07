@@ -4,6 +4,7 @@ import string
 import shutil
 import sys
 import re
+import time
 import traceback
 from collections import OrderedDict
 from datetime import datetime
@@ -528,3 +529,42 @@ class Functions:
         """
         logs_file = os.path.join(res_dir, "logs.txt")
         return os.path.exists(logs_file) and os.path.isfile(logs_file)
+
+    @staticmethod
+    def random_job_id() -> str:
+        """
+        Generate a random job id
+
+        :return: A job id
+        :rtype: str
+        """
+        return Functions.random_string(5) + "_" + datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S')
+
+    @staticmethod
+    def is_email_mandatory() -> bool:
+        """
+        Check if email is mandatory
+
+        :return: True if email is mandatory, else False
+        :rtype: bool
+        """
+        from dgenies import MODE
+        return MODE == "webserver"
+
+    @staticmethod
+    def get_session() -> str:
+        from dgenies import config_reader, MODE
+
+        if MODE == "webserver":
+            from dgenies.database import Session
+            with Session.connect():
+                s_id = Session.new()
+        else:
+            upload_folder = Functions.random_string(20)
+            tmp_dir = config_reader.upload_folder
+            upload_folder_path = os.path.join(tmp_dir, upload_folder)
+            while os.path.exists(upload_folder_path):
+                upload_folder = Functions.random_string(20)
+                upload_folder_path = os.path.join(tmp_dir, upload_folder)
+            s_id = upload_folder
+        return s_id
