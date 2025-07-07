@@ -607,10 +607,11 @@ class JobManager:
         if ">" in args:
             out_file = self.paf_raw
             args = args[:args.index(">")]
-        args = args.replace("{target}", self.target.get_path()) \
-                   .replace("{threads}", str(self.tool.threads)) \
-                   .replace("{options}", self.options) \
-                   .replace("{out}", self.paf_raw)
+        args = (args.strip()
+                   .replace("{target}", self.target.get_path())
+                   .replace("{threads}", str(self.tool.threads))
+                   .replace("{options}", str(self.options))
+                   .replace("{out}", self.paf_raw))
         args = re.sub(r" +", " ", args)
         return self.tool.exec, args, out_file
 
