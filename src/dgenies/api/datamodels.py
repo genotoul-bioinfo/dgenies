@@ -92,7 +92,7 @@ class JobDescription(BaseModel):
 
 
 class Session(BaseModel):
-    session: str = Field(description="Session id")
+    s_id: str = Field(description="Session id")
 
 class SessionResponse(BaseResponse):
     data: Session
@@ -110,8 +110,8 @@ class AskUploadResponse(BaseResponse):
 
 class JobMetadata(BaseModel):
     id_job: str = Field(description="Job id")
-    if Functions.is_email_mandatory():
-        email: str = Field(description="Email to warn you when job is finished")
+    #if Functions.is_email_mandatory():
+    email: str = Field(description="Email to warn you when job is finished")
 
 
 class FileType(str, Enum):

@@ -11,6 +11,7 @@ import traceback
 import json
 from string import Template
 from flask import render_template, request, url_for, jsonify, Response, abort, send_file, send_from_directory
+from werkzeug.datastructures import ImmutableMultiDict
 from markupsafe import Markup
 from werkzeug.utils import secure_filename
 from pathlib import Path
@@ -111,7 +112,7 @@ def run():
     extensions = AllowedExtensions()
 
     # We create working dirs
-    s_id = Functions.get_session()
+    s_id = Functions.create_session()
 
     id_job = Functions.random_job_id()
     if "id_job" in request.args:
@@ -300,6 +301,51 @@ def create_batch_file(batch_path: str, jobs: list) -> DataFile:
     # We must avoid that a file has the same name as batch_file
     return DataFile(name="batch", path=batch_path, type_f="local")
 
+def parse_form(form_data: ImmutableMultiDict[str, str]) -> tuple[str, str, str, int, list[dict]]:
+    """
+    Parse form data and extract job data
+
+    :param form: form data
+    :type: ImmutableMultiDict
+    :result: job id, job type, email, number of jobs, job list
+    :rtype: tuple
+    """
+    # We get the distinct client's message elements
+    id_job = form_data["id_job"]
+    job_type = form_data["type"]
+    email = form_data["email"]
+    nb_jobs = int(form_data["nb_jobs"]) if "nb_jobs" in form_data else 0
+    jobs = list()
+    for i in range(0, nb_jobs):
+        jt = Template("jobs[$i][$attr]")  # job template
+        k = jt.safe_substitute(i=i, attr="id_job")
+        id_sub_job = form_data[k] if k in form_data else id_job
+        # subjob
+        j = {"id_job": id_sub_job,
+             "email": email}
+        # k: key in j, attr: key in jt
+        for k, attr in (
+                ("type", "type"),
+                ("query", "query"),
+                ("query_type", "query_type"),
+                ("target", "target"),
+                ("target_type", "target_type"),
+                ("tool", "tool"),
+                ("align", "alignfile"),
+                ("align_type", "alignfile_type"),
+                ("backup", "backup"),
+                ("backup_type", "backup_type"),
+                ("batch", "batch"),
+                ("batch_type", "batch_type")
+        ):
+            s = jt.safe_substitute(i=i, attr=attr)
+            j[k] = form_data[s] if s in form_data else None
+            if j[k] == "":
+                j[k] = None
+        tool_options = jt.safe_substitute(i=i, attr="tool_options][")
+        j["options"] = form_data.getlist(tool_options) if tool_options in form_data else []
+        jobs.append(j)
+    return id_job, job_type, email, nb_jobs, jobs
 
 # Launch analysis
 @app.route("/launch_analysis", methods=['POST'])
@@ -320,40 +366,7 @@ def launch_analysis():
         upload_folder = request.form["s_id"]
 
     # We get the distinct client's message elements
-    id_job = request.form["id_job"]
-    job_type = request.form["type"]
-    email = request.form["email"]
-    nb_jobs = int(request.form["nb_jobs"]) if "nb_jobs" in request.form else 0
-    jobs = list()
-    for i in range(0, nb_jobs):
-        jt = Template("jobs[$i][$attr]") # job template
-        k = jt.safe_substitute(i=i, attr="id_job")
-        id_sub_job = request.form[k] if k in request.form else id_job
-        # subjob
-        j = {"id_job": id_sub_job,
-             "email": email}
-        # k: key in j, attr: key in jt
-        for k, attr in (
-                ("type", "type"),
-                ("query", "query"),
-                ("query_type", "query_type"),
-                ("target", "target"),
-                ("target_type", "target_type"),
-                ("tool", "tool"),
-                ("align", "alignfile"),
-                ("align_type", "alignfile_type"),
-                ("backup", "backup"),
-                ("backup_type", "backup_type"),
-                ("batch", "batch"),
-                ("batch_type", "batch_type")
-            ):
-            s = jt.safe_substitute(i=i, attr=attr)
-            j[k] = request.form[s] if s in request.form else None
-            if j[k] == "":
-                j[k] = None
-        tool_options = jt.safe_substitute(i=i, attr="tool_options][")
-        j["options"] = request.form.getlist(tool_options) if tool_options in request.form else []
-        jobs.append(j)
+    id_job, job_type, email, nb_jobs, jobs = parse_form(request.form)
 
     # Check form
     # Client side must have sent correct message depending on the job type.

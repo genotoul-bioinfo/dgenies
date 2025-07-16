@@ -54,6 +54,33 @@ class Functions:
         return False
 
     @staticmethod
+    def allowed_file_ext(filename: str, job_types: set[str], file_roles: set[str]) -> bool:
+        """
+        Check whether a filename has a valid extension based on job types and file roles it is implied with
+
+        :param filename: the filename
+        :type: str
+        :param job_types: type of jobs
+        :type: list of str
+        :param file_roles: type of roles the file takes
+        :type: list of str
+        :return: True if valid format, else False
+        :rtype: bool
+        """
+        result = True
+        allowed_extensions = AllowedExtensions()
+        # for each job type, file must have an allowed file role based on extension
+        for j in job_types:
+            valid_role = False
+            for role in file_roles:
+                extensions = set()
+                for fmt in allowed_extensions.get_formats(j, role):
+                    extensions.update(allowed_extensions.get_extensions(fmt))
+                valid_role = valid_role or any((filename.endswith(f'.{ext}') for ext in extensions))
+            result = result and valid_role
+        return result
+
+    @staticmethod
     def random_string(s_len):
         """
         Generate a random string
@@ -552,7 +579,7 @@ class Functions:
         return MODE == "webserver"
 
     @staticmethod
-    def get_session() -> str:
+    def create_session() -> str:
         from dgenies import config_reader, MODE
 
         if MODE == "webserver":
