@@ -90,9 +90,6 @@ def launch(mode="webserver", config=[], tools_config=None, flask_config=None, de
 
     # Init Flask:
     app = OpenAPI(__name__, static_url_path='/static')
-    from .api import api
-    app.register_api(api)
-
     app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
     app.config['MAX_CONTENT_LENGTH'] = config_reader.max_upload_file_size
     app.config['SECRET_KEY'] = 'dsqdsq-255sdA-fHfg52-25Asd5'
@@ -104,6 +101,10 @@ def launch(mode="webserver", config=[], tools_config=None, flask_config=None, de
     if MODE == "webserver":
         from .lib.mailer import Mailer
         mailer = Mailer(app)
+
+    # Register api after mailer init else mailer lost
+    from .api import api
+    app.register_api(api)
 
     # Create data dir if not exists
     if not os.path.exists(config_reader.app_data):
