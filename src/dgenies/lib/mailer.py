@@ -1,3 +1,5 @@
+import os
+
 from dgenies.config_reader import AppConfigReader
 from flask_mail import Mail, Message
 
@@ -14,6 +16,7 @@ class Mailer:
         :param app: Flask app object
         :type app: Flask
         """
+        self.set_config_from_env(app)
         self.app = app
         self.mail = Mail(app)
         self.config = AppConfigReader()
@@ -21,6 +24,20 @@ class Mailer:
         # self.mail_reply = config_reader.get_mail_reply()
         # self.mail_org = config_reader.get_mail_org()
         # self.disable = config_reader.get_disable_mail()
+
+    @staticmethod
+    def set_config_from_env(app):
+        """
+        Set mailer configuration from environment variables.
+
+        :param app: Flask application
+        :type app: Flask
+        """
+        for var in ["MAIL_SERVER", "MAIL_USERNAME", "MAIL_PASSWORD", "MAIL_PORT", "MAIL_USE_TLS", "MAIL_USE_SSL",
+                    "MAIL_DEFAULT_SENDER", "MAIL_DEBUG", "MAIL_MAX_EMAILS", "MAIL_SUPPRESS_SEND",
+                    "MAIL_ASCII_ATTACHMENTS"]:
+            if value := os.getenv(var):
+                app.config[var] = value
 
     def _send_async_email(self, msg):
         """
