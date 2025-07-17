@@ -31,10 +31,14 @@ from .datamodels import (
 from .job_descriptions import job_descriptions
 from ..lib.upload_file import UploadFile
 
-import logging
 
 from ..views import check_file_type_and_resolv_options, update_files
 
+if MODE == "webserver":
+    import dgenies.database as db
+    from peewee import DoesNotExist
+
+import logging
 logger = logging.getLogger(__name__)
 
 api = APIBlueprint('dgenies', __name__, url_prefix=f"{os.environ.get('URL_PREFIX', '')}/api/v1")
@@ -79,8 +83,8 @@ def ask_upload(form: AskUploadQuery):
     if MODE != "webserver":
         return {"code": 0, "message": "ok", "data": {"allowed": True}}
     try:
-        with Session.connect():
-            session = Session.get(s_id=form.s_id)
+        with db.Session.connect():
+            session = db.Session.get(s_id=form.s_id)
             allowed = session.ask_for_upload(True)
         return {"code": 0, "message": "ok", "data": {"allowed": allowed}}
     except DoesNotExist:
@@ -92,8 +96,8 @@ def ping_upload(form: Session):
     When upload waiting, ping to be kept in the waiting line
     """
     if MODE == "webserver":
-        with Session.connect():
-            session = Session.get(s_id=form.s_id)
+        with db.Session.connect():
+            session = db.Session.get(s_id=form.s_id)
             session.ping()
     return {"code": 0, "message": "ok"}
 
@@ -132,8 +136,8 @@ def upload_file(form: UploadFileForm):
     try:
         if MODE == "webserver":
             try:
-                with Session.connect():
-                    session = Session.get(s_id=form.s_id)
+                with db.Session.connect():
+                    session = db.Session.get(s_id=form.s_id)
                     if session.ask_for_upload(False):
                         folder = session.upload_folder
                     else:
@@ -216,8 +220,8 @@ def post_jobs(form: JobSubmissionQuery):
     """
     if MODE == "webserver":
         try:
-            with Session.connect():
-                session = Session.get(s_id=form.s_id)
+            with db.Session.connect():
+                session = db.Session.get(s_id=form.s_id)
         except DoesNotExist:
             return {"code": 404, "message": "Session has expired."}
         upload_folder = session.upload_folder
