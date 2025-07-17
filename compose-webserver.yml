@@ -1,0 +1,40 @@
+services:
+
+  dgenies-front:
+    build:
+      context: .
+      target: dgenies
+    environment:
+      - MAIL_SERVER=smtp
+      - MAIL_PORT=25
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./src/:/app/:ro
+      - dgenies-data:/root/.dgenies
+      - dgenies-upload:/tmp/dgenies
+    command: [ "/app/bin/dgenies", "run", "--debug", "--mode", "webserver", "--no-cron", "-p", "5000", "--no-browser", "-o", "0.0.0.0" ]
+
+  dgenies-scheduler:
+    build:
+      context: .
+      target: dgenies
+    environment:
+      - WEB_URL=http://dgenies-front:5000
+    volumes:
+      - ./src/:/app/:ro*
+      - dgenies-data:/root/.dgenies
+      - dgenies-upload:/tmp/dgenies
+    command: [ "/app/dgenies/bin/local_scheduler.py", "-d"]
+
+  smtp:
+    image: rnwood/smtp4dev
+    expose:
+      - 25
+    ports:
+      - "5080:80"
+      - "2525:25"
+
+volumes:
+  dgenies-data:
+  dgenies-upload:

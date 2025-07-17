@@ -45,6 +45,12 @@ class AppConfigReader:
             raise FileNotFoundError("ERROR: application.properties not found.")
         self.reader = None
         self.reset_config(config_file)
+        self.override_from_env()
+
+    def override_from_env(self):
+        self.web_url = os.getenv('WEB_URL', self.web_url)
+        #self.config_dir = os.getenv('CONFIG_DIR', self.config_dir)
+        #self.app_data = os.getenv('DATA_DIR', self.app_data)
 
     def reset_config(self, config_files):
         self.reader = RawConfigParser()

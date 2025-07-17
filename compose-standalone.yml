@@ -1,0 +1,12 @@
+services:
+
+  dgenies:
+    build:
+      context: .
+      target: dgenies
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./src/:/app/:ro
+    command: [ "/app/bin/dgenies", "run", "--debug", "-p", "5000", "--no-browser", "-o", "0.0.0.0" ]
+
