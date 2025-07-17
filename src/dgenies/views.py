@@ -440,35 +440,6 @@ def launch_analysis():
         return jsonify({"success": False, "errors": errors})
 
 
-def get_status(job):
-    """
-    Return the needed information for displaying the status page or sending the status message
-    :param job: job
-    :type job: JobManager
-    :return: a dict containing describing the job status preparing the json answer. (TODO: describe each entry)
-    :rtype: dict
-    """
-    j_status = job.status()
-    mem_peak = j_status["mem_peak"] if "mem_peak" in j_status else None
-    if mem_peak is not None:
-        mem_peak = "%.1f G" % (mem_peak / 1024.0 / 1024.0)
-    time_e = j_status["time_elapsed"] if "time_elapsed" in j_status else None
-    if time_e is not None:
-        if time_e < 60:
-            time_e = "%d secs" % time_e
-        else:
-            minutes = time_e // 60
-            seconds = time_e - minutes * 60
-            time_e = "%d min %d secs" % (minutes, seconds)
-    return {
-        "status": j_status["status"],
-        "error": j_status["error"].replace("#ID#", ""),
-        "has_logs": os.path.exists(job.logs),
-        "id_job": job.id_job,
-        "mem_peak": mem_peak,
-        "time_elapsed": time_e
-    }
-
 
 # Status of a job
 @app.route('/status/<id_job>', methods=['GET'])
@@ -480,9 +451,9 @@ def status(id_job):
     :type id_job: str
     """
     job = JobManager(id_job)
-    answer = get_status(job)
+    answer = Functions().get_status(job)
     if job.is_batch():
-        answer["batch"] = [get_status(JobManager(subjob_id)) for subjob_id in job.get_subjob_ids()]
+        answer["batch"] = [Functions().get_status(JobManager(subjob_id)) for subjob_id in job.get_subjob_ids()]
 
     fmt = request.args.get("format")
     if fmt is not None and fmt == "json":

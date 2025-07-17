@@ -26,7 +26,9 @@ from .datamodels import (
     Limits,
     Session,
     SessionResponse,
-    UploadFileForm
+    UploadFileForm,
+    JobStatus,
+    JobStatusResponse
 )
 from .job_descriptions import job_descriptions
 from ..lib.upload_file import UploadFile
@@ -305,6 +307,39 @@ def post_jobs(form: JobSubmissionQuery):
             return {"code": 500, "message": "Something went wrong during job creation!"}
     else:
         return {"code": 406, "message": "Incorrect form", "data": {"errors": errors}}
+
+
+def create_job_status(answer: dict) -> JobStatus:
+    subjob_status: list[JobStatus] = []
+    if "batch" in answer:
+        for j in answer["batch"]:
+            subjob_status.append(create_job_status(Functions().get_status(JobManager(j["id_job"]))))
+    res = JobStatus(
+            jobid=answer["id_job"],
+            status=answer.get("status", 'unknown'),
+            error=answer.get("error", None),
+            has_logs=answer.get("has_logs", False),
+            mem_peak=answer.get("mem_peak", None),
+            time_elapsed=answer.get("time_elapsed", None),
+            batch=subjob_status if subjob_status else None
+    )
+    return res
+
+
+@api.get('/status/<jobid>', responses={200: JobStatusResponse})
+def get_status(path: JobPath):
+    """
+    Get status for a job id
+    """
+    job = JobManager(path.jobid)
+    answer = Functions().get_status(job)
+    try:
+        if answer["status"] == "unknown":
+            return {"code": 404, "message": "Job does not exists", "data": None}
+        return {"code": 0, "message": "ok", "data" : create_job_status(answer).model_dump()}
+    except KeyError:
+        return {"code": 500, "message": "Unknown error, please contact support", "data": None}
+
 
 @api.get('/result/<jobid>/dotplot', responses={200: DotplotResponse})
 def get_dotplot(path: JobPath):

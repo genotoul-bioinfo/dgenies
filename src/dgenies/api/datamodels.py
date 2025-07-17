@@ -159,6 +159,19 @@ class UploadFileForm(BaseModel):
 class JobPath(BaseModel):
     jobid: str = Field(description='job id')
 
+
+class JobStatus(BaseModel):
+    jobid: str = Field(description='job id')
+    status: str = Field(description="Status of job")
+    error: str|None = Field(description="Error message")
+    has_logs: bool = Field(description="True if a log file is available")
+    mem_peak: str|None = Field(None, description="Consumed peak memory if available")
+    time_elapsed: str|None = Field(None, description="Time elapsed if available")
+    batch: list[JobStatus]|None = Field(None, description="Statuses of subjobs if current job is batch job")
+
+class JobStatusResponse(BaseResponse):
+    data: JobStatus|None = Field(description="The job status")
+
 class Dotplot(BaseModel):
     y_len: int = Field(description="Cumulative query length (y-axis) in base-pairs")
     x_len: int = Field(description="Cumulative target length (x-axis) in base-pairs")
