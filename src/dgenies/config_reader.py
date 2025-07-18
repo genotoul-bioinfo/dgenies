@@ -45,12 +45,6 @@ class AppConfigReader:
             raise FileNotFoundError("ERROR: application.properties not found.")
         self.reader = None
         self.reset_config(config_file)
-        self.override_from_env()
-
-    def override_from_env(self):
-        self.web_url = os.getenv('WEB_URL', self.web_url)
-        #self.config_dir = os.getenv('CONFIG_DIR', self.config_dir)
-        #self.app_data = os.getenv('DATA_DIR', self.app_data)
 
     def reset_config(self, config_files):
         self.reader = RawConfigParser()
@@ -79,19 +73,20 @@ class AppConfigReader:
 
     def _get_config_dir(self):
         try:
-            return self._replace_vars(self.reader.get("global", "config_dir"), True)
+             config_dir = self._replace_vars(self.reader.get("global", "config_dir"))
         except NoOptionError:
-            return self._replace_vars("###USER###/.dgenies")
+            config_dir = self._replace_vars("###USER###/.dgenies")
+        return os.getenv('CONFIG_DIR', config_dir)
 
     def _get_upload_folder(self):
         try:
-            return self._replace_vars(self.reader.get("global", "upload_folder"))
+            return os.getenv('UPLOAD_DIR', self._replace_vars(self.reader.get("global", "upload_folder")))
         except NoOptionError:
             raise Exception("No upload folder found in application.properties (global section)")
 
     def _get_app_data(self):
         try:
-            return self._replace_vars(self.reader.get("global", "data_folder"))
+            return os.getenv('DATA_DIR', self._replace_vars(self.reader.get("global", "data_folder")))
         except NoOptionError:
             raise Exception("No data folder found in application.properties (global section)")
 
@@ -103,9 +98,10 @@ class AppConfigReader:
 
     def _get_web_url(self):
         try:
-            return self._replace_vars(self.reader.get("global", "web_url"))
+            web_url = self._replace_vars(self.reader.get("global", "web_url"))
         except NoOptionError:
-            return "http://localhost:5000"
+            web_url = "http://localhost:5000"
+        return os.getenv('WEB_URL', web_url)
 
     def _get_max_upload_size(self):
         try:
@@ -207,13 +203,13 @@ class AppConfigReader:
                         os.makedirs(parent_dir)
                     except FileNotFoundError:
                         pass
-            return url
         except (NoSectionError, NoOptionError):
-            return self._replace_vars("###USER###/.dgenies/database.sqlite")
+            url = self._replace_vars("###USER###/.dgenies/database.sqlite")
+        return os.getenv('DATABASE_URL', url)
 
     def _get_database_port(self):
         try:
-            return int(self.reader.get("database", "port"))
+            return int(os.getenv('DATABASE_PORT', self.reader.get("database", "port")))
         except (NoSectionError, NoOptionError, ValueError):
             db_type = self._get_database_type()
             if db_type == "mysql":
@@ -224,7 +220,7 @@ class AppConfigReader:
 
     def _get_database_db(self):
         try:
-            db = self.reader.get("database", "db")
+            db = os.getenv('DATABASE_BASE', self.reader.get("database", "db"))
             if db == "":
                 raise ValueError()
             return db
@@ -235,7 +231,7 @@ class AppConfigReader:
 
     def _get_database_user(self):
         try:
-            user = self.reader.get("database", "user")
+            user = os.getenv('DATABASE_USER', self.reader.get("database", "user"))
             if user == "":
                 raise ValueError()
             return user
@@ -246,7 +242,7 @@ class AppConfigReader:
 
     def _get_database_password(self):
         try:
-            passwd = self.reader.get("database", "password")
+            passwd = os.getenv('DATABASE_PASSWORD', self.reader.get("database", "password"))
             if passwd == "":
                 raise ValueError()
             return passwd
