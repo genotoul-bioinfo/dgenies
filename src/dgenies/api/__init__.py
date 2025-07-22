@@ -3,9 +3,8 @@ import re
 import shutil
 import traceback
 from pathlib import Path
-from flask import current_app, url_for
+from flask import current_app
 from flask_openapi3 import APIBlueprint
-from peewee import DoesNotExist
 
 from dgenies import config_reader, APP_DATA, MODE, mailer
 from ..lib.exceptions import DGeniesJobCheckError, DGeniesExampleInvalid
@@ -21,8 +20,8 @@ from .datamodels import (
     ConfigResponse,
     DotplotResponse,
     JobPath,
-    JobSubmissionResponse,
-    JobSubmissionQuery,
+    BatchSubmissionResponse,
+    BatchSubmissionQuery,
     Limits,
     Session,
     SessionResponse,
@@ -47,8 +46,8 @@ api = APIBlueprint('dgenies', __name__, url_prefix=f"{os.environ.get('URL_PREFIX
 
 limits = Limits(
     number_of_jobs=config_reader.max_nb_jobs_in_batch_mode,
-    upload_size=config_reader.max_upload_size,
-    uncompressed_size_ava=config_reader.max_upload_size_ava,
+    file_size=config_reader.max_upload_size,
+    uncompressed_size_self_align=config_reader.max_upload_size_ava,
     uncompressed_size=config_reader.max_upload_file_size,
     walltime_prepare=config_reader.cluster_walltime_prepare,
     walltime_align=config_reader.cluster_walltime_align
@@ -60,7 +59,7 @@ def get_config():
     Get this D-Genies instance configuration and limits
     """
     res = Config(
-        id_job=Functions.random_job_id(),
+        batch_id=Functions.random_job_id(),
         email=Functions.is_email_mandatory(),
         limits=limits,
         #allowed_extensions=allowed_extensions,
@@ -73,20 +72,21 @@ def get_session():
     """
     Ask for a session to upload files and submit a job
     """
-    res = Session(s_id = Functions.create_session())
+    res = Session(session_id = Functions.create_session())
     return {"code": 0, "message": "ok", "data": res.model_dump()}
 
 @api.post('/ask-upload', responses={200: AskUploadResponse})
 def ask_upload(form: AskUploadQuery):
     """
-    Ask for upload files. A session must be asked before. Keep asking until allowed to upload.
+    Ask to upload files. A session must be asked before be allowed to use /upload route.
+    You must ask regularly until allowed.
     """
     allowed = False
     if MODE != "webserver":
         return {"code": 0, "message": "ok", "data": {"allowed": True}}
     try:
         with db.Session.connect():
-            session = db.Session.get(s_id=form.s_id)
+            session = db.Session.get(s_id=form.session_id)
             allowed = session.ask_for_upload(True)
         return {"code": 0, "message": "ok", "data": {"allowed": allowed}}
     except DoesNotExist:
@@ -99,7 +99,7 @@ def ping_upload(form: Session):
     """
     if MODE == "webserver":
         with db.Session.connect():
-            session = db.Session.get(s_id=form.s_id)
+            session = db.Session.get(s_id=form.session_id)
             session.ping()
     return {"code": 0, "message": "ok"}
 
@@ -113,6 +113,7 @@ def _fix_job_type(job_type: str) -> str:
     :return: fixed job type
     :rtype: str
     """
+    # TODO: to normalize and remove
     if job_type == 'align':
         return 'new'
     return job_type
@@ -126,6 +127,7 @@ def _fix_file_role(file_role: str) -> str:
     :return: fixed job type
     :rtype: str
     """
+    # TODO: to normalize and remove
     if file_role == 'align':
         return 'map'
     return file_role
@@ -139,7 +141,7 @@ def upload_file(form: UploadFileForm):
         if MODE == "webserver":
             try:
                 with db.Session.connect():
-                    session = db.Session.get(s_id=form.s_id)
+                    session = db.Session.get(s_id=form.session_id)
                     if session.ask_for_upload(False):
                         folder = session.upload_folder
                     else:
@@ -147,12 +149,12 @@ def upload_file(form: UploadFileForm):
             except DoesNotExist:
                 return {"code": 401, "message": "Session not initialized. Please ask for a session before", "data": {"files": []}}
         else:
-            folder = form.s_id
+            folder = form.session_id
 
-        print(form.s_id)
+        print(form.session_id)
         print(form.file.filename)
-        print(form.jobtype)
-        print(form.filetype)
+        print(form.job_types)
+        print(form.file_roles)
 
         if form.file:
             filename = form.file.filename
@@ -164,8 +166,8 @@ def upload_file(form: UploadFileForm):
 
             if not Functions.allowed_file_ext(
                     filename,
-                    job_types=set([_fix_job_type(t.value) for t in form.jobtype]),
-                    file_roles=set([_fix_file_role(t.value) for t in form.filetype])
+                    job_types=set([_fix_job_type(t.value) for t in form.job_types]),
+                    file_roles=set([_fix_file_role(t.value) for t in form.file_roles])
                 ):
                 shutil.rmtree(folder_files)
                 return {"code": 415, "message": "File type not allowed", "data": {"files": []}}
@@ -173,9 +175,9 @@ def upload_file(form: UploadFileForm):
             else:
                 # save file to disk
                 uploaded_file_path = os.path.join(folder_files, filename)
-                logger.info(f"Session '{form.s_id}' starts saving file {uploaded_file_path}")
+                logger.info(f"Session '{form.session_id}' starts saving file {uploaded_file_path}")
                 form.file.save(uploaded_file_path)
-                logger.info(f"Session '{form.s_id}' has saved file {uploaded_file_path}")
+                logger.info(f"Session '{form.session_id}' has saved file {uploaded_file_path}")
 
                 # get file size after saving
                 size = os.path.getsize(uploaded_file_path)
@@ -192,49 +194,53 @@ def upload_file(form: UploadFileForm):
 
 
 def parse_form(form):
-    id_job, job_type, email, nb_jobs = form.id_job, form.type.value, form.email, form.nb_jobs
+    batch_id, email, nb_jobs = form.batch_id, form.email, form.nb_jobs
     jobs = list()
-    for i in range(0, nb_jobs):
-        jt = form.jobs[i]
-        j = {
-            "id_job": jt.id_job,
-            "email": email,
-            "type": jt.type.value,
-            "query": jt.query if jt.query else None,
-            "query_type": jt.query_type.value if jt.query else None,
-            "target": jt.target if jt.target else None,
-            "target_type": jt.target_type.value if jt.target else None,
-            "align": jt.align if jt.align else None,
-            "align_type": jt.align_type.value if jt.align else None,
-            "backup": jt.backup if jt.backup else None,
-            "backup_type": jt.backup_type.value if jt.backup else None,
-            "tool": jt.tool.value if jt.tool else None
-        }
-        j["options"] = jt.tool_option if jt.tool_option else []
-        jobs.append(j)
-    return id_job, job_type, email, nb_jobs, jobs
+    try:
+        for i in range(0, nb_jobs):
+            jt = form.jobs[i]
+            j = {
+                "id_job": jt.job_id,
+                "email": email,
+                "type": jt.type.value,
+                "query": jt.query if jt.query else None,
+                "query_type": jt.query_type.value if jt.query else None,
+                "target": jt.target if jt.target else None,
+                "target_type": jt.target_type.value if jt.target else None,
+                "align": jt.align if jt.align else None,
+                "align_type": jt.align_type.value if jt.align else None,
+                "backup": jt.backup if jt.backup else None,
+                "backup_type": jt.backup_type.value if jt.backup else None,
+                "tool": jt.tool.value if jt.tool else None
+            }
+            j["options"] = jt.tool_option if jt.tool_option else []
+            jobs.append(j)
+    except IndexError:
+        logger.info(f"Missing jobs in batch '{batch_id}'. Announced {nb_jobs} jobs. Got {len(jobs)} jobs.")
+    return batch_id, email, nb_jobs, jobs
 
 
-@api.post('/job', responses={200: JobSubmissionResponse})
-def post_jobs(form: JobSubmissionQuery):
+@api.post('/job', responses={200: BatchSubmissionResponse})
+def post_jobs(form: BatchSubmissionQuery):
     """
     Launch the job
     """
     if MODE == "webserver":
         try:
             with db.Session.connect():
-                session = db.Session.get(s_id=form.s_id)
+                session = db.Session.get(s_id=form.session_id)
         except DoesNotExist:
             return {"code": 404, "message": "Session has expired."}
         upload_folder = session.upload_folder
         # Delete session:
         session.delete_instance()
     else:
-        upload_folder = form.s_id
+        upload_folder = form.session_id
 
     # We get the distinct client's message elements
-    id_job, job_type, email, nb_jobs, jobs = parse_form(form)
+    batch_id, email, nb_jobs, jobs = parse_form(form)
 
+    print(jobs)
     # Check form
     # Client side must have sent correct message depending on the job type.
     # Here we check that everything was correctly transmitted.
@@ -244,10 +250,17 @@ def post_jobs(form: JobSubmissionQuery):
     form_pass = True
     errors = []
 
+    job_type= ""
     # We check job header (id + email)
-    if id_job == "":
-        errors.append("Id of job not given")
-        form_pass = False
+    if nb_jobs == 1:
+        job_id = jobs[0]["id_job"]
+        job_type = jobs[0]["type"]
+        #batch_id = job_id
+    if nb_jobs > 1:
+        job_type = "batch"
+        if batch_id == "":
+            errors.append("Id of batch not given")
+            form_pass = False
 
     # An email is required in webserver mode
     if Functions.is_email_mandatory():
@@ -275,29 +288,26 @@ def post_jobs(form: JobSubmissionQuery):
     # Form pass
     if form_pass:
         # Get final job id (sanitize and avoid collision):
-        id_job = re.sub(r'[^A-Za-z0-9_\-]+', '', id_job.replace(" ", "_"))
-        id_job_orig = id_job
+        job_id = re.sub(r'[^A-Za-z0-9_\-]+', '', job_id.replace(" ", "_"))
+        job_id_orig = job_id
         i = 2
-        while os.path.exists(os.path.join(APP_DATA, id_job)):
-            id_job = id_job_orig + ("_%d" % i)
+        while os.path.exists(os.path.join(APP_DATA, job_id)):
+            job_id = job_id_orig + ("_%d" % i)
             i += 1
 
-        folder_files = os.path.join(APP_DATA, id_job)
+        folder_files = os.path.join(APP_DATA, job_id)
         os.makedirs(folder_files)
 
         # Transform files path into datafiles:
         try:
             update_files(jobs, upload_folder)
             # Launch job:
-            print(id_job, job_type, email)
-            print(jobs[0:nb_jobs])
-
-            job = JobManager.create(id_job=id_job, job_type=job_type, jobs=jobs, email=email, mailer=mailer)
+            job = JobManager.create(id_job=job_id, job_type=job_type, jobs=jobs, email=email, mailer=mailer)
             if MODE == "webserver":
                 job.launch()
             else:
                 job.launch_standalone()
-            return {"code": 0, "message": "ok", "data": {"job_id": id_job}}
+            return {"code": 0, "message": "ok", "data": {"job_id": job_id}}
 
         except DGeniesExampleInvalid as e:
             return {"code": 404, "message": e.message}
@@ -313,9 +323,9 @@ def create_job_status(answer: dict) -> JobStatus:
     subjob_status: list[JobStatus] = []
     if "batch" in answer:
         for j in answer["batch"]:
-            subjob_status.append(create_job_status(Functions().get_status(JobManager(j["id_job"]))))
+            subjob_status.append(create_job_status(Functions().get_status(JobManager(j["job_id"]))))
     res = JobStatus(
-            jobid=answer["id_job"],
+            job_id=answer["job_id"],
             status=answer.get("status", 'unknown'),
             error=answer.get("error", None),
             has_logs=answer.get("has_logs", False),

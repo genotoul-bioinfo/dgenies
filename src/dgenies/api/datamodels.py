@@ -16,16 +16,17 @@ class BaseResponse(BaseModel):
 
 class Limits(BaseModel):
     number_of_jobs: int = Field(description="Maximum number of jobs allowed per run")
-    upload_size: int = Field(description="Maximum file size allowed for upload")
-    uncompressed_size_ava: int = Field(
-        description="Maximum uncompressed file size (in bytes) allowed in target vs itself mode")
+    file_size: int = Field(description="Maximum file size allowed for upload")
+    uncompressed_size_self_align: int = Field(
+        description="Maximum uncompressed file size (in bytes) allowed when self aligning a sequence (target)"
+    )
     uncompressed_size: int = Field(description="Maximum uncompressed file size (in bytes) allowed in query vs target mode")
     walltime_prepare: str = Field(description="Walltime (in hh:mm:ss) for sequence preparation step")
     walltime_align: str = Field(description="Walltime (in hh:mm:ss) for sequence alignment step")
 
 
 class Config(BaseModel):
-    id_job: str = Field(description="Suggested job id")
+    batch_id: str = Field(description="Suggested batch id")
     email: bool = Field(True, description="if True, an email is required to submit a job")
     limits: Limits = Field(description="This instance limits")
     jobs: list[JobDescription] = Field(description="Configuration about jobs")
@@ -36,12 +37,6 @@ class ConfigResponse(BaseResponse):
 
 
 class JobType(str, Enum):
-    align = 'align'
-    plot = 'plot'
-    batch = 'batch'
-
-
-class SubJobType(str, Enum):
     align = 'align'
     plot = 'plot'
 
@@ -67,7 +62,7 @@ class OptionEntry(BaseModel):
 
 
 class ToolOption(BaseModel):
-    name: str = Field(description="name of option")
+    name: str = Field(description="Name of option")
     label: str = Field(description="Label of option")
     desc: str = Field(description="Describes the option")
     mutex: bool = Field(description="True if option's choices are mutually exclusives")
@@ -92,7 +87,8 @@ class JobDescription(BaseModel):
 
 
 class Session(BaseModel):
-    s_id: str = Field(description="Session id")
+    session_id: str = Field(description="Session id")
+
 
 class SessionResponse(BaseResponse):
     data: Session
@@ -101,6 +97,7 @@ class SessionResponse(BaseResponse):
 class AskUpload(BaseModel):
     allowed: bool = Field(False, description="Allowed to upload file")
 
+
 class AskUploadQuery(Session):
     pass
 
@@ -108,18 +105,17 @@ class AskUploadResponse(BaseResponse):
     data: AskUpload
 
 
-class JobMetadata(BaseModel):
-    id_job: str = Field(description="Job id")
-    #if Functions.is_email_mandatory():
-    email: str = Field(description="Email to warn you when job is finished")
-
-
 class FileType(str, Enum):
     local = 'local'
     url = 'url'
 
-class Job(JobMetadata):
-    type: SubJobType = Field(SubJobType.align, description="Type of job (align, plot or batch)")
+
+class JobId(BaseModel):
+    job_id: str = Field(description="Job id")
+
+
+class Job(JobId):
+    type: JobType = Field(JobType.align, description="Type of job (align, plot or batch)")
 
     query: str = Field(description="Query file. Can be either a filename or an url")
     query_type: FileType = Field(description="Type of query file. Either 'local' or 'url'")
@@ -137,31 +133,43 @@ class Job(JobMetadata):
     tool_option: list[str] = Field([], description="List of options for chosen tool.")
 
 
-class JobSubmissionQuery(Session, JobMetadata):
-    nb_jobs: int = Field(description="Number of jobs submitted.")
-    jobs: list[Job] = Field(description="List of jobs submitted")
-    type: JobType = Field(JobType.align, description="Type of job (align, plot or batch)")
+class JobsSubmissionQuery(Session, Job):
+    email: str = Field(description="Email to warn you when job is finished")
 
-
-class JobId(BaseModel):
-    jobid: str = Field(description="Job id")
 
 class JobSubmissionResponse(BaseResponse):
     data: JobId
 
-class UploadFileForm(BaseModel):
-    s_id: str = Field(description="Session id")
-    jobtype: set[JobType] = Field(description="Types of job the file is associated with", min_length=1)
-    filetype: set[InputType] = Field(description="Types of file is associated with", min_length=1)
+
+class BatchId(BaseModel):
+    batch_id: str = Field(description="Batch id")
+
+
+class BatchSubmissionQuery(Session, BatchId):
+    email: str = Field(description="Email to warn you when job is finished")
+    nb_jobs: int = Field(description="Number of jobs submitted.")
+    jobs: list[Job] = Field(description="List of jobs submitted")
+
+
+class BatchSubmissionResponseData(BatchId):
+    jobs: list[JobId] = Field(description="List of jobs ids")
+
+
+class BatchSubmissionResponse(BaseResponse):
+    data: BatchSubmissionResponseData
+
+
+class UploadFileForm(Session):
+    job_types: set[JobType] = Field(description="Types of job the file is associated with", min_length=1)
+    file_roles: set[InputType] = Field(description="Roles of file is associated with", min_length=1)
     file: FileStorage
 
 
-class JobPath(BaseModel):
-    jobid: str = Field(description='job id')
+class JobPath(JobId):
+    pass
 
 
-class JobStatus(BaseModel):
-    jobid: str = Field(description='job id')
+class JobStatus(JobId):
     status: str = Field(description="Status of job")
     error: str|None = Field(description="Error message")
     has_logs: bool = Field(description="True if a log file is available")
@@ -169,8 +177,10 @@ class JobStatus(BaseModel):
     time_elapsed: str|None = Field(None, description="Time elapsed if available")
     batch: list[JobStatus]|None = Field(None, description="Statuses of subjobs if current job is batch job")
 
+
 class JobStatusResponse(BaseResponse):
     data: JobStatus|None = Field(description="The job status")
+
 
 class Dotplot(BaseModel):
     y_len: int = Field(description="Cumulative query length (y-axis) in base-pairs")
