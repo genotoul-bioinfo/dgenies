@@ -6,69 +6,13 @@ TARGET="./data/ensembl_104/Escherichia_coli_o157_h7_str_sakai_gca_000008865.ASM8
 JOB_NAME="api"
 EMAIL="name@example.com"
 
+QUERY_NAME="$(basename ${QUERY})"
+TARGET_NAME="$(basename ${TARGET})"
 
-# Get proposed job name
-
-echo "Get config from ${ENDPOINT}:"
-JOB_NAME="$(curl -X 'GET' \
-  "${ENDPOINT}/config" \
-  -H 'accept: application/json' \
-  | jq -r ".data.batch_id")"
-
-echo "Will use job id: ${JOB_NAME}"
-
-# Get Session
-
-echo "Get session:"
-session_id="$(curl -X 'GET' \
-  "${ENDPOINT}/session" \
-  -H 'accept: application/json' \
-  | jq -r ".data.session_id")"
-
-echo "Will use session id: ${session_id}"
-
-sleep 1
-
-echo "Ask upload permission:"
-curl -X 'POST' \
-  "${ENDPOINT}/ask-upload" \
-  -H 'accept: application/json' \
-  -H 'Content-Type: multipart/form-data' \
-  -F "session_id=${session_id}"
-
-sleep 1
-
-echo "Upload query file: ${QUERY}"
-query_name="$(curl -X 'POST' \
-  "${ENDPOINT}/upload" \
-  -H 'accept: application/json' \
-  -H 'Content-Type: multipart/form-data' \
-  -F 'file=@'"${QUERY}"';type=application/gzip' \
-  -F 'file_roles=query' \
-  -F 'job_types=align' \
-  -F "session_id=${session_id}" \
-  | jq -r ".data.files[0].name" )"
-
-
-sleep 1
-
-echo "Upload target file: ${TARGET}"
-target_name="$(curl -X 'POST' \
-  "${ENDPOINT}/upload" \
-  -H 'accept: application/json' \
-  -H 'Content-Type: multipart/form-data' \
-  -F 'file=@'"${TARGET}"';type=application/gzip' \
-  -F 'file_roles=target' \
-  -F 'job_types=align' \
-  -F "session_id=${session_id}"\
-  | jq -r ".data.files[0].name" )"
-
-# Run job
-
-sleep 1
 
 echo "Submit align job"
-curl -X 'POST' \
+echo
+msg="$(curl -X 'POST' \
   "${ENDPOINT}/job" \
   -H 'accept: application/json' \
   -H 'Content-Type: multipart/form-data' \
@@ -77,10 +21,10 @@ curl -X 'POST' \
   -F 'jobs={
   "backup": "",
   "align": "",
-  "query": "'"${query_name}"'",
+  "query": "'"${QUERY_NAME}"'",
   "target_type": "local",
   "query_type": "local",
-  "target": "'"${target_name}"'",
+  "target": "'"${TARGET_NAME}"'",
   "align_type": "local",
   "backup_type": "local",
   "tool": "minimap2",
@@ -88,5 +32,90 @@ curl -X 'POST' \
   "type": "align",
   "tool_option": ["repeat:few"]
 }' \
-  -F 'nb_jobs=1' \
+  -F 'nb_jobs=1')"
+
+echo "$msg"
+
+session_id="$(echo "$msg" | jq -r ".data.session_id" )"
+echo
+echo "Will use session id: ${session_id}"
+
+sleep 1
+
+echo
+echo "Upload query file: ${QUERY}"
+echo
+msg="$(curl -X 'POST' \
+  "${ENDPOINT}/upload" \
+  -H 'accept: application/json' \
+  -H 'Content-Type: multipart/form-data' \
+  -F 'file=@'"${QUERY}"';type=application/gzip' \
+  -F "session_id=${session_id}")"
+
+echo "$msg"
+
+#echo
+#query_name="$(echo "${msg}" | jq -r ".data.file.name" )"
+#echo "${query_name}"
+
+sleep 1
+
+echo
+echo "Upload query file again: ${QUERY}"
+echo
+curl -X 'POST' \
+  "${ENDPOINT}/upload" \
+  -H 'accept: application/json' \
+  -H 'Content-Type: multipart/form-data' \
+  -F 'file=@'"${QUERY}"';type=application/gzip' \
   -F "session_id=${session_id}"
+
+
+sleep 1
+
+echo
+echo "Upload target file: ${TARGET}"
+echo
+msg="$(curl -X 'POST' \
+  "${ENDPOINT}/upload" \
+  -H 'accept: application/json' \
+  -H 'Content-Type: multipart/form-data' \
+  -F 'file=@'"${TARGET}"';type=application/gzip' \
+  -F "session_id=${session_id}")"
+
+echo "$msg"
+#echo
+#target_name="$(echo "${msg}" | jq -r ".data.file.name" )"
+batch_id="$(echo "${msg}" | jq -r ".data.batch_id" )"
+#echo "${target_name}"
+
+echo "Running with id: ${batch_id}"
+
+sleep 1
+
+echo
+echo "Get status"
+echo
+curl -X 'GET' \
+  "${ENDPOINT}/status/${batch_id}" \
+  -H 'accept: application/json'
+
+sleep 1
+
+echo
+echo "Get status"
+echo
+curl -X 'GET' \
+  "${ENDPOINT}/status/${batch_id}" \
+  -H 'accept: application/json'
+
+
+
+sleep 10
+
+echo
+echo "Get dotplot"
+echo
+curl -X 'GET' \
+  "${ENDPOINT}/result/${batch_id}/dotplot" \
+  -H 'accept: application/json'

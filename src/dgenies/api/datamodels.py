@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, StrEnum
 from pydantic import BaseModel, Field
 from flask_openapi3 import FileStorage
 
 from ..lib.functions import Functions
 from ..tools import Tools
 
-ToolName = Enum('ToolName', [(k, k) for k in Tools().tools.keys()])
+ToolName = StrEnum('ToolName', [(k, k) for k in Tools().tools.keys()])
 
 class BaseResponse(BaseModel):
     code: int = Field(0, description="status code")
@@ -137,32 +137,60 @@ class JobsSubmissionQuery(Session, Job):
     email: str = Field(description="Email to warn you when job is finished")
 
 
+class NeededFiles(BaseModel):
+    needed_files: list[str]|None = Field(description="files needed to be uploaded")
+
+
+class JobSubmissionResponseData(NeededFiles):
+    job_id: str|None = Field(description="Job id, null if file upload is needed")
+    session_id: str|None = Field(description="Session id, null if no file upload is needed")
+    allowed_upload: bool = Field(False, description="Allowed to upload files, if false, use /ask-upload within 50s to ask again")
+
+
+class JobSubmissionResponseDataAlt(NeededFiles, JobId, Session, AskUpload):
+    pass
+
+
 class JobSubmissionResponse(BaseResponse):
-    data: JobId
+    data: JobSubmissionResponseData
 
 
 class BatchId(BaseModel):
     batch_id: str = Field(description="Batch id")
 
 
-class BatchSubmissionQuery(Session, BatchId):
+class BatchSubmissionQuery(BatchId):
     email: str = Field(description="Email to warn you when job is finished")
     nb_jobs: int = Field(description="Number of jobs submitted.")
     jobs: list[Job] = Field(description="List of jobs submitted")
 
 
-class BatchSubmissionResponseData(BatchId):
-    jobs: list[JobId] = Field(description="List of jobs ids")
-
+class BatchSubmissionResponseData(NeededFiles):
+    batch_id: str|None = Field(description="Batch id, null if file upload is needed")
+    job_ids: list[JobId]|None = Field(description="List of jobs ids, null if file upload is needed")
+    session_id: str|None = Field(description="Session id, null if no file upload is needed")
+    allowed_upload: bool = Field(False, description="Allowed to upload files, if false and files need to be uploaded, use /ask-upload within 50s to ask again")
 
 class BatchSubmissionResponse(BaseResponse):
     data: BatchSubmissionResponseData
 
-
 class UploadFileForm(Session):
-    job_types: set[JobType] = Field(description="Types of job the file is associated with", min_length=1)
-    file_roles: set[InputType] = Field(description="Roles of file is associated with", min_length=1)
+#    job_types: set[JobType] = Field(description="Types of job the file is associated with", min_length=1)
+#    file_roles: set[InputType] = Field(description="Roles of file is associated with", min_length=1)
     file: FileStorage
+
+
+class UploadResponseData(NeededFiles):
+    batch_id: str|None = Field(description="Job id, null until last upload is completed")
+    job_ids: list[JobId]|None = Field(description="List of jobs ids, null if file upload is needed")
+    file: str = Field(description="File name")
+
+class UploadResponseDataAlt(NeededFiles, JobId, Session):
+    pass
+
+
+class UploadResponse(BaseResponse):
+    data:UploadResponseData
 
 
 class JobPath(JobId):
@@ -180,7 +208,6 @@ class JobStatus(JobId):
 
 class JobStatusResponse(BaseResponse):
     data: JobStatus|None = Field(description="The job status")
-
 
 class Dotplot(BaseModel):
     y_len: int = Field(description="Cumulative query length (y-axis) in base-pairs")
