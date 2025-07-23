@@ -325,7 +325,7 @@ def create_job_status(answer: dict) -> JobStatus:
         for j in answer["batch"]:
             subjob_status.append(create_job_status(Functions().get_status(JobManager(j["job_id"]))))
     res = JobStatus(
-            job_id=answer["job_id"],
+            job_id=answer["id_job"],
             status=answer.get("status", 'unknown'),
             error=answer.get("error", None),
             has_logs=answer.get("has_logs", False),
@@ -336,12 +336,12 @@ def create_job_status(answer: dict) -> JobStatus:
     return res
 
 
-@api.get('/status/<jobid>', responses={200: JobStatusResponse})
+@api.get('/status/<job_id>', responses={200: JobStatusResponse})
 def get_status(path: JobPath):
     """
     Get status for a job id
     """
-    job = JobManager(path.jobid)
+    job = JobManager(id_job=path.job_id)
     answer = Functions().get_status(job)
     try:
         if answer["status"] == "unknown":
@@ -351,12 +351,12 @@ def get_status(path: JobPath):
         return {"code": 500, "message": "Unknown error, please contact support", "data": None}
 
 
-@api.get('/result/<jobid>/dotplot', responses={200: DotplotResponse})
+@api.get('/result/<job_id>/dotplot', responses={200: DotplotResponse})
 def get_dotplot(path: JobPath):
     """
     Get dotplot data for a job id
     """
-    id_f = path.jobid
+    id_f = path.job_id
     paf = os.path.join(APP_DATA, id_f, "map.paf")
     idx1 = os.path.join(APP_DATA, id_f, "query.idx")
     idx2 = os.path.join(APP_DATA, id_f, "target.idx")
