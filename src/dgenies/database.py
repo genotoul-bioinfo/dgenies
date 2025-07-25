@@ -11,8 +11,19 @@ ID_JOB_LENGTH = 50
 config = AppConfigReader()
 
 if MODE == "webserver":
-    from peewee import DatabaseProxy, SqliteDatabase, Model, CharField, IntegerField, DateTimeField, BooleanField, MySQLDatabase, \
-    OperationalError, ForeignKeyField, __exception_wrapper__
+    from peewee import (
+        DatabaseProxy,
+        SqliteDatabase,
+        Model,
+        CharField,
+        IntegerField,
+        DateTimeField,
+        BooleanField,
+        MySQLDatabase,
+        OperationalError,
+        ForeignKeyField,
+        __exception_wrapper__
+    )
 
     database_proxy = DatabaseProxy()
 
@@ -154,23 +165,22 @@ if MODE == "webserver":
         if config.database_type == "sqlite":
             db = SqliteDatabase(config.database_url)
         elif config.database_type == "mysql":
-            db = MyRetryDB(host=config.database_url, port=config.database_port, user=config.database_user,
-                           passwd=config.database_password, database=config.database_db)
+            db = MyRetryDB(
+                database=config.database_db,
+                host=config.database_url,
+                port=config.database_port,
+                user=config.database_user,
+                passwd=config.database_password
+            )
         else:
             raise Exception("Unsupported database type: " + config.database_db)
         database_proxy.initialize(db)
 
-        if not Job.table_exists():
-            Job.create_table()
-
-        if not Gallery.table_exists():
-            Gallery.create_table()
-
-        if not Session.table_exists():
-            Session.create_table()
-
-        if config.analytics_enabled and not Analytics.table_exists():
-            Analytics.create_table()
+        Job.create_table(safe=True)
+        Gallery.create_table(safe=True)
+        Session.create_table(safe=True)
+        if config.analytics_enabled:
+            Analytics.create_table(safe=True)
 
 else:
 

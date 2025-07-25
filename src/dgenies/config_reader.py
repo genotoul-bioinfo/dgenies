@@ -5,7 +5,7 @@ import inspect
 from pathlib import Path
 import logging
 from configparser import RawConfigParser, NoOptionError, NoSectionError
-from dgenies.lib.decorators import Singleton
+from .lib.decorators import Singleton
 
 
 @Singleton
@@ -189,9 +189,10 @@ class AppConfigReader:
 
     def _get_database_type(self):
         try:
-            return self.reader.get("database", "type")
+            db_type = self.reader.get("database", "type")
         except (NoSectionError, NoOptionError):
-            return "sqlite"
+            db_type = "sqlite"
+        return os.getenv('DATABASE_TYPE', db_type)
 
     def _get_database_url(self):
         try:
@@ -209,45 +210,54 @@ class AppConfigReader:
 
     def _get_database_port(self):
         try:
-            return int(os.getenv('DATABASE_PORT', self.reader.get("database", "port")))
-        except (NoSectionError, NoOptionError, ValueError):
             db_type = self._get_database_type()
-            if db_type == "mysql":
-                return 3306
-            elif db_type == "sqlite":
-                return -1
+            if db_type == "sqlite":
+               default_port = -1
+            else:
+                default_port = 3306
+            if 'DATABASE_PORT' in os.environ:
+                port = os.getenv('DATABASE_PORT', default_port)
+            else:
+                port = int(self.reader.get("database", "port"))
+            return port
+        except (NoSectionError, NoOptionError, ValueError):
             raise Exception("Missing parameter: database port")
 
     def _get_database_db(self):
         try:
-            db = os.getenv('DATABASE_BASE', self.reader.get("database", "db"))
+            db = self.reader.get("database", "db")
             if db == "":
                 raise ValueError()
             return db
         except (NoSectionError, NoOptionError, ValueError):
-            if self._get_database_type() == "sqlite":
-                return ""
+            db = os.getenv('DATABASE_BASE', "")
+            if db or self._get_database_type() == "sqlite":
+                return db
             raise Exception("Missing parameter: database db name")
 
     def _get_database_user(self):
         try:
-            user = os.getenv('DATABASE_USER', self.reader.get("database", "user"))
+            user = self.reader.get("database", "user")
             if user == "":
                 raise ValueError()
             return user
         except (NoSectionError, NoOptionError, ValueError):
-            if self._get_database_type() == "sqlite":
-                return ""
+            user = os.getenv('DATABASE_USER', "")
+            if user or self._get_database_type() == "sqlite":
+                return user
             raise Exception("Missing parameter: database user")
 
     def _get_database_password(self):
         try:
-            passwd = os.getenv('DATABASE_PASSWORD', self.reader.get("database", "password"))
+            if 'DATABASE_PASSWORD' in os.environ:
+                passwd = os.getenv('DATABASE_PASSWORD', "")
+            else:
+                passwd = self.reader.get("database", "password")
             if passwd == "":
                 raise ValueError()
             return passwd
         except (NoSectionError, NoOptionError, ValueError):
-            if self._get_database_type() == "sqlite":
+            if passwd or self._get_database_type() == "sqlite":
                 return ""
             raise Exception("Missing parameter: database password")
 
