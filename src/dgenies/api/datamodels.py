@@ -83,7 +83,7 @@ class JobDescription(BaseModel):
     desc: str = Field(description="Describes the purpose of job.")
     tools: list[ToolDescription] = Field(description="Tools that can be used by job.")
     inputs: list[JobInput] = Field(description="Inputs that can be used with job")
-    default: str = Field(description="Name of default tool.")
+    default: str|None = Field(description="Name of default tool.")
 
 
 class Session(BaseModel):
