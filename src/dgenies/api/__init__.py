@@ -294,7 +294,7 @@ def valid_email(email: str|None):
     Validate email
     """
     if Functions.is_email_mandatory():
-        if email:
+        if not email:
             ValidationError("Email not given")
         elif not re.match(r"^.+@.+\..+$", email):
             # The email regex is simple because checking email address is not simple (RFC3696).
