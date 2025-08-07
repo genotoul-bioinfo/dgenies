@@ -157,10 +157,10 @@ def _fix_file_role(file_role: str) -> str:
     return file_role
 
 
-def get_upload_folder(session_id):
+def get_upload_folder(session_id: str):
     if MODE == "webserver":
-        with Session.connect():
-            session = Session.get(s_id=session_id)
+        with db.Session.connect():
+            session = db.Session.get(s_id=session_id)
             return session.upload_folder
     else:
         return session_id
