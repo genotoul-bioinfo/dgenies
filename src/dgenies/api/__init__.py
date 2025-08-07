@@ -267,7 +267,6 @@ def upload_file(form: UploadFileForm):
                         }
                     }
                 else:
-                    delete_session(form.session_id)
                     # Create & Launch jobs
                     job_manager = launch_batch(form.session_id, batch.batch_id, batch.email, batch.nb_jobs, batch.jobs)
 
@@ -512,6 +511,7 @@ def launch_batch(session_id: str, batch_id: str, email: str, nb_jobs: int, jobs:
     legacy_jobs = prepare_jobs(email, jobs[0:nb_jobs])
     # Transform files path into datafiles:
     update_files(legacy_jobs, upload_folder)
+    delete_session(session_id)
 
     print(legacy_jobs)
     # Launch job:
