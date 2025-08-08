@@ -431,7 +431,7 @@ def post_jobs(form: BatchSubmissionQuery):
                     "batch_id": job_manager.id_job,
                     "job_ids": subjobs if subjobs else [job_manager.id_job],
                     "session_id": None,
-                    "needed_files": None,
+                    "needed_files": [],
                     "allowed_upload": False
                 }}
 
