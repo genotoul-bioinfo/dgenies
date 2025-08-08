@@ -271,10 +271,11 @@ def upload_file(form: UploadFileForm):
                     job_manager = launch_batch(form.session_id, batch.batch_id, batch.email, batch.nb_jobs, batch.jobs)
 
                     logger.info(f"Session: '{form.session_id}' - Starting job {batch.batch_id}")
+                    subjobs = job_manager.get_subjob_ids()
                     return {
                         "code": 0, "message": "ok", "data": {
                             "batch_id": job_manager.id_job,
-                            "job_ids": job_manager.get_subjob_ids(),
+                            "job_ids": subjobs if subjobs else [job_manager.id_job],
                             "needed_files": [],
                             "file": result.get_file()
                         }
@@ -404,7 +405,7 @@ def post_jobs(form: BatchSubmissionQuery):
             upload_folder = os.path.join(current_app.config["UPLOAD_FOLDER"], get_upload_folder(session_id))
             if not os.path.exists(upload_folder):
                 os.makedirs(upload_folder)
-            batch_file =  os.path.join(upload_folder, 'jobs.json')
+            batch_file = os.path.join(upload_folder, 'jobs.json')
             logger.info(f'writing jobs to {batch_file}')
             with open(batch_file, 'w') as outfile:
                 json.dump(form.model_dump(), outfile)
@@ -422,13 +423,13 @@ def post_jobs(form: BatchSubmissionQuery):
                 }}
             else:
                 delete_session(session_id)
-
                 # Create & Launch jobs
                 job_manager = launch_batch(session_id, form.batch_id, form.email, form.nb_jobs, form.jobs)
 
+                subjobs = job_manager.get_subjob_ids()
                 return {"code": 0, "message": "ok", "data": {
                     "batch_id": job_manager.id_job,
-                    "job_ids": job_manager.get_subjob_ids(),
+                    "job_ids": subjobs if subjobs else [job_manager.id_job],
                     "session_id": None,
                     "needed_files": None,
                     "allowed_upload": False
@@ -467,6 +468,7 @@ def prepare_jobs(email: str, jobs: list[Job]) -> list[dict]:
     for job in jobs:
         result.append({
             "job_id": job.job_id,
+            "type": job.type,
             "email": email,
             "query": job.query if job.query else None,
             "query_type": job.query_type.value if job.query else None,
