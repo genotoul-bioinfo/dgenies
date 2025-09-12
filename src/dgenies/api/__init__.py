@@ -122,9 +122,15 @@ def ping_upload(form: Session):
     When upload waiting, ping to be kept in the waiting line
     """
     if MODE == "webserver":
-        with db.Session.connect():
-            session = db.Session.get(s_id=form.session_id)
-            session.ping()
+        try:
+            with db.Session.connect():
+                session = db.Session.get(s_id=form.session_id)
+                session.ping()
+        except DoesNotExist:
+            return {"code": 404, "message": "Session doesn't exist"}
+        except Exception:
+            logger.error(traceback.format_exc())
+            return {"code": 500, "message": "Internal error"}
     return {"code": 0, "message": "ok"}
 
 
@@ -272,6 +278,7 @@ def upload_file(form: UploadFileForm):
 
                     logger.info(f"Session: '{form.session_id}' - Starting job {batch.batch_id}")
                     subjobs = job_manager.get_subjob_ids()
+                    print(subjobs)
                     return {
                         "code": 0, "message": "ok", "data": {
                             "batch_id": job_manager.id_job,
@@ -425,7 +432,6 @@ def post_jobs(form: BatchSubmissionQuery):
                 delete_session(session_id)
                 # Create & Launch jobs
                 job_manager = launch_batch(session_id, form.batch_id, form.email, form.nb_jobs, form.jobs)
-
                 subjobs = job_manager.get_subjob_ids()
                 return {"code": 0, "message": "ok", "data": {
                     "batch_id": job_manager.id_job,
