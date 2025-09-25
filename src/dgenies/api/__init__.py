@@ -105,26 +105,26 @@ def allow_upload(session_id: str) -> bool:
             return session.ask_for_upload(True)
 
 @api.post('/ask-upload', responses={200: AskUploadResponse})
-def ask_upload(form: AskUploadQuery):
+def ask_upload(body: AskUploadQuery):
     """
     Ask to upload files. A session must be asked before be allowed to use /upload route.
     You must ask regularly until allowed.
     """
     try:
-        return {"code": 0, "message": "ok", "data": {"allowed": allow_upload(form.session_id)}}
+        return {"code": 0, "message": "ok", "data": {"allowed": allow_upload(body.session_id)}}
     except DoesNotExist:
         return {"code": 1, "message": "Session not initialized. Please GET a session", "data": {"allowed": False}}
 
 
 @api.post('/ping-upload', responses={200: BaseResponse})
-def ping_upload(form: Session):
+def ping_upload(body: Session):
     """
     When upload waiting, ping to be kept in the waiting line
     """
     if MODE == "webserver":
         try:
             with db.Session.connect():
-                session = db.Session.get(s_id=form.session_id)
+                session = db.Session.get(s_id=body.session_id)
                 session.ping()
         except DoesNotExist:
             return {"code": 404, "message": "Session doesn't exist"}
@@ -377,14 +377,19 @@ def get_file_role(job: Job, file_types: list[str] = ['local', 'url']) -> Iterato
             yield getattr(job, role), role
 
 
+job_post_content_type= {
+    'requestBody': {
+        'content': 'application/json'
+    }
+}
+
 @api.post('/job', responses={200: BatchSubmissionResponse})
-def post_jobs(form: BatchSubmissionQuery):
+def post_jobs(body: BatchSubmissionQuery):
     """
     Launch the job
     """
-
     try:
-        valid_form(form)
+        valid_form(body)
         form_pass = True
     except ValidationError as e:
         message = e.message
@@ -415,10 +420,10 @@ def post_jobs(form: BatchSubmissionQuery):
             batch_file = os.path.join(upload_folder, 'jobs.json')
             logger.info(f'writing jobs to {batch_file}')
             with open(batch_file, 'w') as outfile:
-                json.dump(form.model_dump(), outfile)
+                json.dump(body.model_dump(), outfile)
 
             # Get files from jobs in form
-            needed_files = set(it.chain.from_iterable((get_file_role(job, file_types=['local']) for job in form.jobs)))
+            needed_files = set(it.chain.from_iterable((get_file_role(job, file_types=['local']) for job in body.jobs)))
 
             if needed_files:
                 return {"code": 0, "message": "ok", "data": {
@@ -431,7 +436,7 @@ def post_jobs(form: BatchSubmissionQuery):
             else:
                 delete_session(session_id)
                 # Create & Launch jobs
-                job_manager = launch_batch(session_id, form.batch_id, form.email, form.nb_jobs, form.jobs)
+                job_manager = launch_batch(session_id, body.batch_id, body.email, body.nb_jobs, body.jobs)
                 subjobs = job_manager.get_subjob_ids()
                 return {"code": 0, "message": "ok", "data": {
                     "batch_id": job_manager.id_job,
