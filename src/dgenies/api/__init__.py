@@ -37,7 +37,7 @@ from .datamodels import (
     SessionResponse,
     UploadFileForm,
     JobStatus,
-    JobStatusResponse, JobDescription, Job, JobType, UploadResponseData
+    JobStatusResponse, JobDescription, Job, JobType, UploadResponse
 )
 from .job_descriptions import job_descriptions
 from ..lib.upload_file import UploadFile
@@ -194,7 +194,7 @@ def allowed_file_ext(filename: str, job_type: str, file_role: str) -> bool:
     return any((filename.endswith(f'.{ext}') for ext in extensions))
 
 
-@api.post('/upload', responses={200: UploadResponseData})
+@api.post('/upload', responses={200: UploadResponse})
 def upload_file(form: UploadFileForm):
     """
     Do upload of a file
@@ -490,7 +490,7 @@ def prepare_jobs(email: str, jobs: list[Job]) -> list[dict]:
             "align_type": job.align_type.value if job.align else None,
             "backup": job.backup if job.backup else None,
             "backup_type": job.backup_type.value if job.backup else None,
-            "options": " ".join(get_tools_options(job.tool.value, job.tool_option)) if job.tool_option else None
+            "options": " ".join(get_tools_options(job.tool.value, job.tool_options)) if job.tool_options else None
         })
     return result
 
@@ -499,7 +499,6 @@ def launch_batch(session_id: str, batch_id: str, email: str, nb_jobs: int, jobs:
 
     #batch_id, email, nb_jobs, jobs = form.batch_id, form.email, form.nb_jobs, form.jobs
     upload_folder = os.path.join(current_app.config["UPLOAD_FOLDER"], get_upload_folder(session_id))
-
     if nb_jobs > 1:
         job_id = batch_id
         job_type = 'batch'
@@ -533,7 +532,6 @@ def launch_batch(session_id: str, batch_id: str, email: str, nb_jobs: int, jobs:
         job.launch()
     else:
         job.launch_standalone()
-
     return job
 
 
