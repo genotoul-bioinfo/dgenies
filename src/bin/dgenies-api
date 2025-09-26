@@ -1,0 +1,336 @@
+#!/usr/bin/env python
+import argparse
+import json
+import os.path
+import string
+import random
+import re
+from abc import ABC, abstractmethod
+from threading import Timer
+from time import sleep
+
+
+import requests
+from requests.exceptions import ConnectionError
+
+ENDPOINT="http://127.0.0.1:5000/api/v1"
+CONFIG_URL=f'{ENDPOINT}/config'
+JOB_URL=f'{ENDPOINT}/job'
+ASK_UPLOAD_URL=f'{ENDPOINT}/ask-upload'
+UPLOAD_URL=f'{ENDPOINT}/upload'
+
+query="https://ftp.ensemblgenomes.ebi.ac.uk/pub/bacteria/release-62/fasta/bacteria_0_collection/bacillus_subtilis_subsp_subtilis_str_168_gca_000009045/dna/Bacillus_subtilis_subsp_subtilis_str_168_gca_000009045.ASM904v1.dna.toplevel.fa.gz"
+query_type='url'
+target="https://ftp.ensemblgenomes.ebi.ac.uk/pub/bacteria/release-62/fasta/bacteria_0_collection/escherichia_coli_str_k_12_substr_mg1655_gca_000005845/dna/Escherichia_coli_str_k_12_substr_mg1655_gca_000005845.ASM584v2.dna.toplevel.fa.gz"
+target_type='url'
+job_name="api"
+job_type="align"
+email="name@example.com"
+tool="minimap2"
+tool_options = ["repeat:few"]
+query_name=query.rsplit("/", 1)[-1].removesuffix(".gz").rsplit(".", 1)[0]
+target_name=target.rsplit("/", 1)[-1].removesuffix(".gz").rsplit(".", 1)[0]
+
+
+
+job_data = {
+    "email": email,
+    "batch_id": job_name,
+    "nb_jobs": 2,
+    "jobs": [{
+        "job_id": job_name + "1",
+        "type": job_type,
+        "query": query,
+        "query_type": query_type,
+        "target": query,
+        "target_type": target_type,
+        "tool": tool,
+        "tool_options": tool_options,
+        "backup": "",
+        "backup_type": "local",
+        "align": "",
+        "align_type": "local"
+    }, {
+        "job_id": job_name + "2",
+        "type": job_type,
+        "query": query,
+        "query_type": query_type,
+        "target": query,
+        "target_type": target_type,
+        "tool": tool,
+        "tool_options": tool_options,
+        "backup": "",
+        "backup_type": "local",
+        "align": "",
+        "align_type": "local"
+    }]
+}
+
+
+class DataFile:
+
+    def __init__(self, path: str, type: str=None):
+        self.path = path
+        self.type = "url" if re.search(r"^(https?|ftp)://", path) else "local"
+        self.name = os.path.basename(path)
+
+class Job(ABC):
+
+    @abstractmethod
+    def check(self):
+        # check tool, etc
+        pass
+
+    @abstractmethod
+    def to_json(self):
+        pass
+
+    @abstractmethod
+    def get_file(self, filename: str) -> DataFile:
+        pass
+
+
+def random_job_name(length):
+   letters = string.ascii_lowercase
+   return ''.join(random.choice(letters) for i in range(length))
+
+
+def print_res(func):
+    def wrapper(*args, **kwargs):
+        result = func(*args, **kwargs)
+        print(result)
+        return result
+    return wrapper
+
+class AlignJob(Job):
+
+    type = 'align'
+    nb = 1
+
+    def __init__(self, config, args):
+        self.config = config
+        self.name: str = args.name if args.name else random_job_name(10)
+        self.target = DataFile(args.target)
+        self.query = DataFile(args.query) if args.query else None
+        self.tool: str = args.aligner if args.aligner else "minimap2"
+        self.options: list[str] = args.options if args.options else []
+        self.email: str = args.email if args.email else ""
+        self.check()
+        self.name_to_file: dict[str, DataFile] = {
+            self.target.name: self.target,
+        }
+        if self.query:
+            self.name_to_file[self.query.name]=self.query
+
+    def check(self):
+        # check tool, etc
+        pass
+
+    @print_res
+    def to_json(self):
+        return {
+            "batch_id" : self.name,
+            "email": self.email,
+            "nb_jobs": self.nb,
+            "jobs": [{
+                "align": "",
+                "align_type": "local",
+                "backup": "",
+                "backup_type": "local",
+                "job_id": self.name,
+                "query": self.query.name if self.query else "",
+                "query_type": self.query.type if self.query else "local",
+                "target": self.target.name,
+                "target_type": self.target.type,
+                "tool": self.tool,
+                "tool_options": self.options,
+                "type": self.type
+            }]
+        }
+
+    def get_file(self, filename: str):
+        return self.name_to_file[filename]
+
+def get_config():
+    try:
+        r = requests.get(CONFIG_URL)
+        if r.status_code != 200:
+            print("Server error")
+            print(r)
+            exit(1)
+        print("Server available")
+        return r.json()
+    except ConnectionError:
+        print("Connection error")
+        exit(1)
+
+
+def check_job():
+    # Check if submitted jobs are compatibles with server configuration
+    pass
+
+
+def create_job(args):
+    check_job()
+    return ""
+
+def register_job(job):
+    r = requests.post(JOB_URL, json=job)
+    if r.status_code != 200:
+        print("Error submitting job")
+        print(json.dumps(r.json(), indent=4))
+        exit(1)
+    res = r.json()
+    if res["code"] != 0:
+        raise BaseException(res["message"])
+    print("Job register")
+    return res["data"]
+
+def ask_upload(session_id: str):
+    r = requests.post(ASK_UPLOAD_URL, json={"session_id": session_id})
+    if r.status_code != 200:
+        print("Error ask-upload")
+        print(json.dumps(r.json(), indent=4))
+        exit(1)
+    res = r.json()
+    if res["code"] != 0:
+        raise BaseException(res["message"])
+    return res["data"]
+
+
+def get_file(file: str):
+    return file
+
+
+def ping_upload(session_id: str):
+    r = requests.post(f'{ENDPOINT}/ping-upload', json={"session_id": session_id})
+    if r.status_code != 200:
+        print("Error pinging upload")
+        print(json.dumps(r.json(), indent=4))
+        exit(1)
+    print(f"ping : {r.json()['message']}")
+
+
+def upload_file(session_id, filename, file):
+    files = {'file': open(file, 'rb')}
+    r = requests.post(UPLOAD_URL, files=files, data={"session_id": session_id})
+    if r.status_code != 200:
+        print("Error ask-upload")
+        print(json.dumps(r.json(), indent=4))
+        exit(1)
+    res = r.json()
+    if res["code"] != 0:
+        raise BaseException(res["message"])
+    return res["data"]
+
+
+def submit(job: Job):
+    print("Submit a job")
+    try:
+        data = register_job(job.to_json())
+        session_id = data["session_id"]
+        needed_files = data["needed_files"]
+        if needed_files:
+            # We need to upload file
+            data["allowed"] = data["allowed_upload"]
+            while not data["allowed"]:
+                sleep(15)
+            # upload allowed
+            # ping upload in a thread every 15s
+            ping = Timer(15.0, ping_upload, kwargs={"session_id": session_id})
+            ping.start()
+            # upload itself
+            while needed_files:
+                print(needed_files)
+                next_file = needed_files.pop(0)
+                data = upload_file(session_id, next_file, job.get_file(next_file).path)
+                # distant_filename = data["file"] # TODO update filename in local file data structure
+                needed_files = data["needed_files"]
+            ping.cancel()
+        # job validated
+        return data["batch_id"], data["job_ids"]
+
+    except ConnectionError:
+        print("Connection error")
+        exit(1)
+
+
+def submit_job(job):
+    print("Submit a job")
+    try:
+        data = register_job(job)
+        session_id = data["session_id"]
+        needed_files = data["needed_files"]
+        if needed_files:
+            # We need to upload file
+            data["allowed"] = data["allowed_upload"]
+            while not data["allowed"]:
+                sleep(15)
+            # upload allowed
+            # ping upload in a thread every 15s
+            ping = Timer(15.0, ping_upload, kwargs={"session_id": session_id})
+            ping.start()
+            # upload itself
+            while needed_files:
+                next_file = needed_files.pop(0)
+                data = upload_file(session_id, next_file, next_file)
+                # distant_filename = data["file"] # TODO update filename in local file data structure
+                needed_files = data["needed_files"]
+            ping.cancel()
+        # job validated
+        return data["batch_id"], data["job_ids"]
+
+    except ConnectionError:
+        print("Connection error")
+        exit(1)
+
+def parse_args():
+
+    # TODO:
+    # - if no config file exists, get it from default url.
+    # - when config file exists, use it to populate options.
+    # - display a warning and invite to run update command if config file is too "old" (old = 1 week ?)
+
+    parser = argparse.ArgumentParser(description='Submit job to a D-Genies instance')
+    subparsers = parser.add_subparsers(help='subcommand help', dest='command')
+
+    parser_config = subparsers.add_parser('config', help='config help')
+    parser_config.add_argument('action', choices=["update"], default="update", help='Action on config')
+    parser_config.add_argument('--url', type=str, default=ENDPOINT, help='Use alternative url')
+
+    parser_align = subparsers.add_parser('align', help='align help')
+    parser_align.add_argument('--target', type=str, help='Target (or reference) fasta file', required=True)
+    parser_align.add_argument('--query', type=str, help='Query file fasta file', required=False)
+    parser_align.add_argument('--aligner', type=str, help='Tool used for alignment', required=False)
+    parser_align.add_argument('--options', type=str, nargs='*', help='Options used with aligner', required=False, default = [])
+    parser_align.add_argument('--name', type=str, help='Preferred job name', required=False)
+    parser_align.add_argument('--email', type=str, help='Email for notification', required=False)
+
+    parser_plot = subparsers.add_parser('plot', help='plot help')
+    parser_batch = subparsers.add_parser('batch', help='batch help')
+
+    return parser.parse_args()
+
+def main():
+    args = parse_args()
+    print(args)
+    config = get_config()
+    if args.command == "config":
+        config = get_config()
+        print(config)
+    elif args.command == "align":
+        print(args.options)
+        job = AlignJob(config, args)
+        res = submit(job)
+        print(res)
+    elif args.command == "plot":
+        res = submit_job(job_data)
+        print(res)
+    elif args.command == "batch":
+        res = submit_job(job_data)
+        print(res)
+    else:
+        print("Unknown command")
+
+if __name__ == "__main__":
+    main()
