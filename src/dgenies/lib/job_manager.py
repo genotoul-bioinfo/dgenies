@@ -42,6 +42,7 @@ import json
 from hashlib import sha1
 from dgenies.database import Job, ID_JOB_LENGTH
 from dgenies.allowed_extensions import AllowedExtensions
+from typing import Self
 
 import logging
 
@@ -56,7 +57,7 @@ class JobManager:
     """
 
     def __init__(self, id_job, email=None, query: DataFile = None, target: DataFile = None, mailer=None,
-                 tool="minimap2", align: DataFile = None, backup: DataFile = None, batch=None, options=None):
+                 tool="minimap2", align: DataFile = None, backup: DataFile = None, batch: list[Self] = None, options=None):
         """
         This object will be used in two states:
          - A full state for creating, launching jobs, send emails
@@ -80,8 +81,8 @@ class JobManager:
         :type align: DataFile
         :param backup: backup TAR file
         :type backup: DataFile
-        :param batch: batch file
-        :type batch: DataFile
+        :param batch: list of subjobs
+        :type batch: list[JobManager]
         :param options: list of str containing options for the chosen tool
         :type options: list
         """
@@ -107,7 +108,9 @@ class JobManager:
         # Outputs:
         self.output_dir = os.path.join(self.config.app_data, id_job)
         if self.batch is not None:
-            Path(self.output_dir, ".batch").touch()
+            # We keep track of subjob ids
+            with open(os.path.join(self.output_dir, ".batch"), "w") as outfile:
+                outfile.write("\n".join([j.id_job for j in self.batch]))
         self.preptime_file = os.path.join(self.output_dir, "prep_times")
         self.query_index_split = os.path.join(self.output_dir, "query_split.idx")
         self.paf = os.path.join(self.output_dir, "map.paf")
@@ -1502,7 +1505,8 @@ class JobManager:
         :rtype: list of str
         """
         try:
-            return [j['id_job'] for j in self.read_jobs()]
+            with open(os.path.join(self.output_dir, ".batch"), "r") as infile:
+                return infile.read().splitlines()
         except FileNotFoundError:
             return []
 
