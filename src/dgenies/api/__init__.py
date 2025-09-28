@@ -368,9 +368,9 @@ def get_file_role(job: Job, file_types: list[str] = ['local', 'url']) -> Iterato
         roles = ["query", "target"]
     elif job.type == JobType.plot:
         if job.backup:
-            roles = ["query", "target", "align"]
-        else:
             roles = ["backup"]
+        else:
+            roles = ["query", "target", "align"]
     for role in roles:
         file_type = getattr(job, role + '_type')
         if file_type in file_types:
