@@ -76,6 +76,8 @@ class DataFile:
 
 class Job(ABC):
 
+    batch_id = None
+
     @abstractmethod
     def check(self):
         # check tool, etc
@@ -151,6 +153,59 @@ class AlignJob(Job):
     def get_file(self, filename: str):
         return self.name_to_file[filename]
 
+
+class PlotJob(Job):
+
+    type = 'plot'
+    nb = 1
+
+    def __init__(self, config, args):
+        self.config = config
+        self.name: str = args.name if args.name else random_job_name(10)
+        self.align = DataFile(args.align) if ('align' in args and args.align) else None
+        self.target = DataFile(args.target) if ('target' in args and args.target) else None
+        self.query = DataFile(args.query) if ('query' in args and args.query) else None
+        self.backup = DataFile(args.backup) if ('backup' in args and args.backup) else None
+        self.email: str = args.email if args.email else ""
+        self.check()
+        self.name_to_file: dict[str, DataFile] = dict()
+        for attr in ["align", "target", "query", "backup"]:
+            val:DataFile = getattr(self, attr)
+            print(val)
+            if val is not None:
+                self.name_to_file[val.name] = val
+
+    def check(self):
+        # check tool, etc
+        pass
+
+    @print_res
+    def to_json(self):
+        return {
+            "batch_id" : self.name,
+            "email": self.email,
+            "nb_jobs": self.nb,
+            "jobs": [{
+                "align": self.align.name if self.align else "",
+                "align_type": self.align.type if self.align else "local",
+                "backup": self.backup.name if self.backup else "",
+                "backup_type": self.backup.type if self.backup else "local",
+                "job_id": self.name,
+                "query": self.query.name if self.query else "",
+                "query_type": self.query.type if self.query else "local",
+                "target": self.target.name if self.target else "",
+                "target_type": self.target.type if self.target else "local",
+                "tool": "minimap2",
+                "tool_options": [],
+                "type": self.type
+            }]
+        }
+
+    def get_file(self, filename: str):
+        return self.name_to_file[filename]
+
+
+
 def get_config():
     try:
         r = requests.get(CONFIG_URL)
@@ -223,6 +278,16 @@ def upload_file(session_id, filename, file):
         raise BaseException(res["message"])
     return res["data"]
 
+def get_status(jod_id: str):
+    r = requests.get(f'{ENDPOINT}/status/{jod_id}')
+    if r.status_code != 200:
+        print("Error ask-upload")
+        print(json.dumps(r.json(), indent=4))
+        exit(1)
+    res = r.json()
+    if res["code"] != 0:
+        raise BaseException(res["message"])
+    return res["data"]
 
 def submit(job: Job):
     print("Submit a job")
@@ -241,8 +306,9 @@ def submit(job: Job):
             ping.start()
             # upload itself
             while needed_files:
-                print(needed_files)
+                print(f'remaining files: {needed_files}')
                 next_file = needed_files.pop(0)
+                print(f'uploading {next_file}')
                 data = upload_file(session_id, next_file, job.get_file(next_file).path)
                 # distant_filename = data["file"] # TODO update filename in local file data structure
                 needed_files = data["needed_files"]
@@ -284,6 +350,14 @@ def submit_job(job):
         print("Connection error")
         exit(1)
 
+def update_status(batch_id: str):
+    status = get_status(batch_id)
+    print(status)
+    while status["status"] not in ["success", "failed"]:
+        sleep(30)
+        status = get_status(batch_id)
+        print(status)
+
 def parse_args():
 
     # TODO:
@@ -299,14 +373,25 @@ def parse_args():
     parser_config.add_argument('--url', type=str, default=ENDPOINT, help='Use alternative url')
 
     parser_align = subparsers.add_parser('align', help='align help')
+    parser_align.add_argument('--name', type=str, help='Preferred job name', required=False)
+    parser_align.add_argument('--email', type=str, help='Email for notification', required=False)
     parser_align.add_argument('--target', type=str, help='Target (or reference) fasta file', required=True)
     parser_align.add_argument('--query', type=str, help='Query file fasta file', required=False)
     parser_align.add_argument('--aligner', type=str, help='Tool used for alignment', required=False)
     parser_align.add_argument('--options', type=str, nargs='*', help='Options used with aligner', required=False, default = [])
-    parser_align.add_argument('--name', type=str, help='Preferred job name', required=False)
-    parser_align.add_argument('--email', type=str, help='Email for notification', required=False)
 
     parser_plot = subparsers.add_parser('plot', help='plot help')
+    parser_plot.add_argument('--name', type=str, help='Preferred job name', required=False)
+    parser_plot.add_argument('--email', type=str, help='Email for notification', required=False)
+
+    subparsers_plot = parser_plot.add_subparsers()
+    parsers_plot_raw = subparsers_plot.add_parser('raw', help='Plot raw files help')
+    parsers_plot_raw.add_argument('align', type=str, help='Alignment file in maf format')
+    parsers_plot_raw.add_argument('target', type=str, help='Target (or reference) in fasta or idx file')
+    parsers_plot_raw.add_argument('query', type=str, help='Query file in fasta of idx format')
+    parsers_plot_backup = subparsers_plot.add_parser('backup', help='plot backup help')
+    parsers_plot_backup.add_argument('backup', type=str, help='Backup file in tar or tar.gz format')
+
     parser_batch = subparsers.add_parser('batch', help='batch help')
 
     return parser.parse_args()
@@ -323,9 +408,13 @@ def main():
         job = AlignJob(config, args)
         res = submit(job)
         print(res)
+        update_status(res[0])
     elif args.command == "plot":
-        res = submit_job(job_data)
+        job = PlotJob(config, args)
+        #res = submit_job(job_data)
+        res = submit(job)
         print(res)
+        update_status(res[0])
     elif args.command == "batch":
         res = submit_job(job_data)
         print(res)
