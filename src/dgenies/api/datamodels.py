@@ -130,11 +130,14 @@ class Job(JobId):
     backup_type: FileType = Field(description="Type of backup file. Either 'local' or 'url'")
 
     tool: ToolName = Field(description="Tool file. Can be either 'minimap2' or 'mashmap'")
-    tool_option: list[str] = Field([], description="List of options for chosen tool.")
-
+    tool_options: Optional[list[str]] = Field([], description="List of options for chosen tool.")
 
 class JobsSubmissionQuery(Session, Job):
-    email: str = Field(description="Email to warn you when job is finished")
+
+    if dgenies.MODE == "webserver":
+        email: str = Field(description="Email to warn you when job is finished")
+    else:
+        email: Optional[str] = Field(None, description="Email to warn you when job is finished")
 
 
 class NeededFiles(BaseModel):
@@ -196,14 +199,13 @@ class UploadResponse(BaseResponse):
 class JobPath(JobId):
     pass
 
-
 class JobStatus(JobId):
+    percent: float = Field(description="Progression of job. Takes value between 0 and 100. When the value reaches 100, the job is complete regardless of its status (success or error).")
     status: str = Field(description="Status of job")
     error: str|None = Field(description="Error message")
     has_logs: bool = Field(description="True if a log file is available")
     mem_peak: str|None = Field(None, description="Consumed peak memory if available")
     time_elapsed: str|None = Field(None, description="Time elapsed if available")
-    batch: list[JobStatus]|None = Field(None, description="Statuses of subjobs if current job is batch job")
 
 
 class JobStatusResponse(BaseResponse):

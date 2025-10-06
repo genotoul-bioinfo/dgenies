@@ -535,19 +535,40 @@ def launch_batch(session_id: str, batch_id: str, email: str, nb_jobs: int, jobs:
     return job
 
 
+def get_percentage(status: str) -> float:
+    if status in ["getfiles", "getfiles-waiting"]:
+        return 3.7
+    elif status == "waiting":
+        return 7
+    elif status in ["preparing", "prepare-scheduled", "preparing-cluster"]:
+        return 10.7
+    elif status == "prepared":
+        return 20.4
+    elif status == "scheduled":
+        return 30.3
+    elif status in ["starting", "scheduled-cluster"]:
+        return 35.2
+    elif status in ["started", "started-batch"]:
+        return 40.3
+    elif status == "succeed":
+        return 75.0
+    elif status == "merging":
+        return 80.4
+    elif status in ["success", "no-match", "fail"]:
+        return 100
+    return 0
+
 def create_job_status(answer: dict) -> JobStatus:
-    subjob_status: list[JobStatus] = []
-    if "batch" in answer:
-        for j in answer["batch"]:
-            subjob_status.append(create_job_status(Functions().get_status(JobManager(j["job_id"]))))
+    error = answer.get("error", None)
+    status = answer.get("status", 'unknown')
     res = JobStatus(
             job_id=answer["id_job"],
-            status=answer.get("status", 'unknown'),
-            error=answer.get("error", None),
+            percent=get_percentage(status),
+            status=status,
+            error=error if error else None,
             has_logs=answer.get("has_logs", False),
             mem_peak=answer.get("mem_peak", None),
-            time_elapsed=answer.get("time_elapsed", None),
-            batch=subjob_status if subjob_status else None
+            time_elapsed=answer.get("time_elapsed", None)
     )
     return res
 
