@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from enum import Enum, StrEnum
+from typing import Optional, Literal
 from pydantic import BaseModel, Field
 from flask_openapi3 import FileStorage
 
+import dgenies
 from ..lib.functions import Functions
 from ..tools import Tools
 
@@ -187,9 +189,6 @@ class UploadResponseData(NeededFiles):
     batch_id: str|None = Field(description="Job id, null until last upload is completed")
     job_ids: list[JobId]|None = Field(description="List of jobs ids, null if file upload is needed")
     file: str = Field(description="File name")
-
-class UploadResponseDataAlt(NeededFiles, JobId, Session):
-    pass
 
 
 class UploadResponse(BaseResponse):
