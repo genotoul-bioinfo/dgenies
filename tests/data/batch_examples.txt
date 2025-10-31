@@ -1,0 +1,5 @@
+type=align id_job=example_align tool=minimap2 options=repeat:few query=example://Fusarium_culmorum.EF1.dna.toplevel.fa.gz target=example://Fusarium_graminearum.RR1.dna.toplevel.fa.gz
+
+type=align id_job=example_align_ava tool=minimap2 options=repeat:few target=example://Fusarium_graminearum.RR1.dna.toplevel.fa.gz
+
+type=plot id_job=example_plot backup=example://backup.tar.gz

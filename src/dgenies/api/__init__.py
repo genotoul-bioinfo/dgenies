@@ -430,7 +430,7 @@ def post_jobs(body: BatchSubmissionQuery):
                     "batch_id": None,
                     "job_ids": None,
                     "session_id": session_id,
-                    "needed_files": [f for f, _ in needed_files],
+                    "needed_files": [f for f, _ in needed_files if f],
                     "allowed_upload": allow_upload(session_id)
                 }}
             else:

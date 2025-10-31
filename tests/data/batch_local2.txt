@@ -1,0 +1,4 @@
+type=align id_job=example_align tool=minimap2 options=repeat:few query="ensembl_104/Escherichia_coli_o157_h7_str_sakai_gca_000008865.ASM886v2.dna.toplevel.fa.gz" target="ensembl_104/Escherichia_coli_str_k_12_substr_mg1655_gca_000005845.ASM584v2.dna_rm.toplevel.fa.gz"
+
+type=align id_job=example_align_ava tool=minimap2 options=repeat:few target="ensembl_104/Escherichia_coli_str_k_12_substr_mg1655_gca_000005845.ASM584v2.dna.toplevel.fa.gz"
+

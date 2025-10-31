@@ -8,8 +8,9 @@ import re
 from abc import ABC, abstractmethod
 from threading import Timer
 from time import sleep
+from types import SimpleNamespace
 
-
+from lark import Lark, Token, Transformer, Tree
 import requests
 from requests.exceptions import ConnectionError
 
@@ -31,8 +32,6 @@ tool_options = ["repeat:few"]
 query_name=query.rsplit("/", 1)[-1].removesuffix(".gz").rsplit(".", 1)[0]
 target_name=target.rsplit("/", 1)[-1].removesuffix(".gz").rsplit(".", 1)[0]
 
-
-
 job_data = {
     "email": email,
     "batch_id": job_name,
@@ -42,7 +41,7 @@ job_data = {
         "type": job_type,
         "query": query,
         "query_type": query_type,
-        "target": query,
+        "target": target,
         "target_type": target_type,
         "tool": tool,
         "tool_options": tool_options,
@@ -78,6 +77,11 @@ class Job(ABC):
 
     batch_id = None
 
+    def __init__(self, config, args):
+        self.config = config
+        self.email: str = args.email if args.email else ""
+        self.name: str = args.name if args.name else random_job_name(10)
+
     @abstractmethod
     def check(self):
         # check tool, etc
@@ -110,13 +114,11 @@ class AlignJob(Job):
     nb = 1
 
     def __init__(self, config, args):
-        self.config = config
-        self.name: str = args.name if args.name else random_job_name(10)
+        super().__init__(config, args)
         self.target = DataFile(args.target)
         self.query = DataFile(args.query) if args.query else None
-        self.tool: str = args.aligner if args.aligner else "minimap2"
+        self.tool: str = args.tool if args.tool else "minimap2"
         self.options: list[str] = args.options if args.options else []
-        self.email: str = args.email if args.email else ""
         self.check()
         self.name_to_file: dict[str, DataFile] = {
             self.target.name: self.target,
@@ -128,7 +130,7 @@ class AlignJob(Job):
         # check tool, etc
         pass
 
-    @print_res
+    #@print_res
     def to_json(self):
         return {
             "batch_id" : self.name,
@@ -160,13 +162,11 @@ class PlotJob(Job):
     nb = 1
 
     def __init__(self, config, args):
-        self.config = config
-        self.name: str = args.name if args.name else random_job_name(10)
+        super().__init__(config, args)
         self.align = DataFile(args.align) if ('align' in args and args.align) else None
         self.target = DataFile(args.target) if ('target' in args and args.target) else None
         self.query = DataFile(args.query) if ('query' in args and args.query) else None
         self.backup = DataFile(args.backup) if ('backup' in args and args.backup) else None
-        self.email: str = args.email if args.email else ""
         self.check()
         self.name_to_file: dict[str, DataFile] = dict()
         for attr in ["align", "target", "query", "backup"]:
@@ -179,7 +179,7 @@ class PlotJob(Job):
         # check tool, etc
         pass
 
-    @print_res
+    #@print_res
     def to_json(self):
         return {
             "batch_id" : self.name,
@@ -204,7 +204,116 @@ class PlotJob(Job):
     def get_file(self, filename: str):
         return self.name_to_file[filename]
 
+class BatchJob(Job):
 
+    type = 'batch'
+    nb = 1
+
+    def __init__(self, config, args):
+        super().__init__(config, args)
+        #with open(args.batch_file) as input_file:
+        #    tree = BatchJob.get_parser().parse(input_file.read())
+        #    print(tree.pretty())
+        #    jobs = BatchJob.BatchFileToBatchJob(config).transform(tree)
+        #    #print(jobs)
+
+        with open(args.batch_file, 'r') as batch_file:
+            tree = BatchJob.get_parser().parse(batch_file.read())
+            self.jobs: list[Job] = self.BatchFileToBatchJob(config, self.email).transform(tree)
+        self.nb = len(self.jobs)
+        self.check()
+
+    def check(self):
+        pass
+
+    def to_json(self):
+        return {
+            "batch_id": self.name,
+            "email": self.email,
+            "nb_jobs": self.nb,
+            "jobs": [j.to_json()["jobs"][0] for j in self.jobs],
+        }
+
+    def get_file(self, filename: str) -> DataFile:
+        pass
+
+    @classmethod
+    def get_parser(cls) -> Lark:
+        return Lark(r"""
+            value: VALUE
+                 | DQUOTEDVALUE
+                 | SQUOTEDVALUE
+            values: value ("," value)*
+            param: KEY "=" value
+            params: OPTIONS "=" values
+            job: (param|params) (SPACES (param|params))* SPACES?
+            whitespaces: (NEWLINES | SPACES)*
+            jobs: whitespaces job (SPACES? NEWLINES job)* whitespaces
+            
+            COMMENT: /#[^\n\r]*/
+            VALUE: /[^#\s'",]+/
+            DQUOTEDVALUE: /"[^"#\r\n]+"/
+            SQUOTEDVALUE: /'[^'#\r\n]+'/
+            KEY: /(type|align|query|target|backup|tool|name)/
+            OPTIONS: /options/
+            NEWLINES: /[\n\r]+/
+            SPACES:  /[\t ]+/
+            
+            %import common.ESCAPED_STRING
+            %ignore COMMENT
+        """, start='jobs')
+
+    class BatchFileToBatchJob(Transformer):
+
+        def __init__(self, config,  email: str = ''):
+            super().__init__()
+            self.config = config
+            self.email = email
+
+        def jobs(self, items):
+            res = [j for j in items if j]
+            return res
+
+        def job(self, items):
+            params = dict()
+            for element in items:
+                if element:
+                    k, v = element
+                    params[k.value] = v
+            if "type" in params:
+                job_type = params.pop("type")
+                if job_type == "align":
+                    if "query" not in params:
+                        params["query"] = None
+                    return AlignJob(config = self.config, args = SimpleNamespace(email=self.email, **params))
+                elif job_type == "plot":
+                    return PlotJob(config = self.config, args = SimpleNamespace(email=self.email, **params))
+                else:
+                    raise ValueError("Unknown value for 'type'")
+            raise ValueError("Missing key 'key'")
+
+        def param(self, key_value):
+            k, v = key_value
+            return k, v
+
+        def params(self, key_value):
+            k, v = key_value
+            return k, v
+
+        def values(self, items):
+            return list(items)
+
+        def value(self, val: list[Token]):
+            (val,) = val # take first element of list
+            if val.type == 'VALUE':
+                return val.value
+            # remove quotes around value
+            return val.value[1:-1]
+
+
+        whitespaces = lambda self, _: None
+        SPACES = lambda self, _: None
+        NEWLINES = lambda self, _: None
 
 def get_config():
     try:
@@ -353,12 +462,13 @@ def submit_job(job):
 def update_status(batch_id: str):
     status = get_status(batch_id)
     print(status)
-    while status["status"] not in ["success", "failed"]:
+    while status["percent"] < 100:
         sleep(30)
         status = get_status(batch_id)
         print(status)
 
-def parse_args():
+
+def get_argparse() -> argparse.ArgumentParser :
 
     # TODO:
     # - if no config file exists, get it from default url.
@@ -377,8 +487,8 @@ def parse_args():
     parser_align.add_argument('--email', type=str, help='Email for notification', required=False)
     parser_align.add_argument('--target', type=str, help='Target (or reference) fasta file', required=True)
     parser_align.add_argument('--query', type=str, help='Query file fasta file', required=False)
-    parser_align.add_argument('--aligner', type=str, help='Tool used for alignment', required=False)
-    parser_align.add_argument('--options', type=str, nargs='*', help='Options used with aligner', required=False, default = [])
+    parser_align.add_argument('--tool', type=str, help='Tool used for alignment', required=False)
+    parser_align.add_argument('--options', type=str, nargs='*', help='Options used with tool', required=False, default = [])
 
     parser_plot = subparsers.add_parser('plot', help='plot help')
     parser_plot.add_argument('--name', type=str, help='Preferred job name', required=False)
@@ -393,11 +503,16 @@ def parse_args():
     parsers_plot_backup.add_argument('backup', type=str, help='Backup file in tar or tar.gz format')
 
     parser_batch = subparsers.add_parser('batch', help='batch help')
+    parser_batch.add_argument('--name', type=str, help='Preferred job name', required=False)
+    parser_batch.add_argument('--email', type=str, help='Email for notification', required=False)
+    parser_batch.add_argument('batch_file', type=str, help='Batch file in txt format')
+    parser_batch.add_argument('data_file', nargs='*', type=str, help='Data files used as input in batch file')
 
-    return parser.parse_args()
+    return parser
 
 def main():
-    args = parse_args()
+    parser = get_argparse()
+    args = parser.parse_args()
     print(args)
     config = get_config()
     if args.command == "config":
@@ -416,10 +531,14 @@ def main():
         print(res)
         update_status(res[0])
     elif args.command == "batch":
-        res = submit_job(job_data)
+        #res = submit_job(job_data)
+        job = BatchJob(config, args)
+        print(job.to_json())
+        res = submit(job)
         print(res)
+        update_status(res[0])
     else:
-        print("Unknown command")
+        parser.print_help()
 
 if __name__ == "__main__":
     main()

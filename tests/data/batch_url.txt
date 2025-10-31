@@ -1,0 +1,4 @@
+type=align id_job=example_align tool=minimap2 options=repeat:few query="http://ftp.ensemblgenomes.org/pub/bacteria/release-52/fasta/bacteria_79_collection/escherichia_coli_str_k_12_substr_w3110_gca_000010245/dna/Escherichia_coli_str_k_12_substr_w3110_gca_000010245.ASM1024v1.dna_rm.toplevel.fa.gz" target="http://ftp.ensemblgenomes.org/pub/bacteria/release-52/fasta/bacteria_0_collection/escherichia_coli_str_k_12_substr_mg1655_gca_000005845/dna/Escherichia_coli_str_k_12_substr_mg1655_gca_000005845.ASM584v2.dna_rm.toplevel.fa.gz"
+
+type=align id_job=example_align_ava tool=minimap2 options=repeat:few target="http://ftp.ensemblgenomes.org/pub/bacteria/release-52/fasta/bacteria_22_collection/escherichia_coli_o157_h7_gca_004100305/dna/Escherichia_coli_o157_h7_gca_004100305.ASM410030v1.dna_rm.toplevel.fa.gz"
+
