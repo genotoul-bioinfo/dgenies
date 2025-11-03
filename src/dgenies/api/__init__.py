@@ -217,7 +217,7 @@ def upload_file(form: UploadFileForm):
 
             # Get missing files for jobs
             needed_files = set(it.chain.from_iterable((get_file_role(job, file_types=['local']) for job in batch.jobs)))
-            needed_files = [fn for fn, _ in needed_files if not os.path.exists(os.path.join(upload_folder, fn))]
+            needed_files = {fn for fn, _ in needed_files if not os.path.exists(os.path.join(upload_folder, fn))}
             print(needed_files)
             # Check if file already exists
             if filename not in needed_files:
@@ -424,19 +424,21 @@ def post_jobs(body: BatchSubmissionQuery):
 
             # Get files from jobs in form
             needed_files = set(it.chain.from_iterable((get_file_role(job, file_types=['local']) for job in body.jobs)))
+            needed_files = [f for f, _ in needed_files if f]
 
             if needed_files:
                 return {"code": 0, "message": "ok", "data": {
                     "batch_id": None,
                     "job_ids": None,
                     "session_id": session_id,
-                    "needed_files": [f for f, _ in needed_files if f],
+                    "needed_files": needed_files,
                     "allowed_upload": allow_upload(session_id)
                 }}
             else:
                 delete_session(session_id)
                 # Create & Launch jobs
                 job_manager = launch_batch(session_id, body.batch_id, body.email, body.nb_jobs, body.jobs)
+                logger.info(f"Session: '{session_id}' - Starting job {body.batch_id}")
                 subjobs = job_manager.get_subjob_ids()
                 return {"code": 0, "message": "ok", "data": {
                     "batch_id": job_manager.id_job,

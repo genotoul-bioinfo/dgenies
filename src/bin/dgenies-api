@@ -14,56 +14,12 @@ from lark import Lark, Token, Transformer, Tree
 import requests
 from requests.exceptions import ConnectionError
 
-ENDPOINT="http://127.0.0.1:5000/api/v1"
+BASE_URL = "http://127.0.0.1:5000"
+ENDPOINT= f"{BASE_URL}/api/v1"
 CONFIG_URL=f'{ENDPOINT}/config'
 JOB_URL=f'{ENDPOINT}/job'
 ASK_UPLOAD_URL=f'{ENDPOINT}/ask-upload'
 UPLOAD_URL=f'{ENDPOINT}/upload'
-
-query="https://ftp.ensemblgenomes.ebi.ac.uk/pub/bacteria/release-62/fasta/bacteria_0_collection/bacillus_subtilis_subsp_subtilis_str_168_gca_000009045/dna/Bacillus_subtilis_subsp_subtilis_str_168_gca_000009045.ASM904v1.dna.toplevel.fa.gz"
-query_type='url'
-target="https://ftp.ensemblgenomes.ebi.ac.uk/pub/bacteria/release-62/fasta/bacteria_0_collection/escherichia_coli_str_k_12_substr_mg1655_gca_000005845/dna/Escherichia_coli_str_k_12_substr_mg1655_gca_000005845.ASM584v2.dna.toplevel.fa.gz"
-target_type='url'
-job_name="api"
-job_type="align"
-email="name@example.com"
-tool="minimap2"
-tool_options = ["repeat:few"]
-query_name=query.rsplit("/", 1)[-1].removesuffix(".gz").rsplit(".", 1)[0]
-target_name=target.rsplit("/", 1)[-1].removesuffix(".gz").rsplit(".", 1)[0]
-
-job_data = {
-    "email": email,
-    "batch_id": job_name,
-    "nb_jobs": 2,
-    "jobs": [{
-        "job_id": job_name + "1",
-        "type": job_type,
-        "query": query,
-        "query_type": query_type,
-        "target": target,
-        "target_type": target_type,
-        "tool": tool,
-        "tool_options": tool_options,
-        "backup": "",
-        "backup_type": "local",
-        "align": "",
-        "align_type": "local"
-    }, {
-        "job_id": job_name + "2",
-        "type": job_type,
-        "query": query,
-        "query_type": query_type,
-        "target": query,
-        "target_type": target_type,
-        "tool": tool,
-        "tool_options": tool_options,
-        "backup": "",
-        "backup_type": "local",
-        "align": "",
-        "align_type": "local"
-    }]
-}
 
 
 class DataFile:
@@ -72,6 +28,9 @@ class DataFile:
         self.path = path
         self.type = "url" if re.search(r"^(https?|ftp)://", path) else "local"
         self.name = os.path.basename(path)
+
+    def get_form_value(self):
+        return self.path if self.type == "url" else self.name
 
 class Job(ABC):
 
@@ -142,9 +101,9 @@ class AlignJob(Job):
                 "backup": "",
                 "backup_type": "local",
                 "job_id": self.name,
-                "query": self.query.name if self.query else "",
+                "query": self.query.get_form_value() if self.query else "",
                 "query_type": self.query.type if self.query else "local",
-                "target": self.target.name,
+                "target": self.target.get_form_value(),
                 "target_type": self.target.type,
                 "tool": self.tool,
                 "tool_options": self.options,
@@ -186,14 +145,14 @@ class PlotJob(Job):
             "email": self.email,
             "nb_jobs": self.nb,
             "jobs": [{
-                "align": self.align.name if self.align else "",
+                "align": self.align.get_form_value() if self.align else "",
                 "align_type": self.align.type if self.align else "local",
-                "backup": self.backup.name if self.backup else "",
+                "backup": self.backup.get_form_value() if self.backup else "",
                 "backup_type": self.backup.type if self.backup else "local",
                 "job_id": self.name,
-                "query": self.query.name if self.query else "",
+                "query": self.query.get_form_value() if self.query else "",
                 "query_type": self.query.type if self.query else "local",
-                "target": self.target.name if self.target else "",
+                "target": self.target.get_form_value() if self.target else "",
                 "target_type": self.target.type if self.target else "local",
                 "tool": "minimap2",
                 "tool_options": [],
@@ -310,10 +269,10 @@ class BatchJob(Job):
             # remove quotes around value
             return val.value[1:-1]
 
-
         whitespaces = lambda self, _: None
         SPACES = lambda self, _: None
         NEWLINES = lambda self, _: None
+
 
 def get_config():
     try:
@@ -338,6 +297,7 @@ def create_job(args):
     check_job()
     return ""
 
+
 def register_job(job):
     r = requests.post(JOB_URL, json=job)
     if r.status_code != 200:
@@ -349,6 +309,7 @@ def register_job(job):
         raise BaseException(res["message"])
     print("Job register")
     return res["data"]
+
 
 def ask_upload(session_id: str):
     r = requests.post(ASK_UPLOAD_URL, json={"session_id": session_id})
@@ -401,7 +362,10 @@ def get_status(jod_id: str):
 def submit(job: Job):
     print("Submit a job")
     try:
-        data = register_job(job.to_json())
+        job_json = job.to_json()
+        print(json.dumps(job_json, indent=4))
+        data = register_job(job_json)
+        print(data)
         session_id = data["session_id"]
         needed_files = data["needed_files"]
         if needed_files:
@@ -429,44 +393,18 @@ def submit(job: Job):
         print("Connection error")
         exit(1)
 
-
-def submit_job(job):
-    print("Submit a job")
-    try:
-        data = register_job(job)
-        session_id = data["session_id"]
-        needed_files = data["needed_files"]
-        if needed_files:
-            # We need to upload file
-            data["allowed"] = data["allowed_upload"]
-            while not data["allowed"]:
-                sleep(15)
-            # upload allowed
-            # ping upload in a thread every 15s
-            ping = Timer(15.0, ping_upload, kwargs={"session_id": session_id})
-            ping.start()
-            # upload itself
-            while needed_files:
-                next_file = needed_files.pop(0)
-                data = upload_file(session_id, next_file, next_file)
-                # distant_filename = data["file"] # TODO update filename in local file data structure
-                needed_files = data["needed_files"]
-            ping.cancel()
-        # job validated
-        return data["batch_id"], data["job_ids"]
-
-    except ConnectionError:
-        print("Connection error")
-        exit(1)
-
 def update_status(batch_id: str):
     status = get_status(batch_id)
     print(status)
+    #print('', end=f'{status["percent"]}%: {status["status"]}' + (f' - {status["error"]}' if status["error"] else "") + '\r')
+    wait_duration = 5
     while status["percent"] < 100:
-        sleep(30)
+        sleep(wait_duration)
+        wait_duration = min(wait_duration*2, 30)
         status = get_status(batch_id)
         print(status)
-
+        #print('', end=f'{status["percent"]}%: {status["status"]}' + (f' - {status["error"]}' if status["error"] else "") + '\r')
+    return status
 
 def get_argparse() -> argparse.ArgumentParser :
 
@@ -480,7 +418,7 @@ def get_argparse() -> argparse.ArgumentParser :
 
     parser_config = subparsers.add_parser('config', help='config help')
     parser_config.add_argument('action', choices=["update"], default="update", help='Action on config')
-    parser_config.add_argument('--url', type=str, default=ENDPOINT, help='Use alternative url')
+    parser_config.add_argument('--url', type=str, default=BASE_URL, help='Use alternative url')
 
     parser_align = subparsers.add_parser('align', help='align help')
     parser_align.add_argument('--name', type=str, help='Preferred job name', required=False)
@@ -510,6 +448,12 @@ def get_argparse() -> argparse.ArgumentParser :
 
     return parser
 
+def display_ids(batch_id, job_ids):
+    if len(job_ids) == 1 and batch_id == job_ids[0]:
+        print(f'{batch_id}')
+    else:
+        print(f'{batch_id}: {", ".join(job_ids)}')
+
 def main():
     parser = get_argparse()
     args = parser.parse_args()
@@ -521,22 +465,30 @@ def main():
     elif args.command == "align":
         print(args.options)
         job = AlignJob(config, args)
-        res = submit(job)
-        print(res)
-        update_status(res[0])
+        batch_id, job_ids = submit(job)
+        display_ids(batch_id, job_ids)
+        res = update_status(batch_id)
+        if res.get('status') == 'success':
+            print(f'result available at {BASE_URL}/result/{res["job_id"]}')
     elif args.command == "plot":
         job = PlotJob(config, args)
-        #res = submit_job(job_data)
-        res = submit(job)
-        print(res)
-        update_status(res[0])
+        batch_id, job_ids = submit(job)
+        display_ids(batch_id, job_ids)
+        res = update_status(batch_id)
+        if res.get('status') == 'success':
+            print(f'result available at {BASE_URL}/result/{res["job_id"]}')
     elif args.command == "batch":
-        #res = submit_job(job_data)
         job = BatchJob(config, args)
-        print(job.to_json())
-        res = submit(job)
-        print(res)
-        update_status(res[0])
+        batch_id, job_ids = submit(job)
+        display_ids(batch_id, job_ids)
+        res = update_status(batch_id)
+        for sub_job in job_ids:
+            res = get_status(sub_job)
+            if res.get('status') == 'success':
+                print(f'result available at {BASE_URL}/result/{res["job_id"]}')
+            else:
+                print(f'job {sub_job} failed at step {res.get("status", "unknown")}'
+                      f' with error "{res.get("error", "No error provided")}"')
     else:
         parser.print_help()
 
