@@ -131,7 +131,7 @@ class Job(JobId):
     backup: str = Field(description="Backup file. Can be either a filename or an url")
     backup_type: FileType = Field(description="Type of backup file. Either 'local' or 'url'")
 
-    tool: ToolName = Field(description="Tool file. Can be either 'minimap2' or 'mashmap'")
+    tool: ToolName | None = Field(description="Tool file. Can be either 'minimap2' or 'mashmap'")
     tool_options: Optional[list[str]] = Field([], description="List of options for chosen tool.")
 
 class JobsSubmissionQuery(Session, Job):

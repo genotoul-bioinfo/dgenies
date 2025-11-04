@@ -154,7 +154,7 @@ class PlotJob(Job):
                 "query_type": self.query.type if self.query else "local",
                 "target": self.target.get_form_value() if self.target else "",
                 "target_type": self.target.type if self.target else "local",
-                "tool": "minimap2",
+                "tool": None,
                 "tool_options": [],
                 "type": self.type
             }]
