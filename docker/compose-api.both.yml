@@ -1,0 +1,5 @@
+services:
+  nginx:
+    volumes:
+      - ./html/dist-sub:/usr/share/nginx/html:ro
+      - ./nginx/dgenies-both.conf:/etc/nginx/conf.d/default.conf:ro
