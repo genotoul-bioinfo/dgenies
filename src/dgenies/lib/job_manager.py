@@ -23,6 +23,7 @@ from jinja2 import Template
 import traceback
 from pathlib import Path
 from urllib import request, parse
+from urllib.error import URLError
 import tarfile
 from dgenies.bin.split_fa import Splitter
 from dgenies.bin.index import index_file, Index
@@ -567,11 +568,15 @@ class JobManager:
             with open(key_file, "w") as k_f:
                 k_f.write(key)
             data = parse.urlencode({"key": key}).encode()
-            req = request.Request(self.config.web_url + "/send-mail/" + self.id_job, data=data)
-            resp = request.urlopen(req)
-            if resp.getcode() != 200:
+            req = request.Request(self.config.send_mail_url + "/send-mail/" + self.id_job, data=data)
+            self.logger.debug("{} - Sending mail: {} {} ".format(self.id_job, req.get_method(), req.get_full_url()))
+            try:
+                resp = request.urlopen(req)
+                if resp.getcode() != 200:
+                    self.logger.error("{} - Send mail failed!".format(self.id_job))
+            except URLError as e:
                 self.logger.error("{} - Send mail failed!".format(self.id_job))
-
+                self.logger.error(e)
     def search_error(self):
         """
         Search for an error in the log file (for local runs). If no error found, returns a generic error message

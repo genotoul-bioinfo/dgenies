@@ -1,0 +1,72 @@
+services:
+
+  dgenies-api:
+    build:
+      context: ..
+      target: dgenies
+    environment:
+      - MAIL_SERVER=smtp
+      - MAIL_PORT=25
+      - CONFIG_DIR=/dgenies
+      - DATA_DIR=/dgenies/data
+      - UPLOAD_DIR=/tmp/dgenies
+      - DATABASE_URL=/dgenies/database.sqlite
+    user: "${USER_ID}:${GROUP_ID}"
+    expose:
+      - 5000
+    ports:
+      - "5000:5000"
+    volumes:
+      - ../src/:/app/:ro
+      - dgenies-data:/dgenies
+      - dgenies-upload:/tmp/dgenies
+      - dgenies-logs:/logs
+      - ./examples:/dgenies/examples:ro
+      - ./config/api/:/etc/dgenies/:ro
+    command: [ "gunicorn", "--config=/etc/dgenies/gunicorn.conf.py", 'dgenies:launch()' ]
+
+
+  dgenies-scheduler:
+    build:
+      context: ..
+      target: dgenies
+    environment:
+      #- WEB_URL=http://localhost:8080
+      - CONFIG_DIR=/dgenies
+      - DATA_DIR=/dgenies/data
+      - UPLOAD_DIR=/tmp/dgenies
+      - DATABASE_URL=/dgenies/database.sqlite
+    user: "${USER_ID}:${GROUP_ID}"
+    volumes:
+      - ../src/:/app/:ro
+      - dgenies-data:/dgenies
+      - dgenies-upload:/tmp/dgenies
+      - dgenies-logs:/logs
+      - ./examples:/dgenies/examples:ro
+      - ./config/api/:/etc/dgenies/:ro
+    command: [ "/app/dgenies/bin/local_scheduler.py", "-d"]
+
+  nginx:
+    image: nginx
+    #environment:
+    #- NGINX_PORT=8080
+    ports:
+      - "8080:8080"
+    user: "${USER_ID}:${GROUP_ID}"
+    volumes:
+      - ./dist:/usr/share/nginx/html:ro
+      - ./nginx:/etc/nginx/conf.d:ro
+
+  smtp:
+    image: rnwood/smtp4dev
+    expose:
+      - 25
+    ports:
+      - "5080:80"
+      - "2525:25"
+
+
+volumes:
+  dgenies-data:
+  dgenies-upload:
+  dgenies-logs:

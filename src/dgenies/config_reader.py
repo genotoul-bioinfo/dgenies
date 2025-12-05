@@ -6,7 +6,7 @@ from pathlib import Path
 import logging
 from configparser import RawConfigParser, NoOptionError, NoSectionError
 from .lib.decorators import Singleton
-
+from typing import Callable, Iterator
 
 @Singleton
 class AppConfigReader:
@@ -46,21 +46,49 @@ class AppConfigReader:
         self.reader = None
         self.reset_config(config_file)
 
-    def reset_config(self, config_files):
+    def _options_iterator(self) -> Iterator[tuple[str, Callable]]:
+        """
+        Iterator over self attributes related to configuration
+        :return: iterator producing a tuple (attribute, callable)
+        """
+        for attr in dir(self):
+            attr_o = getattr(self, attr)
+            if attr.startswith("_get_") and callable(attr_o):
+                yield attr[5:], attr_o
+
+    def ___str___(self) -> str:
+        """
+        Representation of the configuration, except password attributes
+        :return: string representation of self
+        """
+        try:
+            return "\n".join((f"{attr}: {method()}" for attr, method in self._options_iterator() if "pass" not in attr))
+        except Exception as e:
+            print(e)
+
+    def reset_config(self, config_files: list[Path|str]) -> None:
+        """
+        Override a previous configuration with new config files
+        :param config_files: the list of config files. Parameters in last files override parameters in previous files.
+        """
         self.reader = RawConfigParser()
         self.logger.info("Reset config")
         for f in config_files:
             self.logger.info("Override config with {}".format(f))
         self.reader.read(config_files)
-        for attr in dir(self):
-            attr_o = getattr(self, attr)
-            if attr.startswith("_get_") and callable(attr_o):
-                try:
-                    setattr(self, attr[5:], attr_o())
-                except Exception as e:
-                    print(e)
+        for attr, attr_o in self._options_iterator():
+            try:
+                setattr(self, attr, attr_o())
+            except Exception as e:
+                print(e)
+        self.logger.info(self.___str___())
 
-    def _replace_vars(self, path, config=False):
+    def _replace_vars(self, path: str, config: bool=False):
+        """
+        In a path related to configuration, replaces each variable by its value
+        :param path: the path.
+        :param config: is the path is the config path?
+        """
         new_path = path.replace("###USER###", os.path.expanduser("~"))\
             .replace("###PROGRAM###", os.path.dirname(os.path.dirname(os.path.realpath(__file__))))\
             .replace("###SYSEXEC###", os.path.dirname(sys.executable))
@@ -102,6 +130,13 @@ class AppConfigReader:
         except NoOptionError:
             web_url = "http://localhost:5000"
         return os.getenv('WEB_URL', web_url)
+
+    def _get_send_mail_url(self):
+        try:
+            send_mail_url = self._replace_vars(self.reader.get("global", "send_mail_url"))
+        except NoOptionError:
+            send_mail_url = self._get_web_url()
+        return os.getenv('SEND_MAIL_URL', send_mail_url)
 
     def _get_max_upload_size(self):
         try:
