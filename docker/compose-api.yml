@@ -23,6 +23,7 @@ services:
       - dgenies-logs:/logs
       - ./examples:/dgenies/examples:ro
       - ./config/api/:/etc/dgenies/:ro
+      - /dev/null:/app/dgenies/application-dev.properties
     command: [ "gunicorn", "--config=/etc/dgenies/gunicorn.conf.py", 'dgenies:launch()' ]
 
 
@@ -44,6 +45,7 @@ services:
       - dgenies-logs:/logs
       - ./examples:/dgenies/examples:ro
       - ./config/api/:/etc/dgenies/:ro
+      - /dev/null:/app/dgenies/application-dev.properties
     command: [ "/app/dgenies/bin/local_scheduler.py", "-d"]
 
   nginx:
