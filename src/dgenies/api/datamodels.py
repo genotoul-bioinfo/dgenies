@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum, StrEnum
-from typing import Optional, Literal
+from typing import Annotated, Optional, Literal
 from pydantic import BaseModel, Field
 from flask_openapi3 import FileStorage
 
@@ -235,3 +235,10 @@ class Dotplot(BaseModel):
 
 class DotplotResponse(BaseResponse):
     data: Dotplot
+
+
+class SummaryResponse(BaseResponse):
+    data: Optional[dict[
+        Annotated[int, Field(ge=-1, description="Category")],
+        Annotated[float, Field(ge=0, le=100, description="Percentage value for category")]
+    ]]

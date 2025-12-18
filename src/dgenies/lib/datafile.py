@@ -21,6 +21,15 @@ class DataFile:
         self._example = example is not False
         self._file_size = -1
 
+    def __str__(self):
+        return "DataFile(name={}, path={}, type={}, example={}, file_size={})".format(
+            self._name,
+            self._path,
+            self._type,
+            self._example,
+            self._file_size
+        )
+
     def set_path(self, path):
         """
         Set path to the data file

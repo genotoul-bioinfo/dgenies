@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import os.path
 import string
 import random
@@ -22,6 +23,9 @@ CONFIG_URL=f'{ENDPOINT}/config'
 JOB_URL=f'{ENDPOINT}/job'
 ASK_UPLOAD_URL=f'{ENDPOINT}/ask-upload'
 UPLOAD_URL=f'{ENDPOINT}/upload'
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 class DataFile:
@@ -133,7 +137,7 @@ class PlotJob(Job):
         self.name_to_file: dict[str, DataFile] = dict()
         for attr in ["align", "target", "query", "backup"]:
             val:DataFile = getattr(self, attr)
-            print(val)
+            logger.debug(val)
             if val is not None:
                 self.name_to_file[val.name] = val
 
@@ -175,9 +179,9 @@ class BatchJob(Job):
         super().__init__(config, args)
         #with open(args.batch_file) as input_file:
         #    tree = BatchJob.get_parser().parse(input_file.read())
-        #    print(tree.pretty())
+        #    logger.debug(tree.pretty())
         #    jobs = BatchJob.BatchFileToBatchJob(config).transform(tree)
-        #    #print(jobs)
+        #    #logger.debug(jobs)
 
         with open(args.batch_file, 'r') as batch_file:
             tree = BatchJob.get_parser().parse(batch_file.read())
@@ -194,7 +198,7 @@ class BatchJob(Job):
                     f.path = norm_path
                 else:
                     raise(FileNotFoundError(f.path))
-        print(self.name_to_file)
+        logger.debug(self.name_to_file)
 
     @classmethod
     def generate_map_to_file(cls, jobs: list[Job]) -> dict[str, DataFile]:
@@ -298,14 +302,15 @@ class BatchJob(Job):
 def get_config():
     try:
         r = requests.get(CONFIG_URL)
+        logger.debug(f"GET {r.url}")
         if r.status_code != 200:
-            print("Server error")
-            print(r)
+            logger.error("Server error")
+            logger.error(r)
             exit(1)
-        print("Server available")
+        logger.info("Server available")
         return r.json()
     except ConnectionError:
-        print("Connection error")
+        logger.error("Connection error")
         exit(1)
 
 
@@ -321,22 +326,24 @@ def create_job(args):
 
 def register_job(job):
     r = requests.post(JOB_URL, json=job)
+    logger.debug(f"POST {r.url}")
     if r.status_code != 200:
-        print(f"Error submitting job on {r.url}")
-        print(json.dumps(r.json(), indent=4))
+        logger.error(f"Error submitting job on {r.url}")
+        logger.error(json.dumps(r.json(), indent=4))
         exit(1)
     res = r.json()
     if res["code"] != 0:
         raise BaseException(res["message"])
-    print("Job register")
+    logger.info("Job register")
     return res["data"]
 
 
 def ask_upload(session_id: str):
     r = requests.post(ASK_UPLOAD_URL, json={"session_id": session_id})
+    logger.debug(f"POST {r.url}")
     if r.status_code != 200:
-        print(f"Error ask-upload on {r.url}")
-        print(json.dumps(r.json(), indent=4))
+        logger.error(f"Error ask-upload on {r.url}")
+        logger.error(json.dumps(r.json(), indent=4))
         exit(1)
     res = r.json()
     if res["code"] != 0:
@@ -350,20 +357,22 @@ def get_file(file: str):
 
 def ping_upload(session_id: str):
     r = requests.post(f'{ENDPOINT}/ping-upload', json={"session_id": session_id})
+    logger.debug(f"POST {r.url}")
     if r.status_code != 200:
-        print(f"Error pinging upload on {r.url}")
-        print(json.dumps(r.json(), indent=4))
+        logger.error(f"Error pinging upload on {r.url}")
+        logger.error(json.dumps(r.json(), indent=4))
         exit(1)
-    print(f"ping : {r.json()['message']}")
+    logger.info(f"ping : {r.json()['message']}")
 
 
 def upload_file(session_id, filename, file):
     files = {'file': open(file, 'rb')}
     r = requests.post(UPLOAD_URL, files=files, data={"session_id": session_id})
+    logger.debug(f"POST {filename} on {r.url}")
     if r.status_code != 200:
-        print(f"Error upload on {r.url}")
-        print(r.reason)
-        #print(r.text)
+        logger.error(f"Error upload on {r.url}")
+        logger.error(r.reason)
+        #logger.error(r.text)
         exit(1)
     res = r.json()
     if res["code"] != 0:
@@ -372,9 +381,10 @@ def upload_file(session_id, filename, file):
 
 def get_status(jod_id: str):
     r = requests.get(f'{ENDPOINT}/status/{jod_id}')
+    logger.debug(f"GET {r.url}")
     if r.status_code != 200:
-        print(f"Error status on {r.url}")
-        print(json.dumps(r.json(), indent=4))
+        logger.error(f"Error status on {r.url}")
+        logger.error(json.dumps(r.json(), indent=4))
         exit(1)
     res = r.json()
     if res["code"] != 0:
@@ -382,12 +392,12 @@ def get_status(jod_id: str):
     return res["data"]
 
 def submit(job: Job):
-    print("Submit a job")
+    logger.info("Submit a job")
     try:
         job_json = job.to_json()
-        print(json.dumps(job_json, indent=4))
+        logger.debug(json.dumps(job_json, indent=4))
         data = register_job(job_json)
-        print(data)
+        logger.debug(data)
         session_id = data["session_id"]
         needed_files = data["needed_files"]
         if needed_files:
@@ -401,9 +411,9 @@ def submit(job: Job):
             ping.start()
             # upload itself
             while needed_files:
-                print(f'remaining files: {needed_files}')
+                logger.info(f'remaining files: {needed_files}')
                 next_file = needed_files.pop(0)
-                print(f'uploading {next_file}')
+                logger.info(f'uploading {next_file}')
                 data = upload_file(session_id, next_file, job.get_file(next_file).path)
                 # distant_filename = data["file"] # TODO update filename in local file data structure
                 needed_files = data["needed_files"]
@@ -412,21 +422,33 @@ def submit(job: Job):
         return data["batch_id"], data["job_ids"]
 
     except ConnectionError:
-        print("Connection error")
+        logger.error("Connection error")
         exit(1)
 
 def update_status(batch_id: str):
     status = get_status(batch_id)
-    print(status)
-    #print('', end=f'{status["percent"]}%: {status["status"]}' + (f' - {status["error"]}' if status["error"] else "") + '\r')
+    logger.info(status)
+    #logger.debug('', end=f'{status["percent"]}%: {status["status"]}' + (f' - {status["error"]}' if status["error"] else "") + '\r')
     wait_duration = 5
     while status["percent"] < 100:
         sleep(wait_duration)
         wait_duration = min(wait_duration*2, 30)
         status = get_status(batch_id)
-        print(status)
-        #print('', end=f'{status["percent"]}%: {status["status"]}' + (f' - {status["error"]}' if status["error"] else "") + '\r')
+        logger.info(status)
+        #logger.debug('', end=f'{status["percent"]}%: {status["status"]}' + (f' - {status["error"]}' if status["error"] else "") + '\r')
     return status
+
+def get_feature(job_id: str, feat:str):
+    r = requests.get(f'{ENDPOINT}/result/{job_id}/{feat}')
+    logger.debug(f"GET {r.url}")
+    if r.status_code != 200:
+        logger.error(f"Error when getting feature on {r.url}")
+        logger.error(json.dumps(r.json(), indent=4))
+        exit(1)
+    res = r.json()
+    if res["code"] != 0:
+        logger.error(res)
+    return res["data"]
 
 def get_argparse() -> argparse.ArgumentParser :
 
@@ -436,14 +458,14 @@ def get_argparse() -> argparse.ArgumentParser :
     # - display a warning and invite to run update command if config file is too "old" (old = 1 week ?)
 
     parser = argparse.ArgumentParser(description='Submit job to a D-Genies instance')
+    parser.add_argument('--url', type=str, default=BASE_URL, help='Use alternative url')
+    parser.add_argument('--debug', action='store_true', help='Display debug messages')
     subparsers = parser.add_subparsers(help='subcommand help', dest='command')
 
     parser_config = subparsers.add_parser('config', help='config help')
     parser_config.add_argument('action', choices=["update"], default="update", help='Action on config')
-    parser_config.add_argument('--url', type=str, default=BASE_URL, help='Use alternative url')
 
     parser_align = subparsers.add_parser('align', help='align help')
-    parser_align.add_argument('--url', type=str, default=BASE_URL, help='Use alternative url')
     parser_align.add_argument('--name', type=str, help='Preferred job name', required=False)
     parser_align.add_argument('--email', type=str, help='Email for notification', required=False)
     parser_align.add_argument('--target', type=str, help='Target (or reference) fasta file', required=True)
@@ -452,7 +474,6 @@ def get_argparse() -> argparse.ArgumentParser :
     parser_align.add_argument('--options', type=str, nargs='*', help='Options used with tool', required=False, default = [])
 
     parser_plot = subparsers.add_parser('plot', help='plot help')
-    parser_plot.add_argument('--url', type=str, default=BASE_URL, help='Use alternative url')
     parser_plot.add_argument('--name', type=str, help='Preferred job name', required=False)
     parser_plot.add_argument('--email', type=str, help='Email for notification', required=False)
 
@@ -465,31 +486,36 @@ def get_argparse() -> argparse.ArgumentParser :
     parsers_plot_backup.add_argument('backup', type=str, help='Backup file in tar or tar.gz format')
 
     parser_batch = subparsers.add_parser('batch', help='batch help')
-    parser_batch.add_argument('--url', type=str, default=BASE_URL, help='Use alternative url')
     parser_batch.add_argument('--name', type=str, help='Preferred job name', required=False)
     parser_batch.add_argument('--email', type=str, help='Email for notification', required=False)
     parser_batch.add_argument('batch_file', type=str, help='Batch file in txt format')
     parser_batch.add_argument('data_file', nargs='*', type=str, help='Data files used as input in batch file')
 
+    parser_get = subparsers.add_parser('get', help='get help')
+    parser_get.add_argument('job_id', type=str, help='Job id')
+    parser_get.add_argument('feature', type=str, help='Feature to get from api', choices=['dotplot', 'summary'])
+
     return parser
 
 def display_ids(batch_id, job_ids):
     if len(job_ids) == 1 and batch_id == job_ids[0]:
-        print(f'{batch_id}')
+        logger.info(f'{batch_id}')
     else:
-        print(f'{batch_id}: {", ".join(job_ids)}')
+        logger.info(f'{batch_id}: {", ".join(job_ids)}')
 
 def main():
     parser = get_argparse()
     args = parser.parse_args()
-    print(args)
+    logger.debug(args)
     config = get_config()
     BASE_URL = args.url
+    if args.debug:
+        logger.setLevel(logging.DEBUG)
     if args.command == "config":
         config = get_config()
-        print(config)
+        logger.info(config)
     elif args.command == "align":
-        print(args.options)
+        logger.info(args.options)
         job = AlignJob(config, args)
         batch_id, job_ids = submit(job)
         display_ids(batch_id, job_ids)
@@ -515,6 +541,9 @@ def main():
             else:
                 print(f'job {sub_job} failed at step {res.get("status", "unknown")}'
                       f' with error "{res.get("error", "No error provided")}"')
+    elif args.command == "get":
+        res = get_feature(args.job_id, args.feature)
+        print(res)
     else:
         parser.print_help()
 

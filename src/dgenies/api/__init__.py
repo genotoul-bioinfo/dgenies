@@ -14,10 +14,12 @@ import itertools as it
 from flask import current_app
 from flask_openapi3 import APIBlueprint
 from pydantic import ValidationError
+from werkzeug.exceptions import RequestEntityTooLarge
 
 from dgenies import config_reader, APP_DATA, MODE, mailer
 from ..allowed_extensions import AllowedExtensions
-from ..lib.exceptions import DGeniesJobCheckError, DGeniesExampleInvalid, DGeniesUnknownToolError
+from ..lib.exceptions import DGeniesJobCheckError, DGeniesExampleInvalid, DGeniesUnknownToolError, \
+    DGeniesUnknownOptionError
 from ..lib.functions import Functions
 from ..lib.job_manager import JobManager
 from ..lib.paf import Paf
@@ -37,13 +39,18 @@ from .datamodels import (
     SessionResponse,
     UploadFileForm,
     JobStatus,
-    JobStatusResponse, JobDescription, Job, JobType, UploadResponse
+    JobStatusResponse,
+    JobDescription,
+    Job,
+    JobType,
+    UploadResponse,
+    SummaryResponse
 )
 from .job_descriptions import job_descriptions
 from ..lib.upload_file import UploadFile
 from ..tools import Tools
 
-from ..views import check_file_type_and_resolv_options, update_files
+from ..views import check_file_type_and_resolv_options, update_files, compute_summary
 
 if MODE == "webserver":
     import dgenies.database as db
@@ -290,6 +297,9 @@ def upload_file(form: UploadFileForm):
 
         return {"code": 404, "message": "No file provided", "data": {"files": [] }}
 
+    except RequestEntityTooLarge:
+        return {"code": 410, "message": "Upload file too large", "data": {"files": []}}
+
     except:  # Except all possible exceptions to prevent crashes
         traceback.print_exc()
         return {"code": 500, "message": "An unexpected error has occurred on upload. Please contact the support.",
@@ -335,7 +345,7 @@ def valid_form(form: BatchSubmissionQuery):
     Check if a job description is valid according to its type.
     """
     if len(form.jobs) != form.nb_jobs:
-        raise ValidationError()
+        raise ValidationError("Incorrect number of jobs")
     valid_email(form.email)
     if form.nb_jobs < 1:
         raise ValidationError("No job provided")
@@ -608,3 +618,20 @@ def get_dotplot(path: JobPath):
             Path(valid).touch()
         return {"code": 0, "message": "ok", "data" : paf.get_d3js_data()}
     return {"code": 1, "message": paf.error, "data" : None}
+
+@api.get('/result/<job_id>/summary', responses={200: SummaryResponse})
+def get_summary(path: JobPath):
+    percents, s_status = compute_summary(path.job_id)
+    if s_status == "file_not_found":
+        return {
+            "code": 404, "message": "Unable to load data!", "data": {}
+        }
+    if s_status == "job_not_found":
+        return {
+            "code": 404, "message": "Job does not exists!", "data": {}
+        }
+    if s_status == "fail":
+        return {
+            "code": 500, "message": "Build of summary failed. Please contact us to report the bug", "data": None
+        }
+    return {"code": 0, "message": s_status, "data": percents}

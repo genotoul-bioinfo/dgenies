@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dgenies import app, app_title, app_folder, config_reader, mailer, APP_DATA, MODE, DEBUG, VERSION
 
 import os
@@ -1053,27 +1055,28 @@ def no_assoc(id_res):
     abort(404)
 
 
-@app.route('/summary/<id_res>', methods=['POST'])
-def summary(id_res):
+def compute_summary(id_res: str) -> tuple[dict[int, float] | None, str]:
     """
-    Get Dot plot summary data
+    Compute Dot plot summary data
 
     :param id_res: job id
     :type id_res: str
     """
-    paf_file = os.path.join(APP_DATA, id_res, "map.paf")
-    idx1 = os.path.join(APP_DATA, id_res, "query.idx")
-    idx2 = os.path.join(APP_DATA, id_res, "target.idx")
+    percents = None
+    job_dir = os.path.join(APP_DATA, id_res)
+    if not os.path.exists(job_dir) or not os.path.isdir(job_dir):
+        logger.debug(f"Job not found: {job_dir}")
+        return percents, "job_not_found"
+    paf_file = os.path.join(job_dir, "map.paf")
+    idx1 = os.path.join(job_dir, "query.idx")
+    idx2 = os.path.join(job_dir, "target.idx")
+    s_status = "waiting"  # Accepted values: 'waiting', 'done', 'fail'
     try:
         paf = Paf(paf_file, idx1, idx2, False)
     except FileNotFoundError:
-        return jsonify({
-            "success": False,
-            "message": "Unable to load data!"
-        })
-    percents = None
-    s_status = "waiting"  # Accepted values: waiting, done, fail
-    status_file = os.path.join(APP_DATA, id_res, ".summarize")
+        logger.debug(f"File not found: {paf_file}, {idx1}, {idx2}")
+        return percents, "file_not_found"
+    status_file = os.path.join(job_dir, ".summarize")
     fail_file = status_file + ".fail"
     if not os.path.exists(status_file):  # The job is finished or not started
         if not os.path.exists(fail_file):  # The job has not started yet or has successfully ended
@@ -1099,7 +1102,23 @@ def summary(id_res):
                 s_status = "fail"
             else:  # The job has successfully ended
                 s_status = "done"
+    return percents, s_status
 
+
+@app.route('/summary/<id_res>', methods=['POST'])
+def summary(id_res):
+    """
+    Get Dot plot summary data
+
+    :param id_res: job id
+    :type id_res: str
+    """
+    percents, s_status = compute_summary(id_res)
+    if s_status == "file_not_found":
+        return jsonify({
+            "success": False,
+            "message": "Unable to load data!"
+        })
     if s_status == "fail":
         return jsonify({
             "success": False,
