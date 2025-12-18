@@ -493,7 +493,7 @@ def get_argparse() -> argparse.ArgumentParser :
 
     parser_get = subparsers.add_parser('get', help='get help')
     parser_get.add_argument('job_id', type=str, help='Job id')
-    parser_get.add_argument('feature', type=str, help='Feature to get from api', choices=['dotplot', 'summary'])
+    parser_get.add_argument('feature', type=str, help='Feature to get from api', choices=['dotplot', 'sorted-dotplot', 'summary'])
 
     return parser
 

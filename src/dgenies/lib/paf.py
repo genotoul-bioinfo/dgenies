@@ -327,6 +327,35 @@ class Paf:
             "max_nb_lines": self.max_nb_lines,
         }
 
+    def get_dotplot_data(self, sorted=False):
+        """
+        Build data for api
+
+        :param sorted: sort dotplot
+        :type sorted: bool
+        :return: data for api:
+
+            * y_len: length of query (Bp)
+            * x_len: length of target (Bp)
+            * min_idy: minimum of identity (float)
+            * max_idy: maximum of identity (float)
+            * lines: matches lines, by class of identity (dict)
+            * y_contigs: query contigs definitions (dict)
+            * y_order: query contigs order (list)
+            * x_contigs: target contigs definitions (dict)
+            * x_order: target contigs order (list)
+            * name_y: name of the query (str)
+            * name_x: name of the target (str)
+            * limit_idy: limit for each class of identities (list)
+        :rtype: dict
+        """
+        if sorted == self.sorted:
+            return self.get_d3js_data()
+        else:
+            self.sort()
+            return self.get_d3js_data()
+
+
     def save_json(self, out):
         """
         Save D3.js data to json

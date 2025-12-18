@@ -466,7 +466,7 @@ def post_jobs(body: BatchSubmissionQuery):
             return {"code": 500, "message": "Something went wrong during job creation!"}
 
     else:
-        return {"code": 406, "message": "Incorrect form {message}"}
+        return {"code": 406, "message": f"Incorrect form: {message}"}
 
 def get_tools_options(tool_name, chosen_options):
     """
@@ -616,8 +616,28 @@ def get_dotplot(path: JobPath):
         valid = os.path.join(APP_DATA, id_f, ".valid")
         if not os.path.exists(valid):
             Path(valid).touch()
-        return {"code": 0, "message": "ok", "data" : paf.get_d3js_data()}
-    return {"code": 1, "message": paf.error, "data" : None}
+        return {"code": 0, "message": "ok", "data" : paf.get_dotplot_data(sorted=False)}
+    return {"code": 500, "message": paf.error, "data" : None}
+
+
+@api.get('/result/<job_id>/sorted-dotplot', responses={200: DotplotResponse})
+def sorted_dotplot(path: JobPath):
+    """
+    Sort dot plot to reference
+    """
+    id_res = path.job_id
+    if not os.path.exists(os.path.join(APP_DATA, id_res, ".all-vs-all")):
+        paf_file = os.path.join(APP_DATA, id_res, "map.paf")
+        idx1 = os.path.join(APP_DATA, id_res, "query.idx")
+        idx2 = os.path.join(APP_DATA, id_res, "target.idx")
+        paf = Paf(paf_file, idx1, idx2, False)
+        paf.sort()
+        # TODO: maybe clean this part
+        if paf.parsed:
+            return {"code": 0, "message": "ok", "data": paf.get_dotplot_data(sorted=True)}
+        return {"code": 500, "message": paf.error, "data": None}
+    return {"code": 405, "message": "Sort is not available for All-vs-All mode", "data": None}
+
 
 @api.get('/result/<job_id>/summary', responses={200: SummaryResponse})
 def get_summary(path: JobPath):
