@@ -443,6 +443,7 @@ def get_argparse() -> argparse.ArgumentParser :
     parser_config.add_argument('--url', type=str, default=BASE_URL, help='Use alternative url')
 
     parser_align = subparsers.add_parser('align', help='align help')
+    parser_align.add_argument('--url', type=str, default=BASE_URL, help='Use alternative url')
     parser_align.add_argument('--name', type=str, help='Preferred job name', required=False)
     parser_align.add_argument('--email', type=str, help='Email for notification', required=False)
     parser_align.add_argument('--target', type=str, help='Target (or reference) fasta file', required=True)
@@ -451,6 +452,7 @@ def get_argparse() -> argparse.ArgumentParser :
     parser_align.add_argument('--options', type=str, nargs='*', help='Options used with tool', required=False, default = [])
 
     parser_plot = subparsers.add_parser('plot', help='plot help')
+    parser_plot.add_argument('--url', type=str, default=BASE_URL, help='Use alternative url')
     parser_plot.add_argument('--name', type=str, help='Preferred job name', required=False)
     parser_plot.add_argument('--email', type=str, help='Email for notification', required=False)
 
@@ -463,6 +465,7 @@ def get_argparse() -> argparse.ArgumentParser :
     parsers_plot_backup.add_argument('backup', type=str, help='Backup file in tar or tar.gz format')
 
     parser_batch = subparsers.add_parser('batch', help='batch help')
+    parser_batch.add_argument('--url', type=str, default=BASE_URL, help='Use alternative url')
     parser_batch.add_argument('--name', type=str, help='Preferred job name', required=False)
     parser_batch.add_argument('--email', type=str, help='Email for notification', required=False)
     parser_batch.add_argument('batch_file', type=str, help='Batch file in txt format')
@@ -481,6 +484,7 @@ def main():
     args = parser.parse_args()
     print(args)
     config = get_config()
+    BASE_URL = args.url
     if args.command == "config":
         config = get_config()
         print(config)
