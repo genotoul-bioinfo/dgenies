@@ -112,6 +112,13 @@ def parse_args():
                          const=True, default=False)
     inforun.add_argument("--config", nargs="+", metavar='application.properties', type=str, required=False,
                          help="D-Genies configuration file")
+
+    # Debug config
+    debug = subparsers.add_parser("debug", help="Debug commands")
+    debug.set_defaults(which="debug")
+    debug.add_argument("--config", nargs="+", metavar='application.properties', type=str, required=False,
+                         help="D-Genies configuration file")
+
     args = parser.parse_args()
 
     if 'config' in args and args.config:
@@ -137,6 +144,8 @@ def parse_args():
             return None, None
     if args.subparser_name == "inforun":
         return "inforun", args
+    if args.subparser_name == "debug":
+        return "debug", args
     else:
         parser.print_help()
         print("\nYou must specify the command to launch")
@@ -426,3 +435,5 @@ if __name__ == "__main__":
                 print("-t/--type option is required if -c/--clear not given")
                 exit(1)
             set_inforun_message(args.message, args.type)
+    elif command == "debug":
+        print(config)

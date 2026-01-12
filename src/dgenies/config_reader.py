@@ -59,7 +59,7 @@ class AppConfigReader:
             if attr.startswith("_get_") and callable(attr_o):
                 yield attr[5:], attr_o
 
-    def ___str___(self) -> str|None:
+    def __str__(self) -> str|None:
         """
         Representation of the configuration, except password attributes
         :return: string representation of self
@@ -84,7 +84,7 @@ class AppConfigReader:
                 setattr(self, attr, attr_o())
             except Exception as e:
                 print(e)
-        self.logger.info(self.___str___())
+        self.logger.info(self.__str__())
 
     def _replace_vars(self, path: str, config: bool=False) -> str:
         """
