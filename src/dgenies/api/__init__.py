@@ -332,14 +332,14 @@ def valid_email(email: str|None):
     """
     if Functions.is_email_mandatory():
         if not email:
-            ValidationError("Email not given")
+            DGeniesValidationError("Email not given")
         elif not re.match(r"^.+@.+\..+$", email):
             # The email regex is simple because checking email address is not simple (RFC3696).
             # Sending an email to the address is the most reliable way to check if the email address is correct.
             # The only constraints we set on the email address are:
             # - to have at least one @ in it, with something before and something after
             # - to have something.tdl syntax for email server, as it will be used over Internet (not mandatory in RFC)
-            ValidationError("Email is invalid")
+            DGeniesValidationError("Email is invalid")
 
 
 def valid_align(job: Job) -> Job:
@@ -350,11 +350,11 @@ def valid_align(job: Job) -> Job:
     print(job)
     # Valid input files (type, syntax)
     if not job.target:
-        raise ValidationError("'target' is required")
+        raise DGeniesValidationError("'target' is required")
     if not job.target_type:
-        raise ValidationError("'target_type' is required (either 'local' or 'url'")
+        raise DGeniesValidationError("'target_type' is required (either 'local' or 'url'")
     if job.query and not job.query_type:
-        raise ValidationError("'query_type' is required (either 'local' or 'url'")
+        raise DGeniesValidationError("'query_type' is required (either 'local' or 'url'")
     # validate file based on name extension
 
     # Valid tool + options
@@ -377,23 +377,23 @@ def valid_plot(job: Job) -> Job:
     print(job)
     if job.backup:
         if not job.target_type:
-            raise ValidationError("'target_type' is required (either 'local' or 'url'")
+            raise DGeniesValidationError("'target_type' is required (either 'local' or 'url'")
         if job.query and not job.query_type:
-            raise ValidationError("'query_type' is required (either 'local' or 'url'")
+            raise DGeniesValidationError("'query_type' is required (either 'local' or 'url'")
         # validate file based on name extension
     else:
         if not job.target:
-            raise ValidationError("'target' is required")
+            raise DGeniesValidationError("'target' is required")
         if not job.target_type:
-            raise ValidationError("'target_type' is required (either 'local' or 'url'")
+            raise DGeniesValidationError("'target_type' is required (either 'local' or 'url'")
         if not job.query:
-            raise ValidationError("'query' is required")
+            raise DGeniesValidationError("'query' is required")
         if not job.query_type:
-            raise ValidationError("'query_type' is required (either 'local' or 'url'")
+            raise DGeniesValidationError("'query_type' is required (either 'local' or 'url'")
         if not job.align:
-            raise ValidationError("'align' is required")
+            raise DGeniesValidationError("'align' is required")
         if not job.align_type:
-            raise ValidationError("'align_type' is required (either 'local' or 'url'")
+            raise DGeniesValidationError("'align_type' is required (either 'local' or 'url'")
     return job
 
 
@@ -406,23 +406,23 @@ def valid_job(job: Job) -> Job:
     elif job.type == JobType.plot:
         return valid_plot(job)
     else:
-        raise ValidationError(f"Job type '{job.type}' is not supported")
+        raise DGeniesValidationError(f"Job type '{job.type}' is not supported")
 
 def valid_form(form: BatchSubmissionQuery):
     """
     Check if a job description is valid according to its type.
     """
     if len(form.jobs) != form.nb_jobs:
-        raise ValidationError("Incorrect number of jobs")
+        raise DGeniesValidationError("Incorrect number of jobs")
     valid_email(form.email)
     if form.nb_jobs < 1:
-        raise ValidationError("No job provided")
+        raise DGeniesValidationError("No job provided")
     elif form.nb_jobs == 1:
         # Batch id is ignored when running 1 job only
         valid_job(form.jobs[0])
     else :
         if form.batch_id == "":
-            raise ValidationError("Batch id is required")
+            raise DGeniesValidationError("Batch id is required")
         for job in form.jobs:
             valid_job(job)
     pass
@@ -470,7 +470,7 @@ def post_jobs(body: BatchSubmissionQuery):
     try:
         valid_form(body)
         form_pass = True
-    except ValidationError as e:
+    except DGeniesValidationError as e:
         message = e.message
         form_pass = False
 
