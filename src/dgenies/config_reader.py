@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import os
 import sys
 import re
 import inspect
+from os import environ
 from pathlib import Path
 import logging
 from configparser import RawConfigParser, NoOptionError, NoSectionError
@@ -56,7 +59,7 @@ class AppConfigReader:
             if attr.startswith("_get_") and callable(attr_o):
                 yield attr[5:], attr_o
 
-    def ___str___(self) -> str:
+    def ___str___(self) -> str|None:
         """
         Representation of the configuration, except password attributes
         :return: string representation of self
@@ -83,7 +86,7 @@ class AppConfigReader:
                 print(e)
         self.logger.info(self.___str___())
 
-    def _replace_vars(self, path: str, config: bool=False):
+    def _replace_vars(self, path: str, config: bool=False) -> str:
         """
         In a path related to configuration, replaces each variable by its value
         :param path: the path.
@@ -99,137 +102,138 @@ class AppConfigReader:
                 return new_path.replace("###CONFIG###", self._get_config_dir())
         return new_path
 
-    def _get_config_dir(self):
+    def _get_config_dir(self) -> str:
         try:
              config_dir = self._replace_vars(self.reader.get("global", "config_dir"))
         except NoOptionError:
             config_dir = self._replace_vars("###USER###/.dgenies")
         return os.getenv('CONFIG_DIR', config_dir)
 
-    def _get_upload_folder(self):
+    def _get_upload_folder(self) -> str:
         try:
             return os.getenv('UPLOAD_DIR', self._replace_vars(self.reader.get("global", "upload_folder")))
         except NoOptionError:
             raise Exception("No upload folder found in application.properties (global section)")
 
-    def _get_app_data(self):
+    def _get_app_data(self) -> str:
         try:
             return os.getenv('DATA_DIR', self._replace_vars(self.reader.get("global", "data_folder")))
         except NoOptionError:
             raise Exception("No data folder found in application.properties (global section)")
 
-    def _get_runner_type(self):
+    def _get_runner_type(self) -> str:
         try:
-            return self.reader.get("global", "runner_type")
+            runner = os.getenv('RUNNER_TYPE')
+            if runner is None:
+                runner = self.reader.get("global", "runner_type")
+            return runner
         except NoOptionError:
             return "local"
 
-    def _get_web_url(self):
+    def _get_web_url(self) -> str:
         try:
-            web_url = self._replace_vars(self.reader.get("global", "web_url"))
+            web_url = self.reader.get("global", "web_url")
         except NoOptionError:
             web_url = "http://localhost:5000"
         return os.getenv('WEB_URL', web_url)
 
-    def _get_send_mail_url(self):
+    def _get_send_mail_url(self) -> str:
         try:
-            send_mail_url = self._replace_vars(self.reader.get("global", "send_mail_url"))
+            send_mail_url = self.reader.get("global", "send_mail_url")
         except NoOptionError:
             send_mail_url = self._get_web_url()
         return os.getenv('SEND_MAIL_URL', send_mail_url)
 
-    def _get_max_upload_size(self):
+    @staticmethod
+    def _parse_size(size_b: str) -> int:
+        if size_b == "-1":
+            return -1
+        size_v = float(size_b[:-1])
+        size_unit = size_b[-1].upper()
+        if size_unit not in ["M", "G"]:
+            raise ValueError("Max size unit must be M or G")
+        size = int(size_v * 1024 * 1024)
+        if size_unit == "G":
+            size *= 1024
+        return size
+
+    def _get_max_upload_size(self) -> int:
         try:
-            max_size_b = self._replace_vars(self.reader.get("global", "max_upload_size"))
-            if max_size_b == "-1":
-                return -1
-            size_v = float(max_size_b[:-1])
-            size_unit = max_size_b[-1].upper()
-            if size_unit not in ["M", "G"]:
-                raise ValueError("Max size unit must be M or G")
-            max_size = int(size_v * 1024 * 1024)
-            if size_unit == "G":
-                max_size *= 1024
-            return max_size
+            size = os.getenv('MAX_UPLOAD_SIZE')
+            if size is None:
+                size = self.reader.get("global", "max_upload_size")
+            return self._parse_size(size)
         except NoOptionError:
             return -1
 
-    def _get_max_upload_size_ava(self):
+    def _get_max_upload_size_ava(self) -> int:
         try:
-            max_size_b = self._replace_vars(self.reader.get("global", "max_upload_size_ava"))
-            if max_size_b == "-1":
-                return -1
-            size_v = float(max_size_b[:-1])
-            size_unit = max_size_b[-1].upper()
-            if size_unit not in ["M", "G"]:
-                raise ValueError("Max size unit must be M or G")
-            max_size = int(size_v * 1024 * 1024)
-            if size_unit == "G":
-                max_size *= 1024
-            return max_size
+            size = os.getenv('MAX_UPLOAD_SIZE_AVA')
+            if size is None:
+                size = self.reader.get("global", "max_upload_size_ava")
+            return self._parse_size(size)
         except NoOptionError:
             return -1
 
-    def _get_max_upload_file_size(self):
+    def _get_max_upload_file_size(self) -> int:
         try:
-            max_size_b = self._replace_vars(self.reader.get("global", "max_upload_file_size"))
-            if max_size_b == "-1":
-                return -1
-            size_v = float(max_size_b[:-1])
-            size_unit = max_size_b[-1].upper()
-            if size_unit not in ["M", "G"]:
-                raise ValueError("Max size unit must be M or G")
-            max_size = int(size_v * 1024 * 1024)
-            if size_unit == "G":
-                max_size *= 1024
-            return max_size
+            size = os.getenv('MAX_UPLOAD_FILE_SIZE')
+            if size is None:
+                size = self.reader.get("global", "max_upload_file_size")
+            return self._parse_size(size)
         except NoOptionError:
             return 1024 * 1024 * 1024
 
-    def _get_max_nb_lines(self):
+    def _get_max_nb_lines(self) -> int:
         try:
-            return int(self._replace_vars(self.reader.get("global", "max_nb_lines")))
+            nb = os.getenv('MAX_NB_LINES')
+            if nb is None:
+                nb = self.reader.get("global", "max_nb_lines")
+            return int(nb)
         except NoOptionError:
             return 100000
 
-    def _get_max_nb_jobs_in_batch_mode(self):
+    def _get_max_nb_jobs_in_batch_mode(self) -> int:
         try:
-            return int(self._replace_vars(self.reader.get("global", "max_nb_jobs_in_batch_mode")))
+            nb = os.getenv('MAX_NB_JOBS_IN_BATCH_MODE')
+            if nb is None:
+                nb = self.reader.get("global", "max_nb_jobs_in_batch_mode")
+            return int(nb)
         except NoOptionError:
             return 10
 
-    def _get_max_download_sessions(self):
+    def _get_max_download_sessions(self) -> int:
         try:
-            return int(self._replace_vars(self.reader.get("session", "max_download_sessions")))
+            return int(self.reader.get("session", "max_download_sessions"))
         except NoOptionError:
             return 5
 
-    def _get_delete_allowed_session_delay(self):
+    def _get_delete_allowed_session_delay(self) -> int:
         try:
-            return int(self._replace_vars(self.reader.get("session", "delete_allowed_session_delay")))
+            return int(self.reader.get("session", "delete_allowed_session_delay"))
         except NoOptionError:
             return 50
 
-    def _get_reset_pending_session_delay(self):
+    def _get_reset_pending_session_delay(self) -> int:
         try:
-            return int(self._replace_vars(self.reader.get("session", "reset_pending_session_delay")))
+            return int(self.reader.get("session", "reset_pending_session_delay"))
         except NoOptionError:
             return 30
 
-    def _get_delete_session_delay(self):
+    def _get_delete_session_delay(self) -> int:
         try:
-            return int(self._replace_vars(self.reader.get("session", "delete_session_delay")))
+            return int(self.reader.get("session", "delete_session_delay"))
         except NoOptionError:
             return 86400
 
-    def _get_database_type(self):
+    def _get_database_type(self) -> str:
         try:
             db_type = self.reader.get("database", "type")
         except (NoSectionError, NoOptionError):
             db_type = "sqlite"
         return os.getenv('DATABASE_TYPE', db_type)
 
-    def _get_database_url(self):
+    def _get_database_url(self) -> str:
         try:
             url = self._replace_vars(self.reader.get("database", "url"))
             if self._get_database_type() == "sqlite" and url != ":memory:":
@@ -243,7 +247,7 @@ class AppConfigReader:
             url = self._replace_vars("###USER###/.dgenies/database.sqlite")
         return os.getenv('DATABASE_URL', url)
 
-    def _get_database_port(self):
+    def _get_database_port(self) -> int:
         try:
             db_type = self._get_database_type()
             if db_type == "sqlite":
@@ -258,7 +262,7 @@ class AppConfigReader:
         except (NoSectionError, NoOptionError, ValueError):
             raise Exception("Missing parameter: database port")
 
-    def _get_database_db(self):
+    def _get_database_db(self) -> str:
         try:
             db = self.reader.get("database", "db")
             if db == "":
@@ -270,7 +274,7 @@ class AppConfigReader:
                 return db
             raise Exception("Missing parameter: database db name")
 
-    def _get_database_user(self):
+    def _get_database_user(self) -> str:
         try:
             user = self.reader.get("database", "user")
             if user == "":
@@ -282,7 +286,7 @@ class AppConfigReader:
                 return user
             raise Exception("Missing parameter: database user")
 
-    def _get_database_password(self):
+    def _get_database_password(self) -> str:
         try:
             if 'DATABASE_PASSWORD' in os.environ:
                 passwd = os.getenv('DATABASE_PASSWORD', "")
@@ -296,37 +300,37 @@ class AppConfigReader:
                 return ""
             raise Exception("Missing parameter: database password")
 
-    def _get_mail_status_sender(self):
+    def _get_mail_status_sender(self) -> str:
         try:
-            return self._replace_vars(self.reader.get("mail", "status"))
+            return self.reader.get("mail", "status")
         except (NoSectionError, NoOptionError):
             return "status@dgenies"
 
-    def _get_mail_reply(self):
+    def _get_mail_reply(self) -> str:
         try:
-            return self._replace_vars(self.reader.get("mail", "reply"))
+            return self.reader.get("mail", "reply")
         except (NoSectionError, NoOptionError):
             return "status@dgenies"
 
-    def _get_mail_org(self):
+    def _get_mail_org(self) -> str:
         try:
-            return self._replace_vars(self.reader.get("mail", "org"))
+            return self.reader.get("mail", "org")
         except (NoSectionError, NoOptionError):
             return None
 
-    def _get_send_mail_status(self):
+    def _get_send_mail_status(self) -> str:
         try:
             return self.reader.get("mail", "send_mail_status").lower() == "true"
         except (NoSectionError, NoOptionError):
             return True
 
-    def _get_disable_mail(self):
+    def _get_disable_mail(self) -> str:
         try:
             return self.reader.get("mail", "disable").lower() == "true"
         except (NoSectionError, NoOptionError):
             return False
 
-    def _get_cron_clean_time(self):
+    def _get_cron_clean_time(self) -> list[int]:
         try:
             value = self.reader.get("cron", "clean_time").lower()
             match = re.match(r"(([0-9])|([0-1][0-9])|(2[0-3]))[hH]([0-5][0-9])", value)
@@ -338,33 +342,35 @@ class AppConfigReader:
         except (NoOptionError, NoSectionError):
             return [1, 0]
 
-    def _get_cron_clean_freq(self):
+    def _get_cron_clean_freq(self) -> int:
         try:
             return int(self.reader.get("cron", "clean_freq"))
         except (NoOptionError, NoSectionError):
             return 1
 
-    def _get_local_nb_runs(self):
+    def _get_local_nb_runs(self) -> int:
         try:
             return int(self.reader.get("jobs", "run_local"))
         except (NoOptionError, NoSectionError):
             return 1
 
-    def _get_nb_data_prepare(self):
+    def _get_nb_data_prepare(self) -> int:
         try:
             return int(self.reader.get("jobs", "data_prepare"))
         except (NoOptionError, NoSectionError):
             return 2
 
-    def _get_max_concurrent_dl(self):
+    def _get_max_concurrent_dl(self) -> int:
         try:
             return int(self.reader.get("jobs", "max_concurrent_dl"))
         except (NoOptionError, NoSectionError):
             return 5
 
-    def _get_drmaa_lib_path(self):
+    def _get_drmaa_lib_path(self) -> str|None:
         try:
-            path = self.reader.get("cluster", "drmaa_lib_path")
+            path = os.getenv('DRMAA_LIB_PATH')
+            if path is None:
+                path = self.reader.get("cluster", "drmaa_lib_path")
             if path != "###SET_IT###":
                 return path
             return None
@@ -373,108 +379,150 @@ class AppConfigReader:
                 raise Exception("No drmaa library set. It is required if the runner type is not 'local'")
             return None
 
-    def _get_drmaa_native_specs(self):
+    def _get_drmaa_native_specs(self) -> str:
         try:
-            return self.reader.get("cluster", "native_specs")
+            specs = os.getenv('DRMAA_NATIVE_SPECS')
+            if specs is None:
+                specs = self.reader.get("cluster", "native_specs")
+            return specs
         except (NoOptionError, NoSectionError):
             return "###DEFAULT###"
 
-    def _get_max_run_local(self):
+    def _get_max_run_local(self) -> int:
         try:
-            return int(self.reader.get("cluster", "max_run_local"))
+            local = os.getenv('MAX_RUN_LOCAL')
+            if local is None:
+                local = self.reader.get("cluster", "max_run_local")
+            return int(local)
         except (NoOptionError, NoSectionError):
             return 10
 
-    def _get_max_wait_local(self):
+    def _get_max_wait_local(self) -> int:
+        """
+        Get the maximum number of jobs that can run on local runner
+        """
         try:
-            return int(self.reader.get("cluster", "max_wait_local"))
+            local = os.getenv('MAX_WAIT_LOCAL')
+            if local is None:
+                local = self.reader.get("cluster", "max_wait_local")
+            return int(local)
         except (NoOptionError, NoSectionError):
             return 5
 
-    def _get_min_query_size(self):
+    def _get_min_query_size(self) -> int:
+        """
+        Get the query size limit above which a job must run on cluster
+        """
         try:
-            size_b = self.reader.get("cluster", "min_query_size")
-            size_v = int(size_b[:-1])
-            size_unit = size_b[-1].upper()
-            if size_unit not in ["M", "G"]:
-                raise ValueError("Min query size unit must be M or G")
-            min_size = size_v * 1024 * 1024
-            if size_unit == "G":
-                min_size *= 1024
-            return min_size
+            size_b = os.getenv('MIN_QUERY_SIZE')
+            if size_b is None:
+                size_b = self.reader.get("cluster", "min_query_size")
+            return self._parse_size(size_b)
         except (NoOptionError, NoSectionError):
             return 0
 
-    def _get_min_target_size(self):
+    def _get_min_target_size(self) -> int:
+        """
+        Get the target size limit above which a job must run on cluster
+        """
         try:
-            size_b = self.reader.get("cluster", "min_target_size")
-            size_v = int(size_b[:-1])
-            size_unit = size_b[-1].upper()
-            if size_unit not in ["M", "G"]:
-                raise ValueError("Min query size unit must be M or G")
-            min_size = size_v * 1024 * 1024
-            if size_unit == "G":
-                min_size *= 1024
-            return min_size
+            size_b = os.getenv('MIN_TARGET_SIZE')
+            if size_b is None:
+                size_b = self.reader.get("cluster", "min_target_size")
+            return self._parse_size(size_b)
         except (NoOptionError, NoSectionError):
             return 0
 
-    def _get_cluster_prepare_script(self):
+    def _get_cluster_prepare_script(self) -> str:
+        """
+        Get the (absolute) path to the all_prepare.py script
+        """
         try:
-            return self._replace_vars(self.reader.get("cluster", "prepare_script"))
+            script = os.getenv('PREPARE_SCRIPT')
+            if script is None:
+                script = self.reader.get("cluster", "prepare_script")
+            return self._replace_vars(script)
         except (NoOptionError, NoSectionError):
             return self._replace_vars("###PROGRAM###/bin/all_prepare.py")
 
-    def _get_cluster_python_exec(self):
+    def _get_cluster_python_exec(self) -> str:
+        """
+        Get the python executable path on the cluster nodes.
+        """
         try:
-            return self._replace_vars(self.reader.get("cluster", "python3_exec"))
+            python = os.getenv('PYTHON3_EXEC')
+            if python is None:
+                python = self.reader.get("cluster", "python3_exec")
+            return self._replace_vars(python)
         except (NoOptionError, NoSectionError):
             return "python3"
 
-    def _get_cluster_memory(self):
+    def _get_cluster_memory(self) -> int:
+        """
+        Get max memory in GiB to reserve on the cluster
+        """
         try:
-            memory = int(self.reader.get("cluster", "memory"))
-            return memory
+            memory = os.getenv('MAX_MEMORY')
+            if memory is None:
+                memory = self.reader.get("cluster", "memory")
+            return int(memory)
         except (NoOptionError, NoSectionError):
             return 32
 
-    def _get_cluster_memory_ava(self):
+    def _get_cluster_memory_ava(self) -> int:
+        """
+        Get max memory in GiB to reserve on the cluster in all-vs-all mode
+        """
         try:
-            memory = int(self.reader.get("cluster", "memory_ava"))
-            return memory
+            memory = os.getenv('MAX_MEMORY_AVA')
+            if memory is None:
+                memory = self.reader.get("cluster", "memory_ava")
+            return int(memory)
         except (NoOptionError, NoSectionError):
             return self._get_cluster_memory()
 
-    def _get_cluster_walltime(self):
+    def _get_cluster_walltime(self) -> str:
         try:
-            walltime = self.reader.get("cluster", "walltime")
+            walltime = os.getenv('WALLTIME')
+            if walltime is None:
+                walltime = self.reader.get("cluster", "walltime")
             return walltime
         except (NoOptionError, NoSectionError):
             return "02:00:00"
 
-    def _get_cluster_walltime_prepare(self):
+    def _get_cluster_walltime_prepare(self) -> str:
         try:
-            walltime = self.reader.get("cluster", "walltime_prepare")
+            walltime = os.getenv('WALLTIME_PREPARE')
+            if walltime is None:
+                walltime = self.reader.get("cluster", "walltime_prepare")
             return walltime
         except (NoOptionError, NoSectionError):
             return self._get_cluster_walltime()
 
-    def _get_cluster_walltime_align(self):
+    def _get_cluster_walltime_align(self) -> str:
         try:
-            walltime = self.reader.get("cluster", "walltime_align")
+            walltime = os.getenv('WALLTIME_ALIGN')
+            if walltime is None:
+                walltime = self.reader.get("cluster", "walltime_align")
             return walltime
         except (NoOptionError, NoSectionError):
             return self._get_cluster_walltime()
 
-    def _get_debug(self):
+    def _get_debug(self) -> bool:
         try:
-            return self.reader.get("debug", "enable").lower() == "true"
+            debug = os.getenv('DEBUG')
+            if debug is None:
+                debug = self.reader.get("debug", "enable")
+            return debug.lower() in ["true", "1"]
         except (NoOptionError, NoSectionError):
             return False
 
-    def _get_log_dir(self):
+    def _get_log_dir(self) -> str:
         try:
-            log_dir = self._replace_vars(self.reader.get("debug", "log_dir"))
+            log_dir = os.getenv('LOG_DIR')
+            if log_dir is None:
+                log_dir = self.reader.get("debug", "log_dir")
+            log_dir = self._replace_vars(log_dir)
         except (NoOptionError, NoSectionError):
             log_dir = self._replace_vars("###CONFIG###/logs")
         if not os.path.exists(log_dir):
@@ -483,7 +531,7 @@ class AppConfigReader:
             raise TypeError("Log dir must be a directory")
         return log_dir
 
-    def _get_allowed_ip_tests(self):
+    def _get_allowed_ip_tests(self) -> set[str]:
         allowed_ip = {"127.0.0.1"}
         try:
             allowed_ip_txt = self.reader.get("debug", "allowed_ip_tests")
@@ -493,61 +541,82 @@ class AppConfigReader:
             pass
         return allowed_ip
 
-    def _get_example_query(self):
+    def _get_example_query(self) -> str:
         try:
-            return self.reader.get("example", "query")
+            example = os.getenv('EXAMPLE_QUERY')
+            if example is None:
+                example = self.reader.get("example", "query")
+            return example
         except (NoOptionError, NoSectionError):
             return ""
 
-    def _get_example_target(self):
+    def _get_example_target(self) -> str:
         try:
-            return self.reader.get("example", "target")
+            example = os.getenv('EXAMPLE_TARGET')
+            if example is None:
+                example = self.reader.get("example", "target")
+            return example
         except (NoOptionError, NoSectionError):
             return ""
 
-    def _get_example_backup(self):
+    def _get_example_backup(self) -> str:
         try:
-            return self.reader.get("example", "backup")
+            example = os.getenv('EXAMPLE_BACKUP')
+            if example is None:
+                self.reader.get("example", "backup")
+            return example
         except (NoOptionError, NoSectionError):
             return ""
 
-    def _get_example_batch(self):
+    def _get_example_batch(self) -> str:
         try:
-            return self.reader.get("example", "batch")
+            example = os.getenv('EXAMPLE_BATCH')
+            if example is None:
+                self.reader.get("example", "batch")
+            return example
         except (NoOptionError, NoSectionError):
             return ""
 
-    def _get_analytics_enabled(self):
+    def _get_analytics_enabled(self) -> bool:
         try:
-            return self.reader.get("analytics", "enable_logging_runs").lower() == "true"
+            analytics = os.getenv('ANALYTICS')
+            if analytics is None:
+                self.reader.get("analytics", "enable_logging_runs")
+            return analytics.lower() in ["true", "1"]
         except (NoOptionError, NoSectionError):
             return False
 
-    def _get_disable_anonymous_analytics(self):
+    def _get_disable_anonymous_analytics(self) -> bool:
         try:
-            return not self.reader.get("analytics", "disable_anonymous_analytics").lower() == "true"
+            disable = os.getenv('DISABLE_ANONYMOUS_ANALYTICS')
+            if disable is None:
+                disable = self.reader.get("analytics", "disable_anonymous_analytics")
+            return not disable.lower() in ["true", "1"]
         except (NoOptionError, NoSectionError):
             return True
 
-    def _get_anonymous_analytics(self):
+    def _get_anonymous_analytics(self) -> str:
         try:
-            return self.reader.get("analytics", "anonymous_analytics").strip().lower()
+            anon_strat = os.getenv('ANONYMOUS_ANALYTICS')
+            if anon_strat is None:
+                anon_strat = self.reader.get("analytics", "anonymous_analytics")
+            return anon_strat.strip().lower()
         except (NoOptionError, NoSectionError):
             return "groups"
 
-    def _get_analytics_groups(self):
+    def _get_analytics_groups(self) -> list[tuple[str, str]]:
         try:
             return [(option, self.reader.get("analytics_groups", option)) for option in self.reader.options("analytics_groups")]
         except (NoOptionError, NoSectionError):
             return []
 
-    def _get_cookie_wall(self):
+    def _get_cookie_wall(self) -> str|None:
         try:
             return self.reader.get("legal", "cookie_wall")
         except (NoOptionError, NoSectionError):
             return None
 
-    def _get_legal(self):
+    def _get_legal(self) -> dict[str, str]:
         try:
             return {option: self.reader.get("legal", option) for option in self.reader.options("legal")
                     if option not in ["cookie_wall"]}
