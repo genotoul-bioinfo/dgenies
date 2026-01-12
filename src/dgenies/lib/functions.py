@@ -6,6 +6,7 @@ import sys
 import re
 import time
 import traceback
+import binascii
 from collections import OrderedDict
 from datetime import datetime
 from Bio import SeqIO
@@ -13,6 +14,7 @@ from jinja2 import Template
 from xopen import xopen
 from dgenies.config_reader import AppConfigReader
 from dgenies.allowed_extensions import AllowedExtensions
+
 
 
 class Functions:
@@ -625,3 +627,15 @@ class Functions:
             "mem_peak": mem_peak,
             "time_elapsed": time_e
         }
+
+    @staticmethod
+    def is_gz_file(filepath):
+        """
+        Check if a file is gzipped
+
+        :param filepath: file to check
+        :type filepath: str
+        :return: True if gzipped, else False
+        """
+        with open(filepath, 'rb') as test_f:
+            return binascii.hexlify(test_f.read(2)) == b'1f8b'

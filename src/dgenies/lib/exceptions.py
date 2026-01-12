@@ -104,7 +104,6 @@ class DGeniesUploadedFileSizeLimitError(DGeniesFileCheckError):
         return "{} file exceed size limit of {:d} {} ({}compressed)".format(self.filename, int(self.sizelimit), self.unit,
                                                                             '' if self.compressed else 'un')
 
-
 class DGeniesAlignmentFileUnsupported(DGeniesFileCheckError):
     """
     Exception raise when alignment file format is not supported
@@ -433,3 +432,7 @@ class DGeniesDeleteGalleryJobForbidden(DGeniesMessageException):
 
     def __str__(self):
         return "Delete a job that is in gallery is forbidden"
+
+
+class DGeniesValidationError(DGeniesMessageException):
+    pass

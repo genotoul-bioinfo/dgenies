@@ -13,13 +13,18 @@ import itertools as it
 
 from flask import current_app
 from flask_openapi3 import APIBlueprint
-from pydantic import ValidationError
 from werkzeug.exceptions import RequestEntityTooLarge
 
 from dgenies import config_reader, APP_DATA, MODE, mailer
 from ..allowed_extensions import AllowedExtensions
-from ..lib.exceptions import DGeniesJobCheckError, DGeniesExampleInvalid, DGeniesUnknownToolError, \
-    DGeniesUnknownOptionError
+from ..lib.exceptions import (
+    DGeniesExampleInvalid,
+    DGeniesNotGzipFileError,
+    DGeniesUnknownOptionError,
+    DGeniesUnknownToolError,
+    DGeniesUploadedFileSizeLimitError,
+    DGeniesValidationError
+)
 from ..lib.functions import Functions
 from ..lib.job_manager import JobManager
 from ..lib.paf import Paf
@@ -69,6 +74,11 @@ limits = Limits(
     walltime_prepare=config_reader.cluster_walltime_prepare,
     walltime_align=config_reader.cluster_walltime_align
 )
+
+def get_max_file_size(job_type: JobType, role: str) -> int:
+    if job_type == "align" and role == "target":
+        return config_reader.max_upload_size_ava
+    return config_reader.max_upload_size
 
 @api.get('/config', responses={200: ConfigResponse})
 def get_config():
@@ -264,7 +274,17 @@ def upload_file(form: UploadFileForm):
                 # get file size after saving
                 size = os.path.getsize(uploaded_file_path)
                 # Check file size
-                # TODO
+                compressed = uploaded_file_path.endswith(".gz")
+                if compressed and not Functions.is_gz_file(uploaded_file_path):
+                    # Check file is correctly gzipped
+                    #raise DGeniesNotGzipFileError(filename)
+                    return {"code": 415, "message": "Not a gzip file", "data": {"files": []}}
+
+                min_allowed_size = min((get_max_file_size(j, r) for j, fn, r in roles))
+                if size > min_allowed_size:
+                    #raise DGeniesUploadedFileSizeLimitError(filename, Functions.get_readable_size(size, base="MiB"),
+                    #                                        unit="Mb", compressed=compressed)
+                    return {"code": 410, "message": "File too large", "data": {"files": []}}
 
                 # return json for js call back
                 result = UploadFile(name=filename, type_f=mime_type, size=size)
@@ -322,21 +342,69 @@ def valid_email(email: str|None):
             ValidationError("Email is invalid")
 
 
-def valid_job(job: Job):
+def valid_align(job: Job) -> Job:
     """
-    Check if a job description is valid according to its type.
+    Valid an align job
+    :return: The job modified to include default parameters if missing.
+    """
+    print(job)
+    # Valid input files (type, syntax)
+    if not job.target:
+        raise ValidationError("'target' is required")
+    if not job.target_type:
+        raise ValidationError("'target_type' is required (either 'local' or 'url'")
+    if job.query and not job.query_type:
+        raise ValidationError("'query_type' is required (either 'local' or 'url'")
+    # validate file based on name extension
+
+    # Valid tool + options
+    if not job.tool:
+        job.tool = Tools().get_default()
+    elif job.tool not in Tools().tools:
+        raise DGeniesUnknownToolError(job.tool)
+    tool = Tools().tools[job.tool]
+    # Check options
+    unknown_options = [opt for opt in job.tool_options if opt not in tool.get_options_keys()]
+    # Get missing default options
+    if unknown_options:
+        raise DGeniesUnknownOptionError(", ".join(unknown_options))
+    job.tool_options.extend(tool.get_default_options(job.tool_options))
+    return job
+
+
+def valid_plot(job: Job) -> Job:
+    # Valid input files (type, syntax)
+    print(job)
+    if job.backup:
+        if not job.target_type:
+            raise ValidationError("'target_type' is required (either 'local' or 'url'")
+        if job.query and not job.query_type:
+            raise ValidationError("'query_type' is required (either 'local' or 'url'")
+        # validate file based on name extension
+    else:
+        if not job.target:
+            raise ValidationError("'target' is required")
+        if not job.target_type:
+            raise ValidationError("'target_type' is required (either 'local' or 'url'")
+        if not job.query:
+            raise ValidationError("'query' is required")
+        if not job.query_type:
+            raise ValidationError("'query_type' is required (either 'local' or 'url'")
+        if not job.align:
+            raise ValidationError("'align' is required")
+        if not job.align_type:
+            raise ValidationError("'align_type' is required (either 'local' or 'url'")
+    return job
+
+
+def valid_job(job: Job) -> Job:
+    """
+    Check if a job description is valid according to its type and complete it with default values if needed.
     """
     if job.type == JobType.align:
-        # Valid input files (type, syntax)
-
-        # Valid tool + options
-        pass
-
+        return valid_align(job)
     elif job.type == JobType.plot:
-        # Valid input files (type, syntax)
-
-        pass
-
+        return valid_plot(job)
     else:
         raise ValidationError(f"Job type '{job.type}' is not supported")
 
@@ -398,6 +466,7 @@ def post_jobs(body: BatchSubmissionQuery):
     """
     Launch the job
     """
+    message = "Unknown error"
     try:
         valid_form(body)
         form_pass = True

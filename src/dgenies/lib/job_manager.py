@@ -38,7 +38,6 @@ from dgenies.lib.exceptions import DGeniesFileCheckError, DGeniesNotGzipFileErro
     DGeniesMissingJobError, DgeniesMissingSubjobsError, DGeniesDeleteGalleryJobForbidden
 import gzip
 import io
-import binascii
 import json
 from hashlib import sha1
 from dgenies.database import Job, ID_JOB_LENGTH
@@ -219,17 +218,6 @@ class JobManager:
     def get_align_format(filepath):
         return os.path.splitext(filepath)[1][1:]
 
-    @staticmethod
-    def is_gz_file(filepath):
-        """
-        Check if a file is gzipped
-
-        :param filepath: file to check
-        :type filepath: str
-        :return: True if gzipped, else False
-        """
-        with open(filepath, 'rb') as test_f:
-            return binascii.hexlify(test_f.read(2)) == b'1f8b'
 
     def get_file_size(self, filepath: str):
         """
@@ -1090,7 +1078,7 @@ class JobManager:
         self.logger.info('{} - Check file: {}'.format(self.id_job, datafile.get_path()))
         max_upload_size_readable = size_limit / 1024 / 1024
         with Job.connect():
-            if datafile.get_path().endswith(".gz") and not self.is_gz_file(datafile.get_path()):
+            if datafile.get_path().endswith(".gz") and not Functions.is_gz_file(datafile.get_path()):
                 # Check file is correctly gzipped
                 raise DGeniesNotGzipFileError(input_type)
             # Check size:
