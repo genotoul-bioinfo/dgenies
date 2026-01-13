@@ -24,7 +24,6 @@ minimap2:
           label: "few repeats"
           value: "-f 0.0002"
           help: "-f 0.0002"
-          default: True
         -
           key: some
           label: "some repeats"
@@ -35,6 +34,7 @@ minimap2:
           label: "many repeats"
           value: "-f 0.02"
           help: "-f 0.02"
+          default: True
 
 mashmap:
   exec: default
