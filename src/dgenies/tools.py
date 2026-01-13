@@ -113,13 +113,25 @@ class Tool:
         # Options
         self.options = []
         self.options_dict = {}
+        self.group_default_options = {}
         if options is not None:
             if isinstance(options, list):
                 self.options = options
                 try:
                     for group in options:
+                        group_key = group['group']
+                        group_defaults = []
+                        # When group type is radio, there can be only one option set.
+                        # The default option is then the first set to default in the list.
+                        only_one_default = group["type"] == 'radio'
+                        default_unset = True
                         for entry in group['entries']:
-                            self.options_dict["{}:{}".format(group['group'], entry["key"])] = entry['value']
+                            option_key = "{}:{}".format(group_key, entry["key"])
+                            self.options_dict[option_key] = entry['value']
+                            if 'default' in entry and default_unset and entry['default']:
+                                group_defaults.append(option_key)
+                                default_unset = only_one_default
+                        self.group_default_options[group_key] = group_defaults
                 except KeyError as e:
                     raise ValueError("Missing key {} in tool option".format(e.args[0]))
             else:
@@ -141,6 +153,25 @@ class Tool:
             raise DGeniesUnknownOptionError(e.args[0])
         return options_params
 
+    def get_options_keys(self):
+        return self.options_dict.keys()
+
+    def get_default_options(self, option_keys: list[str]) -> list[str]:
+        """
+        Get missing default options for a tool, taking in account a list of already set ones.
+        This function doesn't check if givens option keys are in conflict but just return missing option keys
+        :param option_keys: list of option keys already set.
+        :type option_keys: list of str
+        :return: list of missing default option keys
+        :rtype: list of str
+        """
+        res = []
+        groups = set([opt.split(":", 1)[0] for opt in option_keys])
+        for g in self.options:
+            key = g['group']
+            if key not in groups and key in self.group_default_options:
+                res.extend(self.group_default_options[key])
+        return res
 
 @Singleton
 class Tools:
