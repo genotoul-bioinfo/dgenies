@@ -431,7 +431,7 @@ class DGeniesExampleInvalid(DGeniesMessageException):
 class DGeniesDeleteGalleryJobForbidden(DGeniesMessageException):
 
     def __str__(self):
-        return "Delete a job that is in gallery is forbidden"
+        return "Deleting a job that is in gallery is forbidden"
 
 
 class DGeniesValidationError(DGeniesMessageException):

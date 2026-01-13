@@ -370,13 +370,15 @@ def upload_file(session_id, filename, file):
     r = requests.post(UPLOAD_URL, files=files, data={"session_id": session_id})
     logger.debug(f"POST {filename} on {r.url}")
     if r.status_code != 200:
-        logger.error(f"Error upload on {r.url}")
+        logger.error(f"Error uploading file {filename} on {r.url}")
         logger.error(r.reason)
         #logger.error(r.text)
         exit(1)
     res = r.json()
     if res["code"] != 0:
-        raise BaseException(res["message"])
+        logger.error(f"Error uploading file '{filename}' on {r.url}")
+        logger.error(res["message"])
+        exit(res["code"])
     return res["data"]
 
 def get_status(jod_id: str):
@@ -450,6 +452,15 @@ def get_feature(job_id: str, feat:str):
         logger.error(res)
     return res["data"]
 
+def delete_job(job_id: str):
+    r = requests.delete(f'{ENDPOINT}/job/{job_id}')
+    if r.status_code != 200:
+        logger.error(f"Error when deleting job '{job_id}' on {r.url}")
+        logger.error(json.dumps(r.json(), indent=4))
+        exit(1)
+    res = r.json()
+    print(f'{res["message"]} ({res["code"]})')
+
 def get_argparse() -> argparse.ArgumentParser :
 
     # TODO:
@@ -493,7 +504,11 @@ def get_argparse() -> argparse.ArgumentParser :
 
     parser_get = subparsers.add_parser('get', help='get help')
     parser_get.add_argument('job_id', type=str, help='Job id')
-    parser_get.add_argument('feature', type=str, help='Feature to get from api', choices=['dotplot', 'sorted-dotplot', 'summary'])
+    parser_get.add_argument('feature', type=str, help='Feature to get from api',
+                            choices=['dotplot', 'sorted-dotplot', 'summary', 'status'])
+
+    parser_get = subparsers.add_parser('delete', help='get help')
+    parser_get.add_argument('job_id', type=str, help='Job id')
 
     return parser
 
@@ -542,8 +557,13 @@ def main():
                 print(f'job {sub_job} failed at step {res.get("status", "unknown")}'
                       f' with error "{res.get("error", "No error provided")}"')
     elif args.command == "get":
-        res = get_feature(args.job_id, args.feature)
+        if args.feature == 'status':
+            res = get_status(args.job_id)
+        else:
+            res = get_feature(args.job_id, args.feature)
         print(res)
+    elif args.command == "delete":
+        delete_job(args.job_id)
     else:
         parser.print_help()
 

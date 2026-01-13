@@ -15,6 +15,9 @@ class BaseResponse(BaseModel):
     code: int = Field(0, description="status code")
     message: str = Field("ok", description="exception information")
 
+class NotImplementedResponse(BaseResponse):
+    code: int = 501
+    message: str = "Not Implemented"
 
 class Limits(BaseModel):
     number_of_jobs: int = Field(description="Maximum number of jobs allowed per run")
@@ -198,6 +201,9 @@ class UploadResponse(BaseResponse):
 class JobPath(JobId):
     pass
 
+class JobFilePath(JobId):
+    filename: str = Field(description="File name")
+
 class JobStatus(JobId):
     percent: float = Field(description="Progression of job. Takes value between 0 and 100. When the value reaches 100, the job is complete regardless of its status (success or error).")
     status: str = Field(description="Status of job")
@@ -242,3 +248,15 @@ class SummaryResponse(BaseResponse):
         Annotated[int, Field(ge=-1, description="Category")],
         Annotated[float, Field(ge=0, le=100, description="Percentage value for category")]
     ]]
+
+class GalleryData(BaseModel):
+    name: str = Field(description="The name of the job")
+    job_id: str = Field(description="The id of the job")
+    picture: str = Field(description="The picture illustrating the job in gallery")
+    query: str = Field(description="The query name")
+    target: str = Field(description="The target name")
+    mem_peak: str = Field(description="The max memory used for the run (human readable)")
+    time_elapsed: str = Field(description="The time elapsed for the run (human readable)")
+
+class GalleryResponse(BaseResponse):
+    data: list[GalleryData]|None = Field(description="The list of entries in gallery")

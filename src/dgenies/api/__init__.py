@@ -18,24 +18,29 @@ from werkzeug.exceptions import RequestEntityTooLarge
 from dgenies import config_reader, APP_DATA, MODE, mailer
 from ..allowed_extensions import AllowedExtensions
 from ..lib.exceptions import (
+    DGeniesDeleteGalleryJobForbidden,
     DGeniesExampleInvalid,
+    DGeniesMissingJobError,
     DGeniesNotGzipFileError,
     DGeniesUnknownOptionError,
     DGeniesUnknownToolError,
     DGeniesUploadedFileSizeLimitError,
-    DGeniesValidationError
+    DGeniesValidationError,
 )
 from ..lib.functions import Functions
 from ..lib.job_manager import JobManager
 from ..lib.paf import Paf
 
 from .datamodels import (
+    NotImplementedResponse,
     AskUploadQuery,
     AskUploadResponse,
     BaseResponse,
     Config,
     ConfigResponse,
     DotplotResponse,
+    GalleryResponse,
+    JobFilePath,
     JobPath,
     BatchSubmissionResponse,
     BatchSubmissionQuery,
@@ -49,7 +54,7 @@ from .datamodels import (
     Job,
     JobType,
     UploadResponse,
-    SummaryResponse
+    SummaryResponse,
 )
 from .job_descriptions import job_descriptions
 from ..lib.upload_file import UploadFile
@@ -74,6 +79,8 @@ limits = Limits(
     walltime_prepare=config_reader.cluster_walltime_prepare,
     walltime_align=config_reader.cluster_walltime_align
 )
+
+notImplementedResponse = NotImplementedResponse()
 
 def get_max_file_size(job_type: JobType, role: str) -> int:
     if job_type == "align" and role == "target":
@@ -302,7 +309,6 @@ def upload_file(form: UploadFileForm):
                 else:
                     # Create & Launch jobs
                     job_manager = launch_batch(form.session_id, batch.batch_id, batch.email, batch.nb_jobs, batch.jobs)
-
                     logger.info(f"Session: '{form.session_id}' - Starting job {batch.batch_id}")
                     subjobs = job_manager.get_subjob_ids()
                     print(subjobs)
@@ -474,6 +480,8 @@ def post_jobs(body: BatchSubmissionQuery):
         message = e.message
         form_pass = False
 
+    form = body
+
     # Check batch form
     # We get the distinct client's message elements
     #batch_id, email, nb_jobs, jobs = parse_form(form)
@@ -499,10 +507,10 @@ def post_jobs(body: BatchSubmissionQuery):
             batch_file = os.path.join(upload_folder, 'jobs.json')
             logger.info(f'writing jobs to {batch_file}')
             with open(batch_file, 'w') as outfile:
-                json.dump(body.model_dump(), outfile)
+                json.dump(form.model_dump(), outfile)
 
             # Get files from jobs in form
-            needed_files = set(it.chain.from_iterable((get_file_role(job, file_types=['local']) for job in body.jobs)))
+            needed_files = set(it.chain.from_iterable((get_file_role(job, file_types=['local']) for job in form.jobs)))
             needed_files = [f for f, _ in needed_files if f]
 
             if needed_files:
@@ -516,8 +524,8 @@ def post_jobs(body: BatchSubmissionQuery):
             else:
                 delete_session(session_id)
                 # Create & Launch jobs
-                job_manager = launch_batch(session_id, body.batch_id, body.email, body.nb_jobs, body.jobs)
-                logger.info(f"Session: '{session_id}' - Starting job {body.batch_id}")
+                job_manager = launch_batch(session_id, form.batch_id, form.email, form.nb_jobs, form.jobs)
+                logger.info(f"Session: '{session_id}' - Starting job {form.batch_id}")
                 subjobs = job_manager.get_subjob_ids()
                 return {"code": 0, "message": "ok", "data": {
                     "batch_id": job_manager.id_job,
@@ -724,3 +732,110 @@ def get_summary(path: JobPath):
             "code": 500, "message": "Build of summary failed. Please contact us to report the bug", "data": None
         }
     return {"code": 0, "message": s_status, "data": percents}
+
+
+@api.get('/result/<job_id>/fasta-query', responses={200: NotImplementedResponse})
+def get_fasta_query(path: JobPath):
+    return notImplementedResponse.model_dump()
+
+@api.post('/build-query-as-reference/<job_id>', responses={200: NotImplementedResponse})
+def post_build_query_as_reference(path: JobPath):
+    return notImplementedResponse.model_dump()
+
+@api.get('/download/<job_id>/file/<filename>', responses={200: NotImplementedResponse})
+def get_file(path: JobFilePath):
+    return notImplementedResponse.model_dump()
+
+@api.get('/download/<job_id>/paf', responses={200: NotImplementedResponse})
+def get_paf(path: JobPath):
+    return notImplementedResponse.model_dump()
+
+@api.get('/download/<job_id>/backup', responses={200: NotImplementedResponse})
+def get_backup(path: JobPath):
+    return notImplementedResponse.model_dump()
+
+@api.get('/download/<job_id>/logs', responses={200: NotImplementedResponse})
+def get_logs(path: JobPath):
+    return notImplementedResponse.model_dump()
+
+@api.get('/download/<job_id>/query-as-reference', responses={200: NotImplementedResponse})
+def get_query_as_reference(path: JobPath):
+    return notImplementedResponse.model_dump()
+
+@api.get('/download/<job_id>/qt-assoc', responses={200: NotImplementedResponse})
+def get_qt_assoc(path: JobPath):
+    return notImplementedResponse.model_dump()
+
+@api.get('/download/<job_id>/no-assoc', responses={200: NotImplementedResponse})
+def get_no_assoc(path: JobPath):
+    return notImplementedResponse.model_dump()
+
+@api.get('/download/<job_id>/filter-out/query', responses={200: NotImplementedResponse})
+def get_filter_out_target(path: JobPath):
+    return notImplementedResponse.model_dump()
+
+@api.get('/download/<job_id>/filter-out/target', responses={200: NotImplementedResponse})
+def get_filter_out_query(path: JobPath):
+    return notImplementedResponse.model_dump()
+
+@api.get('/download/<job_id>/viewer', responses={200: NotImplementedResponse})
+def get_viewer(path: JobPath):
+    return notImplementedResponse.model_dump()
+
+@api.delete('/job/<job_id>', responses={200: BaseResponse})
+def delete_job(path: JobPath):
+    print(path.job_id)
+    job = JobManager(id_job=path.job_id)
+    try:
+        job.delete()
+        return {
+            "code": 0,
+            "message": "ok"
+        }
+    except DGeniesMissingJobError:
+        return {
+            "code": 0,
+            "message": "ok"
+        }
+    except DGeniesDeleteGalleryJobForbidden:
+        return {
+            "code": 403,
+            "message": "Access denied"
+        }
+
+# Download example files
+@api.get('/example/query', responses={200: NotImplementedResponse})
+def get_example_query():
+    return notImplementedResponse.model_dump()
+
+@api.get('/example/target', responses={200: NotImplementedResponse})
+def get_example_target():
+    return notImplementedResponse.model_dump()
+
+@api.get('/example/backup', responses={200: NotImplementedResponse})
+def get_example_backup():
+    return notImplementedResponse.model_dump()
+
+@api.get('/example/batch', responses={200: NotImplementedResponse})
+def get_example_batch():
+    return notImplementedResponse.model_dump()
+
+
+# Gallery
+@api.get('/gallery', responses={200: GalleryResponse})
+def get_gallery():
+    if MODE == "webserver":
+        items = Functions.get_gallery_items()
+        # fix key
+        for e in items:
+            e['job_id'] = e.pop('id_job')
+        return {
+            "code": 0,
+            "message": "ok",
+            "data": items
+        }
+
+    return {
+        "code": 501,
+        "message": "Not available in this instance"
+    }
