@@ -318,15 +318,18 @@ class AppConfigReader:
         except (NoSectionError, NoOptionError):
             return None
 
-    def _get_send_mail_status(self) -> str:
+    def _get_send_mail_status(self) -> bool:
         try:
             return self.reader.get("mail", "send_mail_status").lower() == "true"
         except (NoSectionError, NoOptionError):
             return True
 
-    def _get_disable_mail(self) -> str:
+    def _get_disable_mail(self) -> bool:
         try:
-            return self.reader.get("mail", "disable").lower() == "true"
+            disabled = os.getenv('DISABLE_MAIL')
+            if disabled is None:
+                disabled = self.reader.get("mail", "disable").lower()
+            return disabled in ["true", "1"]
         except (NoSectionError, NoOptionError):
             return False
 
