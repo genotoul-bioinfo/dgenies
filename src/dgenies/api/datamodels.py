@@ -6,7 +6,6 @@ from pydantic import BaseModel, Field
 from flask_openapi3 import FileStorage
 
 import dgenies
-from ..lib.functions import Functions
 from ..tools import Tools
 
 ToolName = StrEnum('ToolName', [(k, k) for k in Tools().tools.keys()])
@@ -15,9 +14,13 @@ class BaseResponse(BaseModel):
     code: int = Field(0, description="status code")
     message: str = Field("ok", description="exception information")
 
+class NotFoundResponse(BaseModel):
+    code: int = Field(-1, description="Status Code")
+    message: str = Field("Resource not found!", description="Exception Information")
+
 class NotImplementedResponse(BaseResponse):
-    code: int = 501
-    message: str = "Not Implemented"
+    code: int = Field(501, description="Status Code")
+    message: str = Field("Not Implemented", description="Exception Information")
 
 class Limits(BaseModel):
     number_of_jobs: int = Field(description="Maximum number of jobs allowed per run")
@@ -51,6 +54,11 @@ class InputType(str, Enum):
     target = 'target'
     align = 'align'
     backup = 'backup'
+
+
+class ContigType(str, Enum):
+    query = 'query'
+    target = 'target'
 
 
 class JobInput(BaseModel):
@@ -249,10 +257,41 @@ class SummaryResponse(BaseResponse):
         Annotated[float, Field(ge=0, le=100, description="Percentage value for category")]
     ]]
 
+
+class QTAssocRecord(BaseModel):
+    query: str
+    target: Optional[str]
+    strand: str
+    q_len: int
+    q_start: Optional[int]
+    q_stop: Optional[int]
+    t_len: Optional[int]
+    t_start: Optional[int]
+    t_stop: Optional[int]
+
+class QTAssoc(BaseModel):
+    records: list[QTAssocRecord] = Field(description="Associations between query and target")
+    count: int = Field(description="Number of records", ge=0)
+
+class QTAssocResponse(BaseResponse):
+    data: list[QTAssoc]
+
+
+class NoAssocInput(BaseModel):
+    which: Optional[ContigType] = Field(description="Which contigs type, ('query' if not set)")
+
+class NoAssoc(BaseModel):
+    which: ContigType = Field(description="Which contigs type")
+    count: int = Field(description="Number of no matches", ge=0)
+    contigs: list[str] = Field(description="List of contigs")
+
+class NoAssocResponse(BaseResponse):
+    data: NoAssoc
+
 class GalleryData(BaseModel):
     name: str = Field(description="The name of the job")
     job_id: str = Field(description="The id of the job")
-    picture: str = Field(description="The picture illustrating the job in gallery")
+    picture: str = Field(description="The filename of the picture illustrating the job in gallery")
     query: str = Field(description="The query name")
     target: str = Field(description="The target name")
     mem_peak: str = Field(description="The max memory used for the run (human readable)")

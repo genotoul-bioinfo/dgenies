@@ -3,11 +3,12 @@ from __future__ import annotations
 import json
 import os
 import re
-import shutil
 import traceback
-from logging import raiseExceptions
 from pathlib import Path
-from typing import Iterator
+from typing import (
+    Any,
+    Iterator
+)
 
 import itertools as it
 
@@ -32,10 +33,11 @@ from ..lib.job_manager import JobManager
 from ..lib.paf import Paf
 
 from .datamodels import (
+    BaseResponse,
+    NotFoundResponse,
     NotImplementedResponse,
     AskUploadQuery,
     AskUploadResponse,
-    BaseResponse,
     Config,
     ConfigResponse,
     DotplotResponse,
@@ -55,6 +57,12 @@ from .datamodels import (
     JobType,
     UploadResponse,
     SummaryResponse,
+    QTAssoc,
+    QTAssocRecord,
+    QTAssocResponse,
+    NoAssoc,
+    NoAssocInput,
+    NoAssocResponse
 )
 from .job_descriptions import job_descriptions
 from ..lib.upload_file import UploadFile
@@ -88,7 +96,7 @@ def get_max_file_size(job_type: JobType, role: str) -> int:
     return config_reader.max_upload_size
 
 @api.get('/config', responses={200: ConfigResponse})
-def get_config():
+def get_config() -> dict[str, Any]:
     """
     Get this D-Genies instance configuration and limits
     """
@@ -102,7 +110,7 @@ def get_config():
     return {"code": 0, "message": "ok", "data": res.model_dump()}
 
 @api.get('/session', responses={200: SessionResponse})
-def create_session():
+def create_session() -> dict[str, Any]:
     """
     Ask for a session to upload files and submit a job
     """
@@ -110,7 +118,7 @@ def create_session():
     return {"code": 0, "message": "ok", "data": res.model_dump()}
 
 
-def delete_session(session_id: str):
+def delete_session(session_id: str) -> None:
     """
     Delete a session
     """
@@ -121,6 +129,14 @@ def delete_session(session_id: str):
 
 
 def allow_upload(session_id: str) -> bool:
+    """
+    Tell if the upload is allowed for a session id
+
+    :param session_id: the session id
+    :type: str
+    :return: True if the upload is allowed, False else
+    :rtype: bool
+    """
     if MODE != "webserver":
         return True
     else:
@@ -129,7 +145,7 @@ def allow_upload(session_id: str) -> bool:
             return session.ask_for_upload(True)
 
 @api.post('/ask-upload', responses={200: AskUploadResponse})
-def ask_upload(body: AskUploadQuery):
+def ask_upload(body: AskUploadQuery) -> dict[str, Any]:
     """
     Ask to upload files. A session must be asked before be allowed to use /upload route.
     You must ask regularly until allowed.
@@ -141,7 +157,7 @@ def ask_upload(body: AskUploadQuery):
 
 
 @api.post('/ping-upload', responses={200: BaseResponse})
-def ping_upload(body: Session):
+def ping_upload(body: Session) -> dict[str, Any]:
     """
     When upload waiting, ping to be kept in the waiting line
     """
@@ -188,6 +204,12 @@ def _fix_file_role(file_role: str) -> str:
 
 
 def get_upload_folder(session_id: str):
+    """
+    Get the upload folder for a session id
+
+    :param session_id: the session id
+    :type: str
+    """
     if MODE == "webserver":
         with db.Session.connect():
             session = db.Session.get(s_id=session_id)
@@ -219,7 +241,7 @@ def allowed_file_ext(filename: str, job_type: str, file_role: str) -> bool:
 
 
 @api.post('/upload', responses={200: UploadResponse})
-def upload_file(form: UploadFileForm):
+def upload_file(form: UploadFileForm) -> dict[str, Any]:
     """
     Do upload of a file
     """
@@ -350,8 +372,12 @@ def valid_email(email: str|None):
 
 def valid_align(job: Job) -> Job:
     """
-    Valid an align job
+    Valid and complete with default values parameters of an align job
+
+    :param job: the job
+    :type job: Job
     :return: The job modified to include default parameters if missing.
+    :rtype: Job
     """
     print(job)
     # Valid input files (type, syntax)
@@ -379,7 +405,14 @@ def valid_align(job: Job) -> Job:
 
 
 def valid_plot(job: Job) -> Job:
-    # Valid input files (type, syntax)
+    """
+    Valid and complete with default values parameters of a plot job
+
+    :param job: the job
+    :type job: Job
+    :return: The job modified to include default parameters if missing.
+    :rtype: Job
+    """
     print(job)
     if job.backup:
         if not job.target_type:
@@ -405,7 +438,12 @@ def valid_plot(job: Job) -> Job:
 
 def valid_job(job: Job) -> Job:
     """
-    Check if a job description is valid according to its type and complete it with default values if needed.
+    Valid and complete with default values parameters of a job.
+
+    :param job: the job
+    :type job: Job
+    :return: The job modified to include default parameters if missing.
+    :rtype: Job
     """
     if job.type == JobType.align:
         return valid_align(job)
@@ -414,9 +452,12 @@ def valid_job(job: Job) -> Job:
     else:
         raise DGeniesValidationError(f"Job type '{job.type}' is not supported")
 
-def valid_form(form: BatchSubmissionQuery):
+def valid_form(form: BatchSubmissionQuery) -> None:
     """
-    Check if a job description is valid according to its type.
+    Valid and complete with default values parameters of a submission of jobs.
+
+    :param form: the job
+    :type form: BatchSubmissionQuery
     """
     if len(form.jobs) != form.nb_jobs:
         raise DGeniesValidationError("Incorrect number of jobs")
@@ -431,8 +472,6 @@ def valid_form(form: BatchSubmissionQuery):
             raise DGeniesValidationError("Batch id is required")
         for job in form.jobs:
             valid_job(job)
-    pass
-
 
 def get_file_role(job: Job, file_types: list[str] = ['local', 'url']) -> Iterator[tuple[str, str]]:
     """
@@ -461,39 +500,19 @@ def get_file_role(job: Job, file_types: list[str] = ['local', 'url']) -> Iterato
             yield getattr(job, role), role
 
 
-job_post_content_type= {
-    'requestBody': {
-        'content': 'application/json'
-    }
-}
-
 @api.post('/job', responses={200: BatchSubmissionResponse})
-def post_jobs(body: BatchSubmissionQuery):
+def post_jobs(body: BatchSubmissionQuery) -> dict[str, Any]:
     """
     Launch the job
     """
+    form = body
     message = "Unknown error"
     try:
-        valid_form(body)
+        valid_form(form)
         form_pass = True
     except DGeniesValidationError as e:
         message = e.message
         form_pass = False
-
-    form = body
-
-    # Check batch form
-    # We get the distinct client's message elements
-    #batch_id, email, nb_jobs, jobs = parse_form(form)
-    """
-    # We check each job parameters
-    for j in jobs:
-        try:
-            check_file_type_and_resolv_options(j)
-        except DGeniesJobCheckError as e:
-            form_pass = False
-            errors.append(e.message)
-    """
 
     if form_pass:
         try:
@@ -545,7 +564,7 @@ def post_jobs(body: BatchSubmissionQuery):
     else:
         return {"code": 406, "message": f"Incorrect form: {message}"}
 
-def get_tools_options(tool_name, chosen_options):
+def get_tools_options(tool_name: str, chosen_options: list[str]) -> list[str]:
     """
     Transform options chosen from client side into option values
 
@@ -563,7 +582,16 @@ def get_tools_options(tool_name, chosen_options):
 
 
 def prepare_jobs(email: str, jobs: list[Job]) -> list[dict]:
-    # convert to legacy job dict
+    """
+    Convert a list of jobs into a legacy list of dict of jobs
+
+    :param email: the email
+    :type email: str
+    :param jobs: the list of jobs
+    :type jobs: list of Job
+    :return: return options value
+    :rtype: list of dict
+    """
     result = []
     for job in jobs:
         result.append({
@@ -585,7 +613,22 @@ def prepare_jobs(email: str, jobs: list[Job]) -> list[dict]:
 
 #def launch_batch(session_id: str, form: BatchSubmissionQuery) -> JobManager:
 def launch_batch(session_id: str, batch_id: str, email: str, nb_jobs: int, jobs: list[Job]) -> JobManager:
+    """
+    Run a batch of jobs
 
+    :param session_id: the session id
+    :type session_id: str
+    :param batch_id: the batch id
+    :type batch_id: str
+    :param email: the email
+    :type email: str
+    :param nb_jobs: the number of jobs
+    :type nb_jobs: int
+    :param jobs: the list of jobs
+    :type jobs: list of Job
+    :return: A job manager
+    :rtype: JobManager
+    """
     #batch_id, email, nb_jobs, jobs = form.batch_id, form.email, form.nb_jobs, form.jobs
     upload_folder = os.path.join(current_app.config["UPLOAD_FOLDER"], get_upload_folder(session_id))
     if nb_jobs > 1:
@@ -625,6 +668,14 @@ def launch_batch(session_id: str, batch_id: str, email: str, nb_jobs: int, jobs:
 
 
 def get_percentage(status: str) -> float:
+    """
+    Get percentage from status string
+
+    :param status: the job status
+    :type status: str
+    :return: a percentage that takes value between 0 and 100
+    :rtype: float
+    """
     if status in ["getfiles", "getfiles-waiting"]:
         return 3.7
     elif status == "waiting":
@@ -647,7 +698,15 @@ def get_percentage(status: str) -> float:
         return 100
     return 0
 
-def create_job_status(answer: dict) -> JobStatus:
+def create_job_status(answer: dict[str, Any]) -> JobStatus:
+    """
+    Convert legacy status answer to the new status object
+
+    :param answer: the legacy status answer
+    :type answer: dict
+    :return: the new status answer
+    :rtype: JobStatus
+    """
     error = answer.get("error", None)
     status = answer.get("status", 'unknown')
     res = JobStatus(
@@ -663,7 +722,7 @@ def create_job_status(answer: dict) -> JobStatus:
 
 
 @api.get('/status/<job_id>', responses={200: JobStatusResponse})
-def get_status(path: JobPath):
+def get_status(path: JobPath) -> dict[str, Any]:
     """
     Get status for a job id
     """
@@ -678,7 +737,7 @@ def get_status(path: JobPath):
 
 
 @api.get('/result/<job_id>/dotplot', responses={200: DotplotResponse})
-def get_dotplot(path: JobPath):
+def get_dotplot(path: JobPath) -> dict[str, Any]:
     """
     Get dotplot data for a job id
     """
@@ -698,9 +757,9 @@ def get_dotplot(path: JobPath):
 
 
 @api.get('/result/<job_id>/sorted-dotplot', responses={200: DotplotResponse})
-def sorted_dotplot(path: JobPath):
+def sorted_dotplot(path: JobPath) -> dict[str, Any]:
     """
-    Sort dot plot to reference
+    Get sorted dot plot to reference
     """
     id_res = path.job_id
     if not os.path.exists(os.path.join(APP_DATA, id_res, ".all-vs-all")):
@@ -717,7 +776,10 @@ def sorted_dotplot(path: JobPath):
 
 
 @api.get('/result/<job_id>/summary', responses={200: SummaryResponse})
-def get_summary(path: JobPath):
+def get_summary(path: JobPath) -> dict[str, Any]:
+    """
+    Get dot plot summary
+    """
     percents, s_status = compute_summary(path.job_id)
     if s_status == "file_not_found":
         return {
@@ -734,56 +796,176 @@ def get_summary(path: JobPath):
     return {"code": 0, "message": s_status, "data": percents}
 
 
-@api.get('/result/<job_id>/fasta-query', responses={200: NotImplementedResponse})
-def get_fasta_query(path: JobPath):
-    return notImplementedResponse.model_dump()
+@api.get('/result/<job_id>/fasta-query', responses={501: NotImplementedResponse})
+def get_fasta_query(path: JobPath) -> dict[str, Any]:
+    return notImplementedResponse.model_dump(), 501
 
-@api.post('/build-query-as-reference/<job_id>', responses={200: NotImplementedResponse})
-def post_build_query_as_reference(path: JobPath):
-    return notImplementedResponse.model_dump()
 
-@api.get('/download/<job_id>/file/<filename>', responses={200: NotImplementedResponse})
-def get_file(path: JobFilePath):
-    return notImplementedResponse.model_dump()
+@api.get('/result/<job_id>/qt-assoc', responses={200: QTAssocResponse})
+def get_qt_assoc(path: JobPath) -> dict[str, Any]:
+    """
+    Get the query on target associations
+    """
+    id_res = path.job_id
+    res_dir = os.path.join(APP_DATA, id_res)
+    if os.path.exists(res_dir) and os.path.isdir(res_dir):
+        paf_file = os.path.join(APP_DATA, id_res, "map.paf")
+        idx1 = os.path.join(APP_DATA, id_res, "query.idx")
+        idx2 = os.path.join(APP_DATA, id_res, "target.idx")
+        try:
+            paf = Paf(paf_file, idx1, idx2, False)
+            paf.parse_paf(False)
+        except FileNotFoundError:
+            return {"code": 404, "message": "Unable to load data!", "data": None}
+        records = [QTAssocRecord(
+            query= row[0],
+            target= row[1],
+            strand= row[2],
+            q_len= row[3],
+            q_start= row[4],
+            q_stop= row[5],
+            t_len= row[6],
+            t_start= row[7],
+            t_stop= row[8]) for row in list(paf.build_query_on_target_association_records())]
+        return {
+            "code": 0,
+            "message": "OK",
+            "data": QTAssoc(
+                records=records,
+                count=len(records)
+            ).model_dump()}
+    return {"code": 404, "message": "Job doesn't exist", "data": None}
 
-@api.get('/download/<job_id>/paf', responses={200: NotImplementedResponse})
-def get_paf(path: JobPath):
-    return notImplementedResponse.model_dump()
 
-@api.get('/download/<job_id>/backup', responses={200: NotImplementedResponse})
-def get_backup(path: JobPath):
-    return notImplementedResponse.model_dump()
+@api.get('/download/<job_id>/qt-assoc',
+          responses={
+              200: {"content": {"text/tsv": {"schema": {"type": "string"}}}}     ,
+              404: NotFoundResponse
+          })
+def get_dl_qt_assoc(path: JobPath) -> dict[str, Any]:
+    """
+    Get the query on target associations
+    """
+    id_res = path.job_id
+    res_dir = os.path.join(APP_DATA, id_res)
+    if os.path.exists(res_dir) and os.path.isdir(res_dir):
+        paf_file = os.path.join(APP_DATA, id_res, "map.paf")
+        idx1 = os.path.join(APP_DATA, id_res, "query.idx")
+        idx2 = os.path.join(APP_DATA, id_res, "target.idx")
+        try:
+            paf = Paf(paf_file, idx1, idx2, False)
+            paf.parse_paf(False)
+        except FileNotFoundError:
+            return NotFoundResponse(code= 404, message="Unable to load data! Does job is done?").model_dump(), 404
+        return paf.build_query_on_target_association_file(), 200
+    return NotFoundResponse(code=404, message="Job doesn't exist").model_dump(), 404
 
-@api.get('/download/<job_id>/logs', responses={200: NotImplementedResponse})
-def get_logs(path: JobPath):
-    return notImplementedResponse.model_dump()
 
-@api.get('/download/<job_id>/query-as-reference', responses={200: NotImplementedResponse})
-def get_query_as_reference(path: JobPath):
-    return notImplementedResponse.model_dump()
+@api.post('/result/<job_id>/no-assoc', responses={200: NoAssocResponse})
+def post_no_assoc(path: JobPath, body: NoAssocInput) -> dict[str, Any]:
+    """
+    Get the list of contigs or chromosomes from query (resp. target) that don't match the target (resp. query)
+    """
+    id_res = path.job_id
+    res_dir = os.path.join(APP_DATA, id_res)
+    if os.path.exists(res_dir) and os.path.isdir(res_dir):
+        paf_file = os.path.join(APP_DATA, id_res, "map.paf")
+        idx1 = os.path.join(APP_DATA, id_res, "query.idx")
+        idx2 = os.path.join(APP_DATA, id_res, "target.idx")
+        try:
+            paf = Paf(paf_file, idx1, idx2, False)
+        except FileNotFoundError:
+            return {"code": 404, "message": "Unable to load data!", "data": None}
+        contigs_list = paf.build_list_no_assoc(body.which)
+        return {"code": 0, "message": "OK", "data": NoAssoc(which=body.which, count=len(contigs_list), contigs=contigs_list).model_dump()}
+    return {"code": 404, "message": "Job doesn't exist", "data": None}
 
-@api.get('/download/<job_id>/qt-assoc', responses={200: NotImplementedResponse})
-def get_qt_assoc(path: JobPath):
-    return notImplementedResponse.model_dump()
 
-@api.get('/download/<job_id>/no-assoc', responses={200: NotImplementedResponse})
-def get_no_assoc(path: JobPath):
-    return notImplementedResponse.model_dump()
+@api.post('/download/<job_id>/no-assoc',
+          responses={
+              200: {"content": {"text/csv": {"schema": {"type": "string"}}}},
+              404: NotFoundResponse
+          })
+def post_dl_no_assoc(path: JobPath, body: NoAssocInput) -> dict[str, Any]:
+    """
+    Download as a text file the list of contigs or chromosomes from query (resp. target) that don't match the target (resp. query)
+    """
+    id_res = path.job_id
+    res_dir = os.path.join(APP_DATA, id_res)
+    if os.path.exists(res_dir) and os.path.isdir(res_dir):
+        paf_file = os.path.join(APP_DATA, id_res, "map.paf")
+        idx1 = os.path.join(APP_DATA, id_res, "query.idx")
+        idx2 = os.path.join(APP_DATA, id_res, "target.idx")
+        try:
+            paf = Paf(paf_file, idx1, idx2, False)
+        except FileNotFoundError:
+            return NotFoundResponse(code= 404, message="Unable to load data!").model_dump(), 404
+        content = "\n".join(paf.build_list_no_assoc(body.which)) + "\n"
+        return content, 200
+    return NotFoundResponse(code=404, message="Job doesn't exist").model_dump(), 404
 
-@api.get('/download/<job_id>/filter-out/query', responses={200: NotImplementedResponse})
-def get_filter_out_target(path: JobPath):
-    return notImplementedResponse.model_dump()
 
-@api.get('/download/<job_id>/filter-out/target', responses={200: NotImplementedResponse})
-def get_filter_out_query(path: JobPath):
-    return notImplementedResponse.model_dump()
+@api.post('/build-query-as-reference/<job_id>', responses={501: NotImplementedResponse})
+def post_build_query_as_reference(path: JobPath) -> dict[str, Any]:
+    return notImplementedResponse.model_dump(), 501
 
-@api.get('/download/<job_id>/viewer', responses={200: NotImplementedResponse})
-def get_viewer(path: JobPath):
-    return notImplementedResponse.model_dump()
+@api.get('/download/<job_id>/file/<filename>', responses={501: NotImplementedResponse})
+def get_file(path: JobFilePath) -> dict[str, Any]:
+    """
+    Download a file produced by the job
+    """
+    return notImplementedResponse.model_dump(), 501
 
-@api.delete('/job/<job_id>', responses={200: BaseResponse})
-def delete_job(path: JobPath):
+@api.get('/download/<job_id>/paf', responses={501: NotImplementedResponse})
+def get_paf(path: JobPath) -> dict[str, Any]:
+    """
+    Download the alignment file in paf format
+    """
+    return notImplementedResponse.model_dump(), 501
+
+@api.get('/download/<job_id>/backup', responses={501: NotImplementedResponse})
+def get_backup(path: JobPath) -> dict[str, Any]:
+    """
+    Download the backup file in tar.gz format
+    """
+    return notImplementedResponse.model_dump(), 501
+
+@api.get('/download/<job_id>/logs', responses={501: NotImplementedResponse})
+def get_logs(path: JobPath) -> dict[str, Any]:
+    """
+    Download the log file
+    """
+    return notImplementedResponse.model_dump(), 501
+
+@api.get('/download/<job_id>/query-as-reference', responses={501: NotImplementedResponse})
+def get_query_as_reference(path: JobPath) -> dict[str, Any]:
+    return notImplementedResponse.model_dump(), 501
+
+
+@api.get('/download/<job_id>/filter-out/query', responses={501: NotImplementedResponse})
+def get_filter_out_target(path: JobPath) -> dict[str, Any]:
+    return notImplementedResponse.model_dump(), 501
+
+@api.get('/download/<job_id>/filter-out/target', responses={501: NotImplementedResponse})
+def get_filter_out_query(path: JobPath) -> dict[str, Any]:
+    return notImplementedResponse.model_dump(), 501
+
+@api.get('/download/<job_id>/viewer', responses={501: NotImplementedResponse})
+def get_viewer(path: JobPath) -> dict[str, Any]:
+    """
+    Download the offline viewer
+    """
+    return notImplementedResponse.model_dump(), 501
+
+@api.delete('/job/<job_id>',
+            responses={
+                200: BaseResponse,
+                403: BaseResponse
+            })
+def delete_job(path: JobPath) -> dict[str, Any]:
+    """
+    Delete a job
+    """
     print(path.job_id)
     job = JobManager(id_job=path.job_id)
     try:
@@ -801,29 +983,33 @@ def delete_job(path: JobPath):
         return {
             "code": 403,
             "message": "Access denied"
-        }
+        }, 403
+
 
 # Download example files
-@api.get('/example/query', responses={200: NotImplementedResponse})
-def get_example_query():
-    return notImplementedResponse.model_dump()
+@api.get('/example/query', responses={501: NotImplementedResponse})
+def get_example_query() -> dict[str, Any]:
+    return notImplementedResponse.model_dump(), 501
 
-@api.get('/example/target', responses={200: NotImplementedResponse})
-def get_example_target():
-    return notImplementedResponse.model_dump()
+@api.get('/example/target', responses={501: NotImplementedResponse})
+def get_example_target() -> dict[str, Any]:
+    return notImplementedResponse.model_dump(), 501
 
-@api.get('/example/backup', responses={200: NotImplementedResponse})
-def get_example_backup():
-    return notImplementedResponse.model_dump()
+@api.get('/example/backup', responses={501: NotImplementedResponse})
+def get_example_backup() -> dict[str, Any]:
+    return notImplementedResponse.model_dump(), 501
 
-@api.get('/example/batch', responses={200: NotImplementedResponse})
-def get_example_batch():
-    return notImplementedResponse.model_dump()
+@api.get('/example/batch', responses={501: NotImplementedResponse})
+def get_example_batch() -> dict[str, Any]:
+    return notImplementedResponse.model_dump(), 501
 
 
 # Gallery
 @api.get('/gallery', responses={200: GalleryResponse})
-def get_gallery():
+def get_gallery() -> dict[str, Any]:
+    """
+    Get gallery items
+    """
     if MODE == "webserver":
         items = Functions.get_gallery_items()
         # fix key

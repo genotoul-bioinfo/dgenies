@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from __future__ import annotations
 
 from dgenies import MODE
 
@@ -12,7 +13,6 @@ from dgenies.bin.index import Index
 from dgenies.config_reader import AppConfigReader
 from dgenies.lib.functions import Functions
 from intervaltree import IntervalTree
-from xopen import xopen
 import traceback
 import matplotlib as mpl
 mpl.use('Agg')
@@ -21,6 +21,7 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from datetime import datetime
+from typing import Generator
 
 
 class Paf:
@@ -692,7 +693,46 @@ class Paf:
                 queries_on_target[max_chr].append(contig)
         return queries_on_target
 
-    def build_query_on_target_association_file(self):
+    def build_query_on_target_association_records(self) -> Generator[
+        tuple[str, str | None, str, int, int | None, int | None, str|None, int | None, int | None], None, None]:
+        """
+        For each query, get the best matching chromosome and register it in to a dict.
+        Use the order of queries
+
+        :return: Generator of list
+        """
+        query_on_target = self.get_query_on_target_association(with_coords=True)
+        for contig in self.q_order:
+            strand = "+"
+            if contig in self.q_reversed:
+                strand = "-" if self.q_reversed[contig] else "+"
+            if contig in query_on_target:
+                chrm, min_query, max_query, min_target, max_target = query_on_target[contig][0:5]
+                yield (
+                    contig,
+                    chrm,
+                    strand,
+                    self.q_contigs[contig],
+                    min_query if min_query != -1 else None,
+                    max_query if max_query != -1 else None,
+                    self.t_contigs[chrm],
+                    min_target if min_target != -1 else None,
+                    max_target if max_target != -1 else None
+                )
+            else:
+                yield (
+                    contig,
+                    None,
+                    strand,
+                    self.q_contigs[contig],
+                    None,
+                    None,
+                    None,
+                    None,
+                    None
+                )
+
+    def build_query_on_target_association_file(self) -> str:
         """
         For each query, get the best matching chromosome and save it to a CSV file.
         Use the order of queries
@@ -732,7 +772,7 @@ class Paf:
         Build list of queries that match with None target, or the opposite
 
         :param to: query or target
-        :return: content of the file
+        :return: set of str
         """
         index = self.idx_q if to == "query" else self.idx_t
         name, contigs_list, contigs, reversed, abs_start, c_len = Index.load(index)
@@ -742,7 +782,7 @@ class Paf:
                 c_name = line.strip("\n").split("\t")[0 if to == "query" else 5]
                 if c_name in contigs_list:
                     contigs_list.remove(c_name)
-        return "\n".join(contigs_list) + "\n"
+        return contigs_list
 
     def _add_percents(self, percents, item):
         """
