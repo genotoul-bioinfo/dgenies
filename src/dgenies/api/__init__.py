@@ -1005,7 +1005,11 @@ def get_example_batch() -> dict[str, Any]:
 
 
 # Gallery
-@api.get('/gallery', responses={200: GalleryResponse})
+@api.get('/gallery',
+         responses={
+             200: GalleryResponse,
+             501: NotImplementedResponse
+         })
 def get_gallery() -> dict[str, Any]:
     """
     Get gallery items
@@ -1020,8 +1024,4 @@ def get_gallery() -> dict[str, Any]:
             "message": "ok",
             "data": items
         }
-
-    return {
-        "code": 501,
-        "message": "Not available in this instance"
-    }
+    return NotImplementedResponse(message= "Not available in this instance").model_dump(), 501

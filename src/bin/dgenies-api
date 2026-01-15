@@ -461,6 +461,20 @@ def delete_job(job_id: str):
     res = r.json()
     print(f'{res["message"]} ({res["code"]})')
 
+def get_gallery():
+    r = requests.get(f'{ENDPOINT}/gallery')
+    logger.debug(f"GET {r.url}")
+    if r.status_code != 200:
+        logger.error(f"Error when getting gallery on {r.url}")
+        logger.error(json.dumps(r.json(), indent=4))
+        exit(1)
+    res = r.json()
+    if res["code"] != 0:
+        logger.error(res)
+    for elem in res["data"]:
+        elem["picture"] = f'{BASE_URL}/gallery/{elem["picture"]}'
+    return res["data"]
+
 def get_argparse() -> argparse.ArgumentParser :
 
     # TODO:
@@ -507,8 +521,11 @@ def get_argparse() -> argparse.ArgumentParser :
     parser_get.add_argument('feature', type=str, help='Feature to get from api',
                             choices=['dotplot', 'sorted-dotplot', 'summary', 'status'])
 
-    parser_get = subparsers.add_parser('delete', help='get help')
+    parser_get = subparsers.add_parser('delete', help='delete help')
     parser_get.add_argument('job_id', type=str, help='Job id')
+
+
+    subparsers.add_parser('gallery', help='gallery help')
 
     return parser
 
@@ -564,6 +581,8 @@ def main():
         print(res)
     elif args.command == "delete":
         delete_job(args.job_id)
+    elif args.command == "gallery":
+        print(get_gallery())
     else:
         parser.print_help()
 
