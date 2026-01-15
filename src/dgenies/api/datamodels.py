@@ -5,8 +5,8 @@ from typing import Annotated, Optional, Literal
 from pydantic import BaseModel, Field
 from flask_openapi3 import FileStorage
 
-import dgenies
 from ..tools import Tools
+from ..lib.functions import Functions
 
 ToolName = StrEnum('ToolName', [(k, k) for k in Tools().tools.keys()])
 
@@ -35,7 +35,7 @@ class Limits(BaseModel):
 
 class Config(BaseModel):
     batch_id: str = Field(description="Suggested batch id")
-    email: bool = Field(True, description="if True, an email is required to submit a job")
+    email: bool = Field(Functions.is_email_mandatory(), description="if True, an email is required to submit a job")
     limits: Limits = Field(description="This instance limits")
     jobs: list[JobDescription] = Field(description="Configuration about jobs")
 
@@ -147,7 +147,7 @@ class Job(JobId):
 
 class JobsSubmissionQuery(Session, Job):
 
-    if dgenies.MODE == "webserver":
+    if Functions.is_email_mandatory():
         email: str = Field(description="Email to warn you when job is finished")
     else:
         email: Optional[str] = Field(None, description="Email to warn you when job is finished")

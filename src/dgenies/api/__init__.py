@@ -360,14 +360,14 @@ def valid_email(email: str|None):
     """
     if Functions.is_email_mandatory():
         if not email:
-            DGeniesValidationError("Email not given")
+            raise DGeniesValidationError("Email not given")
         elif not re.match(r"^.+@.+\..+$", email):
             # The email regex is simple because checking email address is not simple (RFC3696).
             # Sending an email to the address is the most reliable way to check if the email address is correct.
             # The only constraints we set on the email address are:
             # - to have at least one @ in it, with something before and something after
             # - to have something.tdl syntax for email server, as it will be used over Internet (not mandatory in RFC)
-            DGeniesValidationError("Email is invalid")
+            raise DGeniesValidationError("Email is invalid")
 
 
 def valid_align(job: Job) -> Job:
