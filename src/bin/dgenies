@@ -123,8 +123,9 @@ def parse_args():
 
     if 'config' in args and args.config:
         config.reset_config(args.config)
-    if 'mode' in args and args.mode == "webserver":
+    if 'mode' in args and args.mode == "webserver" or args.subparser_name == "gallery":
         import dgenies.database as database
+        print(f"Using database: {config.database_type}://{config.database_url}:{config.database_port}")
         database.initialize()
 
     if args.subparser_name == "run":
@@ -325,7 +326,8 @@ def add_to_gallery(id_job, name, picture, query, target):
     from dgenies.database import Gallery, Job
     from peewee import DoesNotExist
     try:
-        job = Job.get(id_job=id_job)
+        with Job.connect():
+            job = Job.get(Job.id_job==id_job)
     except DoesNotExist:
         print("Error: job \"%s\" does not exists!" % id_job)
         exit(1)
