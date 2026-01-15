@@ -546,7 +546,7 @@ class AppConfigReader:
             example = os.getenv('EXAMPLE_QUERY')
             if example is None:
                 example = self.reader.get("example", "query")
-            return example
+            return "" if example is None else example
         except (NoOptionError, NoSectionError):
             return ""
 
@@ -555,7 +555,7 @@ class AppConfigReader:
             example = os.getenv('EXAMPLE_TARGET')
             if example is None:
                 example = self.reader.get("example", "target")
-            return example
+            return "" if example is None else example
         except (NoOptionError, NoSectionError):
             return ""
 
@@ -564,7 +564,7 @@ class AppConfigReader:
             example = os.getenv('EXAMPLE_BACKUP')
             if example is None:
                 self.reader.get("example", "backup")
-            return example
+            return "" if example is None else example
         except (NoOptionError, NoSectionError):
             return ""
 
@@ -573,7 +573,7 @@ class AppConfigReader:
             example = os.getenv('EXAMPLE_BATCH')
             if example is None:
                 self.reader.get("example", "batch")
-            return example
+            return "" if example is None else example
         except (NoOptionError, NoSectionError):
             return ""
 
