@@ -96,7 +96,7 @@ def get_max_file_size(job_type: JobType, role: str) -> int:
     return config_reader.max_upload_size
 
 @api.get('/config', responses={200: ConfigResponse})
-def get_config() -> dict[str, Any]:
+def get_config():
     """
     Get this D-Genies instance configuration and limits
     """
@@ -110,7 +110,7 @@ def get_config() -> dict[str, Any]:
     return {"code": 0, "message": "ok", "data": res.model_dump()}
 
 @api.get('/session', responses={200: SessionResponse})
-def create_session() -> dict[str, Any]:
+def create_session():
     """
     Ask for a session to upload files and submit a job
     """
@@ -145,7 +145,7 @@ def allow_upload(session_id: str) -> bool:
             return session.ask_for_upload(True)
 
 @api.post('/ask-upload', responses={200: AskUploadResponse})
-def ask_upload(body: AskUploadQuery) -> dict[str, Any]:
+def ask_upload(body: AskUploadQuery):
     """
     Ask to upload files. A session must be asked before be allowed to use /upload route.
     You must ask regularly until allowed.
@@ -157,7 +157,7 @@ def ask_upload(body: AskUploadQuery) -> dict[str, Any]:
 
 
 @api.post('/ping-upload', responses={200: BaseResponse})
-def ping_upload(body: Session) -> dict[str, Any]:
+def ping_upload(body: Session):
     """
     When upload waiting, ping to be kept in the waiting line
     """
@@ -241,7 +241,7 @@ def allowed_file_ext(filename: str, job_type: str, file_role: str) -> bool:
 
 
 @api.post('/upload', responses={200: UploadResponse})
-def upload_file(form: UploadFileForm) -> dict[str, Any]:
+def upload_file(form: UploadFileForm):
     """
     Do upload of a file
     """
@@ -501,7 +501,7 @@ def get_file_role(job: Job, file_types: list[str] = ['local', 'url']) -> Iterato
 
 
 @api.post('/job', responses={200: BatchSubmissionResponse})
-def post_jobs(body: BatchSubmissionQuery) -> dict[str, Any]:
+def post_jobs(body: BatchSubmissionQuery):
     """
     Launch the job
     """
@@ -722,7 +722,7 @@ def create_job_status(answer: dict[str, Any]) -> JobStatus:
 
 
 @api.get('/status/<job_id>', responses={200: JobStatusResponse})
-def get_status(path: JobPath) -> dict[str, Any]:
+def get_status(path: JobPath):
     """
     Get status for a job id
     """
@@ -737,7 +737,7 @@ def get_status(path: JobPath) -> dict[str, Any]:
 
 
 @api.get('/result/<job_id>/dotplot', responses={200: DotplotResponse})
-def get_dotplot(path: JobPath) -> dict[str, Any]:
+def get_dotplot(path: JobPath):
     """
     Get dotplot data for a job id
     """
@@ -757,7 +757,7 @@ def get_dotplot(path: JobPath) -> dict[str, Any]:
 
 
 @api.get('/result/<job_id>/sorted-dotplot', responses={200: DotplotResponse})
-def sorted_dotplot(path: JobPath) -> dict[str, Any]:
+def sorted_dotplot(path: JobPath):
     """
     Get sorted dot plot to reference
     """
@@ -776,7 +776,7 @@ def sorted_dotplot(path: JobPath) -> dict[str, Any]:
 
 
 @api.get('/result/<job_id>/summary', responses={200: SummaryResponse})
-def get_summary(path: JobPath) -> dict[str, Any]:
+def get_summary(path: JobPath):
     """
     Get dot plot summary
     """
@@ -796,13 +796,105 @@ def get_summary(path: JobPath) -> dict[str, Any]:
     return {"code": 0, "message": s_status, "data": percents}
 
 
-@api.get('/result/<job_id>/fasta-query', responses={501: NotImplementedResponse})
-def get_fasta_query(path: JobPath) -> dict[str, Any]:
+@api.get('/sort/<job_id>',
+          responses={
+              200: BaseResponse,
+              404: NotFoundResponse,
+              500: BaseResponse
+          })
+def post_sort(path: JobPath):
+    """
+    Sort dot plot to reference
+    """
+    id_res = path.job_id
+    if not os.path.exists(os.path.join(APP_DATA, id_res, ".all-vs-all")):
+        paf_file = os.path.join(APP_DATA, id_res, "map.paf")
+        idx1 = os.path.join(APP_DATA, id_res, "query.idx")
+        idx2 = os.path.join(APP_DATA, id_res, "target.idx")
+        paf = Paf(paf_file, idx1, idx2, False)
+        paf.sort()
+        if paf.parsed:
+            return {"code": 0, "message": "ok"}, 200
+        return {"code": 500, "message": paf.error}, 500
+    return {"code": 404, "message": "Sort is not available for All-vs-All mode"}, 404
+
+
+@api.post('/reset-sort/<job_id>',
+          responses={
+              200: BaseResponse,
+              404: BaseResponse
+          })
+def post_reset_sort(path: JobPath):
+    """
+    Reset sort on dotplot
+    """
+    id_res = path.job_id
+    to_remove = [".sorted", "map.paf.sorted", "query.idx.sorted"]
+    try:
+        for f in to_remove:
+            if os.path.exists(os.path.join(APP_DATA, id_res, f)):
+                os.remove(os.path.join(APP_DATA, id_res, f))
+
+        paf = os.path.join(APP_DATA, id_res, "map.paf")
+        idx1 = os.path.join(APP_DATA, id_res, "query.idx")
+        idx2 = os.path.join(APP_DATA, id_res, "target.idx")
+
+        paf = Paf(paf, idx1, idx2)
+        # Force refresh the sorted query file.
+        Path(os.path.join(APP_DATA, id_res, ".new-reversals")).touch()
+
+        if paf.parsed:
+            return {"code": 0, "message": "ok"}, 200
+        return {"code": 404, "message": paf.error}, 404
+    except FileNotFoundError:
+        return {"code": 404, "message": f"Job doesn't exists"}, 404
+
+
+from pydantic import BaseModel
+
+class ReverseContigInput(BaseModel):
+    contig: str
+
+@api.post('/result/<job_id>/reverse-contig',
+          responses={
+              200: BaseResponse,
+              404: NotFoundResponse
+          })
+def post_reverse_contig(path: JobPath, body: ReverseContigInput):
+    """
+    Reverse contig order on query
+    """
+    id_res = path.job_id
+    contig_name = body.contig
+    try:
+        if not os.path.exists(os.path.join(APP_DATA, id_res, ".all-vs-all")):
+            paf_file = os.path.join(APP_DATA, id_res, "map.paf")
+            idx1 = os.path.join(APP_DATA, id_res, "query.idx")
+            idx2 = os.path.join(APP_DATA, id_res, "target.idx")
+            paf = Paf(paf_file, idx1, idx2, False)
+            Path(os.path.join(APP_DATA, id_res, ".new-reversals")).touch()
+            paf.reverse_contig(contig_name)
+            if paf.parsed:
+                # TODO: to apply on sorted dotplot only
+                return {"code": 0, "message": "ok"}
+            return {"code": 404, "message": paf.error}, 404
+        return {"code": 404, "message": "Sort is not available for All-vs-All mode"}, 404
+    except FileNotFoundError:
+        return {"code": 404, "message": f"Job doesn't exists"}, 404
+
+
+@api.post('/result/<job_id>/free-noise', responses={501: NotImplementedResponse})
+def post_free_noise(path: JobPath, body):
+    """
+    Remove noise from the dot plot
+    """
     return notImplementedResponse.model_dump(), 501
 
 
+# Associations between query and target
+
 @api.get('/result/<job_id>/qt-assoc', responses={200: QTAssocResponse})
-def get_qt_assoc(path: JobPath) -> dict[str, Any]:
+def get_qt_assoc(path: JobPath):
     """
     Get the query on target associations
     """
@@ -842,7 +934,7 @@ def get_qt_assoc(path: JobPath) -> dict[str, Any]:
               200: {"content": {"text/tsv": {"schema": {"type": "string"}}}}     ,
               404: NotFoundResponse
           })
-def get_dl_qt_assoc(path: JobPath) -> dict[str, Any]:
+def get_dl_qt_assoc(path: JobPath):
     """
     Get the query on target associations
     """
@@ -861,8 +953,12 @@ def get_dl_qt_assoc(path: JobPath) -> dict[str, Any]:
     return NotFoundResponse(code=404, message="Job doesn't exist").model_dump(), 404
 
 
-@api.post('/result/<job_id>/no-assoc', responses={200: NoAssocResponse})
-def post_no_assoc(path: JobPath, body: NoAssocInput) -> dict[str, Any]:
+@api.post('/result/<job_id>/no-assoc',
+          responses={
+              200: NoAssocResponse,
+              404: NotFoundResponse
+          })
+def post_no_assoc(path: JobPath, body: NoAssocInput):
     """
     Get the list of contigs or chromosomes from query (resp. target) that don't match the target (resp. query)
     """
@@ -875,18 +971,18 @@ def post_no_assoc(path: JobPath, body: NoAssocInput) -> dict[str, Any]:
         try:
             paf = Paf(paf_file, idx1, idx2, False)
         except FileNotFoundError:
-            return {"code": 404, "message": "Unable to load data!", "data": None}
+            return {"code": 404, "message": "Unable to load data!"}, 404
         contigs_list = paf.build_list_no_assoc(body.which)
-        return {"code": 0, "message": "OK", "data": NoAssoc(which=body.which, count=len(contigs_list), contigs=contigs_list).model_dump()}
-    return {"code": 404, "message": "Job doesn't exist", "data": None}
+        return {"code": 0, "message": "ok", "data": NoAssoc(which=body.which, count=len(contigs_list), contigs=contigs_list).model_dump()}, 200
+    return {"code": 404, "message": "Job doesn't exist"}, 404
 
 
 @api.post('/download/<job_id>/no-assoc',
           responses={
-              200: {"content": {"text/csv": {"schema": {"type": "string"}}}},
+              200: {"content": {"text/tsv": {"schema": {"type": "string"}}}},
               404: NotFoundResponse
           })
-def post_dl_no_assoc(path: JobPath, body: NoAssocInput) -> dict[str, Any]:
+def post_dl_no_assoc(path: JobPath, body: NoAssocInput):
     """
     Download as a text file the list of contigs or chromosomes from query (resp. target) that don't match the target (resp. query)
     """
@@ -905,55 +1001,90 @@ def post_dl_no_assoc(path: JobPath, body: NoAssocInput) -> dict[str, Any]:
     return NotFoundResponse(code=404, message="Job doesn't exist").model_dump(), 404
 
 
-@api.post('/build-query-as-reference/<job_id>', responses={501: NotImplementedResponse})
-def post_build_query_as_reference(path: JobPath) -> dict[str, Any]:
+
+@api.get('/result/<job_id>/build-fasta-query', responses={501: NotImplementedResponse})
+def get_fasta_query(path: JobPath):
+    """
+    Generate the fasta file of query
+    """
     return notImplementedResponse.model_dump(), 501
 
+@api.post('/build-query-as-reference/<job_id>', responses={501: NotImplementedResponse})
+def post_build_query_as_reference(path: JobPath, body):
+    """
+    Launch build fasta of query with contigs order like reference
+    """
+    return notImplementedResponse.model_dump(), 501
+
+@api.post('/get-query-as-reference/<job_id>', responses={501: NotImplementedResponse})
+def get_build_query_as_reference(path: JobPath, body):
+    """
+    Get fasta of query with contigs order like reference
+    """
+    return notImplementedResponse.model_dump(), 501
+
+# Download file contents
+
 @api.get('/download/<job_id>/file/<filename>', responses={501: NotImplementedResponse})
-def get_file(path: JobFilePath) -> dict[str, Any]:
+def get_file(path: JobFilePath):
     """
     Download a file produced by the job
     """
     return notImplementedResponse.model_dump(), 501
 
 @api.get('/download/<job_id>/paf', responses={501: NotImplementedResponse})
-def get_paf(path: JobPath) -> dict[str, Any]:
+def get_paf(path: JobPath):
     """
     Download the alignment file in paf format
     """
     return notImplementedResponse.model_dump(), 501
 
 @api.get('/download/<job_id>/backup', responses={501: NotImplementedResponse})
-def get_backup(path: JobPath) -> dict[str, Any]:
+def get_backup(path: JobPath):
     """
     Download the backup file in tar.gz format
     """
     return notImplementedResponse.model_dump(), 501
 
 @api.get('/download/<job_id>/logs', responses={501: NotImplementedResponse})
-def get_logs(path: JobPath) -> dict[str, Any]:
+def get_logs(path: JobPath):
     """
     Download the log file
     """
     return notImplementedResponse.model_dump(), 501
 
 @api.get('/download/<job_id>/query-as-reference', responses={501: NotImplementedResponse})
-def get_query_as_reference(path: JobPath) -> dict[str, Any]:
+def get_query_as_reference(path: JobPath):
+    """
+    Download the query fasta file
+    """
     return notImplementedResponse.model_dump(), 501
 
+@api.get('/download/<job_id>/fasta-query', responses={501: NotImplementedResponse})
+def get_dl_fasta_query(path: JobPath):
+    """
+    Download the query fasta file
+    """
+    return notImplementedResponse.model_dump(), 501
 
 @api.get('/download/<job_id>/filter-out/query', responses={501: NotImplementedResponse})
-def get_filter_out_target(path: JobPath) -> dict[str, Any]:
+def get_filter_out_target(path: JobPath):
+    """
+    Download query filtered fasta, when it has been filtered before job run
+    """
     return notImplementedResponse.model_dump(), 501
 
 @api.get('/download/<job_id>/filter-out/target', responses={501: NotImplementedResponse})
-def get_filter_out_query(path: JobPath) -> dict[str, Any]:
+def get_filter_out_query(path: JobPath):
+    """
+    Download target filtered fasta, when it has been filtered before job run
+    """
     return notImplementedResponse.model_dump(), 501
 
 @api.get('/download/<job_id>/viewer', responses={501: NotImplementedResponse})
-def get_viewer(path: JobPath) -> dict[str, Any]:
+def get_viewer(path: JobPath):
     """
-    Download the offline viewer
+    Get HTML file with offline interactive viewer inside
     """
     return notImplementedResponse.model_dump(), 501
 
@@ -962,7 +1093,7 @@ def get_viewer(path: JobPath) -> dict[str, Any]:
                 200: BaseResponse,
                 403: BaseResponse
             })
-def delete_job(path: JobPath) -> dict[str, Any]:
+def delete_job(path: JobPath):
     """
     Delete a job
     """
@@ -985,22 +1116,40 @@ def delete_job(path: JobPath) -> dict[str, Any]:
             "message": "Access denied"
         }, 403
 
+@api.get('/examples',responses={501: NotImplementedResponse})
+def get_examples():
+    """
+    List example files available on server
+    """
+    return notImplementedResponse.model_dump(), 501
 
 # Download example files
-@api.get('/example/query', responses={501: NotImplementedResponse})
-def get_example_query() -> dict[str, Any]:
+@api.get('/examples/query', responses={501: NotImplementedResponse})
+def get_example_query():
+    """
+    Download query batch file
+    """
     return notImplementedResponse.model_dump(), 501
 
-@api.get('/example/target', responses={501: NotImplementedResponse})
-def get_example_target() -> dict[str, Any]:
+@api.get('/examples/target', responses={501: NotImplementedResponse})
+def get_example_target():
+    """
+    Download target batch file
+    """
     return notImplementedResponse.model_dump(), 501
 
-@api.get('/example/backup', responses={501: NotImplementedResponse})
-def get_example_backup() -> dict[str, Any]:
+@api.get('/examples/backup', responses={501: NotImplementedResponse})
+def get_example_backup():
+    """
+    Download example backup file
+    """
     return notImplementedResponse.model_dump(), 501
 
-@api.get('/example/batch', responses={501: NotImplementedResponse})
-def get_example_batch() -> dict[str, Any]:
+@api.get('/examples/batch', responses={501: NotImplementedResponse})
+def get_example_batch():
+    """
+    Download example batch file
+    """
     return notImplementedResponse.model_dump(), 501
 
 
@@ -1010,7 +1159,7 @@ def get_example_batch() -> dict[str, Any]:
              200: GalleryResponse,
              501: NotImplementedResponse
          })
-def get_gallery() -> dict[str, Any]:
+def get_gallery():
     """
     Get gallery items
     """
@@ -1024,4 +1173,4 @@ def get_gallery() -> dict[str, Any]:
             "message": "ok",
             "data": items
         }
-    return NotImplementedResponse(message= "Not available in this instance").model_dump(), 501
+    return NotImplementedResponse(message="Not available in this instance").model_dump(), 501
