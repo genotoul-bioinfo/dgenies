@@ -144,19 +144,27 @@ def allow_upload(session_id: str) -> bool:
             session = db.Session.get(s_id=session_id)
             return session.ask_for_upload(True)
 
-@api.post('/ask-upload', responses={200: AskUploadResponse})
+@api.post('/ask-upload',
+          responses={
+              200: AskUploadResponse,
+              403: BaseResponse
+          })
 def ask_upload(body: AskUploadQuery):
     """
     Ask to upload files. A session must be asked before be allowed to use /upload route.
     You must ask regularly until allowed.
     """
     try:
-        return {"code": 0, "message": "ok", "data": {"allowed": allow_upload(body.session_id)}}
+        return {"code": 0, "message": "ok", "data": {"allowed": allow_upload(body.session_id)}}, 200
     except DoesNotExist:
-        return {"code": 1, "message": "Session not initialized. Please GET a session", "data": {"allowed": False}}
+        return {"code": 403, "message": "Session not initialized. Please GET a session"}, 403
 
 
-@api.post('/ping-upload', responses={200: BaseResponse})
+@api.post('/ping-upload',
+          responses={
+              200: BaseResponse,
+              404: NotFoundResponse
+          })
 def ping_upload(body: Session):
     """
     When upload waiting, ping to be kept in the waiting line
@@ -167,11 +175,11 @@ def ping_upload(body: Session):
                 session = db.Session.get(s_id=body.session_id)
                 session.ping()
         except DoesNotExist:
-            return {"code": 404, "message": "Session doesn't exist"}
+            return {"code": 404, "message": "Session doesn't exist"}, 404
         except Exception:
             logger.error(traceback.format_exc())
-            return {"code": 500, "message": "Internal error"}
-    return {"code": 0, "message": "ok"}
+            return {"code": 500, "message": "Internal error"}, 500
+    return {"code": 0, "message": "ok"}, 200
 
 
 def _fix_job_type(job_type: str) -> str:
@@ -240,7 +248,14 @@ def allowed_file_ext(filename: str, job_type: str, file_role: str) -> bool:
     return any((filename.endswith(f'.{ext}') for ext in extensions))
 
 
-@api.post('/upload', responses={200: UploadResponse})
+@api.post('/upload',
+          responses={
+              200: UploadResponse,
+              403: UploadResponse,
+              404: UploadResponse,
+              413: UploadResponse,
+              415: UploadResponse
+          })
 def upload_file(form: UploadFileForm):
     """
     Do upload of a file
@@ -268,12 +283,12 @@ def upload_file(form: UploadFileForm):
             # Check if file already exists
             if filename not in needed_files:
                 return {
-                    "code": 422, "message": "Unneeded file or already uploaded file", "data": {
+                    "code": 403, "message": "Unneeded file or already uploaded file", "data": {
                         "filename": filename,
                         "job_id": None,
                         "needed_files": [f for f in needed_files]
                     }
-                }
+                }, 403
 
             # Get roles for the uploaded file
             roles = set()
@@ -291,7 +306,7 @@ def upload_file(form: UploadFileForm):
                 logger.info(f"Session {form.session_id}: Filetype not allowed for '{filename}': {', '.join(['(' + jt + ', ' + r + ')' for jt, _, r in roles])}")
                 #UploadFile(name=filename, type_f=mime_type, size=0, not_allowed_msg="File type not allowed")
                 #shutil.rmtree(upload_folder)
-                return {"code": 415, "message": "File type not allowed", "data": {"files": []}}
+                return {"code": 415, "message": "File type not allowed", "data": {"files": [f for f in needed_files]}}, 415
 
             else:
                 # Save file to disk
@@ -307,13 +322,13 @@ def upload_file(form: UploadFileForm):
                 if compressed and not Functions.is_gz_file(uploaded_file_path):
                     # Check file is correctly gzipped
                     #raise DGeniesNotGzipFileError(filename)
-                    return {"code": 415, "message": "Not a gzip file", "data": {"files": []}}
+                    return {"code": 415, "message": "Not a gzip file", "data": {"files": [f for f in needed_files]}}, 415
 
                 min_allowed_size = min((get_max_file_size(j, r) for j, fn, r in roles))
                 if size > min_allowed_size:
                     #raise DGeniesUploadedFileSizeLimitError(filename, Functions.get_readable_size(size, base="MiB"),
                     #                                        unit="Mb", compressed=compressed)
-                    return {"code": 410, "message": "File too large", "data": {"files": []}}
+                    return {"code": 413, "message": "File too large", "data": {"files": [f for f in needed_files]}}, 413
 
                 # return json for js call back
                 result = UploadFile(name=filename, type_f=mime_type, size=size)
@@ -327,7 +342,7 @@ def upload_file(form: UploadFileForm):
                             "job_ids": None,
                             "file": result.get_file()
                         }
-                    }
+                    }, 200
                 else:
                     # Create & Launch jobs
                     job_manager = launch_batch(form.session_id, batch.batch_id, batch.email, batch.nb_jobs, batch.jobs)
@@ -341,17 +356,13 @@ def upload_file(form: UploadFileForm):
                             "needed_files": [],
                             "file": result.get_file()
                         }
-                    }
+                    }, 200
 
-        return {"code": 404, "message": "No file provided", "data": {"files": [] }}
-
-    except RequestEntityTooLarge:
-        return {"code": 410, "message": "Upload file too large", "data": {"files": []}}
+        return {"code": 404, "message": "No file provided", "data": {"files": [] }}, 404
 
     except:  # Except all possible exceptions to prevent crashes
         traceback.print_exc()
-        return {"code": 500, "message": "An unexpected error has occurred on upload. Please contact the support.",
-                "data": {"files": [] }}
+        return {"code": 500, "message": "An unexpected error has occurred on upload. Please contact the support."}, 500
 
 
 def valid_email(email: str|None):
@@ -500,7 +511,13 @@ def get_file_role(job: Job, file_types: list[str] = ['local', 'url']) -> Iterato
             yield getattr(job, role), role
 
 
-@api.post('/job', responses={200: BatchSubmissionResponse})
+@api.post('/job',
+          responses={
+              200: BatchSubmissionResponse,
+              400: BaseResponse,
+              404: NotFoundResponse,
+              500: BaseResponse
+          })
 def post_jobs(body: BatchSubmissionQuery):
     """
     Launch the job
@@ -539,7 +556,7 @@ def post_jobs(body: BatchSubmissionQuery):
                     "session_id": session_id,
                     "needed_files": needed_files,
                     "allowed_upload": allow_upload(session_id)
-                }}
+                }}, 200
             else:
                 delete_session(session_id)
                 # Create & Launch jobs
@@ -552,17 +569,17 @@ def post_jobs(body: BatchSubmissionQuery):
                     "session_id": None,
                     "needed_files": [],
                     "allowed_upload": False
-                }}
+                }}, 200
 
         except DGeniesExampleInvalid as e:
-            return {"code": 404, "message": e.message}
+            return {"code": 404, "message": e.message}, 404
 
         except Exception:
             traceback.print_exc()
-            return {"code": 500, "message": "Something went wrong during job creation!"}
+            return {"code": 500, "message": "Something went wrong during job creation!"}, 500
 
     else:
-        return {"code": 406, "message": f"Incorrect form: {message}"}
+        return {"code": 400, "message": f"Incorrect form: {message}"}, 400
 
 def get_tools_options(tool_name: str, chosen_options: list[str]) -> list[str]:
     """
@@ -721,7 +738,12 @@ def create_job_status(answer: dict[str, Any]) -> JobStatus:
     return res
 
 
-@api.get('/status/<job_id>', responses={200: JobStatusResponse})
+@api.get('/status/<job_id>',
+         responses={
+             200: JobStatusResponse,
+             404: NotFoundResponse,
+             500: BaseResponse
+         })
 def get_status(path: JobPath):
     """
     Get status for a job id
@@ -730,13 +752,18 @@ def get_status(path: JobPath):
     answer = Functions().get_status(job)
     try:
         if answer["status"] == "unknown":
-            return {"code": 404, "message": "Job does not exists", "data": None}
+            return {"code": 404, "message": "Job does not exists"}, 404
         return {"code": 0, "message": "ok", "data" : create_job_status(answer).model_dump()}
     except KeyError:
-        return {"code": 500, "message": "Unknown error, please contact support", "data": None}
+        return {"code": 500, "message": "Unknown error, please contact support"}, 500
 
 
-@api.get('/result/<job_id>/dotplot', responses={200: DotplotResponse})
+@api.get('/result/<job_id>/dotplot',
+         responses={
+             200: DotplotResponse,
+             404: NotFoundResponse,
+             500: BaseResponse,
+         })
 def get_dotplot(path: JobPath):
     """
     Get dotplot data for a job id
@@ -745,37 +772,53 @@ def get_dotplot(path: JobPath):
     paf = os.path.join(APP_DATA, id_f, "map.paf")
     idx1 = os.path.join(APP_DATA, id_f, "query.idx")
     idx2 = os.path.join(APP_DATA, id_f, "target.idx")
+    try:
+        paf = Paf(paf, idx1, idx2)
+        if paf.parsed:
+            valid = os.path.join(APP_DATA, id_f, ".valid")
+            if not os.path.exists(valid):
+                Path(valid).touch()
+            return {"code": 0, "message": "ok", "data" : paf.get_dotplot_data(sorted=False)}
+        return {"code": 500, "message": paf.error}
+    except FileNotFoundError:
+        return {"code": 404, "message": "Job not found"}, 404
 
-    paf = Paf(paf, idx1, idx2)
-
-    if paf.parsed:
-        valid = os.path.join(APP_DATA, id_f, ".valid")
-        if not os.path.exists(valid):
-            Path(valid).touch()
-        return {"code": 0, "message": "ok", "data" : paf.get_dotplot_data(sorted=False)}
-    return {"code": 500, "message": paf.error, "data" : None}
-
-
-@api.get('/result/<job_id>/sorted-dotplot', responses={200: DotplotResponse})
+@api.get('/result/<job_id>/sorted-dotplot',
+         responses={
+             200: DotplotResponse,
+             403: BaseResponse,
+             404: NotFoundResponse,
+             500: BaseResponse,
+         })
 def sorted_dotplot(path: JobPath):
     """
     Get sorted dot plot to reference
     """
     id_res = path.job_id
-    if not os.path.exists(os.path.join(APP_DATA, id_res, ".all-vs-all")):
-        paf_file = os.path.join(APP_DATA, id_res, "map.paf")
-        idx1 = os.path.join(APP_DATA, id_res, "query.idx")
-        idx2 = os.path.join(APP_DATA, id_res, "target.idx")
-        paf = Paf(paf_file, idx1, idx2, False)
-        paf.sort()
-        # TODO: maybe clean this part
-        if paf.parsed:
-            return {"code": 0, "message": "ok", "data": paf.get_dotplot_data(sorted=True)}
-        return {"code": 500, "message": paf.error, "data": None}
-    return {"code": 405, "message": "Sort is not available for All-vs-All mode", "data": None}
+    try:
+        if not os.path.exists(os.path.join(APP_DATA, id_res)):
+            if not os.path.exists(os.path.join(APP_DATA, id_res, ".all-vs-all")):
+                paf_file = os.path.join(APP_DATA, id_res, "map.paf")
+                idx1 = os.path.join(APP_DATA, id_res, "query.idx")
+                idx2 = os.path.join(APP_DATA, id_res, "target.idx")
+                paf = Paf(paf_file, idx1, idx2, False)
+                paf.sort()
+                # TODO: maybe clean this part
+                if paf.parsed:
+                    return {"code": 0, "message": "ok", "data": paf.get_dotplot_data(sorted=True)}, 200
+                return {"code": 500, "message": paf.error}, 500
+            return {"code": 403, "message": "Sort is not available for Self Align mode"}, 403
+        return {"code": 404, "message": "Job not found"}, 404
+    except FileNotFoundError:
+        return {"code": 500, "message": "Server error"}, 500
 
 
-@api.get('/result/<job_id>/summary', responses={200: SummaryResponse})
+@api.get('/result/<job_id>/summary',
+         responses={
+             200: SummaryResponse,
+             404: NotFoundResponse,
+             500: BaseResponse
+         })
 def get_summary(path: JobPath):
     """
     Get dot plot summary
@@ -784,16 +827,16 @@ def get_summary(path: JobPath):
     if s_status == "file_not_found":
         return {
             "code": 404, "message": "Unable to load data!", "data": {}
-        }
+        }, 404
     if s_status == "job_not_found":
         return {
             "code": 404, "message": "Job does not exists!", "data": {}
-        }
+        }, 404
     if s_status == "fail":
         return {
-            "code": 500, "message": "Build of summary failed. Please contact us to report the bug", "data": None
-        }
-    return {"code": 0, "message": s_status, "data": percents}
+            "code": 500, "message": "Build of summary failed. Please contact us to report the bug"
+        }, 500
+    return {"code": 0, "message": s_status, "data": percents}, 200
 
 
 @api.get('/sort/<job_id>',
@@ -893,7 +936,11 @@ def post_free_noise(path: JobPath, body):
 
 # Associations between query and target
 
-@api.get('/result/<job_id>/qt-assoc', responses={200: QTAssocResponse})
+@api.get('/result/<job_id>/qt-assoc',
+         responses={
+            200: QTAssocResponse,
+            404: NotFoundResponse
+        })
 def get_qt_assoc(path: JobPath):
     """
     Get the query on target associations
@@ -908,7 +955,7 @@ def get_qt_assoc(path: JobPath):
             paf = Paf(paf_file, idx1, idx2, False)
             paf.parse_paf(False)
         except FileNotFoundError:
-            return {"code": 404, "message": "Unable to load data!", "data": None}
+            return {"code": 404, "message": "Unable to load data!"}, 404
         records = [QTAssocRecord(
             query= row[0],
             target= row[1],
@@ -926,7 +973,7 @@ def get_qt_assoc(path: JobPath):
                 records=records,
                 count=len(records)
             ).model_dump()}
-    return {"code": 404, "message": "Job doesn't exist", "data": None}
+    return {"code": 404, "message": "Job doesn't exist"}, 404
 
 
 @api.get('/download/<job_id>/qt-assoc',
@@ -1173,4 +1220,4 @@ def get_gallery():
             "message": "ok",
             "data": items
         }
-    return NotImplementedResponse(message="Not available in this instance").model_dump(), 501
+    return NotImplementedResponse(code=501, message="Not available in this instance").model_dump(), 501
