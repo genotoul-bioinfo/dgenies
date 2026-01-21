@@ -624,7 +624,8 @@ def prepare_jobs(email: str, jobs: list[Job]) -> list[dict]:
             "align_type": job.align_type.value if job.align else None,
             "backup": job.backup if job.backup else None,
             "backup_type": job.backup_type.value if job.backup else None,
-            "options": " ".join(get_tools_options(job.tool.value, job.tool_options)) if job.tool_options else None
+            "options": " ".join(get_tools_options(job.tool.value, job.tool_option)) if job.tool_option else None
+
         })
     return result
 
