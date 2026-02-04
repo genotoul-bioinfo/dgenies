@@ -26,6 +26,19 @@ runned = False
 config = AppConfigReader()
 
 
+def _ensure_database_initialized():
+    """
+    Ensure Peewee database proxy is initialized before any DB access.
+    """
+    import dgenies.database as database
+    proxy = getattr(database, "database_proxy", None)
+    if proxy is None:
+        return
+    if getattr(proxy, "obj", None) is None:
+        print(f"Using database: {config.database_type}://{config.database_url}:{config.database_port}")
+        database.initialize()
+
+
 def parse_args():
     """
     Parse arguments given from the user
@@ -124,9 +137,7 @@ def parse_args():
     if 'config' in args and args.config:
         config.reset_config(args.config)
     if 'mode' in args and args.mode == "webserver" or args.subparser_name == "gallery":
-        import dgenies.database as database
-        print(f"Using database: {config.database_type}://{config.database_url}:{config.database_port}")
-        database.initialize()
+        _ensure_database_initialized()
 
     if args.subparser_name == "run":
         return "run", [args.mode, args.debug, args.host, args.port, args.no_crons, args.no_browser,
@@ -271,6 +282,7 @@ def clear_jobs(max_data_age=7, web=False):
     print("")
 
     if web:
+        _ensure_database_initialized()
         print("######################")
         print("# Parsing Jobs in DB #")
         print("######################")
@@ -301,6 +313,7 @@ def clear_analytics(max_data_age=390):
     Clear analytics
     :param max_data_age: max age for jobs before removing them
     """
+    _ensure_database_initialized()
     from dgenies.database import Analytics, Job
     items = Analytics.select().where(Analytics.date_created <= datetime.date.today() - datetime.timedelta(days=max_data_age))
     for item in items:
@@ -323,11 +336,43 @@ def add_to_gallery(id_job, name, picture, query, target):
     :param target: target name
     :type target: str
     """
+    _ensure_database_initialized()
     from dgenies.database import Gallery, Job
     from peewee import DoesNotExist
+    job_dir = os.path.join(config.app_data, id_job)
     try:
         with Job.connect():
-            job = Job.get(Job.id_job==id_job)
+            try:
+                job = Job.get(Job.id_job == id_job)
+            except DoesNotExist:
+                if os.path.isdir(job_dir):
+                    status = "success"
+                    error = ""
+                    status_file = os.path.join(job_dir, ".status")
+                    if os.path.exists(status_file):
+                        with open(status_file, "r") as status_h:
+                            status_raw = status_h.read().strip()
+                            if status_raw:
+                                parts = status_raw.split("|", 1)
+                                status = parts[0] or status
+                                if len(parts) > 1:
+                                    error = parts[1]
+                    created_at = datetime.datetime.fromtimestamp(os.path.getctime(job_dir))
+                    job = Job.create(
+                        id_job=id_job,
+                        email="",
+                        runner_type=config.runner_type,
+                        status=status,
+                        date_created=created_at,
+                        error=error,
+                        mem_peak=0,
+                        time_elapsed=0,
+                        tool=None,
+                        options=None
+                    )
+                    job.save()
+                else:
+                    raise
     except DoesNotExist:
         print("Error: job \"%s\" does not exists!" % id_job)
         exit(1)
@@ -348,6 +393,7 @@ def del_from_gallery_by_id(id_job):
     :return: list of pictures files to delete
     :rtype: list
     """
+    _ensure_database_initialized()
     from dgenies.database import Gallery, Job
     items = Gallery.select().join(Job).where(Job.id_job == id_job)
     list_pictures = []
@@ -365,6 +411,7 @@ def del_from_gallery_by_name(name):
     :return: list of pictures files to delete
     :rtype: list
     """
+    _ensure_database_initialized()
     from dgenies.database import Gallery
     items = Gallery.select().where(Gallery.name == name)
     list_pictures = []
