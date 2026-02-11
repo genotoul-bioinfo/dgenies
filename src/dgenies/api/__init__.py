@@ -738,6 +738,17 @@ def create_job_status(answer: dict[str, Any]) -> JobStatus:
     return res
 
 
+def has_sorted_output(job_id: str) -> bool:
+    """
+    Check that sorted output files are present for a job.
+    """
+    job_dir = os.path.join(APP_DATA, job_id)
+    return all(
+        os.path.exists(os.path.join(job_dir, f))
+        for f in [".sorted", "map.paf.sorted", "query.idx.sorted"]
+    )
+
+
 @api.get('/status/<job_id>',
          responses={
              200: JobStatusResponse,
@@ -795,20 +806,21 @@ def sorted_dotplot(path: JobPath):
     Get sorted dot plot to reference
     """
     id_res = path.job_id
+    job_dir = os.path.join(APP_DATA, id_res)
     try:
-        if not os.path.exists(os.path.join(APP_DATA, id_res)):
-            if not os.path.exists(os.path.join(APP_DATA, id_res, ".all-vs-all")):
-                paf_file = os.path.join(APP_DATA, id_res, "map.paf")
-                idx1 = os.path.join(APP_DATA, id_res, "query.idx")
-                idx2 = os.path.join(APP_DATA, id_res, "target.idx")
-                paf = Paf(paf_file, idx1, idx2, False)
-                paf.sort()
-                # TODO: maybe clean this part
-                if paf.parsed:
-                    return {"code": 0, "message": "ok", "data": paf.get_dotplot_data(sorted=True)}, 200
-                return {"code": 500, "message": paf.error}, 500
+        if not os.path.exists(job_dir):
+            return {"code": 404, "message": "Job not found"}, 404
+        if os.path.exists(os.path.join(job_dir, ".all-vs-all")):
             return {"code": 403, "message": "Sort is not available for Self Align mode"}, 403
-        return {"code": 404, "message": "Job not found"}, 404
+        paf_file = os.path.join(job_dir, "map.paf")
+        idx1 = os.path.join(job_dir, "query.idx")
+        idx2 = os.path.join(job_dir, "target.idx")
+        paf = Paf(paf_file, idx1, idx2, False)
+        paf.sort()
+        # TODO: maybe clean this part
+        if paf.parsed:
+            return {"code": 0, "message": "ok", "data": paf.get_dotplot_data(sorted=True)}, 200
+        return {"code": 500, "message": paf.error}, 500
     except FileNotFoundError:
         return {"code": 500, "message": "Server error"}, 500
 
@@ -850,16 +862,28 @@ def post_sort(path: JobPath):
     Sort dot plot to reference
     """
     id_res = path.job_id
-    if not os.path.exists(os.path.join(APP_DATA, id_res, ".all-vs-all")):
-        paf_file = os.path.join(APP_DATA, id_res, "map.paf")
-        idx1 = os.path.join(APP_DATA, id_res, "query.idx")
-        idx2 = os.path.join(APP_DATA, id_res, "target.idx")
-        paf = Paf(paf_file, idx1, idx2, False)
-        paf.sort()
-        if paf.parsed:
-            return {"code": 0, "message": "ok"}, 200
-        return {"code": 500, "message": paf.error}, 500
-    return {"code": 404, "message": "Sort is not available for All-vs-All mode"}, 404
+    job_dir = os.path.join(APP_DATA, id_res)
+
+    if os.path.exists(os.path.join(job_dir, ".all-vs-all")):
+        return {"code": 404, "message": "Sort is not available for All-vs-All mode"}, 404
+
+    if has_sorted_output(id_res):
+        return {"code": 0, "message": "ok"}, 200
+
+    sorted_marker = os.path.join(job_dir, ".sorted")
+    if os.path.exists(sorted_marker):
+        os.remove(sorted_marker)
+
+    paf_file = os.path.join(job_dir, "map.paf")
+    idx1 = os.path.join(job_dir, "query.idx")
+    idx2 = os.path.join(job_dir, "target.idx")
+    paf = Paf(paf_file, idx1, idx2, False)
+    paf.sort()
+    if paf.parsed and has_sorted_output(id_res):
+        return {"code": 0, "message": "ok"}, 200
+    if not paf.error:
+        return {"code": 500, "message": "Sort output was not produced"}, 500
+    return {"code": 500, "message": paf.error}, 500
 
 
 @api.post('/reset-sort/<job_id>',
