@@ -870,10 +870,6 @@ def post_sort(path: JobPath):
     if has_sorted_output(id_res):
         return {"code": 0, "message": "ok"}, 200
 
-    sorted_marker = os.path.join(job_dir, ".sorted")
-    if os.path.exists(sorted_marker):
-        os.remove(sorted_marker)
-
     paf_file = os.path.join(job_dir, "map.paf")
     idx1 = os.path.join(job_dir, "query.idx")
     idx2 = os.path.join(job_dir, "target.idx")
@@ -1198,14 +1194,14 @@ def get_examples():
 @api.get('/examples/query', responses={501: NotImplementedResponse})
 def get_example_query():
     """
-    Download query batch file
+    Download query file
     """
     return notImplementedResponse.model_dump(), 501
 
 @api.get('/examples/target', responses={501: NotImplementedResponse})
 def get_example_target():
     """
-    Download target batch file
+    Download target file
     """
     return notImplementedResponse.model_dump(), 501
 
