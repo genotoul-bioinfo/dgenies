@@ -4,6 +4,7 @@ import json
 import os
 import re
 import traceback
+from http import HTTPStatus
 from pathlib import Path
 from typing import (
     Any,
@@ -12,7 +13,7 @@ from typing import (
 
 import itertools as it
 
-from flask import current_app
+from flask import current_app, make_response
 from flask_openapi3 import APIBlueprint
 from werkzeug.exceptions import RequestEntityTooLarge
 
@@ -62,13 +63,18 @@ from .datamodels import (
     QTAssocResponse,
     NoAssoc,
     NoAssocInput,
-    NoAssocResponse
+    NoAssocResponse,
+    ExampleFilesResponse,
+    PrepareFasta,
+    PrepareFastaInput,
+    PrepareFastaEnum,
+    PrepareFastaResponse
 )
 from .job_descriptions import job_descriptions
 from ..lib.upload_file import UploadFile
 from ..tools import Tools
 
-from ..views import check_file_type_and_resolv_options, update_files, compute_summary
+from ..views import update_files, compute_summary, build_fasta
 
 if MODE == "webserver":
     import dgenies.database as db
@@ -1068,23 +1074,110 @@ def post_dl_no_assoc(path: JobPath, body: NoAssocInput):
     return NotFoundResponse(code=404, message="Job doesn't exist").model_dump(), 404
 
 
+@api.post('/result/<job_id>/prepare-fasta-query',
+          responses={
+              200: PrepareFastaResponse,
+              404: NotFoundResponse
+          })
+def prepare_fasta_query(path: JobPath, body: PrepareFastaInput):
+    """
+    Prepare the query fasta file for download with /result/<job_id>/get-fasta-query route.
+    Depend on the sorted state of the dotplot.
+    """
+    try:
+        status, is_compressed = build_fasta(path.job_id, body.gzip)
+        if status == 1:
+            return {
+                "code": 0, "message": "ok",
+                "data": PrepareFasta(status=PrepareFastaEnum.in_progress, gzip=None).model_dump()
+            }, 200
+        elif status == 2:
+            return {
+                "code": 0, "message": "ok",
+                "data": PrepareFasta(status=PrepareFastaEnum.done, gzip=is_compressed).model_dump()
+            }, 200
+    except DGeniesMissingJobError:
+        return NotFoundResponse(code=1, message="Job doesn't exist").model_dump(), 404
+    except FileNotFoundError:
+        return NotFoundResponse(code=2, message="Query fasta file not available").model_dump(), 404
+    except Exception as e:
+        print(e)
+        pass
+    return {"code": 500, "message": "Internal error, please contact support"}, 500
 
-@api.get('/result/<job_id>/build-fasta-query', responses={501: NotImplementedResponse})
+@api.get('/result/<job_id>/get-fasta-query',
+          responses={
+              200: {"content": {
+                  "text/plain": {"schema": {"type": "string"}},
+                  "application/gzip": {"schema": {"type": "string", "format": "binary"}}
+              }},
+              404: NotFoundResponse
+          })
 def get_fasta_query(path: JobPath):
     """
-    Generate the fasta file of query
+    Get the fasta file of query
     """
-    return notImplementedResponse.model_dump(), 501
+    res_dir = os.path.join(APP_DATA, path.job_id)
+    lock_query = os.path.join(res_dir, ".query-fasta-build")
 
-@api.post('/build-query-as-reference/<job_id>', responses={501: NotImplementedResponse})
-def post_build_query_as_reference(path: JobPath, body):
+    if os.path.exists(lock_query):
+        return {"code": 404, "message": "Query fasta file is building, try latter"}, 404
+    query_fasta = Functions.get_fasta_file(res_dir, "query", is_sorted=False)
+    if query_fasta is None:
+        return {"code": 404, "message": "Query fasta file not available"}, 404
+
+    try:
+        is_gzip = query_fasta.endswith(".gz")
+        content = open(query_fasta, "rb" if is_gzip else "r").read()
+    except FileNotFoundError:
+        # Not fasta file was uploaded (plot)
+        return {"code": 404, "message": "Query fasta file not available"}, 404
+    except IOError as e:
+        print(e.__traceback__)
+        return {"code": 500, "message": "Internal server error, please contact support"}, 500
+
+    response = make_response(content, HTTPStatus.OK)
+    response.mimetype = "application/gzip" if is_gzip else "text/plain"
+    return response
+
+
+def build_query_as_reference(id_res):
+    """
+    Build fasta of query with contigs order like reference
+
+    :param id_res: job id
+    :type id_res: str
+    """
+    import threading
+    paf_file = os.path.join(APP_DATA, id_res, "map.paf")
+    idx1 = os.path.join(APP_DATA, id_res, "query.idx")
+    idx2 = os.path.join(APP_DATA, id_res, "target.idx")
+    paf = Paf(paf_file, idx1, idx2, False, mailer=mailer, id_job=id_res)
+    paf.parse_paf(False, True)
+    if MODE == "webserver":
+        thread = threading.Timer(0, paf.build_query_chr_as_reference, kwargs={"compress": True})
+        thread.start()
+        return True
+    return paf.build_query_chr_as_reference(compress=False)
+
+@api.post('/build-query-as-reference/<job_id>',
+          responses={
+              200: BaseResponse,
+              404: NotFoundResponse
+          })
+def post_build_query_as_reference(path: JobPath):
     """
     Launch build fasta of query with contigs order like reference
     """
-    return notImplementedResponse.model_dump(), 501
+    id_res = path.job_id
+    res_dir = os.path.join(APP_DATA, id_res)
+    if os.path.exists(res_dir) and os.path.isdir(res_dir):
+        build_query_as_reference(id_res)
+        return {"code": 0, "message": "ok"}
+    return NotFoundResponse(code=404, message="Job doesn't exist").model_dump(), 404
 
 @api.post('/get-query-as-reference/<job_id>', responses={501: NotImplementedResponse})
-def get_build_query_as_reference(path: JobPath, body):
+def get_build_query_as_reference(path: JobPath):
     """
     Get fasta of query with contigs order like reference
     """
@@ -1183,48 +1276,34 @@ def delete_job(path: JobPath):
             "message": "Access denied"
         }, 403
 
-@api.get('/examples',responses={501: NotImplementedResponse})
-def get_examples():
+@api.get('/example/jobs',responses={501: NotImplementedResponse})
+def get_example_jobs():
     """
-    List example files available on server
-    """
-    return notImplementedResponse.model_dump(), 501
-
-# Download example files
-@api.get('/examples/query', responses={501: NotImplementedResponse})
-def get_example_query():
-    """
-    Download query file
+    Get example jobs
     """
     return notImplementedResponse.model_dump(), 501
 
-@api.get('/examples/target', responses={501: NotImplementedResponse})
-def get_example_target():
+@api.get('/example/files',responses={200: ExampleFilesResponse})
+def get_example_files():
     """
-    Download target file
+    Get example files uri
     """
-    return notImplementedResponse.model_dump(), 501
-
-@api.get('/examples/backup', responses={501: NotImplementedResponse})
-def get_example_backup():
-    """
-    Download example backup file
-    """
-    return notImplementedResponse.model_dump(), 501
-
-@api.get('/examples/batch', responses={501: NotImplementedResponse})
-def get_example_batch():
-    """
-    Download example batch file
-    """
-    return notImplementedResponse.model_dump(), 501
-
+    example_files = []
+    for f in ["backup", "query", "target"]:
+        example_file = getattr(config_reader, f"example_{f}")
+        if example_file:
+            example_files.append(f"example://{os.path.basename(example_file)}")
+    return {
+        "code": 0,
+        "message": "ok",
+        "data": example_files
+    }, 200
 
 # Gallery
 @api.get('/gallery',
          responses={
              200: GalleryResponse,
-             501: NotImplementedResponse
+             404: NotFoundResponse
          })
 def get_gallery():
     """
@@ -1240,4 +1319,4 @@ def get_gallery():
             "message": "ok",
             "data": items
         }
-    return NotImplementedResponse(code=501, message="Not available in this instance").model_dump(), 501
+    return NotFoundResponse(code=404, message="Not available in this instance").model_dump(), 404

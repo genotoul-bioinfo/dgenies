@@ -140,7 +140,7 @@ class Paf:
     @staticmethod
     def remove_noise(lines, noise_limit):
         """
-        Remove noise from the dot plot
+        Remove noise from the dot plot, every line with len<noise_limit is removed
 
         :param lines: lines of the dot plot, by class
         :type lines: dict
@@ -264,11 +264,14 @@ class Paf:
             return False
 
         if not noise and nb_lines > 1000:
-            counts, bins, bars = plt.hist(lines_lens, bins=nb_lines//10)
+            counts, bins, bars = plt.hist(lines_lens, bins=nb_lines//10)  # bins: borders of bins used as input (n+1 bins)
             counts = list(counts)
             max_value = max(counts)
-            max_index = counts.index(max_value)
+            max_index = counts.index(max_value)  # group with most sequences
             limit_index = -1
+            # For bins with lines that are longer than the bin with most lines,
+            # We get the first one (in ascending length order) that is lesser than 2% of the max count of lines
+            # and we remove all lines under this bin size limit (exluded)
             for i in range(max_index, len(counts)):
                 if counts[i] < max_value / 50:
                     limit_index = i

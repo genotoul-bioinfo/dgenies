@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import io
 import json
 import logging
 import os.path
@@ -9,13 +10,16 @@ import string
 import random
 import re
 from abc import ABC, abstractmethod
+from datetime import datetime
 from threading import Timer
 from time import sleep
 from types import SimpleNamespace
+from typing import Any
 
 from lark import Lark, Token, Transformer, Tree
 import requests
 from requests.exceptions import ConnectionError
+from xopen import xopen
 
 BASE_URL = "http://127.0.0.1:5000"
 ENDPOINT= f"{BASE_URL}/api/v1"
@@ -475,6 +479,80 @@ def get_gallery():
         elem["picture"] = f'{BASE_URL}/gallery/{elem["picture"]}'
     return res["data"]
 
+def get_assoc(job_id: str, tsv: bool) -> dict[str, Any]|str:
+    r = requests.get(f'{ENDPOINT}/{"download" if tsv else "result"}/{job_id}/qt-assoc')
+    logger.debug(f"GET {r.url}")
+    if r.status_code != 200:
+        logger.error(f"Error when asking for query fasta file {r.url}")
+        logger.error(json.dumps(r.json(), indent=4))
+        exit(1)
+    if tsv:
+        return r.text
+    res = r.json()
+    return res["data"]
+
+
+def post_no_assoc(job_id: str, which: str, tsv: bool) -> dict[str, Any]|str:
+    r = requests.post(f'{ENDPOINT}/{"download" if tsv else "result"}/{job_id}/no-assoc', json={"which": which})
+    logger.debug(f"POST {r.url} with {{which: {which}}}")
+    if r.status_code != 200:
+        logger.error(f"Error when asking for query fasta file {r.url}")
+        logger.error(json.dumps(r.json(), indent=4))
+        exit(1)
+    if tsv:
+        return r.text
+    res = r.json()
+    return res["data"]
+
+def prepare_query_fasta(job_id: str, gzip: bool) -> dict[str, Any]:
+    r = requests.post(f'{ENDPOINT}/result/{job_id}/prepare-fasta-query', json={"gzip": gzip})
+    logger.debug(f"POST {r.url} with {{gzip: {gzip}}}")
+    if r.status_code != 200:
+        logger.error(f"Error when asking for query fasta file {r.url}")
+        logger.error(json.dumps(r.json(), indent=4))
+        exit(1)
+    res = r.json()
+    return res["data"]
+
+def get_query_fasta(job_id: str, gzip: bool, outpath: str, timeout: int = 180):
+    state = prepare_query_fasta(job_id, gzip)
+    now = datetime.now()
+    start_date = now
+    while state["status"] == "In progress" and (now - start_date) < timeout:
+        sleep(15)
+        state = prepare_query_fasta(job_id, gzip)
+        now = datetime.now()
+    if state["status"] == "Done" :
+        # export file
+        r = requests.get(f'{ENDPOINT}/result/{job_id}/get-fasta-query')
+        if r.status_code != 200:
+            logger.error(f"Error when getting query fasta file {r.url}")
+            logger.error(json.dumps(r.json(), indent=4))
+            exit(1)
+        is_gzipped = r.headers['Content-Type'] == 'application/gzip'
+        if is_gzipped:
+            if gzip:
+                # Write gzip stream as it
+                with open(outpath, mode="wb") as outstream:
+                    outstream.write(r.content)
+            else:
+                # Uncompress from gzip
+                with xopen(io.BytesIO(r.content), mode="r") as instream, open(outpath, "w") as outstream:
+                    outstream.write(instream.read())
+        else:
+            if gzip:
+                # Must only append with standalone mode and uncompressed query files
+                with xopen(outpath, mode="wb", compresslevel=6, format="gz") as outstream:
+                    outstream.write(r.content)
+            else:
+                # No compression
+                with open(outpath, mode="w") as outstream:
+                    outstream.write(r.content)
+        return 'Export Done.'
+    else:
+        return f'Timeout reached, try later to get file (state: {state["status"]}.'
+
+
 def get_argparse() -> argparse.ArgumentParser :
 
     # TODO:
@@ -518,8 +596,22 @@ def get_argparse() -> argparse.ArgumentParser :
 
     parser_get = subparsers.add_parser('get', help='get help')
     parser_get.add_argument('job_id', type=str, help='Job id')
-    parser_get.add_argument('feature', type=str, help='Feature to get from api',
-                            choices=['dotplot', 'sorted-dotplot', 'summary', 'status'])
+
+    subparsers_get_feature = parser_get.add_subparsers(help='Feature to get from api', dest='feature')
+    subparsers_get_feature.add_parser('status', help='Get job status')
+    parser_get_dotplot = subparsers_get_feature.add_parser('dotplot', help='Get dotplot help')
+    parser_get_dotplot.add_argument('--sorted',  action='store_true', help='Get sorted dotplot', default = False)
+    subparsers_get_feature.add_parser('summary', help='Get dotplot summary')
+    parser_get_assoc = subparsers_get_feature.add_parser('association', help='Get association between target and query')
+    parser_get_assoc.add_argument('--tsv', action='store_true', help='Get data in tsv format instead of json', default = False)
+    parser_get_no_assoc = subparsers_get_feature.add_parser('no-assoc', help='Get contigs from query or target with no association')
+    parser_get_no_assoc.add_argument('which', choices=['query', 'target'], help='Which kind of sequence')
+    parser_get_no_assoc.add_argument('--tsv', action='store_true', help='Get data in tsv format instead of json', default = False)
+    parser_get_query_fasta = subparsers_get_feature.add_parser('query-fasta', help='Get query fasta summary')
+    parser_get_query_fasta.add_argument('output', type=str, help='Output file')
+    parser_get_query_fasta.add_argument('--uncompressed', action='store_true', help='Get uncompressed file',
+                                        default=False)
+    subparsers_get_feature.add_parser('query-as-reference', help='Get query as reference')
 
     parser_get = subparsers.add_parser('delete', help='delete help')
     parser_get.add_argument('job_id', type=str, help='Job id')
@@ -574,8 +666,19 @@ def main():
                 print(f'job {sub_job} failed at step {res.get("status", "unknown")}'
                       f' with error "{res.get("error", "No error provided")}"')
     elif args.command == "get":
-        if args.feature == 'status':
+        if args.feature is None:
+            print(parser.parse_args(['get', '--help']))
+            exit(0)
+        elif args.feature == 'status':
             res = get_status(args.job_id)
+        elif args.feature == 'dotplot':
+            res = get_feature(args.job_id, f"sorted-{args.feature}" if args.sorted else args.feature)
+        elif args.feature == 'no-assoc':
+            res = post_no_assoc(args.job_id, args.which, args.tsv)
+        elif args.feature == 'association':
+            res = get_assoc(args.job_id, args.tsv)
+        elif args.feature == 'query-fasta':
+            res = get_query_fasta(args.job_id, gzip=not args.uncompressed, outpath=args.output)
         else:
             res = get_feature(args.job_id, args.feature)
         print(res)

@@ -60,6 +60,10 @@ class ContigType(str, Enum):
     query = 'query'
     target = 'target'
 
+class PrepareFastaEnum(str, Enum):
+    done = 'Done'
+    in_progress = 'In progress'
+
 
 class JobInput(BaseModel):
     type: InputType = Field(description="Type of input field")
@@ -286,7 +290,7 @@ class NoAssoc(BaseModel):
     contigs: list[str] = Field(description="List of contigs")
 
 class NoAssocResponse(BaseResponse):
-    data: NoAssoc
+    data: NoAssoc = Field(description="No association")
 
 class GalleryData(BaseModel):
     name: str = Field(description="The name of the job")
@@ -299,3 +303,20 @@ class GalleryData(BaseModel):
 
 class GalleryResponse(BaseResponse):
     data: list[GalleryData]|None = Field(description="The list of entries in gallery")
+
+class ExampleFile(BaseModel):
+    uri: str = Field(description="The URI of the file")
+
+class ExampleFilesResponse(BaseResponse):
+    data: list[ExampleFile] = Field(description="Exemple Files")
+
+class PrepareFasta(BaseModel):
+    status: PrepareFastaEnum = Field(description="Status of the preparation")
+    gzip: Optional[bool] = Field(description="Whether the file is gzipped")
+
+class PrepareFastaResponse(BaseResponse):
+    data: PrepareFasta = Field(description="Prepared fasta data")
+
+class PrepareFastaInput(BaseModel):
+    gzip: bool = Field(description="Ask for a gzipped the file. If set to false,"
+                                   "but the query file on server is already gzipped, this option will be ignored.")
