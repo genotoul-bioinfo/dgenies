@@ -842,18 +842,21 @@ def build_fasta(id_res: str, to_compress: bool) -> tuple[int, bool]:
         raise FileNotFoundError(id_res)
     lock_query = os.path.join(res_dir, ".query-fasta-build")
     is_sorted = os.path.exists(os.path.join(res_dir, ".sorted"))
-    need_refresh = os.path.exists(os.path.join(res_dir, ".new-reversals"))
+    need_refresh = is_sorted and not has_fresh_sorted_query_fasta(res_dir)
     wanted_query_fasta = Functions.get_fasta_file(res_dir, "query", is_sorted and not need_refresh)
     if wanted_query_fasta is None:
         raise BaseException()
     if need_refresh:
         # Do the sort
-        os.remove(os.path.join(res_dir, ".new-reversals"))
-        Path(lock_query).touch()
+        if Functions.is_file_lock_active(lock_query) or not Functions.acquire_file_lock(lock_query):
+            return 1, False
+        refresh_marker = os.path.join(res_dir, ".new-reversals")
+        if os.path.exists(refresh_marker):
+            os.remove(refresh_marker)
         if not to_compress or MODE == "standalone":  # If compressed, it will took a long time, so not wait
             Path(lock_query + ".pending").touch()
         index_file = os.path.join(res_dir, "query.idx.sorted")
-        logger.debug("Sort file{}: {}".format(" and compress" if to_compress else "", query_fasta))
+        logger.debug("Sort file{}: {}".format(" and compress" if to_compress else "", wanted_query_fasta))
         if MODE == "webserver":
             thread = threading.Timer(1, Functions.sort_fasta, kwargs={
                 "job_name": id_res,
@@ -869,16 +872,20 @@ def build_fasta(id_res: str, to_compress: bool) -> tuple[int, bool]:
             })
             thread.start()
         else:
-            Functions.sort_fasta(job_name=id_res,
-                                 in_fasta_file=wanted_query_fasta,
-                                 index_file=index_file,
-                                 lock_file=lock_query,
-                                 compress=to_compress,
-                                 with_date=False,
-                                 dot_file=None,
-                                 mailer=None,
-                                 mode=MODE,
-                                 overwrite=True)
+            try:
+                Functions.sort_fasta(job_name=id_res,
+                                     fasta_file=wanted_query_fasta,
+                                     index_file=index_file,
+                                     lock_file=lock_query,
+                                     compress=to_compress,
+                                     with_date=False,
+                                     dot_file=None,
+                                     mailer=None,
+                                     mode=MODE,
+                                     overwrite=True)
+            except Exception:
+                Functions.release_file_lock(lock_query)
+                raise
         if not to_compress or MODE == "standalone":
             if MODE == "webserver":
                 i = 0
@@ -892,7 +899,7 @@ def build_fasta(id_res: str, to_compress: bool) -> tuple[int, bool]:
             return 2, to_compress
         else:
             return 1, False
-    elif is_sorted and os.path.exists(lock_query):
+    elif is_sorted and Functions.is_file_lock_active(lock_query):
         # Sort is already in progress
         return 1, False
     else:
@@ -901,7 +908,8 @@ def build_fasta(id_res: str, to_compress: bool) -> tuple[int, bool]:
         if to_compress and not is_compressed:
             logger.debug("Compress file: {}".format(wanted_query_fasta))
             # If compressed file is asked, we must compress it now if not done before...
-            Path(lock_query).touch()
+            if Functions.is_file_lock_active(lock_query) or not Functions.acquire_file_lock(lock_query):
+                return 1, False
             thread = threading.Timer(1, Functions.compress_and_send_mail, kwargs={
                 "job_name": id_res,
                 "fasta_file": wanted_query_fasta,
@@ -1175,6 +1183,33 @@ def summary(id_res):
         "percents": percents,
         "status": s_status
     })
+
+
+def has_fresh_sorted_query_fasta(res_dir: str) -> bool:
+    """
+    Tell whether a sorted query fasta matching the current dotplot state exists.
+    """
+    if not os.path.exists(os.path.join(res_dir, ".sorted")):
+        return False
+
+    base_query_fasta = Functions.get_fasta_file(res_dir, "query", is_sorted=False)
+    sorted_query_fasta = Functions.get_fasta_file(res_dir, "query", is_sorted=True)
+    if base_query_fasta is None or sorted_query_fasta is None:
+        return False
+
+    try:
+        if os.path.realpath(base_query_fasta) == os.path.realpath(sorted_query_fasta):
+            return False
+    except FileNotFoundError:
+        return False
+
+    refresh_marker = os.path.join(res_dir, ".new-reversals")
+    if os.path.exists(refresh_marker):
+        try:
+            return os.path.getmtime(sorted_query_fasta) >= os.path.getmtime(refresh_marker)
+        except FileNotFoundError:
+            return False
+    return True
 
 
 @app.route('/backup/<id_res>')

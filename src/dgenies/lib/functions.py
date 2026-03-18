@@ -24,6 +24,7 @@ class Functions:
     """
 
     config = AppConfigReader()
+    LOCK_STALE_AFTER_SECONDS = 60 * 60
 
     @staticmethod
     def hardlink_or_copy(src, dest):
@@ -37,6 +38,67 @@ class Functions:
             os.link(src, dest)
         except OSError:
             shutil.copy(src, dest)
+
+    @staticmethod
+    def acquire_file_lock(lock_file, stale_after=None):
+        """
+        Create a lock file atomically.
+
+        Returns False when another worker already owns a fresh lock.
+        """
+        stale_after = (
+            Functions.LOCK_STALE_AFTER_SECONDS
+            if stale_after is None
+            else stale_after
+        )
+        try:
+            fd = os.open(lock_file, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            with os.fdopen(fd, "w") as lock_out:
+                lock_out.write(str(time.time()))
+            return True
+        except FileExistsError:
+            if stale_after is None or stale_after <= 0:
+                return False
+            try:
+                lock_age = time.time() - os.path.getmtime(lock_file)
+                if lock_age <= stale_after:
+                    return False
+                os.remove(lock_file)
+            except FileNotFoundError:
+                pass
+            return Functions.acquire_file_lock(lock_file, stale_after=0)
+
+    @staticmethod
+    def is_file_lock_active(lock_file, stale_after=None):
+        """
+        Tell whether a lock file exists and is still considered fresh.
+        """
+        stale_after = (
+            Functions.LOCK_STALE_AFTER_SECONDS
+            if stale_after is None
+            else stale_after
+        )
+        if not os.path.exists(lock_file):
+            return False
+        if stale_after is None or stale_after <= 0:
+            return True
+        try:
+            if time.time() - os.path.getmtime(lock_file) <= stale_after:
+                return True
+            os.remove(lock_file)
+        except FileNotFoundError:
+            return False
+        return False
+
+    @staticmethod
+    def release_file_lock(lock_file):
+        """
+        Remove a lock file if it exists.
+        """
+        try:
+            os.remove(lock_file)
+        except FileNotFoundError:
+            pass
 
     @staticmethod
     def allowed_file(filename, file_formats=("fasta",)):
