@@ -1050,7 +1050,7 @@ class Paf:
             o_fasta = "_._"
             status = "fail"
 
-        if MODE == "webserver":
+        if MODE == "webserver" and self.mailer is not None and self.id_job is not None:
             shift = int(compress)
             parts = os.path.basename(o_fasta).rsplit(".", 1 + shift)
             Functions.send_fasta_ready(mailer=self.mailer,

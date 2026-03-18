@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 import os
 import re
+import tarfile
+import threading
 import traceback
 from http import HTTPStatus
 from pathlib import Path
@@ -13,9 +15,10 @@ from typing import (
 
 import itertools as it
 
-from flask import current_app, make_response
+from flask import current_app, make_response, send_file
 from flask_openapi3 import APIBlueprint
 from werkzeug.exceptions import RequestEntityTooLarge
+from xopen import xopen
 
 from dgenies import config_reader, APP_DATA, MODE, mailer
 from ..allowed_extensions import AllowedExtensions
@@ -68,13 +71,17 @@ from .datamodels import (
     PrepareFasta,
     PrepareFastaInput,
     PrepareFastaEnum,
-    PrepareFastaResponse
+    PrepareFastaResponse,
+    ExportFileState,
+    ExportFileStatus,
+    ExportStatus,
+    ExportStatusResponse,
 )
 from .job_descriptions import job_descriptions
 from ..lib.upload_file import UploadFile
 from ..tools import Tools
 
-from ..views import update_files, compute_summary, build_fasta
+from ..views import update_files, compute_summary, build_fasta, has_fresh_sorted_query_fasta
 
 if MODE == "webserver":
     import dgenies.database as db
@@ -755,6 +762,331 @@ def has_sorted_output(job_id: str) -> bool:
     )
 
 
+def get_job_dir(job_id: str) -> str:
+    """
+    Return the job output directory.
+    """
+    return os.path.join(APP_DATA, job_id)
+
+
+QUERY_FASTA_LOCK = ".query-fasta-build"
+QUERY_AS_REFERENCE_LOCK = ".query-as-reference-build"
+QUERY_AS_REFERENCE_POINTER = ".query-as-reference"
+QUERY_AS_REFERENCE_ERROR = ".query-as-reference.error"
+
+
+def send_download(file_path: str, download_name: str | None = None):
+    """
+    Send a file as an attachment.
+    """
+    return send_file(
+        file_path,
+        as_attachment=True,
+        download_name=download_name or os.path.basename(file_path),
+    )
+
+
+def read_path_pointer(pointer_path: str) -> str | None:
+    """
+    Read a file path stored inside a marker file.
+    """
+    try:
+        with open(pointer_path, "r") as pointer:
+            file_path = pointer.readline().strip()
+    except OSError:
+        return None
+    if not file_path:
+        return None
+    return file_path if os.path.exists(file_path) else None
+
+
+def write_path_pointer(pointer_path: str, file_path: str) -> None:
+    """
+    Persist a generated file path in a marker file.
+    """
+    with open(pointer_path, "w") as pointer:
+        pointer.write(file_path)
+
+
+def find_query_as_reference(job_id: str) -> str | None:
+    """
+    Find the most recent query-as-reference file generated for a job.
+    """
+    res_dir = get_job_dir(job_id)
+    pointer_file = os.path.join(res_dir, QUERY_AS_REFERENCE_POINTER)
+    pointed_file = read_path_pointer(pointer_file)
+    if pointed_file is not None:
+        return pointed_file
+
+    query_fasta = Functions.get_fasta_file(res_dir, "query", is_sorted=False)
+    if query_fasta is None:
+        return None
+
+    query_basename = os.path.basename(query_fasta)
+    if query_basename.endswith(".gz"):
+        query_basename = query_basename[:-3]
+
+    candidates: list[Path] = []
+    search_dirs = {res_dir, os.path.dirname(query_fasta)}
+    patterns = [
+        f"*_as_reference_{query_basename}",
+        f"*_as_reference_{query_basename}.gz",
+    ]
+    for directory in search_dirs:
+        directory_path = Path(directory)
+        if not directory_path.exists():
+            continue
+        for pattern in patterns:
+            candidates.extend(
+                candidate
+                for candidate in directory_path.glob(pattern)
+                if candidate.is_file()
+            )
+
+    if not candidates:
+        return None
+
+    latest = str(max(candidates, key=lambda candidate: candidate.stat().st_mtime))
+    write_path_pointer(pointer_file, latest)
+    return latest
+
+
+def build_state_progress(state: ExportFileState) -> int | None:
+    """
+    Translate an export state into a progress value.
+    """
+    if state == ExportFileState.ready:
+        return 100
+    if state in {ExportFileState.not_ready, ExportFileState.blocked, ExportFileState.unavailable}:
+        return 0
+    return None
+
+
+def create_export_file_status(
+    state: ExportFileState,
+    filename: str | None = None,
+    message: str | None = None,
+) -> ExportFileStatus:
+    """
+    Build a consistent export file status payload.
+    """
+    return ExportFileStatus(
+        state=state,
+        filename=filename,
+        message=message,
+        progress=build_state_progress(state),
+    )
+
+
+def is_file_fresh(file_path: str | None, marker_path: str | None = None) -> bool:
+    """
+    Tell whether a generated file exists and is newer than an invalidation marker.
+    """
+    if file_path is None or not os.path.exists(file_path):
+        return False
+    if marker_path is None or not os.path.exists(marker_path):
+        return True
+    try:
+        return os.path.getmtime(file_path) >= os.path.getmtime(marker_path)
+    except FileNotFoundError:
+        return False
+
+
+def get_query_fasta_ready_file(job_id: str) -> str | None:
+    """
+    Return the downloadable query fasta matching the current dotplot state.
+    """
+    res_dir = get_job_dir(job_id)
+    base_query = Functions.get_fasta_file(res_dir, "query", is_sorted=False)
+    if base_query is None:
+        base_query = Functions.get_fasta_file(res_dir, "query", is_sorted=True)
+    if base_query is None or not os.path.exists(base_query):
+        return None
+
+    if not os.path.exists(os.path.join(res_dir, ".sorted")):
+        return base_query
+
+    if not has_fresh_sorted_query_fasta(res_dir):
+        return None
+
+    sorted_query = Functions.get_fasta_file(res_dir, "query", is_sorted=True)
+    if sorted_query is None or not os.path.exists(sorted_query):
+        return None
+    return sorted_query
+
+
+def get_query_fasta_export_status(job_id: str) -> ExportFileStatus:
+    """
+    Compute export status for the query fasta button.
+    """
+    res_dir = get_job_dir(job_id)
+    if Functions.is_file_lock_active(os.path.join(res_dir, QUERY_FASTA_LOCK)):
+        return create_export_file_status(
+            ExportFileState.building,
+            message="Query FASTA is being prepared.",
+        )
+
+    ready_file = get_query_fasta_ready_file(job_id)
+    if ready_file is not None:
+        return create_export_file_status(
+            ExportFileState.ready,
+            filename=os.path.basename(ready_file),
+            message="Query FASTA is ready to download.",
+        )
+
+    base_query = Functions.get_fasta_file(res_dir, "query", is_sorted=False)
+    if base_query is None:
+        base_query = Functions.get_fasta_file(res_dir, "query", is_sorted=True)
+    if base_query is None:
+        return create_export_file_status(
+            ExportFileState.unavailable,
+            message="Query FASTA file not available.",
+        )
+
+    return create_export_file_status(
+        ExportFileState.not_ready,
+        message="Build the query FASTA before downloading it.",
+    )
+
+
+def get_query_as_reference_export_status(job_id: str) -> ExportFileStatus:
+    """
+    Compute export status for the query-as-reference button.
+    """
+    res_dir = get_job_dir(job_id)
+    if os.path.exists(os.path.join(res_dir, ".all-vs-all")):
+        return create_export_file_status(
+            ExportFileState.unavailable,
+            message="Query-as-reference is not available for Self Align mode.",
+        )
+
+    if not os.path.exists(os.path.join(res_dir, ".sorted")):
+        return create_export_file_status(
+            ExportFileState.blocked,
+            message="Sort the dot plot before building query as reference.",
+        )
+
+    if Functions.is_file_lock_active(os.path.join(res_dir, QUERY_AS_REFERENCE_LOCK)):
+        return create_export_file_status(
+            ExportFileState.building,
+            message="Query-as-reference FASTA is being prepared.",
+        )
+
+    refresh_marker = os.path.join(res_dir, ".new-reversals")
+    ready_file = find_query_as_reference(job_id)
+    if is_file_fresh(ready_file, refresh_marker):
+        return create_export_file_status(
+            ExportFileState.ready,
+            filename=os.path.basename(ready_file),
+            message="Query-as-reference FASTA is ready to download.",
+        )
+
+    error_file = os.path.join(res_dir, QUERY_AS_REFERENCE_ERROR)
+    if os.path.exists(error_file):
+        try:
+            with open(error_file, "r") as error_handle:
+                error_message = error_handle.readline().strip() or None
+        except OSError:
+            error_message = None
+        return create_export_file_status(
+            ExportFileState.not_ready,
+            message=error_message or "Previous build failed. Try again.",
+        )
+
+    return create_export_file_status(
+        ExportFileState.not_ready,
+        message="Build query as reference before downloading it.",
+    )
+
+
+def build_query_as_reference_file(job_id: str) -> str:
+    """
+    Build the query-as-reference fasta synchronously.
+    """
+    if os.path.exists(os.path.join(APP_DATA, job_id, ".all-vs-all")):
+        raise ValueError("Query-as-reference is not available for Self Align mode")
+
+    paf_file = os.path.join(APP_DATA, job_id, "map.paf")
+    idx1 = os.path.join(APP_DATA, job_id, "query.idx")
+    idx2 = os.path.join(APP_DATA, job_id, "target.idx")
+    paf = Paf(paf_file, idx1, idx2, False)
+    paf.parse_paf(False, True)
+    if not paf.sorted:
+        raise ValueError("Sort the dot plot before building query as reference")
+
+    output_file = paf.build_query_chr_as_reference(compress=False)
+    if output_file == "_._" or not os.path.exists(output_file):
+        raise FileNotFoundError("Query-as-reference file could not be built")
+    return output_file
+
+
+def _build_query_as_reference_worker(job_id: str) -> None:
+    """
+    Background worker for query-as-reference builds.
+    """
+    res_dir = get_job_dir(job_id)
+    lock_file = os.path.join(res_dir, QUERY_AS_REFERENCE_LOCK)
+    pointer_file = os.path.join(res_dir, QUERY_AS_REFERENCE_POINTER)
+    error_file = os.path.join(res_dir, QUERY_AS_REFERENCE_ERROR)
+    try:
+        if os.path.exists(error_file):
+            os.remove(error_file)
+        output_file = build_query_as_reference_file(job_id)
+        write_path_pointer(pointer_file, output_file)
+    except Exception as exc:
+        with open(error_file, "w") as error_handle:
+            error_handle.write(str(exc))
+        logger.error(traceback.format_exc())
+    finally:
+        Functions.release_file_lock(lock_file)
+
+
+def start_query_as_reference_build(job_id: str) -> ExportFileStatus:
+    """
+    Start a query-as-reference build if needed and return the resulting state.
+    """
+    res_dir = get_job_dir(job_id)
+    status = get_query_as_reference_export_status(job_id)
+    if status.state in {ExportFileState.ready, ExportFileState.building, ExportFileState.unavailable, ExportFileState.blocked}:
+        return status
+
+    lock_file = os.path.join(res_dir, QUERY_AS_REFERENCE_LOCK)
+    if not Functions.acquire_file_lock(lock_file):
+        return get_query_as_reference_export_status(job_id)
+
+    worker = threading.Thread(
+        target=_build_query_as_reference_worker,
+        args=(job_id,),
+        daemon=True,
+        name=f"query-as-reference-{job_id}",
+    )
+    worker.start()
+    return get_query_as_reference_export_status(job_id)
+
+
+@api.get('/result/<job_id>/export-status',
+         responses={
+             200: ExportStatusResponse,
+             404: NotFoundResponse
+         })
+def get_export_status(path: JobPath):
+    """
+    Get build/download status for exportable files required by the UI.
+    """
+    res_dir = get_job_dir(path.job_id)
+    if not os.path.isdir(res_dir):
+        return NotFoundResponse(code=404, message="Job doesn't exist").model_dump(), 404
+
+    return {
+        "code": 0,
+        "message": "ok",
+        "data": ExportStatus(
+            query_fasta=get_query_fasta_export_status(path.job_id),
+            query_as_reference=get_query_as_reference_export_status(path.job_id),
+        ).model_dump(),
+    }, 200
+
+
 @api.get('/status/<job_id>',
          responses={
              200: JobStatusResponse,
@@ -1111,26 +1443,27 @@ def prepare_fasta_query(path: JobPath, body: PrepareFastaInput):
                   "text/plain": {"schema": {"type": "string"}},
                   "application/gzip": {"schema": {"type": "string", "format": "binary"}}
               }},
-              404: NotFoundResponse
+              404: NotFoundResponse,
+              409: BaseResponse
           })
 def get_fasta_query(path: JobPath):
     """
     Get the fasta file of query
     """
     res_dir = os.path.join(APP_DATA, path.job_id)
-    lock_query = os.path.join(res_dir, ".query-fasta-build")
+    if not os.path.isdir(res_dir):
+        return {"code": 404, "message": "Job doesn't exist"}, 404
 
-    if os.path.exists(lock_query):
-        return {"code": 404, "message": "Query fasta file is building, try latter"}, 404
-    query_fasta = Functions.get_fasta_file(res_dir, "query", is_sorted=False)
+    if Functions.is_file_lock_active(os.path.join(res_dir, QUERY_FASTA_LOCK)):
+        return {"code": 409, "message": "Query fasta file is building, try later"}, 409
+    query_fasta = get_query_fasta_ready_file(path.job_id)
     if query_fasta is None:
         return {"code": 404, "message": "Query fasta file not available"}, 404
 
     try:
-        is_gzip = query_fasta.endswith(".gz")
+        is_gzip = query_fasta.endswith(".gz") or query_fasta.endswith(".gz.sorted")
         content = open(query_fasta, "rb" if is_gzip else "r").read()
     except FileNotFoundError:
-        # Not fasta file was uploaded (plot)
         return {"code": 404, "message": "Query fasta file not available"}, 404
     except IOError as e:
         print(e.__traceback__)
@@ -1140,40 +1473,27 @@ def get_fasta_query(path: JobPath):
     response.mimetype = "application/gzip" if is_gzip else "text/plain"
     return response
 
-
-def build_query_as_reference(id_res):
-    """
-    Build fasta of query with contigs order like reference
-
-    :param id_res: job id
-    :type id_res: str
-    """
-    import threading
-    paf_file = os.path.join(APP_DATA, id_res, "map.paf")
-    idx1 = os.path.join(APP_DATA, id_res, "query.idx")
-    idx2 = os.path.join(APP_DATA, id_res, "target.idx")
-    paf = Paf(paf_file, idx1, idx2, False, mailer=mailer, id_job=id_res)
-    paf.parse_paf(False, True)
-    if MODE == "webserver":
-        thread = threading.Timer(0, paf.build_query_chr_as_reference, kwargs={"compress": True})
-        thread.start()
-        return True
-    return paf.build_query_chr_as_reference(compress=False)
-
 @api.post('/build-query-as-reference/<job_id>',
           responses={
               200: BaseResponse,
-              404: NotFoundResponse
+              404: NotFoundResponse,
+              409: BaseResponse,
+              500: BaseResponse
           })
 def post_build_query_as_reference(path: JobPath):
     """
     Launch build fasta of query with contigs order like reference
     """
-    id_res = path.job_id
-    res_dir = os.path.join(APP_DATA, id_res)
+    res_dir = os.path.join(APP_DATA, path.job_id)
     if os.path.exists(res_dir) and os.path.isdir(res_dir):
-        build_query_as_reference(id_res)
-        return {"code": 0, "message": "ok"}
+        status = start_query_as_reference_build(path.job_id)
+        if status.state in {ExportFileState.ready, ExportFileState.building, ExportFileState.not_ready}:
+            return {"code": 0, "message": "ok"}
+        if status.state == ExportFileState.unavailable:
+            return {"code": 409, "message": status.message or "Not available"}, 409
+        if status.state == ExportFileState.blocked:
+            return {"code": 409, "message": status.message or "Blocked"}, 409
+        return {"code": 500, "message": status.message or "Internal error, please contact support"}, 500
     return NotFoundResponse(code=404, message="Job doesn't exist").model_dump(), 404
 
 @api.post('/get-query-as-reference/<job_id>', responses={501: NotImplementedResponse})
@@ -1199,33 +1519,126 @@ def get_paf(path: JobPath):
     """
     return notImplementedResponse.model_dump(), 501
 
-@api.get('/download/<job_id>/backup', responses={501: NotImplementedResponse})
+@api.get('/download/<job_id>/backup',
+         responses={
+             200: {"content": {"application/gzip": {"schema": {"type": "string", "format": "binary"}}}},
+             404: NotFoundResponse,
+             500: BaseResponse
+         })
 def get_backup(path: JobPath):
     """
     Download the backup file in tar.gz format
     """
-    return notImplementedResponse.model_dump(), 501
+    res_dir = get_job_dir(path.job_id)
+    if not os.path.isdir(res_dir):
+        return NotFoundResponse(code=404, message="Job doesn't exist").model_dump(), 404
 
-@api.get('/download/<job_id>/logs', responses={501: NotImplementedResponse})
+    filename = f"{path.job_id}.tar.gz"
+    tar_path = os.path.join(res_dir, filename)
+    try:
+        with xopen(tar_path, mode="wb", compresslevel=9) as gz_file:
+            with tarfile.open(fileobj=gz_file, mode="w|") as tar_file:
+                for file_name in ("map.paf", "target.idx", "query.idx"):
+                    file_path = os.path.join(res_dir, file_name)
+                    if not os.path.exists(file_path):
+                        return NotFoundResponse(
+                            code=404,
+                            message=f"Missing backup input file: {file_name}",
+                        ).model_dump(), 404
+                    tar_file.add(file_path, arcname=file_name)
+                logs_file = os.path.join(res_dir, "logs.txt")
+                if os.path.exists(logs_file):
+                    tar_file.add(logs_file, arcname="logs.txt")
+        return send_download(tar_path, filename)
+    except Exception:
+        logger.error(traceback.format_exc())
+        return {"code": 500, "message": "Internal error, please contact support"}, 500
+
+@api.get('/download/<job_id>/logs',
+         responses={
+             200: {"content": {"text/plain": {"schema": {"type": "string"}}}},
+             404: NotFoundResponse
+         })
 def get_logs(path: JobPath):
     """
     Download the log file
     """
-    return notImplementedResponse.model_dump(), 501
+    logs_file = os.path.join(get_job_dir(path.job_id), "logs.txt")
+    if not os.path.isfile(logs_file):
+        return NotFoundResponse(code=404, message="Logs file not available").model_dump(), 404
+    return send_download(logs_file, os.path.basename(logs_file))
 
-@api.get('/download/<job_id>/query-as-reference', responses={501: NotImplementedResponse})
+@api.get('/download/<job_id>/query-as-reference',
+         responses={
+             200: {"content": {
+                 "text/plain": {"schema": {"type": "string"}},
+                 "application/gzip": {"schema": {"type": "string", "format": "binary"}}
+             }},
+             404: NotFoundResponse,
+             409: BaseResponse,
+             500: BaseResponse
+         })
 def get_query_as_reference(path: JobPath):
     """
     Download the query fasta file
     """
-    return notImplementedResponse.model_dump(), 501
+    res_dir = get_job_dir(path.job_id)
+    if not os.path.isdir(res_dir):
+        return NotFoundResponse(code=404, message="Job doesn't exist").model_dump(), 404
 
-@api.get('/download/<job_id>/fasta-query', responses={501: NotImplementedResponse})
+    status = get_query_as_reference_export_status(path.job_id)
+    if status.state == ExportFileState.building:
+        return {"code": 409, "message": status.message or "Build in progress"}, 409
+    if status.state in {ExportFileState.blocked, ExportFileState.unavailable}:
+        return {"code": 409, "message": status.message or "Not available"}, 409
+    if status.state != ExportFileState.ready:
+        return NotFoundResponse(
+            code=404,
+            message=status.message or "Query-as-reference file not available",
+        ).model_dump(), 404
+
+    query_reference = find_query_as_reference(path.job_id)
+    if query_reference is None:
+        return NotFoundResponse(
+            code=404,
+            message="Query-as-reference file not available",
+        ).model_dump(), 404
+    return send_download(query_reference, os.path.basename(query_reference))
+
+@api.get('/download/<job_id>/fasta-query',
+         responses={
+             200: {"content": {
+                 "text/plain": {"schema": {"type": "string"}},
+                 "application/gzip": {"schema": {"type": "string", "format": "binary"}}
+             }},
+             404: NotFoundResponse,
+             409: BaseResponse
+         })
 def get_dl_fasta_query(path: JobPath):
     """
     Download the query fasta file
     """
-    return notImplementedResponse.model_dump(), 501
+    res_dir = get_job_dir(path.job_id)
+    if not os.path.isdir(res_dir):
+        return NotFoundResponse(code=404, message="Job doesn't exist").model_dump(), 404
+
+    status = get_query_fasta_export_status(path.job_id)
+    if status.state == ExportFileState.building:
+        return {"code": 409, "message": status.message or "Build in progress"}, 409
+    if status.state != ExportFileState.ready:
+        return NotFoundResponse(
+            code=404,
+            message=status.message or "Query fasta file not available",
+        ).model_dump(), 404
+
+    query_fasta = get_query_fasta_ready_file(path.job_id)
+    if query_fasta is None:
+        return NotFoundResponse(
+            code=404,
+            message="Query fasta file not available",
+        ).model_dump(), 404
+
+    return send_download(query_fasta, os.path.basename(query_fasta))
 
 @api.get('/download/<job_id>/filter-out/query', responses={501: NotImplementedResponse})
 def get_filter_out_target(path: JobPath):
