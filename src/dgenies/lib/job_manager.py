@@ -694,17 +694,19 @@ class JobManager:
         lines = acct.split("\n")
         for line in lines:
             if line.startswith("failed"):
-                status = re.split(r"\s+", line, 1)[1]
+                status = re.split(r"\s+", line, maxsplit=1)[1]
             elif line.startswith("start_time"):
-                start = datetime.strptime(re.split(r"\s+", line, 1)[1], "%a %b %d %H:%M:%S %Y")
+                start = datetime.strptime(re.split(r"\s+", line, maxsplit=1)[1], "%a %b %d %H:%M:%S %Y")
             elif line.startswith("end_time"):
-                end = datetime.strptime(re.split(r"\s+", line, 1)[1], "%a %b %d %H:%M:%S %Y")
+                end = datetime.strptime(re.split(r"\s+", line, maxsplit=1)[1], "%a %b %d %H:%M:%S %Y")
             elif line.startswith("maxvmem"):
-                mem_peak = re.split(r"\s+", line, 1)[1]
+                mem_peak = re.split(r"\s+", line, maxsplit=1)[1]
                 if mem_peak.endswith("G"):
-                    mem_peak = int(mem_peak[-1]) * 1024 * 1024
+                    mem_peak = int(mem_peak[:-1]) * 1024 * 1024
                 elif mem_peak.endswith("M"):
-                    mem_peak = int(mem_peak[-1]) * 1024
+                    mem_peak = int(mem_peak[:-1]) * 1024
+                else:
+                    mem_peak = int(mem_peak)
 
         if status == "0":
             if start is not None and end is not None and mem_peak is not None:

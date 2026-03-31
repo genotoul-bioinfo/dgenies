@@ -20,7 +20,7 @@ from matplotlib import pyplot as plt
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Generator
 
 
@@ -1007,7 +1007,7 @@ class Paf:
             if not os.path.isfile(query_fasta):
                 raise Exception("Query fasta does not exists")
             o_fasta = os.path.join(os.path.dirname(query_fasta),
-                                   datetime.utcnow().strftime('%Y%m%d%H%M%S') +
+                                   datetime.now(UTC).strftime('%Y%m%d%H%M%S') +
                                    "_as_reference_" + os.path.basename(query_fasta))
             if o_fasta.endswith(".gz"):
                 o_fasta = o_fasta[:-3]
@@ -1050,7 +1050,7 @@ class Paf:
             o_fasta = "_._"
             status = "fail"
 
-        if MODE == "webserver":
+        if MODE == "webserver" and self.mailer is not None and self.id_job is not None:
             shift = int(compress)
             parts = os.path.basename(o_fasta).rsplit(".", 1 + shift)
             Functions.send_fasta_ready(mailer=self.mailer,

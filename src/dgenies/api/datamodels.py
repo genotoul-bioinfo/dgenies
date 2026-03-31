@@ -65,6 +65,14 @@ class PrepareFastaEnum(str, Enum):
     in_progress = 'In progress'
 
 
+class ExportFileState(str, Enum):
+    unavailable = 'unavailable'
+    blocked = 'blocked'
+    not_ready = 'not_ready'
+    building = 'building'
+    ready = 'ready'
+
+
 class JobInput(BaseModel):
     type: InputType = Field(description="Type of input field")
     desc: str = Field(description="Description of input field")
@@ -320,3 +328,24 @@ class PrepareFastaResponse(BaseResponse):
 class PrepareFastaInput(BaseModel):
     gzip: bool = Field(description="Ask for a gzipped the file. If set to false,"
                                    "but the query file on server is already gzipped, this option will be ignored.")
+
+
+class ExportFileStatus(BaseModel):
+    state: ExportFileState = Field(description="Current export state")
+    filename: Optional[str] = Field(None, description="Download filename when ready")
+    message: Optional[str] = Field(None, description="Optional state description")
+    progress: Optional[int] = Field(
+        None,
+        ge=0,
+        le=100,
+        description="Progress value when available, null for indeterminate builds",
+    )
+
+
+class ExportStatus(BaseModel):
+    query_fasta: ExportFileStatus = Field(description="Query fasta export status")
+    query_as_reference: ExportFileStatus = Field(description="Query-as-reference export status")
+
+
+class ExportStatusResponse(BaseResponse):
+    data: ExportStatus = Field(description="Export status summary")
