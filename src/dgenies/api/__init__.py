@@ -20,8 +20,9 @@ from flask_openapi3 import APIBlueprint
 from werkzeug.exceptions import RequestEntityTooLarge
 from xopen import xopen
 
-from dgenies import config_reader, APP_DATA, MODE, mailer
+from dgenies import APP_DATA, MODE, mailer
 from ..allowed_extensions import AllowedExtensions
+from ..job_helpers import build_fasta, compute_summary, has_fresh_sorted_query_fasta, update_files
 from ..lib.exceptions import (
     DGeniesDeleteGalleryJobForbidden,
     DGeniesExampleInvalid,
@@ -81,8 +82,6 @@ from .job_descriptions import job_descriptions
 from ..lib.upload_file import UploadFile
 from ..tools import Tools
 
-from ..views import update_files, compute_summary, build_fasta, has_fresh_sorted_query_fasta
-
 if MODE == "webserver":
     import dgenies.database as db
     from peewee import DoesNotExist
@@ -91,22 +90,23 @@ import logging
 logger = logging.getLogger(__name__)
 
 api = APIBlueprint('dgenies', __name__, url_prefix=f"{os.environ.get('URL_PREFIX', '')}/api/v1")
+config = Functions.config
 
 limits = Limits(
-    number_of_jobs=config_reader.max_nb_jobs_in_batch_mode,
-    file_size=config_reader.max_upload_size,
-    uncompressed_size_self_align=config_reader.max_upload_size_ava,
-    uncompressed_size=config_reader.max_upload_file_size,
-    walltime_prepare=config_reader.cluster_walltime_prepare,
-    walltime_align=config_reader.cluster_walltime_align
+    number_of_jobs=config.max_nb_jobs_in_batch_mode,
+    file_size=config.max_upload_size,
+    uncompressed_size_self_align=config.max_upload_size_ava,
+    uncompressed_size=config.max_upload_file_size,
+    walltime_prepare=config.cluster_walltime_prepare,
+    walltime_align=config.cluster_walltime_align
 )
 
 notImplementedResponse = NotImplementedResponse()
 
 def get_max_file_size(job_type: JobType, role: str) -> int:
     if job_type == "align" and role == "target":
-        return config_reader.max_upload_size_ava
-    return config_reader.max_upload_size
+        return config.max_upload_size_ava
+    return config.max_upload_size
 
 @api.get('/config', responses={200: ConfigResponse})
 def get_config():
