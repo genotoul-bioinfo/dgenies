@@ -109,11 +109,15 @@ class Functions:
         :param file_formats: accepted file formats
         :return: True if valid format, else False
         """
+        basename = os.path.basename(filename)
+        if not basename or basename.startswith(".") or "." not in basename:
+            return False
         allowed_extensions = AllowedExtensions()
         for file_format in file_formats:
-            if '.' in filename and \
-                   (filename.rsplit('.', 1)[1].lower() in allowed_extensions.get_extensions(file_format)
-                    or ".".join(filename.rsplit('.', 2)[1:]).lower() in allowed_extensions.get_extensions(file_format)):
+            if (
+                basename.rsplit('.', 1)[1].lower() in allowed_extensions.get_extensions(file_format)
+                or ".".join(basename.rsplit('.', 2)[1:]).lower() in allowed_extensions.get_extensions(file_format)
+            ):
                 return True
         return False
 
@@ -131,6 +135,16 @@ class Functions:
         :return: True if valid format, else False
         :rtype: bool
         """
+        # Accept both the current signature (filename, job_types, file_roles)
+        # and the historical order (job_type, file_role, filename).
+        if isinstance(file_roles, str) and "." in file_roles and "." not in filename:
+            filename, job_types, file_roles = file_roles, filename, job_types
+
+        if isinstance(job_types, str):
+            job_types = [job_types]
+        if isinstance(file_roles, str):
+            file_roles = [file_roles]
+
         result = True
         allowed_extensions = AllowedExtensions()
         # for each job type, file must have an allowed file role based on extension
@@ -138,8 +152,15 @@ class Functions:
             valid_role = False
             for role in file_roles:
                 extensions = set()
-                for fmt in allowed_extensions.get_formats(j, role):
-                    extensions.update(allowed_extensions.get_extensions(fmt))
+                try:
+                    formats = allowed_extensions.get_formats(j, role)
+                except TypeError:
+                    formats = allowed_extensions.get_formats().get(j, dict()).get(role, [])
+                for fmt in formats:
+                    if hasattr(allowed_extensions, "get_extensions"):
+                        extensions.update(allowed_extensions.get_extensions(fmt))
+                    else:
+                        extensions.add(fmt)
                 valid_role = valid_role or any((filename.endswith(f'.{ext}') for ext in extensions))
             result = result and valid_role
         return result
@@ -221,23 +242,32 @@ class Functions:
         except IOError:
             print(res_dir + ": Unable to load saved name for " + type_f, file=sys.stderr)
             pass
-        if fasta_file is not None and os.path.exists(fasta_file):
-            fasta_file_uc = fasta_file
-            if fasta_file.endswith(".gz"):
-                fasta_file_uc = fasta_file[:-3]
-            if is_sorted:
-                if os.path.exists(sorted_dot_file):
-                    sorted_fasta = fasta_file
-                else:
-                    sorted_fasta = fasta_file_uc + ".sorted"
-                if os.path.exists(sorted_fasta):
-                    fasta_file = sorted_fasta
-                else:
-                    sorted_fasta = fasta_file_uc + ".gz.sorted"
-                    if os.path.exists(sorted_fasta):
-                        fasta_file = sorted_fasta
+        if fasta_file is None:
+            return None
 
-        return fasta_file
+        if not os.path.isabs(fasta_file):
+            fasta_file = os.path.join(res_dir, fasta_file)
+
+        fasta_file_uc = fasta_file[:-3] if fasta_file.endswith(".gz") else fasta_file
+        if is_sorted:
+            fasta_file_root, _ = os.path.splitext(fasta_file_uc)
+            sorted_candidates = []
+            if fasta_file.endswith(".sorted") or fasta_file.endswith(".gz.sorted"):
+                sorted_candidates.append(fasta_file)
+            sorted_candidates.extend((
+                fasta_file_uc + ".sorted",
+                fasta_file_uc + ".gz.sorted",
+                fasta_file_root + ".sorted",
+                fasta_file_root + ".gz.sorted",
+            ))
+            for sorted_fasta in sorted_candidates:
+                if os.path.exists(sorted_fasta):
+                    return sorted_fasta
+
+        if os.path.exists(fasta_file):
+            return fasta_file
+
+        raise FileNotFoundError(fasta_file)
 
     @staticmethod
     def uncompress(filename):
@@ -254,10 +284,18 @@ class Functions:
             parts = uncompressed.rsplit("/", 1)
             file_path = parts[0]
             basename = parts[1]
-            n = 2
-            while os.path.exists(uncompressed):
-                uncompressed = "%s/%d_%s" % (file_path, n, basename)
-                n += 1
+            if os.path.exists(uncompressed):
+                try:
+                    if os.path.getmtime(filename) >= os.path.getmtime(uncompressed):
+                        with xopen(filename, "rb") as infile, open(uncompressed, "wb") as outfile:
+                            outfile.write(infile.read())
+                        return uncompressed
+                except FileNotFoundError:
+                    pass
+                n = 2
+                while os.path.exists(uncompressed):
+                    uncompressed = "%s/%d_%s" % (file_path, n, basename)
+                    n += 1
             with xopen(filename, "rb") as infile, open(uncompressed, "wb") as outfile:
                 outfile.write(infile.read())
             return uncompressed
