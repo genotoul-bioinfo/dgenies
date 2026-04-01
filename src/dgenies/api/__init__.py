@@ -74,7 +74,7 @@ from .job_descriptions import job_descriptions
 from ..lib.upload_file import UploadFile
 from ..tools import Tools
 
-from ..views import update_files, compute_summary, build_fasta
+from ..views import update_files, compute_summary, build_fasta, get_inforun
 
 if MODE == "webserver":
     import dgenies.database as db
@@ -107,6 +107,7 @@ def get_config():
     Get this D-Genies instance configuration and limits
     """
     res = Config(
+        banner=get_inforun(),
         batch_id=Functions.random_job_id(),
         email=Functions.is_email_mandatory(),
         limits=limits,
@@ -1089,12 +1090,12 @@ def prepare_fasta_query(path: JobPath, body: PrepareFastaInput):
         if status == 1:
             return {
                 "code": 0, "message": "ok",
-                "data": PrepareFasta(status=PrepareFastaEnum.in_progress, gzip=None).model_dump()
+                "data": PrepareFasta(status=PrepareFastaEnum.in_progress, gzip=None, mail=MODE == "webserver").model_dump()
             }, 200
         elif status == 2:
             return {
                 "code": 0, "message": "ok",
-                "data": PrepareFasta(status=PrepareFastaEnum.done, gzip=is_compressed).model_dump()
+                "data": PrepareFasta(status=PrepareFastaEnum.done, gzip=is_compressed, mail=MODE == "webserver").model_dump()
             }, 200
     except DGeniesMissingJobError:
         return NotFoundResponse(code=1, message="Job doesn't exist").model_dump(), 404

@@ -32,8 +32,18 @@ class Limits(BaseModel):
     walltime_prepare: str = Field(description="Walltime (in hh:mm:ss) for sequence preparation step")
     walltime_align: str = Field(description="Walltime (in hh:mm:ss) for sequence alignment step")
 
+class InforunType(str, Enum):
+    info = "info"
+    warn = "warn"
+    critical = "critical"
+    success = "success"
+
+class Inforun(BaseModel):
+    message: str = Field(description="Banner message"),
+    type: InforunType = Field(description="Message type")
 
 class Config(BaseModel):
+    banner: Inforun|None = Field(description="Banner message if any")
     batch_id: str = Field(description="Suggested batch id")
     email: bool = Field(Functions.is_email_mandatory(), description="if True, an email is required to submit a job")
     limits: Limits = Field(description="This instance limits")
@@ -313,6 +323,7 @@ class ExampleFilesResponse(BaseResponse):
 class PrepareFasta(BaseModel):
     status: PrepareFastaEnum = Field(description="Status of the preparation")
     gzip: Optional[bool] = Field(description="Whether the file is gzipped")
+    mail: bool = Field(description="An email will be sent")
 
 class PrepareFastaResponse(BaseResponse):
     data: PrepareFasta = Field(description="Prepared fasta data")

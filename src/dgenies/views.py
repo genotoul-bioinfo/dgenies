@@ -74,13 +74,7 @@ def main():
         pict = None
     return render_template("index.html", menu="index", pict=pict)
 
-
-@app.route("/run", methods=['GET'])
-def run():
-    """
-    Run page
-    """
-    # Message banner part
+def get_inforun():
     inforun = None
     inforun_file = os.path.join(config_reader.config_dir, ".inforun")
     if os.path.exists(inforun_file):
@@ -90,6 +84,16 @@ def run():
         except json.JSONDecodeError:
             print("Unable to parse inforun file. Ignoring it.", file=sys.stderr)
             pass
+    return inforun
+
+
+@app.route("/run", methods=['GET'])
+def run():
+    """
+    Run page
+    """
+    # Message banner part
+    inforun = get_inforun()
 
     # We get the list of tools and their options
     tools = Tools().tools
