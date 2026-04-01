@@ -1506,8 +1506,9 @@ def test_job_manager_additional_local_cluster_and_update_helpers(monkeypatch, tm
         ).encode(),
         raising=False,
     )
-    assert jm.check_job_status_sge() is True
-    assert "600 2048" in Path(jm.logs).read_text()
+    with pytest.raises(DGeniesClusterRunError, match="SGE Unit not specified."):
+        jm.check_job_status_sge()
+    assert "600 2048" not in Path(jm.logs).read_text()
 
     monkeypatch.setattr(
         module.subprocess,
@@ -1523,6 +1524,23 @@ def test_job_manager_additional_local_cluster_and_update_helpers(monkeypatch, tm
     assert jm.check_job_status_sge() is True
     assert "2097152" in Path(jm.logs).read_text()
 
+    os.remove(jm.logs) #deleting file because check_job_status_sge write using append
+
+    monkeypatch.setattr(
+        module.subprocess,
+        "check_output",
+        lambda *_args, **_kwargs: (
+            "failed       1\n"
+            "start_time   Mon Jan 01 00:00:00 2024\n"
+            "end_time     Mon Jan 01 00:10:00 2024\n"
+            "maxvmem      2M\n"
+        ).encode(),
+        raising=False,
+    )
+
+    assert jm.check_job_status_sge() is False
+    assert Path(jm.logs).exists() is False
+
     monkeypatch.setattr(
         module.subprocess,
         "check_output",
@@ -1536,7 +1554,6 @@ def test_job_manager_additional_local_cluster_and_update_helpers(monkeypatch, tm
     )
     assert jm.check_job_status_sge() is True
     assert "2048" in Path(jm.logs).read_text()
-
     env_web = _setup_job_manager_env(monkeypatch, tmp_path / "status_web", mode="webserver")
     web_query = DataFile("query", str(tmp_path / "status_web_query.fa"), "local")
     web_target = DataFile("target", str(tmp_path / "status_web_target.fa"), "local")

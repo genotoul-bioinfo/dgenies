@@ -706,7 +706,7 @@ class JobManager:
                 elif mem_peak.endswith("M"):
                     mem_peak = int(mem_peak[:-1]) * 1024
                 else:
-                    mem_peak = int(mem_peak)
+                    raise DGeniesClusterRunError("SGE Unit not specified.")
 
         if status == "0":
             if start is not None and end is not None and mem_peak is not None:
