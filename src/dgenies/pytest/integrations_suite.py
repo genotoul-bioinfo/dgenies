@@ -10,6 +10,15 @@ from dgenies.lib.exceptions import DGeniesUnknownOptionError
 
 # This file was split out from src/dgenies/test_dgenies_api.py.
 
+"""
+Verifies the Tool and Tools modules, focusing on object instantiation, parameter validation, and configuration discovery across different operating systems.
+
+Ensure that:
+1. The Tool class correctly resolves executable paths (handling both default and explicit placeholders) and parses complex command-line templates, including radio/checkbox options.
+2. Strict input validation is enforced during Tool creation for all critical parameters, such as thread counts, memory limits, template syntax, and option structures.
+3. The Tools loader successfully identifies tool definitions from both provided YAML files and user home directory defaults (e.g., ~/.dgenies/tools.yaml).
+4. Platform-specific logic correctly adjusts executable pathing and architecture-dependent defaults when switching between Linux and Darwin environments.
+"""
 def test_tools_module_loading_and_validation(monkeypatch, tmp_path):
     import dgenies.tools as tools_module
 
@@ -149,7 +158,14 @@ def test_tools_module_loading_and_validation(monkeypatch, tmp_path):
     with pytest.raises(FileNotFoundError, match="tools.yaml not found"):
         tools_module.Tools()
 
+"""
+Tests the functionality of version tracking, automated email notification, and DRMAA session management utilities.
 
+Ensure that:
+1. The Latest module accurately retrieves, parses, and caches software release metadata while remaining resilient to network connectivity issues during background updates.
+2. The Mailer service correctly implements SMTP configuration from environment variables and supports both direct message dispatch as well as suppressed or entirely disabled sending modes.
+3. DRMAA session management follows the expected lifecycle of initialization and termination.
+"""
 def test_latest_mailer_and_drmaa_helpers(monkeypatch, tmp_path, capsys):
     import dgenies.lib.drmaasession as drmaa_module
     import dgenies.lib.latest as latest_module

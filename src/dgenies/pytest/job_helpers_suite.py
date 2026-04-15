@@ -13,6 +13,15 @@ from dgenies.pytest.helpers import TESTS_DATA_DIR, TESTS_ENSEMBL_DIR, _setup_api
 
 # This file was split out from src/dgenies/test_dgenies_api.py.
 
+"""
+Tests the job_helpers logic for DataFile instantiation and job configuration transformation using real file system fixtures.
+
+Ensure that:
+1. create_datafile correctly handles local files by sanitizing filenames (e.g., removing spaces) and placing them within the appropriate session directory.
+2. The utility properly distinguishes between "example" URIs (mapping them to known fixture paths) and "url" types, while raising specific exceptions for invalid or missing example references.
+3. update_files accurately transforms job dictionaries by converting string-based identifiers into structured DataFile objects.
+4. Redundant metadata keys (like query_type or target_type) are cleaned up after the transformation process is complete.
+"""
 def test_job_helpers_create_datafile_and_update_files_use_real_fixtures(monkeypatch, tmp_path):
     import dgenies
     import dgenies.job_helpers as job_helpers
@@ -104,7 +113,15 @@ def test_job_helpers_create_datafile_and_update_files_use_real_fixtures(monkeypa
     assert "backup_type" not in jobs[0]
     assert "align_type" not in jobs[1]
 
+"""
+Verifies the execution branches of the build_fasta helper, including error states, lock management, and file format variations.
 
+Ensure that:
+1. Appropriate exceptions are raised when a job is missing or the required FASTA file cannot be found.
+2. File locks prevent concurrent builds and are reliably released if a sorting operation fails.
+3. The logic correctly handles different build requirements, such as triggering sorts based on refresh markers (e.g., .new-reversals) and processing both compressed (.gz) and uncompressed files.
+4. Asynchronous post-processing tasks, such as compression and email notifications, are scheduled correctly during the build lifecycle.
+"""
 def test_job_helpers_build_fasta_branches(monkeypatch, tmp_path):
     import dgenies
     import dgenies.job_helpers as job_helpers
@@ -215,7 +232,14 @@ def test_job_helpers_build_fasta_branches(monkeypatch, tmp_path):
     )
     assert job_helpers.build_fasta(job_id, True) == (2, True)
 
+"""
+Tests the logic for computing job statistics summaries and verifying the freshness of sorted FASTA files.
 
+Ensure that:
+1. compute_summary correctly identifies and returns appropriate statuses (e.g., job_not_found, file_not_found, done, or fail) based on the presence of job directories, PAF files, and failure markers.
+2. The summary generation process handles both immediate results and delayed/asynchronous statistics generation via polling or timers.
+3. has_fresh_sorted_query_fasta accurately detects if a sorted FASTA file is stale by comparing its modification time against refresh marker files (e.g., .new-reversals).
+"""
 def test_job_helpers_compute_summary_and_freshness(monkeypatch, tmp_path):
     import dgenies
     import dgenies.job_helpers as job_helpers
@@ -346,7 +370,15 @@ def test_job_helpers_compute_summary_and_freshness(monkeypatch, tmp_path):
     os.utime(sorted_query, (refresh_marker.stat().st_mtime + 5, refresh_marker.stat().st_mtime + 5))
     assert job_helpers.has_fresh_sorted_query_fasta(str(fresh_dir)) is True
 
+"""
+Tests build_fasta behavior in webserver mode, focusing on path resolution, file locking, and freshness detection edge cases.
 
+Ensure that:
+1. Path resolution for both standard and sorted FASTA files is accurate within the job directory.
+2. File locking mechanisms prevent concurrent execution and correctly manage stale or pending lock states.
+3. The system appropriately identifies out-of-date sorted files using refresh markers (e.g., .new-reversals).
+4. Asynchronous tasks, such as compression and email notifications, are properly scheduled during the build lifecycle.
+"""
 def test_job_helpers_build_fasta_webserver_paths_and_freshness_edge_cases(monkeypatch, tmp_path):
     import dgenies
     import dgenies.job_helpers as job_helpers
@@ -474,7 +506,13 @@ def test_job_helpers_build_fasta_webserver_paths_and_freshness_edge_cases(monkey
     monkeypatch.setattr(job_helpers.os.path, "realpath", lambda _path: (_ for _ in ()).throw(FileNotFoundError("gone")), raising=False)
     assert job_helpers.has_fresh_sorted_query_fasta(str(fresh_dir)) is False
 
+"""
+Tests that the freshness check for sorted FASTA files fails gracefully when metadata access is interrupted by filesystem errors.
 
+Ensure that:
+1. The function returns False if the modification time of a sorted file cannot be retrieved due to a FileNotFoundError.
+2. Metadata retrieval failures do not cause the application to crash during the freshness verification process.
+"""
 def test_has_fresh_sorted_query_fasta_returns_false_when_sorted_mtime_is_missing(monkeypatch, tmp_path):
     import dgenies.job_helpers as job_helpers
 

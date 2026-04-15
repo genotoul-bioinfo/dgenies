@@ -11,15 +11,16 @@ from typing import List
 
 import pytest
 
+import dgenies.lib.functions as functions_module
 from dgenies.allowed_extensions import AllowedExtensions
 from dgenies.lib.functions import Functions
-import dgenies.lib.functions as functions_module
 
 # This file was split out from src/dgenies/test_dgenies_api.py.
 
+
 @pytest.mark.parametrize("length", list(range(1, 51)))
 def test_random_string_length_and_charset(length: int) -> None:
-    """Verify that ``Functions.random_string`` produces the correct length and
+    """Verify that Functions.random_string produces the correct length and
     only uses alphanumeric characters.
 
     This parameterised test runs 50 times, once for each length from 1
@@ -60,7 +61,7 @@ def test_get_valid_uploaded_filename(tmp_path, basename: str) -> None:
     """Ensure that duplicate filenames are renamed to a unique name.
 
     For each of the 20 basenames, a file with that name is created in a
-    temporary directory.  ``Functions.get_valid_uploaded_filename`` is
+    temporary directory.  Functions.get_valid_uploaded_filename is
     then called and the returned name is asserted to differ from the
     original basename and to be unused within the directory.
     """
@@ -69,7 +70,9 @@ def test_get_valid_uploaded_filename(tmp_path, basename: str) -> None:
 
     new_name = Functions.get_valid_uploaded_filename(basename, str(tmp_path))
     assert new_name != basename, f"expected a renamed file for {basename}"
-    assert not (tmp_path / new_name).exists(), f"returned name {new_name} already exists"
+    assert not (tmp_path / new_name).exists(), (
+        f"returned name {new_name} already exists"
+    )
 
 
 @pytest.mark.parametrize("_", list(range(10)))
@@ -103,19 +106,24 @@ def test_random_job_id_format(_) -> None:
         ("unknown.extension", False),
     ],
 )
-def test_functions_allowed_file(monkeypatch: pytest.MonkeyPatch, filename: str, expected: bool) -> None:
-    """Test ``Functions.allowed_file`` using a controlled extension mapping.
+def test_functions_allowed_file(
+    monkeypatch: pytest.MonkeyPatch, filename: str, expected: bool
+) -> None:
+    """Test Functions.allowed_file using a controlled extension mapping.
 
-    ``Functions.allowed_file`` defers to ``AllowedExtensions.get_extensions``
+    Functions.allowed_file defers to AllowedExtensions.get_extensions
     to determine which suffixes are acceptable.  The test patches this
-    method so that only ``fa``, ``fasta`` and ``fa.gz`` are recognised.
+    method so that only fa, fasta and fa.gz are recognised.
     Ten filenames are exercised to cover valid and invalid cases.
     """
+
     def fake_get_extensions(file_format: str) -> List[str]:
         return ["fa", "fasta", "fa.gz"]
 
     assert fake_get_extensions("fasta") == ["fa", "fasta", "fa.gz"]
-    monkeypatch.setattr(AllowedExtensions, "get_extensions", fake_get_extensions, raising=False)
+    monkeypatch.setattr(
+        AllowedExtensions, "get_extensions", fake_get_extensions, raising=False
+    )
     result = Functions.allowed_file(filename, ("fasta",))
     assert result is expected
 
@@ -136,22 +144,24 @@ def test_functions_allowed_file(monkeypatch: pytest.MonkeyPatch, filename: str, 
     ],
 )
 def test_do_sort_private(fasta: str, is_sorted: bool, expected: bool) -> None:
-    """Exercise the private helper ``Functions.__get_do_sort``.
+    """Exercise the private helper Functions.__get_do_sort.
 
-    The mangled method name ``_Functions__get_do_sort`` is invoked
-    directly.  Ten combinations of filename and ``is_sorted`` flag are
+    The mangled method name _Functions__get_do_sort is invoked
+    directly.  Ten combinations of filename and is_sorted flag are
     used to verify that sorting is requested only for sorted jobs and
-    suppressed when the filename already ends in ``.sorted``.
+    suppressed when the filename already ends in .sorted.
     """
     result = Functions._Functions__get_do_sort(fasta, is_sorted)
     assert result is expected
 
 
-@pytest.mark.parametrize("is_gz", [True, False, True, False, True, False, True, False, True, False])
+@pytest.mark.parametrize(
+    "is_gz", [True, False, True, False, True, False, True, False, True, False]
+)
 def test_is_gz_file_detection(is_gz: bool) -> None:
-    """Check ``Functions.is_gz_file`` on gzipped and plain files.
+    """Check Functions.is_gz_file on gzipped and plain files.
 
-    Ten files are generated on the fly.  When ``is_gz`` is ``True``, the
+    Ten files are generated on the fly.  When is_gz is True, the
     file is compressed using the gzip module; otherwise it contains
     plain text.  The helper must correctly detect gzipped content based
     on the magic number.
@@ -177,10 +187,11 @@ def test_is_gz_file_detection(is_gz: bool) -> None:
 #
 # Thirty additional tests drive the high level API functions.  Rather than
 # running the full Flask application, each test calls the view functions
-# directly.  External dependencies such as ``allow_upload`` and
-# ``Functions.random_job_id`` are patched out to give deterministic
+# directly.  External dependencies such as allow_upload and
+# Functions.random_job_id are patched out to give deterministic
 # behaviour.  All API tests return a tuple (response dict, status code)
 # where appropriate.
+
 
 def test_get_readable_size_units():
     # Basic unit conversions for bytes to KiB, MiB and GiB.
@@ -227,7 +238,9 @@ def test_get_jobs_and_list_all_jobs(monkeypatch, tmp_path):
     assert Functions._get_jobs_list() == ["job1"]
 
     # Test sorting and gallery removal in standalone mode.
-    monkeypatch.setattr(Functions, "_get_jobs_list", lambda: ["jobb", "JobA", "gallery"])
+    monkeypatch.setattr(
+        Functions, "_get_jobs_list", lambda: ["jobb", "JobA", "gallery"]
+    )
     jobs_all = Functions.get_list_all_jobs(mode="standalone")
     assert jobs_all == ["JobA", "jobb"]
     # In webserver mode no jobs are disclosed.
@@ -252,6 +265,7 @@ def test_has_logs(tmp_path):
 
 def test_is_email_mandatory(monkeypatch):
     import dgenies
+
     # Running in webserver mode makes email mandatory.
     monkeypatch.setattr(dgenies, "MODE", "webserver")
     assert Functions.is_email_mandatory() is True
@@ -277,7 +291,16 @@ def test_get_status(monkeypatch, tmp_path):
     logs_path.write_text("log")
 
     # Case: mem_peak present and time less than a minute.
-    job1 = DummyJob("job1", {"status": "running", "error": "Err#ID#", "mem_peak": 2 * 1024 * 1024, "time_elapsed": 45}, str(logs_path))
+    job1 = DummyJob(
+        "job1",
+        {
+            "status": "running",
+            "error": "Err#ID#",
+            "mem_peak": 2 * 1024 * 1024,
+            "time_elapsed": 45,
+        },
+        str(logs_path),
+    )
     res1 = Functions.get_status(job1)
     assert res1["status"] == "running"
     assert res1["error"] == "Err"
@@ -286,7 +309,11 @@ def test_get_status(monkeypatch, tmp_path):
     assert res1["time_elapsed"] == "45 secs"
 
     # Case: no mem_peak provided and elapsed time spans minutes.
-    job2 = DummyJob("job2", {"status": "done", "error": "NoError#ID#", "time_elapsed": 125}, str(logs_path))
+    job2 = DummyJob(
+        "job2",
+        {"status": "done", "error": "NoError#ID#", "time_elapsed": 125},
+        str(logs_path),
+    )
     res2 = Functions.get_status(job2)
     assert res2["mem_peak"] is None
     assert res2["time_elapsed"] == "2 min 5 secs"
@@ -309,6 +336,7 @@ def test_uncompress_and_compress(monkeypatch, tmp_path):
     # Substitute the xopen function with a simple passthrough to builtin open.
     def fake_xopen(filename, mode="rb", format=None):
         return open(filename, mode)
+
     monkeypatch.setattr(functions_module, "xopen", fake_xopen, raising=False)
 
     # Create a plain file to compress.
@@ -410,8 +438,10 @@ def test_get_fasta_file(tmp_path):
     # If pointed file does not exist a FileNotFoundError should be raised.
     (tmp_path / ".query").write_text("missing.fa")
     import pytest as _pytest
+
     with _pytest.raises(FileNotFoundError):
         Functions.get_fasta_file(str(tmp_path), "query", False)
+
 
 def test_functions_file_lock_copy_session_and_mail_helpers(monkeypatch, tmp_path):
     import dgenies
@@ -421,7 +451,12 @@ def test_functions_file_lock_copy_session_and_mail_helpers(monkeypatch, tmp_path
     linked = tmp_path / "linked.txt"
     copied = tmp_path / "copied.txt"
 
-    monkeypatch.setattr(functions_module.os, "link", lambda src, dest: shutil.copy(src, dest), raising=False)
+    monkeypatch.setattr(
+        functions_module.os,
+        "link",
+        lambda src, dest: shutil.copy(src, dest),
+        raising=False,
+    )
     Functions.hardlink_or_copy(str(source), str(linked))
     assert linked.read_text() == "payload"
 
@@ -452,9 +487,19 @@ def test_functions_file_lock_copy_session_and_mail_helpers(monkeypatch, tmp_path
     Functions.release_file_lock(str(lock_file))
 
     monkeypatch.setattr(dgenies, "MODE", "standalone", raising=False)
-    monkeypatch.setattr(dgenies, "config_reader", SimpleNamespace(upload_folder=str(tmp_path)), raising=False)
+    monkeypatch.setattr(
+        dgenies,
+        "config_reader",
+        SimpleNamespace(upload_folder=str(tmp_path)),
+        raising=False,
+    )
     generated = iter(["duplicated_session", "fresh_session"])
-    monkeypatch.setattr(Functions, "random_string", staticmethod(lambda _size: next(generated)), raising=False)
+    monkeypatch.setattr(
+        Functions,
+        "random_string",
+        staticmethod(lambda _size: next(generated)),
+        raising=False,
+    )
     (tmp_path / "duplicated_session").mkdir()
     assert Functions.create_session() == "fresh_session"
 
@@ -496,12 +541,30 @@ def test_functions_file_lock_copy_session_and_mail_helpers(monkeypatch, tmp_path
     assert Functions.get_mail_for_job("job-db") == "db@example.org"
 
 
-def test_functions_additional_lock_extension_and_compression_error_branches(monkeypatch, tmp_path):
+"""
+Tests the error branches and edge cases for filesystem utility functions, including locking, extension validation, FASTA discovery, and compression.
+
+Ensure that:
+1. File locking mechanisms correctly identify stale locks and handle file access errors during acquisition gracefully.
+2. Extension validation logic accurately verifies allowed file types based on job configurations.
+3. FASTA file retrieval successfully locates files via pointer/metadata files or returns None when the target is missing.
+4. Compression and decompression utilities manage successful operations, idempotency, and runtime failures (e.g., corrupted archives) by returning None.
+"""
+
+
+def test_functions_additional_lock_extension_and_compression_error_branches(
+    monkeypatch, tmp_path
+):
     lock_file = tmp_path / "stale.lock"
     lock_file.write_text("locked")
     assert Functions.is_file_lock_active(str(lock_file), stale_after=0) is True
 
-    monkeypatch.setattr(functions_module.os.path, "getmtime", lambda _path: (_ for _ in ()).throw(FileNotFoundError("gone")), raising=False)
+    monkeypatch.setattr(
+        functions_module.os.path,
+        "getmtime",
+        lambda _path: (_ for _ in ()).throw(FileNotFoundError("gone")),
+        raising=False,
+    )
     assert Functions.acquire_file_lock(str(lock_file), stale_after=1) is False
     assert Functions.is_file_lock_active(str(lock_file), stale_after=1) is False
 
@@ -509,7 +572,12 @@ def test_functions_additional_lock_extension_and_compression_error_branches(monk
         def get_formats(self, *_args):
             return ["fa"]
 
-    monkeypatch.setattr(functions_module, "AllowedExtensions", lambda: LegacyAllowedExtensions(), raising=False)
+    monkeypatch.setattr(
+        functions_module,
+        "AllowedExtensions",
+        lambda: LegacyAllowedExtensions(),
+        raising=False,
+    )
     assert Functions.allowed_file_ext("jobtype", "query", "sample.fa") is True
 
     no_pointer_dir = tmp_path / "no-pointer"
@@ -521,13 +589,17 @@ def test_functions_additional_lock_extension_and_compression_error_branches(monk
     sorted_ready = sorted_pointer / "query.fa.gz.sorted"
     sorted_ready.write_text(">q\nACGT\n")
     (sorted_pointer / ".query.sorted").write_text(str(sorted_ready))
-    assert Functions.get_fasta_file(str(sorted_pointer), "query", True) == str(sorted_ready)
+    assert Functions.get_fasta_file(str(sorted_pointer), "query", True) == str(
+        sorted_ready
+    )
 
     source = tmp_path / "source.txt"
     source.write_text("payload")
     gz_path = Functions.compress(str(source), overwrite=True, remove=False)
     assert gz_path is not None
-    assert Functions.compress(str(Path(gz_path)), overwrite=True, remove=False) == gz_path
+    assert (
+        Functions.compress(str(Path(gz_path)), overwrite=True, remove=False) == gz_path
+    )
 
     real_getmtime = functions_module.os.path.getmtime
     existing_output = tmp_path / "source.txt"
@@ -535,25 +607,62 @@ def test_functions_additional_lock_extension_and_compression_error_branches(monk
     monkeypatch.setattr(
         functions_module.os.path,
         "getmtime",
-        lambda path: (_ for _ in ()).throw(FileNotFoundError("gone")) if path == str(gz_path) else real_getmtime(path),
+        lambda path: (
+            (_ for _ in ()).throw(FileNotFoundError("gone"))
+            if path == str(gz_path)
+            else real_getmtime(path)
+        ),
         raising=False,
     )
     uncompressed = Functions.uncompress(gz_path)
     assert uncompressed is not None
     assert Path(uncompressed).name.startswith("2_")
 
-    monkeypatch.setattr(functions_module, "xopen", lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("broken gzip")), raising=False)
+    monkeypatch.setattr(
+        functions_module,
+        "xopen",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("broken gzip")),
+        raising=False,
+    )
     assert Functions.uncompress(gz_path) is None
 
-    monkeypatch.setattr(functions_module, "open", lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("broken open")), raising=False)
+    monkeypatch.setattr(
+        functions_module,
+        "open",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("broken open")),
+        raising=False,
+    )
     assert Functions.compress(str(source), overwrite=True, remove=False) is None
 
 
-def test_functions_send_sort_compress_gallery_and_membership_helpers(monkeypatch, tmp_path):
+"""
+Tests utility functions for email notifications, FASTA sorting, file compression workflows, and gallery membership logic.
+
+Ensure that:
+1. send_fasta_ready correctly constructs email subjects and bodies containing the appropriate download URLs.
+2. sort_fasta accurately reorders sequences based on an index and generates timestamped output files while managing lock files.
+3. compress_and_send_mail successfully compresses files and triggers the notification workflow.
+4. Gallery retrieval functions correctly format metadata (e.g., memory usage, duration) and handle both existing and missing job records during membership checks.
+"""
+
+
+def test_functions_send_sort_compress_gallery_and_membership_helpers(
+    monkeypatch, tmp_path
+):
     from peewee import DoesNotExist
 
-    monkeypatch.setattr(Functions, "config", SimpleNamespace(web_url="https://dgenies.example"), raising=False)
-    monkeypatch.setattr(Functions, "get_mail_for_job", staticmethod(lambda _job_id: "user@example.org"), raising=False)
+    monkeypatch.setattr(
+        Functions,
+        "config",
+        SimpleNamespace(web_url="https://dgenies.example"),
+        raising=False,
+    )
+    monkeypatch.setattr(
+        Functions,
+        "get_mail_for_job",
+        staticmethod(lambda _job_id: "user@example.org"),
+        raising=False,
+    )
 
     sent_messages = []
 
@@ -591,7 +700,11 @@ def test_functions_send_sort_compress_gallery_and_membership_helpers(monkeypatch
     monkeypatch.setattr(
         Functions,
         "send_fasta_ready",
-        staticmethod(lambda _mailer, job_name, sample_name, compressed, *_args, **_kwargs: send_ready_calls.append((job_name, sample_name, compressed))),
+        staticmethod(
+            lambda _mailer, job_name, sample_name, compressed, *_args, **_kwargs: (
+                send_ready_calls.append((job_name, sample_name, compressed))
+            )
+        ),
         raising=False,
     )
 
@@ -626,10 +739,21 @@ def test_functions_send_sort_compress_gallery_and_membership_helpers(monkeypatch
     monkeypatch.setattr(
         Functions,
         "send_fasta_ready",
-        staticmethod(lambda _mailer, job_name, sample_name, compressed, *_args, **_kwargs: sent_ready_calls.append((job_name, sample_name, compressed))),
+        staticmethod(
+            lambda _mailer, job_name, sample_name, compressed, *_args, **_kwargs: (
+                sent_ready_calls.append((job_name, sample_name, compressed))
+            )
+        ),
         raising=False,
     )
-    Functions.compress_and_send_mail("job-mail", str(second_fasta), str(second_lock), mailer, dot_file=str(second_dot), overwrite=True)
+    Functions.compress_and_send_mail(
+        "job-mail",
+        str(second_fasta),
+        str(second_lock),
+        mailer,
+        dot_file=str(second_dot),
+        overwrite=True,
+    )
     assert not second_lock.exists()
     assert Path(second_dot.read_text()).name == "sorted-query.fasta.gz"
     assert sent_ready_calls == [("job-mail", "sorted-query", True)]
@@ -645,15 +769,19 @@ def test_functions_send_sort_compress_gallery_and_membership_helpers(monkeypatch
 
         @staticmethod
         def select():
-            return FakeGalleryQuery([
-                SimpleNamespace(
-                    name="Gallery Item",
-                    job=SimpleNamespace(id_job="gallery-job", mem_peak=2048, time_elapsed=65),
-                    picture="gallery.png",
-                    query="Query",
-                    target="Target",
-                )
-            ])
+            return FakeGalleryQuery(
+                [
+                    SimpleNamespace(
+                        name="Gallery Item",
+                        job=SimpleNamespace(
+                            id_job="gallery-job", mem_peak=2048, time_elapsed=65
+                        ),
+                        picture="gallery.png",
+                        query="Query",
+                        target="Target",
+                    )
+                ]
+            )
 
     class FakeJob:
         id_job = object()
@@ -670,15 +798,17 @@ def test_functions_send_sort_compress_gallery_and_membership_helpers(monkeypatch
     monkeypatch.setitem(sys.modules, "dgenies.database", fake_db)
 
     gallery_items = Functions.get_gallery_items()
-    assert gallery_items == [{
-        "name": "Gallery Item",
-        "id_job": "gallery-job",
-        "picture": "gallery.png",
-        "query": "Query",
-        "target": "Target",
-        "mem_peak": "2.0 MiB",
-        "time_elapsed": "1 min 5 s",
-    }]
+    assert gallery_items == [
+        {
+            "name": "Gallery Item",
+            "id_job": "gallery-job",
+            "picture": "gallery.png",
+            "query": "Query",
+            "target": "Target",
+            "mem_peak": "2.0 MiB",
+            "time_elapsed": "1 min 5 s",
+        }
+    ]
     assert Functions.is_in_gallery("gallery-job", mode="webserver") is True
     FakeJob.raise_missing = True
     assert Functions.is_in_gallery("missing", mode="webserver") is False

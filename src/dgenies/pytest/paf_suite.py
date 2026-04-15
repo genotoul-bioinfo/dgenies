@@ -10,6 +10,7 @@ import pytest
 
 # This file was split out from src/dgenies/test_dgenies_api.py.
 
+
 def test_paf_parse_index_and_flush_blocks(tmp_path):
     """Validate parsing and block merging in the Paf class.
 
@@ -94,14 +95,16 @@ def test_paf_remove_noise_and_keyerror_message(tmp_path):
 def test_paf_set_sorted_and_gravity_contigs_and_d3js(tmp_path):
     """Verify sorted status toggling, gravity computation and d3js data assembly.
 
-    The set_sorted method should create and remove the `.sorted` marker file
+    The set_sorted method should create and remove the .sorted marker file
     and update the internal flag accordingly.  compute_gravity_contigs must
     accumulate squared match lengths per contig/chromosome and return detailed
     line summaries.  get_d3js_data bundles internal properties into a dict.
     """
-    from dgenies.lib.paf import Paf
-    from math import sqrt, pow
+    from math import pow, sqrt
+
     import pytest
+
+    from dgenies.lib.paf import Paf
 
     # Prepare dummy files
     paf_file = tmp_path / "map.paf"
@@ -193,8 +196,7 @@ def _build_small_paf_runtime(tmp_path: Path):
 
     paf_file = job_dir / "map.paf"
     paf_file.write_text(
-        "q1\t5\t0\t5\t+\tt2\t5\t0\t5\t5\t5\t60\n"
-        "q2\t5\t0\t5\t-\tt1\t5\t0\t5\t5\t5\t60\n"
+        "q1\t5\t0\t5\t+\tt2\t5\t0\t5\t5\t5\t60\nq2\t5\t0\t5\t-\tt1\t5\t0\t5\t5\t5\t60\n"
     )
     (job_dir / ".query").write_text(str(query_fasta))
     return job_dir, query_fasta, target_fasta, paf_file, query_idx, target_idx
@@ -203,7 +205,9 @@ def _build_small_paf_runtime(tmp_path: Path):
 def test_paf_end_to_end_sort_association_and_query_as_reference(tmp_path):
     from dgenies.lib.paf import Paf
 
-    job_dir, query_fasta, _, paf_file, query_idx, target_idx = _build_small_paf_runtime(tmp_path)
+    job_dir, query_fasta, _, paf_file, query_idx, target_idx = _build_small_paf_runtime(
+        tmp_path
+    )
 
     paf = Paf(str(paf_file), str(query_idx), str(target_idx))
     assert paf.parsed is True
@@ -245,11 +249,15 @@ def test_paf_end_to_end_sort_association_and_query_as_reference(tmp_path):
     assert paf.q_order[1] == "q1"
 
 
-def test_paf_build_query_as_reference_with_gz_input_and_webserver_mail(monkeypatch, tmp_path):
+def test_paf_build_query_as_reference_with_gz_input_and_webserver_mail(
+    monkeypatch, tmp_path
+):
     import dgenies.lib.paf as paf_module
     from dgenies.lib.functions import Functions
 
-    job_dir, query_fasta, _, paf_file, query_idx, target_idx = _build_small_paf_runtime(tmp_path)
+    job_dir, query_fasta, _, paf_file, query_idx, target_idx = _build_small_paf_runtime(
+        tmp_path
+    )
     gz_query = Functions.compress(str(query_fasta), overwrite=True, remove=True)
     assert gz_query is not None and Path(gz_query).exists()
     (job_dir / ".query").write_text(gz_query)
@@ -263,7 +271,13 @@ def test_paf_build_query_as_reference_with_gz_input_and_webserver_mail(monkeypat
         raising=False,
     )
 
-    paf = paf_module.Paf(str(paf_file), str(query_idx), str(target_idx), mailer=object(), id_job="job-mail")
+    paf = paf_module.Paf(
+        str(paf_file),
+        str(query_idx),
+        str(target_idx),
+        mailer=object(),
+        id_job="job-mail",
+    )
     paf.sort()
     output_path = paf.build_query_chr_as_reference(compress=True)
 
@@ -279,7 +293,12 @@ def test_paf_summary_stats_remove_overlaps(monkeypatch, tmp_path):
 
     job_dir = tmp_path / "summary"
     job_dir.mkdir()
-    paf = Paf(str(job_dir / "map.paf"), str(job_dir / "query.idx"), str(job_dir / "target.idx"), auto_parse=False)
+    paf = Paf(
+        str(job_dir / "map.paf"),
+        str(job_dir / "query.idx"),
+        str(job_dir / "target.idx"),
+        auto_parse=False,
+    )
     paf.parsed = True
     paf.len_t = 10
     paf.lines = {
@@ -303,7 +322,12 @@ def test_paf_summary_stats_remove_overlaps(monkeypatch, tmp_path):
 def test_paf_error_branches_for_missing_inputs_and_failed_reference_build(tmp_path):
     from dgenies.lib.paf import Paf
 
-    missing = Paf(str(tmp_path / "missing.paf"), str(tmp_path / "query.idx"), str(tmp_path / "target.idx"), auto_parse=False)
+    missing = Paf(
+        str(tmp_path / "missing.paf"),
+        str(tmp_path / "query.idx"),
+        str(tmp_path / "target.idx"),
+        auto_parse=False,
+    )
     assert missing.parse_paf() is False
     assert missing.error == "Index file does not exist for query!"
 
@@ -324,17 +348,32 @@ def test_paf_sorted_marker_save_json_and_sorted_dotplot_branches(monkeypatch, tm
     sorted_dir = tmp_path / "sorted-job"
     sorted_dir.mkdir()
     (sorted_dir / ".sorted").write_text("")
-    sorted_paf = Paf(str(sorted_dir / "map.paf"), str(sorted_dir / "query.idx"), str(sorted_dir / "target.idx"), auto_parse=False)
+    sorted_paf = Paf(
+        str(sorted_dir / "map.paf"),
+        str(sorted_dir / "query.idx"),
+        str(sorted_dir / "target.idx"),
+        auto_parse=False,
+    )
     assert sorted_paf.sorted is True
     assert sorted_paf.paf.endswith(".sorted")
     assert sorted_paf.idx_q.endswith(".sorted")
 
-    monkeypatch.setattr(sorted_paf, "get_d3js_data", lambda: {"sorted": sorted_paf.sorted}, raising=False)
+    monkeypatch.setattr(
+        sorted_paf,
+        "get_d3js_data",
+        lambda: {"sorted": sorted_paf.sorted},
+        raising=False,
+    )
     assert sorted_paf.get_dotplot_data(sorted=True) == {"sorted": True}
 
     plain_dir = tmp_path / "plain-job"
     plain_dir.mkdir()
-    plain_paf = Paf(str(plain_dir / "map.paf"), str(plain_dir / "query.idx"), str(plain_dir / "target.idx"), auto_parse=False)
+    plain_paf = Paf(
+        str(plain_dir / "map.paf"),
+        str(plain_dir / "query.idx"),
+        str(plain_dir / "target.idx"),
+        auto_parse=False,
+    )
     sort_calls = []
 
     def fake_sort():
@@ -342,14 +381,23 @@ def test_paf_sorted_marker_save_json_and_sorted_dotplot_branches(monkeypatch, tm
         plain_paf.sorted = True
 
     monkeypatch.setattr(plain_paf, "sort", fake_sort, raising=False)
-    monkeypatch.setattr(plain_paf, "get_d3js_data", lambda: {"sorted": plain_paf.sorted}, raising=False)
+    monkeypatch.setattr(
+        plain_paf, "get_d3js_data", lambda: {"sorted": plain_paf.sorted}, raising=False
+    )
     assert plain_paf.get_dotplot_data(sorted=True) == {"sorted": True}
     assert sort_calls == ["sort"]
 
     out_json = plain_dir / "dotplot.json"
-    monkeypatch.setattr(plain_paf, "get_d3js_data", lambda: {"lines": {"3": [[0, 1, 0, 1, 1.0, "q1", "t1"]]}}, raising=False)
+    monkeypatch.setattr(
+        plain_paf,
+        "get_d3js_data",
+        lambda: {"lines": {"3": [[0, 1, 0, 1, 1.0, "q1", "t1"]]}},
+        raising=False,
+    )
     plain_paf.save_json(str(out_json))
-    assert json.loads(out_json.read_text()) == {"lines": {"3": [[0, 1, 0, 1, 1.0, "q1", "t1"]]}}
+    assert json.loads(out_json.read_text()) == {
+        "lines": {"3": [[0, 1, 0, 1, 1.0, "q1", "t1"]]}
+    }
 
 
 def test_paf_parse_sampling_and_missing_target_or_query_inputs(tmp_path):
@@ -357,17 +405,26 @@ def test_paf_parse_sampling_and_missing_target_or_query_inputs(tmp_path):
 
     job_dir, _, _, paf_file, query_idx, target_idx = _build_small_paf_runtime(tmp_path)
 
-    missing_target = Paf(str(paf_file), str(query_idx), str(job_dir / "missing-target.idx"), auto_parse=False)
+    missing_target = Paf(
+        str(paf_file),
+        str(query_idx),
+        str(job_dir / "missing-target.idx"),
+        auto_parse=False,
+    )
     assert missing_target.parse_paf() is False
     assert missing_target.error == "Index file does not exist for target!"
 
     bad_query_idx = job_dir / "bad-query.idx"
     bad_query_idx.write_text("Query\nmissing\t5\n")
-    bad_query = Paf(str(paf_file), str(bad_query_idx), str(target_idx), auto_parse=False)
+    bad_query = Paf(
+        str(paf_file), str(bad_query_idx), str(target_idx), auto_parse=False
+    )
     assert bad_query.parse_paf() is False
     assert bad_query.error == "Invalid contig for query: q1"
 
-    missing_paf = Paf(str(job_dir / "missing.paf"), str(query_idx), str(target_idx), auto_parse=False)
+    missing_paf = Paf(
+        str(job_dir / "missing.paf"), str(query_idx), str(target_idx), auto_parse=False
+    )
     assert missing_paf.parse_paf() is False
     assert missing_paf.error == "PAF file does not exist!"
 
@@ -382,7 +439,12 @@ def test_paf_parse_sampling_and_missing_target_or_query_inputs(tmp_path):
 def test_paf_is_contig_well_oriented_edge_cases(tmp_path):
     from dgenies.lib.paf import Paf
 
-    paf = Paf(str(tmp_path / "map.paf"), str(tmp_path / "query.idx"), str(tmp_path / "target.idx"), auto_parse=False)
+    paf = Paf(
+        str(tmp_path / "map.paf"),
+        str(tmp_path / "query.idx"),
+        str(tmp_path / "target.idx"),
+        auto_parse=False,
+    )
     paf.q_contigs = {"q1": 100}
     paf.t_contigs = {"t1": 100}
 
@@ -405,7 +467,9 @@ def test_paf_is_contig_well_oriented_edge_cases(tmp_path):
     assert paf.is_contig_well_oriented(reversed_lines, "q1", "t1") is False
 
 
-def test_paf_parse_categories_sort_transitions_and_summary_failures(monkeypatch, tmp_path):
+def test_paf_parse_categories_sort_transitions_and_summary_failures(
+    monkeypatch, tmp_path
+):
     from dgenies.lib.paf import Paf
 
     job_dir = tmp_path / "paf_edges"
@@ -440,17 +504,39 @@ def test_paf_parse_categories_sort_transitions_and_summary_failures(monkeypatch,
         lambda _values, bins: ([100.0, 1.0], [0.0, 5.0, 10.0], []),
         raising=False,
     )
-    monkeypatch.setattr(Paf, "remove_noise", staticmethod(lambda lines, limit: remove_calls.append(limit) or lines), raising=False)
+    monkeypatch.setattr(
+        Paf,
+        "remove_noise",
+        staticmethod(lambda lines, limit: remove_calls.append(limit) or lines),
+        raising=False,
+    )
     assert noisy.parse_paf(merge_index=False, noise=False) is None
     assert noisy.parsed is True
     assert remove_calls == [5.0]
 
     sortable = Paf(str(paf_file), str(query_idx), str(target_idx), auto_parse=False)
-    monkeypatch.setattr(sortable, "parse_paf", lambda *_args, **_kwargs: None, raising=False)
-    monkeypatch.setattr(sortable, "compute_gravity_contigs", lambda: ({"q0": {"t0": 5}}, {("q0", "t0"): [(5, 1, 5, 0, 10, 0, 10, 10)]}), raising=False)
-    monkeypatch.setattr(sortable, "is_contig_well_oriented", lambda *_args, **_kwargs: True, raising=False)
+    monkeypatch.setattr(
+        sortable, "parse_paf", lambda *_args, **_kwargs: None, raising=False
+    )
+    monkeypatch.setattr(
+        sortable,
+        "compute_gravity_contigs",
+        lambda: ({"q0": {"t0": 5}}, {("q0", "t0"): [(5, 1, 5, 0, 10, 0, 10, 10)]}),
+        raising=False,
+    )
+    monkeypatch.setattr(
+        sortable,
+        "is_contig_well_oriented",
+        lambda *_args, **_kwargs: True,
+        raising=False,
+    )
     update_calls = []
-    monkeypatch.setattr(sortable, "_update_query_index", lambda reoriented: update_calls.append(list(reoriented)), raising=False)
+    monkeypatch.setattr(
+        sortable,
+        "_update_query_index",
+        lambda reoriented: update_calls.append(list(reoriented)),
+        raising=False,
+    )
     sortable.name_q = "Query"
     sortable.q_order = ["q0"]
     sortable.q_contigs = {"q0": 10}
@@ -462,8 +548,12 @@ def test_paf_parse_categories_sort_transitions_and_summary_failures(monkeypatch,
     sorted_marker = job_dir / ".sorted"
     if sorted_marker.exists():
         sorted_marker.unlink()
-    already_sorted = Paf(str(paf_file), str(query_idx), str(target_idx), auto_parse=False)
-    monkeypatch.setattr(already_sorted, "parse_paf", lambda *_args, **_kwargs: None, raising=False)
+    already_sorted = Paf(
+        str(paf_file), str(query_idx), str(target_idx), auto_parse=False
+    )
+    monkeypatch.setattr(
+        already_sorted, "parse_paf", lambda *_args, **_kwargs: None, raising=False
+    )
     (job_dir / "map.paf.sorted").write_text("sorted\n")
     (job_dir / "query.idx.sorted").write_text("Query\nq0\t10\n")
     already_sorted.sort()
@@ -475,23 +565,51 @@ def test_paf_parse_categories_sort_transitions_and_summary_failures(monkeypatch,
     (sorted_job / "map.paf").write_text("sorted\n")
     (sorted_job / "query.idx").write_text("Query\nq0\t10\n")
     (sorted_job / "target.idx").write_text("Target\nt0\t10\n")
-    sorted_instance = Paf(str(sorted_job / "map.paf"), str(sorted_job / "query.idx"), str(sorted_job / "target.idx"), auto_parse=False)
-    monkeypatch.setattr(sorted_instance, "parse_paf", lambda *_args, **_kwargs: None, raising=False)
+    sorted_instance = Paf(
+        str(sorted_job / "map.paf"),
+        str(sorted_job / "query.idx"),
+        str(sorted_job / "target.idx"),
+        auto_parse=False,
+    )
+    monkeypatch.setattr(
+        sorted_instance, "parse_paf", lambda *_args, **_kwargs: None, raising=False
+    )
     sorted_instance.sort()
     assert sorted_instance.sorted is False
     assert not (sorted_job / ".sorted").exists()
 
-    reversed_instance = Paf(str(paf_file), str(query_idx), str(target_idx), auto_parse=False)
-    monkeypatch.setattr(reversed_instance, "parse_paf", lambda *_args, **_kwargs: None, raising=False)
+    reversed_instance = Paf(
+        str(paf_file), str(query_idx), str(target_idx), auto_parse=False
+    )
+    monkeypatch.setattr(
+        reversed_instance, "parse_paf", lambda *_args, **_kwargs: None, raising=False
+    )
     reverse_calls = []
-    monkeypatch.setattr(reversed_instance, "reorient_contigs_in_paf", lambda contigs: reverse_calls.append(list(contigs)), raising=False)
-    monkeypatch.setattr(reversed_instance, "_update_query_index", lambda contigs: reverse_calls.append(["idx"] + list(contigs)), raising=False)
+    monkeypatch.setattr(
+        reversed_instance,
+        "reorient_contigs_in_paf",
+        lambda contigs: reverse_calls.append(list(contigs)),
+        raising=False,
+    )
+    monkeypatch.setattr(
+        reversed_instance,
+        "_update_query_index",
+        lambda contigs: reverse_calls.append(["idx"] + list(contigs)),
+        raising=False,
+    )
     reversed_instance.reverse_contig("q0")
     assert reverse_calls == [["q0"], ["idx", "q0"]]
     assert reversed_instance.idx_q.endswith(".sorted")
 
-    failed_summary = Paf(str(job_dir / "summary_fail.paf"), str(query_idx), str(target_idx), auto_parse=False)
-    monkeypatch.setattr(failed_summary, "parse_paf", lambda *_args, **_kwargs: None, raising=False)
+    failed_summary = Paf(
+        str(job_dir / "summary_fail.paf"),
+        str(query_idx),
+        str(target_idx),
+        auto_parse=False,
+    )
+    monkeypatch.setattr(
+        failed_summary, "parse_paf", lambda *_args, **_kwargs: None, raising=False
+    )
     failed_summary.parsed = False
     status_file = job_dir / ".summary.failme"
     status_file.write_text("running")
@@ -501,12 +619,22 @@ def test_paf_parse_categories_sort_transitions_and_summary_failures(monkeypatch,
     assert failed_summary.get_summary_stats() is None
 
 
-def test_paf_association_file_overlap_branches_and_missing_query_fasta(monkeypatch, tmp_path):
+def test_paf_association_file_overlap_branches_and_missing_query_fasta(
+    monkeypatch, tmp_path
+):
     from intervaltree import Interval
+
     from dgenies.lib.paf import Paf
 
-    paf = Paf(str(tmp_path / "assoc.paf"), str(tmp_path / "query.idx"), str(tmp_path / "target.idx"), auto_parse=False)
-    monkeypatch.setattr(paf, "compute_gravity_contigs", lambda: ({"q1": {}}, {}), raising=False)
+    paf = Paf(
+        str(tmp_path / "assoc.paf"),
+        str(tmp_path / "query.idx"),
+        str(tmp_path / "target.idx"),
+        auto_parse=False,
+    )
+    monkeypatch.setattr(
+        paf, "compute_gravity_contigs", lambda: ({"q1": {}}, {}), raising=False
+    )
     assert paf.get_query_on_target_association() == {"q1": None}
 
     paf.q_contigs = {"q1": 10}
@@ -536,10 +664,15 @@ def test_paf_association_file_overlap_branches_and_missing_query_fasta(monkeypat
             return self.items.pop()
 
         def overlap(self, start, end):
-            return [item for item in self.items if item.begin < end and start < item.end]
+            return [
+                item for item in self.items if item.begin < end and start < item.end
+            ]
 
         def containsi(self, start, end, cat):
-            return any(item.begin == start and item.end == end and item.data == cat for item in self.items)
+            return any(
+                item.begin == start and item.end == end and item.data == cat
+                for item in self.items
+            )
 
         def discard(self, item):
             if item in self.items:
@@ -569,20 +702,46 @@ def test_paf_association_file_overlap_branches_and_missing_query_fasta(monkeypat
     query_dir = tmp_path / "reference_missing"
     query_dir.mkdir()
     (query_dir / ".query").write_text(str(query_dir / "missing.fa"))
-    reference_paf = Paf(str(query_dir / "map.paf"), str(query_dir / "query.idx"), str(query_dir / "target.idx"), auto_parse=False)
+    reference_paf = Paf(
+        str(query_dir / "map.paf"),
+        str(query_dir / "query.idx"),
+        str(query_dir / "target.idx"),
+        auto_parse=False,
+    )
     reference_paf.sorted = True
     assert reference_paf.build_query_chr_as_reference(compress=False) == "_._"
 
 
 def test_paf_reverse_contig_and_remaining_overlap_cases(monkeypatch, tmp_path):
     from intervaltree import Interval
+
     from dgenies.lib.paf import Paf
 
-    paf = Paf(str(tmp_path / "remaining.paf"), str(tmp_path / "query.idx"), str(tmp_path / "target.idx"), auto_parse=False)
+    paf = Paf(
+        str(tmp_path / "remaining.paf"),
+        str(tmp_path / "query.idx"),
+        str(tmp_path / "target.idx"),
+        auto_parse=False,
+    )
     reverse_calls = []
-    monkeypatch.setattr(paf, "parse_paf", lambda *_args, **_kwargs: reverse_calls.append("parse"), raising=False)
-    monkeypatch.setattr(paf, "reorient_contigs_in_paf", lambda contigs: reverse_calls.append(tuple(contigs)), raising=False)
-    monkeypatch.setattr(paf, "_update_query_index", lambda contigs: reverse_calls.append(("update", tuple(contigs))), raising=False)
+    monkeypatch.setattr(
+        paf,
+        "parse_paf",
+        lambda *_args, **_kwargs: reverse_calls.append("parse"),
+        raising=False,
+    )
+    monkeypatch.setattr(
+        paf,
+        "reorient_contigs_in_paf",
+        lambda contigs: reverse_calls.append(tuple(contigs)),
+        raising=False,
+    )
+    monkeypatch.setattr(
+        paf,
+        "_update_query_index",
+        lambda contigs: reverse_calls.append(("update", tuple(contigs))),
+        raising=False,
+    )
     paf.reverse_contig("chr1")
     assert paf.idx_q.endswith(".sorted")
     assert paf.sorted is True
@@ -604,10 +763,15 @@ def test_paf_reverse_contig_and_remaining_overlap_cases(monkeypatch, tmp_path):
         def overlap(self, start, end):
             if self.forced_overlaps is not None:
                 return list(self.forced_overlaps)
-            return [item for item in self.items if item.begin < end and start < item.end]
+            return [
+                item for item in self.items if item.begin < end and start < item.end
+            ]
 
         def containsi(self, start, end, cat):
-            return any(item.begin == start and item.end == end and item.data == cat for item in self.items)
+            return any(
+                item.begin == start and item.end == end and item.data == cat
+                for item in self.items
+            )
 
         def discard(self, item):
             if item in self.items:
@@ -617,7 +781,9 @@ def test_paf_reverse_contig_and_remaining_overlap_cases(monkeypatch, tmp_path):
             self.items.append(Interval(key.start, key.stop, value))
 
     def resolve(items, expected, *, forced_overlaps=None):
-        percents = paf._remove_overlaps(ScenarioTree(items, forced_overlaps=forced_overlaps), base_percents.copy())
+        percents = paf._remove_overlaps(
+            ScenarioTree(items, forced_overlaps=forced_overlaps), base_percents.copy()
+        )
         assert percents == expected
 
     resolve(

@@ -18,31 +18,33 @@ TESTS_DATA_DIR = TESTS_DIR / "data"
 TESTS_ENSEMBL_DIR = TESTS_DATA_DIR / "ensembl_104"
 
 __all__ = [
-    'DummyBody',
-    'DummyJobManager',
-    'REPO_ROOT',
-    'TESTS_DIR',
-    'TESTS_DATA_DIR',
-    'TESTS_ENSEMBL_DIR',
-    '_build_align_job_from_script',
-    '_build_job_from_test_api_script',
-    '_build_plot_backup_job_from_script',
-    '_create_query_job_dir',
-    '_install_fake_launch',
-    '_install_fake_tools',
-    '_make_job_model',
-    '_make_upload_form',
-    '_read_cli_script',
-    '_read_shell_assignments',
-    '_resolve_test_path',
-    '_setup_api_runtime',
+    "DummyBody",
+    "DummyJobManager",
+    "REPO_ROOT",
+    "TESTS_DIR",
+    "TESTS_DATA_DIR",
+    "TESTS_ENSEMBL_DIR",
+    "_build_align_job_from_script",
+    "_build_job_from_test_api_script",
+    "_build_plot_backup_job_from_script",
+    "_create_query_job_dir",
+    "_install_fake_launch",
+    "_install_fake_tools",
+    "_make_job_model",
+    "_make_upload_form",
+    "_read_cli_script",
+    "_read_shell_assignments",
+    "_resolve_test_path",
+    "_setup_api_runtime",
 ]
+
 
 class DummyBody:
     """Simple container used to simulate request bodies for API tests."""
 
     def __init__(self, session_id: str) -> None:
         self.session_id = session_id
+
 
 class DummyJobManager:
     """Minimal job manager used to short-circuit job launches in API tests."""
@@ -75,7 +77,11 @@ def _read_shell_assignments(script_path: Path) -> dict[str, str]:
 def _read_cli_script(script_path: Path) -> tuple[str, list[str], dict[str, str]]:
     """Parse a small dgenies-api shell script into command, positionals and options."""
     content = script_path.read_text().replace("\\\n", " ")
-    lines = [line.strip() for line in content.splitlines() if line.strip() and not line.strip().startswith("#")]
+    lines = [
+        line.strip()
+        for line in content.splitlines()
+        if line.strip() and not line.strip().startswith("#")
+    ]
     tokens = shlex.split(" ".join(lines))
     command = tokens[1]
     positionals = []
@@ -98,8 +104,10 @@ def _resolve_test_path(script_path: Path, value: str) -> Path:
     return (script_path.parent / value).resolve()
 
 
-def _build_align_job_from_script(script_name: str, job_id: str) -> tuple[Job, dict[str, Path]]:
-    """Translate a local `dgenies-api align` shell script into a job payload."""
+def _build_align_job_from_script(
+    script_name: str, job_id: str
+) -> tuple[Job, dict[str, Path]]:
+    """Translate a local dgenies-api align shell script into a job payload."""
     script_path = TESTS_DIR / script_name
     command, _, options = _read_cli_script(script_path)
     assert command == "align"
@@ -128,13 +136,17 @@ def _build_align_job_from_script(script_name: str, job_id: str) -> tuple[Job, di
         backup="",
         backup_type="local",
         tool=options.get("tool"),
-        tool_options=options.get("options", "").split(",") if options.get("options") else [],
+        tool_options=options.get("options", "").split(",")
+        if options.get("options")
+        else [],
     )
     return job, uploads
 
 
-def _build_plot_backup_job_from_script(script_name: str, job_id: str) -> tuple[Job, Path]:
-    """Translate `dgenies-api plot backup` into a job payload."""
+def _build_plot_backup_job_from_script(
+    script_name: str, job_id: str
+) -> tuple[Job, Path]:
+    """Translate dgenies-api plot backup into a job payload."""
     script_path = TESTS_DIR / script_name
     command, positionals, _ = _read_cli_script(script_path)
     assert command == "plot"
@@ -158,7 +170,7 @@ def _build_plot_backup_job_from_script(script_name: str, job_id: str) -> tuple[J
 
 
 def _build_job_from_test_api_script() -> tuple[BatchSubmissionQuery, dict[str, Path]]:
-    """Translate the curl-based `tests/test_api.sh` scenario into Python objects."""
+    """Translate the curl-based tests/test_api.sh scenario into Python objects."""
     variables = _read_shell_assignments(TESTS_DIR / "test_api.sh")
     query_path = _resolve_test_path(TESTS_DIR / "test_api.sh", variables["QUERY"])
     target_path = _resolve_test_path(TESTS_DIR / "test_api.sh", variables["TARGET"])
@@ -185,7 +197,9 @@ def _build_job_from_test_api_script() -> tuple[BatchSubmissionQuery, dict[str, P
     return batch, {"query": query_path, "target": target_path}
 
 
-def _setup_api_runtime(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> SimpleNamespace:
+def _setup_api_runtime(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> SimpleNamespace:
     """Create an isolated app/data environment for direct API function tests."""
     import dgenies
     import dgenies.api as api_module
@@ -203,11 +217,15 @@ def _setup_api_runtime(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Simpl
     monkeypatch.setattr(api_module, "APP_DATA", str(data_root), raising=False)
     monkeypatch.setattr(dgenies, "app", app, raising=False)
 
-    return SimpleNamespace(app=app, upload_root=upload_root, data_root=data_root, api=api_module)
+    return SimpleNamespace(
+        app=app, upload_root=upload_root, data_root=data_root, api=api_module
+    )
 
 
-def _make_upload_form(session_id: str, file_path: Path, content_type: str = "application/gzip") -> SimpleNamespace:
-    """Create the minimal upload form object expected by `upload_file`."""
+def _make_upload_form(
+    session_id: str, file_path: Path, content_type: str = "application/gzip"
+) -> SimpleNamespace:
+    """Create the minimal upload form object expected by upload_file."""
     return SimpleNamespace(
         session_id=session_id,
         file=FileStorage(

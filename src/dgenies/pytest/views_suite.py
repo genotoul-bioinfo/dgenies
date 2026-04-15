@@ -33,7 +33,15 @@ class _NullContext:
     def __exit__(self, exc_type, exc, tb):
         return False
 
+"""
+Initializes a mock runtime environment for testing D-GENIES web views in either standalone or webserver modes.
 
+Ensure that:
+1. A Flask application is instantiated with isolated, temporary directories for uploads, data, and configuration.
+2. The AppConfigReader and global application settings are mocked with predictable test values (e.g., file size limits, example paths).
+3. Database modules are appropriately stubbed when running in webserver mode to prevent real database connections.
+4. Template rendering is intercepted via a spy function to allow verification of context and template names during tests.
+"""
 def _setup_views_runtime(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, mode: str = "standalone") -> SimpleNamespace:
     import dgenies
 
@@ -108,7 +116,14 @@ def _setup_views_runtime(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, mode: 
         render_calls=render_calls,
     )
 
+"""
+Injects a mock Tools registry into the views module to facilitate isolated testing of tool-related view logic.
 
+Ensure that:
+1. The complex Tools class is replaced with a lightweight DummyTools implementation containing predictable, static tools.
+2. Tool option resolution and default selection logic can be verified without relying on external YAML configuration files.
+3. Command-line flag transformations (via resolve_option_keys) are simulated using simplified, deterministic mapping.
+"""
 def _install_dummy_tools(monkeypatch: pytest.MonkeyPatch, views_module) -> None:
     class DummyTool:
         def __init__(self, name: str, order: int, all_vs_all: str | None) -> None:
@@ -142,7 +157,13 @@ def _install_dummy_tools(monkeypatch: pytest.MonkeyPatch, views_module) -> None:
 
     monkeypatch.setattr(views_module, "Tools", DummyTools, raising=False)
 
+"""
+Generates a standardized set of form-data pairs to simulate a job submission request.
 
+Ensure that:
+1. All essential parameters for an alignment task—such as session ID, job ID, and file paths—are included.
+2. The payload supports the complex nested structure required by multi-part forms, specifically targeting array-based indices (e.g., jobs[0][tool]) and tool-specific options.
+"""
 def _make_launch_form(job_id: str, email: str = "user@example.org") -> list[tuple[str, str]]:
     return [
         ("s_id", "upload-session"),
@@ -165,7 +186,15 @@ def _make_launch_form(job_id: str, email: str = "user@example.org") -> list[tupl
         ("jobs[0][tool_options][]", "repeat:few"),
     ]
 
+"""
+Tests the routing, template context, and accessibility of web application pages and documentation routes.
 
+Ensure that:
+1. Global template variables (titles, job lists, tool names) are correctly populated across all views.
+2. Request parameters for endpoints like /run are accurately captured and integrated into the response context.
+3. Documentation and legal routes return the expected templates and content based on the configuration.
+4. Accessing non-existent pages or resources (e.g., missing legal files or galleries) triggers appropriate 404 errors.
+"""
 def test_views_pages_and_documentation_routes(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     runtime = _setup_views_runtime(monkeypatch, tmp_path)
     views = runtime.views
@@ -228,7 +257,15 @@ def test_views_pages_and_documentation_routes(monkeypatch: pytest.MonkeyPatch, t
         with pytest.raises(NotFound):
             views.gallery()
 
+"""
+Verifies webserver-specific routes for gallery management and specialized test execution.
 
+Ensure that:
+1. The main dashboard correctly identifies and displays images from the configured gallery directory.
+2. The gallery route retrieves and renders job items via simulated database queries.
+3. Gallery assets are served successfully when present, or trigger a 404 error when missing.
+4. The run-test endpoint enforces IP-based access control, allowing execution only from authorized addresses (e.g., localhost).
+"""
 def test_views_webserver_gallery_and_run_test(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     runtime = _setup_views_runtime(monkeypatch, tmp_path, mode="webserver")
     views = runtime.views
@@ -283,7 +320,15 @@ def test_views_webserver_gallery_and_run_test(monkeypatch: pytest.MonkeyPatch, t
     with runtime.app.test_request_context("/run-test", environ_base={"REMOTE_ADDR": "127.0.0.1"}):
         assert views.run_test() == "new-session"
 
+"""
+Tests view-layer helpers for form parsing and the full lifecycle of the analysis launch workflow.
 
+Ensure that:
+1. Multipart form data is correctly parsed into structured job parameters (ID, email, tool options).
+2. File type validation and tool-specific option resolution (e.g., mapping flags) are enforced accurately.
+3. Batch files can be successfully generated from a list of job objects for large-scale processing.
+4. The /launch_analysis endpoint handles successful submissions, invalid inputs (e.g., bad emails), and internal execution errors gracefully.
+"""
 def test_views_form_helpers_and_launch_analysis_paths(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     runtime = _setup_views_runtime(monkeypatch, tmp_path)
     views = runtime.views
@@ -385,7 +430,15 @@ def test_views_form_helpers_and_launch_analysis_paths(monkeypatch: pytest.Monkey
     assert payload["success"] is False
     assert payload["errors"] == ["Something went wrong during job creation!"]
 
+"""
+Tests error handling and edge cases for web application views and the job launch process.
 
+Ensure that:
+1. Web views handle corrupted configuration files, empty galleries, and missing session IDs without crashing.
+2. The analysis launch workflow correctly identifies invalid form inputs (e.g., missing emails) and handles internal validation errors as server errors.
+3. Tool option resolution and documentation retrieval remain robust against invalid or malformed parameters.
+4. Application routes trigger appropriate HTTP 500 errors when executed in incorrect operational modes (e.g., webserver routes in standalone mode).
+"""
 def test_views_additional_page_and_launch_error_branches(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     runtime = _setup_views_runtime(monkeypatch, tmp_path, mode="webserver")
     views = runtime.views
@@ -508,7 +561,15 @@ def test_views_additional_page_and_launch_error_branches(monkeypatch: pytest.Mon
             standalone.views.run_test()
     assert getattr(error.value, "code", None) == 500
 
+"""
+Tests the status, result, and example download endpoints within the web application.
 
+Ensure that:
+1. The /status endpoint correctly renders both JSON and HTML responses for single and batch job types.
+2. The /result endpoint accurately presents job metadata, such as gallery membership and file availability.
+3. Example downloads (backup and batch) are served successfully when the files exist in the configuration.
+4. Accessing missing example resources triggers a proper 404 error.
+"""
 def test_views_status_result_and_example_downloads(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     runtime = _setup_views_runtime(monkeypatch, tmp_path)
     views = runtime.views
@@ -574,7 +635,15 @@ def test_views_status_result_and_example_downloads(monkeypatch: pytest.MonkeyPat
         with pytest.raises(NotFound):
             views.download_example_backup()
 
+"""
+Tests the web application endpoints for PAF manipulation, sequence processing, and file retrieval.
 
+Ensure that:
+1. Endpoints for sorting, reversing contigs, and noise filtering correctly manage filesystem locks and parsed/unparsed states.
+2. The FASTA preparation workflow handles all lifecycle stages (in-progress, done, error) and compression requirements.
+3. Retrieval routes for association data (qt_assoc) and unmatched sequences (no_assoc) return the expected genomic information.
+4. Access to the interactive viewer is properly secured against unparsed or invalid alignment data.
+"""
 def test_views_paf_routes_and_viewer_workflows(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     runtime = _setup_views_runtime(monkeypatch, tmp_path)
     views = runtime.views
@@ -762,7 +831,15 @@ def test_views_paf_routes_and_viewer_workflows(monkeypatch: pytest.MonkeyPatch, 
         with pytest.raises(Forbidden):
             views.get_viewer_html(job_id)
 
+"""
+Tests error handling for download, retrieval, and PAF-specific endpoints within the web views.
 
+Ensure that:
+1. Corrupted or unparseable PAF files trigger appropriate error messages in graph and sorting operations.
+2. Missing resources (e.g., missing jobs, logs, or configuration) result in correct 404 responses.
+3. File downloads return the expected MIME types based on file extensions.
+4. Asynchronous reference-building tasks are triggered with correct parameters and handle pre-completion access attempts correctly.
+"""
 def test_views_additional_download_and_paf_error_branches(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     runtime = _setup_views_runtime(monkeypatch, tmp_path)
     views = runtime.views
@@ -900,7 +977,15 @@ def test_views_additional_download_and_paf_error_branches(monkeypatch: pytest.Mo
         with pytest.raises(NotFound):
             web_views.get_query_as_reference(job_id)
 
+"""
+Tests the reliability of summary generation, backup archiving, log retrieval, and multipart file upload routes.
 
+Ensure that:
+1. The /summary endpoint correctly reports job statuses (done, fail) or identifies missing data.
+2. Job backups are successfully archived into .tar.gz files containing all required components (PAF, indices, logs).
+3. File upload endpoints strictly enforce session validity and file type restrictions in both webserver and standalone modes.
+4. Log retrieval handles both valid paths and 404 error scenarios for missing log files.
+"""
 def test_views_summary_backup_logs_upload_and_session_routes(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     runtime = _setup_views_runtime(monkeypatch, tmp_path, mode="webserver")
     views = runtime.views
@@ -1099,7 +1184,13 @@ def test_views_summary_backup_logs_upload_and_session_routes(monkeypatch: pytest
         payload = standalone_views.upload().get_json()
     assert payload["success"] == "ERR"
 
+"""
+Tests the send_mail and delete_job web endpoints, focusing on authorization and error handling.
 
+Ensure that:
+1. The email notification service validates authorization keys and prevents unauthorized access.
+2. Job deletion correctly handles successful removal as well as protected cases (e.g., gallery jobs) and missing job errors.
+"""
 def test_views_send_mail_and_delete_job_routes(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     runtime = _setup_views_runtime(monkeypatch, tmp_path)
     views = runtime.views
@@ -1155,7 +1246,12 @@ def test_views_send_mail_and_delete_job_routes(monkeypatch: pytest.MonkeyPatch, 
     assert payload["success"] is False
     assert payload["error"] == "Job does not exists"
 
+"""
+Verifies error handling for the example batch download endpoint when the target configuration file is missing.
 
+Ensure that:
+1. The download_example_batch method correctly triggers a 404 (NotFound) exception when the path defined in the application configuration does not exist on the filesystem.
+"""
 def test_views_example_batch_not_found(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     runtime = _setup_views_runtime(monkeypatch, tmp_path)
     monkeypatch.setattr(runtime.config, "example_batch", str(runtime.data_root / "missing_batch.txt"), raising=False)

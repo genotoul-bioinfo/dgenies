@@ -9,9 +9,20 @@ from types import SimpleNamespace
 
 import pytest
 
+"""
+Tests the webserver database initialization, session lifecycle management, and database retry logic.
+
+Ensure that:
+1. Database entities (Jobs and Analytics) can be correctly initialized and linked within a transaction context.
+2. Session management—including creation, status transitions (e.g., 'active' to 'pending'), and the "ping" mechanism—functions as expected.
+3. The database retry wrapper successfully intercepts OperationalError and manages the connection/transaction lifecycle during retries.
+4. The initialization process strictly enforces supported database types by raising an exception for unsupported configurations.
+"""
+
 
 def test_database_webserver_initialize_and_session_flow(monkeypatch, tmp_path):
     import dgenies
+
     config_reader_module = importlib.import_module("dgenies.config_reader")
     functions_module = importlib.import_module("dgenies.lib.functions")
 
@@ -30,15 +41,24 @@ def test_database_webserver_initialize_and_session_flow(monkeypatch, tmp_path):
     )
 
     monkeypatch.setattr(dgenies, "MODE", "webserver", raising=False)
-    monkeypatch.setattr(config_reader_module, "AppConfigReader", lambda: config, raising=False)
-    monkeypatch.setattr(functions_module.Functions, "random_string", staticmethod(lambda length: "x" * length), raising=False)
+    monkeypatch.setattr(
+        config_reader_module, "AppConfigReader", lambda: config, raising=False
+    )
+    monkeypatch.setattr(
+        functions_module.Functions,
+        "random_string",
+        staticmethod(lambda length: "x" * length),
+        raising=False,
+    )
     sys.modules.pop("dgenies.database", None)
     database = importlib.import_module("dgenies.database")
 
     database.initialize()
 
     with database.Job.connect():
-        created = database.Job.create(id_job="job1", email="user@example.org", date_created=datetime.now())
+        created = database.Job.create(
+            id_job="job1", email="user@example.org", date_created=datetime.now()
+        )
         assert created.id_job == "job1"
         analytics = database.Analytics.create(
             id_job="job1",
@@ -118,18 +138,43 @@ def test_database_webserver_initialize_and_session_flow(monkeypatch, tmp_path):
     database.database_proxy.close()
 
 
+"""
+Verifies the database module's behavior and initialization stability when running in standalone mode.
+
+Ensure that:
+1. The number of open database connections remains zero during basic connection attempts.
+2. The initialize process completes successfully without errors even when using a minimal or empty configuration.
+"""
+
+
 def test_database_standalone_mode_exposes_noop_models(monkeypatch):
     import dgenies
+
     config_reader_module = importlib.import_module("dgenies.config_reader")
 
     monkeypatch.setattr(dgenies, "MODE", "standalone", raising=False)
-    monkeypatch.setattr(config_reader_module, "AppConfigReader", lambda: SimpleNamespace(), raising=False)
+    monkeypatch.setattr(
+        config_reader_module,
+        "AppConfigReader",
+        lambda: SimpleNamespace(),
+        raising=False,
+    )
     sys.modules.pop("dgenies.database", None)
     database = importlib.import_module("dgenies.database")
 
     with database.Job.connect():
         assert database.Database.nb_open == 0
     assert database.initialize() is None
+
+
+"""
+Tests session ID collision prevention and the initialization of MySQL-specific database configurations.
+
+Ensure that:
+1. The session creation process avoids conflicts with existing session IDs by generating unique, non-colliding identifiers.
+2. Database initialization correctly propagates connection parameters (host, port, user, password) to the database driver when configured for MySQL.
+3. All essential application tables—specifically Job, Gallery, and Session—are properly created during the startup sequence.
+"""
 
 
 def test_database_session_collision_and_mysql_initialize(monkeypatch, tmp_path):
@@ -153,7 +198,9 @@ def test_database_session_collision_and_mysql_initialize(monkeypatch, tmp_path):
     )
 
     monkeypatch.setattr(dgenies, "MODE", "webserver", raising=False)
-    monkeypatch.setattr(config_reader_module, "AppConfigReader", lambda: config, raising=False)
+    monkeypatch.setattr(
+        config_reader_module, "AppConfigReader", lambda: config, raising=False
+    )
     sys.modules.pop("dgenies.database", None)
     database = importlib.import_module("dgenies.database")
     database.initialize()
@@ -168,7 +215,12 @@ def test_database_session_collision_and_mysql_initialize(monkeypatch, tmp_path):
     (upload_root / "dup-folder").mkdir()
 
     generated = iter(["dup-session", "fresh-session", "dup-folder", "fresh-folder"])
-    monkeypatch.setattr(functions_module.Functions, "random_string", staticmethod(lambda _size: next(generated)), raising=False)
+    monkeypatch.setattr(
+        functions_module.Functions,
+        "random_string",
+        staticmethod(lambda _size: next(generated)),
+        raising=False,
+    )
     new_session_id = database.Session.new()
     created = database.Session.get(database.Session.s_id == new_session_id)
     assert new_session_id == "fresh-session"
@@ -179,10 +231,30 @@ def test_database_session_collision_and_mysql_initialize(monkeypatch, tmp_path):
     initialized = {}
     config.database_type = "mysql"
     monkeypatch.setattr(database, "MyRetryDB", lambda **kwargs: kwargs, raising=False)
-    monkeypatch.setattr(database, "database_proxy", SimpleNamespace(initialize=lambda db_obj: initialized.update(db=db_obj)), raising=False)
-    monkeypatch.setattr(database.Job, "create_table", classmethod(lambda cls, safe=True: created_tables.append(("job", safe))), raising=False)
-    monkeypatch.setattr(database.Gallery, "create_table", classmethod(lambda cls, safe=True: created_tables.append(("gallery", safe))), raising=False)
-    monkeypatch.setattr(database.Session, "create_table", classmethod(lambda cls, safe=True: created_tables.append(("session", safe))), raising=False)
+    monkeypatch.setattr(
+        database,
+        "database_proxy",
+        SimpleNamespace(initialize=lambda db_obj: initialized.update(db=db_obj)),
+        raising=False,
+    )
+    monkeypatch.setattr(
+        database.Job,
+        "create_table",
+        classmethod(lambda cls, safe=True: created_tables.append(("job", safe))),
+        raising=False,
+    )
+    monkeypatch.setattr(
+        database.Gallery,
+        "create_table",
+        classmethod(lambda cls, safe=True: created_tables.append(("gallery", safe))),
+        raising=False,
+    )
+    monkeypatch.setattr(
+        database.Session,
+        "create_table",
+        classmethod(lambda cls, safe=True: created_tables.append(("session", safe))),
+        raising=False,
+    )
 
     database.initialize()
     assert initialized["db"]["database"] == "dgenies"

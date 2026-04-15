@@ -29,6 +29,14 @@ from dgenies.pytest.helpers import (
 )
 
 # This file was split out from src/dgenies/test_dgenies_api.py.
+"""
+Tests the end-to-end lifecycle of a job submission triggered via a translated shell script. 
+Ensures that:
+1. The API correctly identifies required files for a batch.
+2. The system prevents duplicate uploads of the same file.
+3. Files are physically written to the filesystem with byte-for-byte integrity.
+4. The final upload triggers the expected job launch.
+"""
 
 def test_translated_test_api_sh_submission_flow_uses_real_files(monkeypatch, tmp_path):
     import dgenies.api as api_module
@@ -73,7 +81,17 @@ def test_translated_test_api_sh_submission_flow_uses_real_files(monkeypatch, tmp
         assert (runtime.upload_root / session_id / uploads["query"].name).read_bytes() == uploads["query"].read_bytes()
         assert (runtime.upload_root / session_id / uploads["target"].name).read_bytes() == uploads["target"].read_bytes()
 
+"""
+Tests the specialized 'align-self-local' job workflow to ensure it correctly 
+handles single-file dependencies.
 
+Ensures that:
+1. When submitting a job translated from the 'api-align-self-local.sh' script, 
+   the API identifies only the target file as required (no query file needed).
+2. The upload process succeeds when providing only the identified target file.
+3. The final launched job is correctly initialized with an empty query string 
+   and the correct target filename.
+"""
 def test_translated_api_align_self_local_sh_requires_only_target_upload(monkeypatch, tmp_path):
     import dgenies.api as api_module
 
@@ -95,7 +113,18 @@ def test_translated_api_align_self_local_sh_requires_only_target_upload(monkeypa
         assert launched["jobs"][0].query == ""
         assert launched["jobs"][0].target == uploads["target"].name
 
+"""
+Tests the 'plot-backup-local' workflow to ensure that archive/backup files 
+are correctly identified and uploaded with full data integrity.
 
+Ensures that:
+1. When submitting a job from the 'api-plot-backup-local.sh' script, 
+   the API correctly identifies the backup file as the only required dependency.
+2. The upload of the backup archive is processed successfully by the server.
+3. The resulting launched job is configured with the correct backup filename.
+4. The uploaded file on the server is bit-perfect (byte-for-byte integrity) 
+   compared to the original source file.
+"""
 def test_translated_api_plot_backup_local_sh_uploads_real_archive(monkeypatch, tmp_path):
     import dgenies.api as api_module
 
@@ -117,7 +146,18 @@ def test_translated_api_plot_backup_local_sh_uploads_real_archive(monkeypatch, t
         assert launched["jobs"][0].backup == backup_path.name
         assert (runtime.upload_root / session_id / backup_path.name).read_bytes() == backup_path.read_bytes()
 
+"""
+Tests the server-side validation logic for compressed file formats during upload.
 
+Ensures that:
+1. The API correctly identifies a .gz file as a required dependency when a job 
+   is submitted with a gzip filename.
+2. The system performs content inspection on uploaded files to verify their integrity.
+3. An attempt to upload a malformed or invalid GZIP file (using the fake.fa.gz fixture) 
+   is intercepted and rejected.
+4. The rejection results in a 415 Unsupported Media Type status code accompanied 
+   by the specific error message: "Not a gzip file".
+"""
 def test_upload_rejects_invalid_gzip_fixture_from_tests_data(monkeypatch, tmp_path):
     import dgenies.api as api_module
 
@@ -151,7 +191,19 @@ def test_upload_rejects_invalid_gzip_fixture_from_tests_data(monkeypatch, tmp_pa
         assert status == 415
         assert response["message"] == "Not a gzip file"
 
+"""
+Tests the export status API and the FASTA query download endpoint using real genomic data.
 
+Ensures that:
+1. The get_export_status endpoint accurately reflects the lifecycle state 
+   (e.g., 'ready' vs 'blocked') of exported files based on the job directory contents.
+2. The API metadata correctly identifies and matches the filenames present 
+   in the simulated job directory.
+3. The download endpoint (get_fasta_query) serves the file with the correct 
+   application/gzip MIME type.
+4. The downloaded file payload maintains byte-for-byte integrity compared 
+   to the original source file on disk.
+"""
 def test_export_status_and_download_use_real_query_fasta(monkeypatch, tmp_path):
     runtime = _setup_api_runtime(monkeypatch, tmp_path)
     job_id = "export_job"
@@ -172,7 +224,19 @@ def test_export_status_and_download_use_real_query_fasta(monkeypatch, tmp_path):
         assert download.mimetype == "application/gzip"
         assert download.get_data() == copied_query.read_bytes()
 
+"""
+Tests the 'query as reference' export status logic, specifically focusing on 
+pointer file tracking and cache invalidation via refresh markers.
 
+Ensures that:
+1. The system correctly identifies a 'ready' state when a valid sorted marker 
+   is present and the output file is properly registered.
+2. The pointer file accurately tracks and maps to the most recently generated 
+   output path within the job directory.
+3. The export status transitions from 'ready' to 'not_ready' if a refresh 
+   marker (e.g., '.new-reversals') is detected with a timestamp newer than 
+   the processed data, effectively triggering a cache invalidation.
+"""
 def test_query_as_reference_status_tracks_pointer_and_refresh_marker(monkeypatch, tmp_path):
     runtime = _setup_api_runtime(monkeypatch, tmp_path)
     job_id = "query_as_reference_job"
@@ -198,7 +262,20 @@ def test_query_as_reference_status_tracks_pointer_and_refresh_marker(monkeypatch
     status = runtime.api.get_query_as_reference_export_status(job_id)
     assert status.state == ExportFileState.not_ready
 
+"""
+Tests that the 'start query as reference build' endpoint correctly triggers 
+an asynchronous background worker without blocking the API response.
 
+Ensures that:
+1. The API immediately returns a 'not_ready' status to the client, signaling 
+   that the build process has been initiated but is still in progress.
+2. The system successfully orchestrates a new thread targeting the correct 
+   internal worker function (_build_query_as_reference_worker).
+3. The background thread is properly configured with the necessary context, 
+   specifically passing the correct job_id as an argument.
+4. The thread is correctly initialized as a daemon thread to ensure it does 
+   not prevent the main application process from exiting.
+"""
 def test_start_query_as_reference_build_starts_background_worker(monkeypatch, tmp_path):
     runtime = _setup_api_runtime(monkeypatch, tmp_path)
     job_id = "background_build_job"
@@ -233,7 +310,19 @@ def test_start_query_as_reference_build_starts_background_worker(monkeypatch, tm
     assert thread_call["daemon"] is True
     assert thread_call["started"] is True
 
+"""
+Tests the API layer's ability to wrap backend process statuses and errors 
+into standardized HTTP responses for FASTA preparation and summary retrieval.
 
+Ensures that:
+1. The prepare_fasta_query endpoint correctly interprets backend completion 
+   signals (e.g., 'done') and preserves configuration flags like gzip.
+2. The get_summary endpoint accurately maps successful backend computation 
+   results into a standardized 200 OK response with the expected data payload.
+3. Backend error signals or missing resources (e.g., 'job_not_found') are 
+   correctly intercepted and translated into appropriate HTTP error statuses 
+   (404 Not Found) and user-friendly error messages for the client.
+"""
 def test_prepare_fasta_query_and_summary_wrap_backend_statuses(monkeypatch):
     import dgenies.api as api_module
 
@@ -254,7 +343,17 @@ def test_prepare_fasta_query_and_summary_wrap_backend_statuses(monkeypatch):
     assert status == 404
     assert response["message"] == "Job does not exists!"
 
+"""
+Tests that the post_build_query_as_reference endpoint correctly maps internal 
+export file states to appropriate HTTP response codes and error messages.
 
+Ensures that:
+1. When the underlying build process reports a 'blocked' state (e.g., due to a 
+   missing sorting step), the API intercepts this and returns a 409 Conflict 
+   status code along with the specific backend error message ("Sort first").
+2. When the backend indicates that the build is 'ready' to be triggered, the 
+   API returns a successful response (code 0) indicating the operation was accepted.
+"""
 def test_post_build_query_as_reference_maps_export_states(monkeypatch, tmp_path):
     runtime = _setup_api_runtime(monkeypatch, tmp_path)
     job_id = "build_reference_job"
@@ -280,7 +379,23 @@ def test_post_build_query_as_reference_maps_export_states(monkeypatch, tmp_path)
     assert response["code"] == 0
     assert response["message"] == "ok"
 
+"""
+Tests the full suite of Dotplot-related API endpoints using a high-fidelity 
+mock of the PAF (Pairwise Alignment Format) processing engine.
 
+Ensures that:
+1. The visualization endpoints (get_dotplot and sorted_dotplot) correctly 
+   interface with the PAF parser to retrieve and present dotplot metadata.
+2. The sorting workflow (post_sort, post_reset_sort) properly manages 
+   filesystem-based state markers (e.g., .sorted, .new-reversals) to 
+   track and invalidate cached views.
+3. Contig manipulation operations (post_reverse_contig) are successfully 
+   processed by the backend logic without disrupting the existing state.
+4. The association retrieval endpoints (get_qt_assoc, get_dl_qt_assoc) 
+   correctly serve both summarized counts and raw, downloadable association records.
+5. The identification and downloading of unmatched contigs (post_no_assoc) 
+   accurately filter and present sequences that do not have alignments.
+"""
 def test_dotplot_sort_and_assoc_endpoints_with_fake_paf(monkeypatch, tmp_path):
     runtime = _setup_api_runtime(monkeypatch, tmp_path)
     job_id = "dotplot_job"
@@ -375,6 +490,23 @@ def test_dotplot_sort_and_assoc_endpoints_with_fake_paf(monkeypatch, tmp_path):
     assert status == 200
     assert response == "chr_unmatched\n"
 
+"""
+Tests the core utility helper functions responsible for path mapping, 
+cache invalidation logic, and job metadata orchestration.
+
+Ensures that:
+1. Path pointer utilities correctly persist and retrieve file mappings 
+   (pointer target) and handle missing pointers gracefully.
+2. The 'file freshness' logic accurately determines if a file is up-to-date 
+   by comparing the modification timestamps of a target file against a 
+   provided refresh marker (detecting both fresh and stale states).
+3. Job metadata helpers correctly identify the presence of sorted output 
+   files and resolve absolute job directory paths.
+4. The state progress engine accurately maps ExportFileState enums to 
+   numerical percentages (e.g., 'ready' 100%, 'blocked' 0%).
+5. The download utility correctly wraps file transfers in an HTTP response 
+   with the appropriate Content-Disposition headers for client-side usage.
+"""
 def test_api_status_and_pointer_helpers(monkeypatch, tmp_path):
     import dgenies.api as api_module
 
@@ -415,7 +547,22 @@ def test_api_status_and_pointer_helpers(monkeypatch, tmp_path):
         assert response.status_code == 200
         assert "downloaded.txt" in response.headers["Content-Disposition"]
 
+"""
+Tests the exhaustive coverage of all possible ExportFileState transitions 
+within the export status helper functions.
 
+Ensures that:
+1. The 'building' state is accurately triggered when active lock files 
+   (e.g., QUERY_FASTA_LOCK) are detected in the job directory.
+2. The API correctly differentiates between 'unavailable', 'blocked', and 
+   'not_ready' states based on the presence or absence of intermediate 
+   processing files (such as .all-vs-all or .sorted).
+3. The system correctly identifies a 'not_ready' state when required 
+   files are missing or when backend processes have failed.
+4. Error propagation is functional, ensuring that if an error file exists, 
+   its specific error message is captured and surfaced to the client 
+   via the API response.
+"""
 def test_api_export_status_helpers_cover_remaining_states(monkeypatch, tmp_path):
     import dgenies.api as api_module
 
@@ -466,7 +613,24 @@ def test_api_export_status_helpers_cover_remaining_states(monkeypatch, tmp_path)
     assert status.state == ExportFileState.not_ready
     assert status.message == "previous failure"
 
+"""
+Tests the end-to-end orchestration of the 'query as reference' build logic, 
+covering file generation, background worker reliability, and error propagation.
 
+Ensures that:
+1. The build_query_as_reference_file utility enforces strict prerequisite 
+   checks, raising errors if required files (like .all-vs-all) are missing or 
+   if the parser points to non-existent paths.
+2. The background worker (_build_query_as_reference_worker) is resilient; 
+   it must successfully manage file locks and, in the event of a RuntimeError, 
+   capture the exception message into a persistent error file for later debugging.
+3. The build trigger (start_query_as_reference_build) respects the current 
+   ExportFileState, preventing redundant builds if the state is already 'ready' 
+   or 'not_ready'.
+4. Critical cleanup operations, such as releasing file locks (QUERY_AS_REFERENCE_LOCK), 
+   are executed correctly during both successful task completion and unexpected 
+   worker failures.
+"""
 def test_build_query_as_reference_helpers(monkeypatch, tmp_path):
     import dgenies.api as api_module
 
@@ -560,7 +724,21 @@ def test_build_query_as_reference_helpers(monkeypatch, tmp_path):
     monkeypatch.setattr(api_module, "Paf", SuccessfulPaf, raising=False)
     assert api_module.build_query_as_reference_file(job_id) == str(built_output)
 
+"""
+Tests the robust error-handling and exception-mapping capabilities of the 
+API wrapper layer across various service endpoints.
 
+Ensures that:
+1. Resource discovery failures (e.g., requesting a missing job ID or a non-existent 
+   file) are correctly intercepted and returned to the client as 404 Not Found.
+2. Backend logic exceptions—ranging from custom domain errors (DGeniesMissingJobError) 
+   to generic system failures (RuntimeError, IOError)—are caught by the 
+   wrappers and translated into standardized 500 Internal Server Error responses.
+3. Specific backend error strings (e.g., 'file_not_found' or 'fail') are correctly 
+   parsed to determine whether they should trigger a 404 or a 500 status code.
+4. Concurrency conflicts, such as attempting to access a file while a process 
+   lock is active, are properly identified and returned as a 409 Conflict.
+"""
 def test_api_wrappers_cover_status_summary_and_download_errors(monkeypatch, tmp_path):
     import dgenies.api as api_module
 
@@ -611,7 +789,24 @@ def test_api_wrappers_cover_status_summary_and_download_errors(monkeypatch, tmp_
     response, status = api_module.get_fasta_query(SimpleNamespace(job_id=job_id))
     assert status == 500
 
+"""
+Tests the integrity of API download endpoints and the robustness of the 
+system's handling of terminal error branches and unimplemented features.
 
+Ensures that:
+1. The get_backup endpoint correctly aggregates job-related files (including logs) 
+   into a valid .tar.gz archive and returns a 404 Not Found for missing jobs.
+2. The log retrieval service (get_logs) accurately serves existing logs and 
+   correctly handles requests for non-existent job IDs.
+3. Download endpoints for specialized data (e.g., Query-as-Reference, FASTA) 
+   enforce state-based access control, specifically returning a 409 Conflict 
+   when the backend process is 'blocked' or currently 'building'.
+4. The job submission endpoint (post_build_query_as_reference) correctly 
+   interprets backend availability and validates job existence before proceeding.
+5. "Terminal branches"—representing unsupported or unimplemented feature 
+   endpoints (e.g., get_paf, get_viewer) are consistently intercepted 
+   by the API and return a standardized 501 Not Implemented status code.
+"""
 def test_api_download_endpoints_and_terminal_branches(monkeypatch, tmp_path):
     import dgenies.api as api_module
 
@@ -699,7 +894,24 @@ def test_api_download_endpoints_and_terminal_branches(monkeypatch, tmp_path):
     assert api_module.get_viewer(SimpleNamespace(job_id=job_id))[1] == 501
     assert api_module.get_example_jobs()[1] == 501
 
+"""
+Tests the API's behavior regarding job lifecycle management and the availability 
+of the Gallery feature across different application execution modes.
 
+Ensures that:
+1. The get_gallery endpoint is context-aware; it successfully retrieves 
+   gallery items when the application is in webserver mode, but returns a 
+   404 Not Found when running in standalone mode.
+2. The job deletion workflow (delete_job) correctly executes for standard 
+   active jobs using the JobManager.
+3. The API gracefully handles lifecycle error exceptions, such as 
+   DGeniesMissingJobError, ensuring that attempts to delete non-existent 
+   jobs are caught and returned with a successful response code rather than 
+   crashing the request.
+4. Security and permission constraints are enforced, specifically returning a 
+   403 Forbidden status when an attempt is made to delete protected resources 
+   (e.g., jobs belonging to the Gallery).
+"""
 def test_api_job_lifecycle_and_gallery_branches(monkeypatch, tmp_path):
     import dgenies.api as api_module
 
@@ -747,7 +959,22 @@ def test_api_job_lifecycle_and_gallery_branches(monkeypatch, tmp_path):
     response, status = api_module.delete_job(SimpleNamespace(job_id=job_id))
     assert status == 403
 
+"""
+Tests the error-handling branches for both session management and sorted dotplot 
+endpoints under various failure conditions in the database and parsing layers.
 
+Ensures that:
+1. The Session Management layer correctly handles:
+   - Successful lifecycle operations (deleting and pinging active sessions).
+   - Resource-not-found errors (translating DoesNotExist exceptions to 404 Not Found).
+   - Database driver failures (translating RuntimeError or database crashes to 500 Internal Server Error).
+2. The Sorted Dotplot endpoint correctly handles:
+   - Missing job requests in standalone mode (404 Not Found).
+   - Prerequisite violations, such as attempting to access a dotplot when an 
+     incomplete state is detected (e.g., presence of .all-vs-all triggering a 403 Forbidden).
+   - Backend processing failures, specifically ensuring that if the PAF parser 
+     encounters an error, the API captures it and returns a 500 Internal Server Error.
+"""
 def test_api_session_and_sorted_dotplot_error_branches(monkeypatch, tmp_path):
     import dgenies.api as api_module
 
@@ -831,7 +1058,25 @@ def test_api_session_and_sorted_dotplot_error_branches(monkeypatch, tmp_path):
     response, status = api_module.sorted_dotplot(SimpleNamespace(job_id=job_id))
     assert status == 500
 
+"""
+Tests the post_jobs endpoint's ability to handle remote URL dependencies and 
+its resilience against various failure modes during the submission lifecycle.
 
+Ensures that:
+1. The system correctly implements "Immediate Launch" logic when jobs are 
+   submitted with remote URLs; specifically, it bypasses the need for an 
+   upload session (resulting in a None session ID) and triggers the 
+   launch process immediately.
+2. The API correctly intercepts and reports validation errors (e.g., 
+   DGeniesValidationError) as a 400 Bad Request when the submission 
+   form is malformed.
+3. The system handles resource-related failures during session initialization, 
+   such as when a required dependency is missing or invalid, by returning 
+   a 404 Not Found status.
+4. The API provides a safety net for unexpected system crashes, translating 
+   unhandled exceptions (e.g., RuntimeError) into a standardized 
+   500 Internal Server Error.
+"""
 def test_api_post_jobs_immediate_launch_and_error_branches(monkeypatch, tmp_path):
     import dgenies.api as api_module
 
@@ -868,7 +1113,24 @@ def test_api_post_jobs_immediate_launch_and_error_branches(monkeypatch, tmp_path
         response, status = api_module.post_jobs(batch)
         assert status == 500
 
+"""
+Tests the launch_batch orchestration logic to ensure that job ID collisions 
+are resolved through automatic identifier sanitization.
 
+Ensures that:
+1. When a submitted job ID (e.g., 'dup job') conflicts with an existing 
+   directory on the filesystem, the system automatically generates a unique, 
+   sanitized identifier (e.g., 'dup_job_2') to prevent data overwrites.
+2. The renaming process is propagated throughout the entire launch lifecycle; 
+   subsequent steps—such as file updates and the final job launch command—use 
+   the newly generated sanitized ID rather than the original input ID.
+3. In webserver mode, where no filesystem collision is detected, the system 
+   correctly processes and launches jobs using their original, intended 
+   identifiers without unnecessary modification.
+4. The system maintains operational integrity across different execution modes 
+   (standalone vs webserver), ensuring that both launch types correctly 
+   interact with the underlying JobManager.
+"""
 def test_launch_batch_sanitizes_colliding_job_ids(monkeypatch, tmp_path):
     import dgenies.api as api_module
 
@@ -922,13 +1184,44 @@ def test_launch_batch_sanitizes_colliding_job_ids(monkeypatch, tmp_path):
     assert Path(runtime.data_root / "web_job").is_dir()
     assert launched[-1] == ("web", "web_job")
 
+"""
+Verifies that the script translation engine correctly extracts and maps 
+file dependencies from a shell script into an API job model.
 
+Ensures that:
+1. The translation of api-align-local.sh correctly identifies the required 
+   input files (query and target) from the provided script context.
+2. The resulting job object contains metadata (filenames) that is perfectly 
+   synchronized with the actual files intended for the upload payload.
+"""
 def test_script_translation_helper_covers_query_branch():
     job, uploads = _build_align_job_from_script("api-align-local.sh", "align_local")
     assert job.query == uploads["query"].name
     assert job.target == uploads["target"].name
 
+"""
+Tests the edge-case resilience of various API helper functions, specifically 
+focusing on filesystem discrepancies, broken dependencies, and partial failures.
 
+Ensures that:
+1. The upload directory resolution correctly adapts to the application mode 
+   (e.webserver vs. standalone), ensuring path stability across environments.
+2. The path pointer utility handles empty or corrupted files gracefully without 
+   crashing the request.
+3. The 'file freshness' logic is robust against transient filesystem errors, 
+   such as a FileNotFoundError occurring during a modification time check.
+4. The get_query_fasta_ready_file logic correctly manages complex file-state 
+   dependencies, such as:
+   - Handling missing base files or sorted variants.
+   - Navigating the presence or absence of required '.sorted' markers.
+   - Resolating paths when a 'ghost' (non-existent) query file is referenced.
+5. The error propagation from the background worker is verified; specifically, 
+   ensensuring that if an error file exists, the API correctly translates 
+   the 'previous failure' message into a not_ready export state.
+6. The system remains resilient to permission-related failures (e.g., OSError: 
+   denied) when attempting to read critical job files, preventing unhandled 
+   exceptions from leaking to the client.
+"""
 def test_api_helper_functions_cover_additional_edge_cases(monkeypatch, tmp_path):
     import dgenies.api as api_module
 
@@ -1087,7 +1380,15 @@ def test_api_helper_functions_cover_additional_edge_cases(monkeypatch, tmp_path)
     assert response["code"] == 0
     assert response["data"]["job_id"] == job_id
 
+"""
+Tests the error handling branches for dotplot, sorting, association, and FASTA preparation API endpoints.
 
+Ensure that:
+1. The API returns correct HTTP status codes (404/500) when PAF files are corrupted or missing.
+2. Sorting, resetting, and reversing operations handle execution failures and missing prerequisites correctly.
+3. Retrieval and creation of associations respond with appropriate errors for invalid job IDs or missing data.
+4. FASTA preparation endpoints manage successful task initiation and file-related error states properly.
+"""
 def test_api_dotplot_sort_assoc_and_prepare_error_branches(monkeypatch, tmp_path):
     import dgenies.api as api_module
 
@@ -1238,7 +1539,15 @@ def test_api_dotplot_sort_assoc_and_prepare_error_branches(monkeypatch, tmp_path
     assert status == 404
     assert response["code"] == 2
 
+"""
+Tests edge cases and error handling for download, export status, build initiation, and example file API endpoints.
 
+Ensure that:
+1. The backup retrieval handles missing required files (404) and internal runtime errors (500).
+2. Export-related endpoints correctly manage "running" states (409), "not ready" states (404), and missing physical files (404).
+3. Initiating the query build process properly handles worker failures or unexpected states (500).
+4. Example file retrieval successfully returns the configured paths (200).
+"""
 def test_api_download_and_example_remaining_branches(monkeypatch, tmp_path):
     import dgenies.api as api_module
 

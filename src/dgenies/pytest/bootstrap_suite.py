@@ -9,7 +9,14 @@ import sys
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
 
+"""
+Tests global logger configuration and application bootstrapping for standalone and webserver modes.
 
+Ensure that:
+1. The system logger is correctly configured with the specified debug level and handlers.
+2. Standalone mode properly initializes application configurations, API registration, and required directory structures.
+3. Webserver mode successfully triggers database initialization, mailer setup, and cron job execution.
+"""
 def test_set_logger_and_launch_cover_bootstrap_paths(monkeypatch, tmp_path):
     import dgenies
     tools_module = importlib.import_module("dgenies.tools")

@@ -12,7 +12,15 @@ import pytest
 def _reset_config_singleton(monkeypatch, module) -> None:
     monkeypatch.setattr(module.AppConfigReader, "instance", None, raising=False)
 
+"""
+Verifies that the AppConfigReader correctly parses complex configuration properties and integrates environment variable overrides.
 
+Ensure that:
+1. Configuration values from various sections (global, database, cluster, etc.) are accurately loaded as their intended types (e.g., integers, booleans, paths, or time durations).
+2. Environment variables successfully override or supplement the settings defined in the properties file.
+3. Placeholder replacement logic correctly resolves relative paths using the application's configuration directory.
+4. The parser robustly handles error cases, such as unsupported size units or invalid tag usage, by raising appropriate exceptions.
+"""
 def test_config_reader_reads_explicit_values_and_env_overrides(monkeypatch, tmp_path):
     config_reader_module = importlib.import_module("dgenies.config_reader")
 
@@ -177,7 +185,15 @@ def test_config_reader_reads_explicit_values_and_env_overrides(monkeypatch, tmp_
     with pytest.raises(ValueError, match="Max size unit"):
         reader._parse_size("5T")
 
+"""
+Tests the fallback mechanisms and error-handling paths of the AppConfigReader.
 
+Ensure that:
+1. Default values are correctly applied for all missing configuration properties across various sections (global, database, session, etc.).
+2. The application raises appropriate exceptions when encountering malformed data or invalid directory paths (e.g., log directory pointing to a file).
+3. Critical errors are triggered when essential parameters, such as the database port, are missing from both the configuration file and environment variables.
+4. Environment variable overrides with empty or invalid values are handled according to the expected logic.
+"""
 def test_config_reader_fallbacks_and_error_paths(monkeypatch, tmp_path):
     config_reader_module = importlib.import_module("dgenies.config_reader")
 
@@ -292,7 +308,13 @@ def test_config_reader_missing_file_raises(monkeypatch):
     with pytest.raises(FileNotFoundError, match="application.properties not found"):
         config_reader_module.AppConfigReader(["/missing/application.properties"])
 
+"""
+Tests the error handling of private methods in AppConfigReader regarding path resolution and database configuration.
 
+Ensure that:
+1. Internal helpers raise appropriate exceptions when critical directories (e.g., upload or data folders) are missing or invalid.
+2. The database URL can still be correctly extracted even if its parent directory structure is non-existent or uncreatable.
+"""
 def test_config_reader_private_error_branches_for_paths_and_database_url(monkeypatch, tmp_path):
     config_reader_module = importlib.import_module("dgenies.config_reader")
 
@@ -331,7 +353,14 @@ def test_config_reader_private_error_branches_for_paths_and_database_url(monkeyp
     )
     assert reader._get_database_url().endswith("database.sqlite")
 
+"""
+Verifies the configuration discovery mechanism across different operating systems, specifically targeting Windows path resolution logic.
 
+Ensure that:
+1. The AppConfigReader correctly identifies default configuration files located relative to the Python executable directory on Windows.
+2. Local override files (e.g., .local extensions) are successfully detected within the search path.
+3. Global user-level configurations within the home directory (e.g., ~/.dgenies) are properly discovered and included in the loading sequence.
+"""
 def test_config_reader_discovers_default_and_windows_paths(monkeypatch, tmp_path):
     config_reader_module = importlib.import_module("dgenies.config_reader")
 

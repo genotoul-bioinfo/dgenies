@@ -3,7 +3,14 @@
 import pytest
 
 # This file was split out from src/dgenies/test_dgenies_api.py.
+"""
+Tests the validation of uploaded files and the parsing logic for genomic alignment formats (PAF, MAF, Mashmap).
 
+Ensure that:
+1. UploadFile correctly generates metadata payloads and enforces file type restrictions (e.g., blocking unauthorized extensions).
+2. Validators accurately identify malformed PAF lines, incorrect column counts, and corrupted Index files.
+3. Parsers robustly handle format conversions (e.g., MAF to PAF) and recover gracefully from underlying parser exceptions or malformed input.
+"""
 def test_upload_file_validators_and_parsers_helpers(monkeypatch, tmp_path):
     import dgenies.lib.parsers as parsers_module
     import dgenies.lib.validators as validators_module

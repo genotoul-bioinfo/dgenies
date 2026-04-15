@@ -9,7 +9,15 @@ import pytest
 from dgenies.lib.datafile import DataFile
 
 # This file was split out from src/dgenies/test_dgenies_api.py.
+"""
+Tests the DataFile model, covering attribute manipulation, cloning, and factory-based instantiation.
 
+Ensure that:
+1. Getter and setter methods correctly manage file metadata such as name, path, type, and size.
+2. The clone() method creates an independent duplicate of the object with identical attributes.
+3. The string representation accurately reflects the object's state.
+4. Factory methods (create) properly initialize DataFile instances for "local", "remote" (URL), and "example" types.
+"""
 def test_datafile_model_and_factory_helpers():
     datafile = DataFile(name="sample", path="/tmp/query.fa", type_f="local", example=False)
     assert datafile.get_name() == "sample"
@@ -38,6 +46,14 @@ def test_datafile_model_and_factory_helpers():
     assert created_url.get_type() == "URL"
     assert created_example.is_example() is True
 
+"""
+Tests the loading, parsing, and retrieval logic for the AllowedExtensions module using a simulated YAML configuration.
+
+Ensure that:
+1. File extensions, descriptions, and job roles (query/target) are correctly extracted from the parsed configuration.
+2. The join method accurately processes node-based structures to identify required formats.
+3. A descriptive exception is raised when the expected configuration file cannot be found on the filesystem.
+"""
 def test_allowed_extensions_loading_helpers_and_missing_config(monkeypatch, tmp_path):
     import dgenies.allowed_extensions as allowed_extensions_module
 
@@ -90,7 +106,15 @@ def test_allowed_extensions_loading_helpers_and_missing_config(monkeypatch, tmp_
     with pytest.raises(Exception, match="Configuration file allowed_extensions.yaml not found"):
         allowed_extensions_module.AllowedExtensions()
 
+"""
+Verifies the integrity of custom exception messages and internal attributes within the dgenies.lib.exceptions module.
 
+Ensure that:
+1. String representations (__str__) for all custom exceptions provide clear, accurate, and user-friendly error messages.
+2. The clear_job flag is correctly assigned to specific exception types that require job cleanup (e.g., file check or URL errors).
+3. Error messages containing dynamic data—such as file sizes, lists of batch errors, or HTML formatting—are formatted exactly as expected.
+4. Domain-specific error logic (e.g., unsupported file types, invalid URLs, or missing parsers) triggers the correct descriptive text and metadata.
+"""
 def test_exceptions_messages_and_flags_cover_remaining_branches():
     import dgenies.lib.exceptions as exc
 
@@ -154,7 +178,13 @@ def test_exceptions_messages_and_flags_cover_remaining_branches():
     assert str(exc.DGeniesDeleteGalleryJobForbidden()) == "Deleting a job that is in gallery is forbidden"
     assert exc.DGeniesValidationError("bad input").message == "bad input"
 
+"""
+Tests the JobsSubmissionQuery data model's behavior when email input is optional.
 
+Ensure that:
+1. The model can be successfully instantiated with a None value for the email field when the mandatory email requirement is disabled.
+2. The attribute correctly retains its null state without triggering validation errors under this specific configuration branch.
+"""
 def test_datamodels_jobs_submission_optional_email_branch(monkeypatch):
     import dgenies.api.datamodels as datamodels_module
 

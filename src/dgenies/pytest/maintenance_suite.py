@@ -10,6 +10,14 @@ import pytest
 
 # This file was split out from src/dgenies/test_dgenies_api.py.
 
+"""
+Tests cron job management, process lifecycle control, and automated cleanup of obsolete uploads and job data.
+
+Ensure that:
+1. The Crons class correctly handles Python executable path resolution, PID-based process termination, and the registration of scheduled tasks (cleaning and local scheduler).
+2. The clean_jobs utility accurately identifies and removes expired files and directories in both upload and application data folders based on age thresholds.
+3. Cleanup processes are resilient to filesystem errors, such as permission denials during directory removal or file deletion.
+"""
 def test_crons_and_clean_jobs_helpers(monkeypatch, tmp_path):
     import dgenies.bin.clean_jobs as clean_jobs_module
     import dgenies.lib.crons as crons_module
@@ -213,6 +221,15 @@ def test_crons_and_clean_jobs_helpers(monkeypatch, tmp_path):
     )
     assert logger_calls == ["upload", "upload"]
 
+"""
+Tests the robustness of genomic file validators, alignment parsers, and the job cleanup orchestration logic.
+
+Ensure that:
+1. File validators correctly reject malformed PAF and Index files (e.g., incorrect column counts or non-numeric data).
+2. Alignment parsers handle both corrupted input streams and successful reverse-mapping transformations accurately.
+3. The database cleanup process identifies and removes obsolete jobs based on configured age thresholds and error flags.
+4. The clean_jobs execution pipeline remains resilient even when encountering missing module dependencies or database import errors.
+"""
 def test_clean_jobs_database_main_and_remaining_parser_validator_branches(monkeypatch, tmp_path):
     import builtins
     import dgenies
