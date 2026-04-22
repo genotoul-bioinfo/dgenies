@@ -266,6 +266,16 @@ def _build_backup(backup_path):
             tmp_file.unlink()
 
 
+"""
+Tests the fundamental creation, configuration, and utility methods of the JobManager class.
+
+Ensure that:
+1. Jobs can be initialized with various input types (local, alignment, plot) and tool-specific options are correctly assigned.
+2. Subjobs are generated within a batch process using unique, randomized identifiers.
+3. File format detection (e.g., .paf vs .gz) and file size calculations work for both plain and compressed files.
+4. The manager accurately handles role assignment/removal and tracks job states (e.g., is_align, is_plot).
+5. Split-mode logic correctly identifies when a query requires splitting based on the selected tool's capabilities.
+"""
 def test_job_manager_creation_and_basic_helpers(monkeypatch, tmp_path):
     env = _setup_job_manager_env(monkeypatch, tmp_path)
     module = env.module
@@ -1473,7 +1483,15 @@ def test_job_manager_additional_batch_mail_and_status_helpers(monkeypatch, tmp_p
     )
     assert "You can try again" in mail_job.search_error()
 
+"""
+Tests advanced JobManager capabilities, including cluster-specific status parsing, process tracking, and complex launch lifecycles.
 
+Ensure that:
+1. SGE job logs are correctly parsed to determine success or failure based on exit codes and resource usage.
+2. Webserver mode accurately manages job status transitions and PID assignment for active processes.
+3. Cluster-based launches generate valid task templates and handle execution errors during the preparation phase.
+4. DRMAMA runners (e.g., Slurm) execute launch sequences and propagate analytics/errors appropriately.
+"""
 def test_job_manager_additional_local_cluster_and_update_helpers(monkeypatch, tmp_path):
     env = _setup_job_manager_env(monkeypatch, tmp_path)
     module = env.module
