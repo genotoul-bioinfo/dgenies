@@ -1024,12 +1024,12 @@ d3.dgenies.draw = function (x_contigs, x_order, y_contigs, y_order) {
     }, 0);
 
     draw.append($("<div>").attr("id", "help-zoom")
-                          .append("Press CTRL to zoom")
+                          .append(/Mac|iPod|iPhone|iPad/.test(navigator.platform) ? "Press ⌘ Cmd to zoom" : "Press CTRL to zoom")
                           .append($("<img>").attr("src", d3.dgenies.help_zoom)
                                             .attr("alt", "")).hide().on("click", function() {$(this).hide()}));
 
     draw.append($("<div>").attr("id", "help-trans")
-                          .append("Press CTRL to translate")
+                          .append(/Mac|iPod|iPhone|iPad/.test(navigator.platform) ? "Press ⌘ Cmd to translate" : "Press CTRL to translate")
                           .append($("<img>").attr("src", d3.dgenies.help_trans)
                                             .attr("alt", "")).hide().on("click", function() {$(this).hide()})
         .on("mouseup", function() {d3.dgenies.translate_start = null; $("#help-trans").fadeOut("slow");}));

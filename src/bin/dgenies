@@ -166,7 +166,7 @@ def start_browser(host, port, app):
         if status_code != 200:
             time.sleep(1)
             tries += 1
-    if app.got_first_request:
+    if getattr(app, 'got_first_request', None) or getattr(app, '_got_first_request', False):
         print("Starting browser...")
         webbrowser.open(web_url)
     else:

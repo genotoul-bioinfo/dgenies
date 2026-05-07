@@ -28,8 +28,11 @@ $.fn.mousetip = function(my_tip, relative_to=null, x=20, y=20) {
     let tip = relative_to === null ? $(my_tip, this) : $(my_tip, relative_to);
     let hidden = true;
 
+    const _isMac = /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+    const _isModKey = (e) => _isMac ? e.metaKey : e.ctrlKey;
+
     $this.hover(function(e) {
-        if (!e.ctrlKey) {
+        if (!_isModKey(e)) {
             tip.show();
             hidden = false;
         }
@@ -125,7 +128,7 @@ $.fn.mousetip = function(my_tip, relative_to=null, x=20, y=20) {
                     css.color = d3.dgenies.mousetip.getColorByBgColor(css.background)
                 }
 
-                if (!hidden && ((!e.ctrlKey && !d3.dgenies.zone_selected) || match !== null)) {
+                if (!hidden && ((!_isModKey(e) && !d3.dgenies.zone_selected) || match !== null)) {
                     tip.show().css(css);
                 }
 

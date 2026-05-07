@@ -5,6 +5,18 @@ d3.dgenies.zoom = {};
 d3.dgenies.zoom.help_timeout = null;
 
 /**
+ * Returns true if the platform-appropriate modifier key is held.
+ * On macOS, this is the Command key (metaKey); on other platforms it is Ctrl (ctrlKey).
+ *
+ * @param {Event} e
+ * @returns {boolean}
+ */
+d3.dgenies.zoom.isModKey = function(e) {
+    const isMac = /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+    return isMac ? e.metaKey : e.ctrlKey;
+};
+
+/**
  * Initialize zoom.init module
  */
 d3.dgenies.zoom.init = function() {
@@ -20,7 +32,7 @@ d3.dgenies.zoom.init = function() {
  * Click event action
  */
 d3.dgenies.zoom.click = function () {
-    if (!d3.event.ctrlKey && !d3.dgenies.all_disabled) {
+    if (!d3.dgenies.zoom.isModKey(d3.event) && !d3.dgenies.all_disabled) {
         let cursor = d3.dgenies.zoom._cursor_pos();
         d3.dgenies.select_zone(cursor[0], cursor[1]);
     }
@@ -70,7 +82,7 @@ d3.dgenies.zoom.translate = function () {
         height_c = rect.height;
     let cursor_x = (d3.event.pageX - posX) / width_c * d3.dgenies.scale,
         cursor_y = (d3.event.pageY - posY) / height_c * d3.dgenies.scale;
-    if (d3.dgenies.translate_start !== null && d3.event.ctrlKey) {
+    if (d3.dgenies.translate_start !== null && d3.dgenies.zoom.isModKey(d3.event)) {
         let old_transform = d3.dgenies.container.attr("transform");
         //let scale = 1;
         let scale_x = 1;
@@ -145,7 +157,7 @@ d3.dgenies.zoom._cursor_pos = function(rect=null) {
  * Zoom staff
  */
 d3.dgenies.zoom.zoom = function () {
-    if (d3.event.ctrlKey) {
+    if (d3.dgenies.zoom.isModKey(d3.event)) {
         d3.event.preventDefault();
         d3.dgenies.mousetip.hide();
         if (d3.dgenies.zoom_enabled) {
