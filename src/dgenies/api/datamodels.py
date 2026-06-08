@@ -70,6 +70,15 @@ class ContigType(str, Enum):
     query = 'query'
     target = 'target'
 
+class AnnotationTrackAxis(str, Enum):
+    query = 'query'
+    target = 'target'
+
+class AnnotationTrackFormat(str, Enum):
+    bed = 'bed'
+    wig = 'wig'
+    bedgraph = 'bedgraph'
+
 class PrepareFastaEnum(str, Enum):
     done = 'Done'
     in_progress = 'In progress'
@@ -144,20 +153,20 @@ class JobId(BaseModel):
 class Job(JobId):
     type: JobType = Field(JobType.align, description="Type of job (align, plot or batch)")
 
-    query: str = Field(description="Query file. Can be either a filename or an url")
-    query_type: FileType = Field(description="Type of query file. Either 'local' or 'url'")
+    query: Optional[str] = Field(None, description="Query file. Can be either a filename or an url")
+    query_type: Optional[FileType] = Field(None, description="Type of query file. Either 'local' or 'url'")
 
-    target: str = Field(description="Target file. Can be either a filename or an url")
-    target_type: FileType = Field(description="Type of target file. Either 'local' or 'url'")
+    target: Optional[str] = Field(None, description="Target file. Can be either a filename or an url")
+    target_type: Optional[FileType] = Field(None, description="Type of target file. Either 'local' or 'url'")
 
-    align: str = Field(description="Align file. Can be either a filename or an url")
-    align_type: FileType = Field(description="Type of align file. Either 'local' or 'url'")
+    align: Optional[str] = Field(None, description="Align file. Can be either a filename or an url")
+    align_type: Optional[FileType] = Field(None, description="Type of align file. Either 'local' or 'url'")
 
-    backup: str = Field(description="Backup file. Can be either a filename or an url")
-    backup_type: FileType = Field(description="Type of backup file. Either 'local' or 'url'")
+    backup: Optional[str] = Field(None, description="Backup file. Can be either a filename or an url")
+    backup_type: Optional[FileType] = Field(None, description="Type of backup file. Either 'local' or 'url'")
 
-    tool: ToolName | None = Field(description="Tool file. Can be either 'minimap2' or 'mashmap'")
-    tool_options: Optional[list[str]] = Field([], description="List of options for chosen tool.")
+    tool: ToolName | None = Field(None, description="Tool file. Can be either 'minimap2' or 'mashmap'")
+    tool_options: list[str] = Field(default_factory=list, description="List of options for chosen tool.")
 
 class JobsSubmissionQuery(Session, Job):
 
@@ -210,6 +219,12 @@ class UploadFileForm(Session):
     file: FileStorage
 
 
+class AnnotationTrackUploadForm(BaseModel):
+    axis: AnnotationTrackAxis = Field(description="Axis the track is associated with")
+    name: Optional[str] = Field(None, description="Display name for the track")
+    file: FileStorage
+
+
 class UploadResponseData(NeededFiles):
     batch_id: str|None = Field(description="Job id, null until last upload is completed")
     job_ids: list[JobId]|None = Field(description="List of jobs ids, null if file upload is needed")
@@ -225,6 +240,9 @@ class JobPath(JobId):
 
 class JobFilePath(JobId):
     filename: str = Field(description="File name")
+
+class AnnotationTrackPath(JobPath):
+    track_id: str = Field(description="Annotation track id")
 
 class JobStatus(JobId):
     percent: float = Field(description="Progression of job. Takes value between 0 and 100. When the value reaches 100, the job is complete regardless of its status (success or error).")
@@ -263,6 +281,25 @@ class Dotplot(BaseModel):
 
 class DotplotResponse(BaseResponse):
     data: Dotplot
+
+class AnnotationTrack(BaseModel):
+    id: str = Field(description="Annotation track id")
+    job_id: str = Field(description="The id of the job")
+    axis: AnnotationTrackAxis = Field(description="Axis the track is associated with")
+    format: AnnotationTrackFormat = Field(description="Track file format")
+    name: str = Field(description="Display name")
+    filename: str = Field(description="Original uploaded filename")
+    size: int = Field(description="Track file size in bytes")
+    created_at: str = Field(description="Track upload timestamp")
+
+class AnnotationTracksList(BaseModel):
+    tracks: list[AnnotationTrack] = Field(description="Annotation tracks available for the job")
+
+class AnnotationTrackResponse(BaseResponse):
+    data: AnnotationTrack
+
+class AnnotationTracksResponse(BaseResponse):
+    data: AnnotationTracksList
 
 
 class SummaryResponse(BaseResponse):

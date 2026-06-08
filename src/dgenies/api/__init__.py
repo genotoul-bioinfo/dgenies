@@ -13,7 +13,7 @@ from typing import (
 
 import itertools as it
 
-from flask import current_app, make_response
+from flask import current_app, make_response, send_file
 from flask_openapi3 import APIBlueprint
 from werkzeug.exceptions import RequestEntityTooLarge
 
@@ -32,6 +32,7 @@ from ..lib.exceptions import (
 from ..lib.functions import Functions
 from ..lib.job_manager import JobManager
 from ..lib.paf import Paf
+from ..lib.annotation_tracks import AnnotationTrackError, AnnotationTracks
 
 from .datamodels import (
     BaseResponse,
@@ -45,12 +46,14 @@ from .datamodels import (
     GalleryResponse,
     JobFilePath,
     JobPath,
+    AnnotationTrackPath,
     BatchSubmissionResponse,
     BatchSubmissionQuery,
     Limits,
     Session,
     SessionResponse,
     UploadFileForm,
+    AnnotationTrackUploadForm,
     JobStatus,
     JobStatusResponse,
     JobDescription,
@@ -68,7 +71,9 @@ from .datamodels import (
     PrepareFasta,
     PrepareFastaInput,
     PrepareFastaEnum,
-    PrepareFastaResponse
+    PrepareFastaResponse,
+    AnnotationTrackResponse,
+    AnnotationTracksResponse
 )
 from .job_descriptions import job_descriptions
 from ..lib.upload_file import UploadFile
@@ -623,14 +628,14 @@ def prepare_jobs(email: str, jobs: list[Job]) -> list[dict]:
             "type": job.type,
             "email": email,
             "query": job.query if job.query else None,
-            "query_type": job.query_type.value if job.query else None,
+            "query_type": job.query_type.value if job.query and job.query_type else None,
             "target": job.target if job.target else None,
-            "target_type": job.target_type.value if job.target else None,
+            "target_type": job.target_type.value if job.target and job.target_type else None,
             "tool": job.tool.value if job.tool else None,
             "align":  job.align if job.align else None,
-            "align_type": job.align_type.value if job.align else None,
+            "align_type": job.align_type.value if job.align and job.align_type else None,
             "backup": job.backup if job.backup else None,
-            "backup_type": job.backup_type.value if job.backup else None,
+            "backup_type": job.backup_type.value if job.backup and job.backup_type else None,
             "options": " ".join(get_tools_options(job.tool.value, job.tool_options)) if job.tool_options else None
         })
     return result
@@ -800,6 +805,84 @@ def get_dotplot(path: JobPath):
         return {"code": 500, "message": paf.error}
     except FileNotFoundError:
         return {"code": 404, "message": "Job not found"}, 404
+
+
+@api.get('/result/<job_id>/tracks',
+         responses={
+             200: AnnotationTracksResponse,
+             404: NotFoundResponse,
+             500: BaseResponse,
+         })
+def get_annotation_tracks(path: JobPath):
+    """
+    List IGV annotation tracks available for a job.
+    """
+    try:
+        tracks = AnnotationTracks(APP_DATA).list_tracks(path.job_id)
+        return {"code": 0, "message": "ok", "data": {"tracks": tracks}}, 200
+    except FileNotFoundError:
+        return {"code": 404, "message": "Job not found"}, 404
+    except Exception:
+        logger.error(traceback.format_exc())
+        return {"code": 500, "message": "Internal error"}, 500
+
+
+@api.post('/result/<job_id>/tracks',
+          responses={
+              200: AnnotationTrackResponse,
+              400: BaseResponse,
+              404: NotFoundResponse,
+              413: BaseResponse,
+              415: BaseResponse,
+              500: BaseResponse,
+          })
+def upload_annotation_track(path: JobPath, form: AnnotationTrackUploadForm):
+    """
+    Upload a BED3 or Wiggle IGV annotation track for a job.
+    """
+    try:
+        track = AnnotationTracks(APP_DATA).save_track(
+            path.job_id,
+            form.axis.value,
+            form.file,
+            form.name,
+        )
+        return {"code": 0, "message": "ok", "data": track}, 200
+    except FileNotFoundError:
+        return {"code": 404, "message": "Job not found"}, 404
+    except AnnotationTrackError as error:
+        return {"code": 415, "message": str(error)}, 415
+    except RequestEntityTooLarge:
+        return {"code": 413, "message": "File too large"}, 413
+    except Exception:
+        logger.error(traceback.format_exc())
+        return {"code": 500, "message": "Internal error"}, 500
+
+
+@api.get('/result/<job_id>/track/<track_id>',
+         responses={
+             200: BaseResponse,
+             404: NotFoundResponse,
+             500: BaseResponse,
+         })
+def get_annotation_track_file(path: AnnotationTrackPath):
+    """
+    Serve an annotation track file for IGV.js.
+    """
+    try:
+        track_path, track = AnnotationTracks(APP_DATA).get_track_file(path.job_id, path.track_id)
+        return send_file(
+            track_path,
+            mimetype="text/plain",
+            as_attachment=False,
+            download_name=track["filename"],
+        )
+    except FileNotFoundError:
+        return {"code": 404, "message": "Track not found"}, 404
+    except Exception:
+        logger.error(traceback.format_exc())
+        return {"code": 500, "message": "Internal error"}, 500
+
 
 @api.get('/result/<job_id>/sorted-dotplot',
          responses={
